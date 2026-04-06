@@ -13,6 +13,9 @@ class Player(Camera):
         self.on_ground = False
         self.feet_pos = glm.vec3(position)
         self.free_fly = False
+        self.step_counter = 0
+        self.interaction_timer = 0
+        self.interaction_delay = 150 # ms delay for continuous mining/placing
 
     def update(self):
         self.mouse_control()
@@ -24,8 +27,16 @@ class Player(Camera):
             self.keyboard_control()
             self.apply_gravity()
             self.move_and_collide()
-            self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
             
+            # View Bobbing
+            bob_offset = 0.0
+            if self.on_ground and glm.length(glm.vec2(self.velocity.x, self.velocity.z)) > 0.001:
+                self.step_counter += glm.length(glm.vec2(self.velocity.x, self.velocity.z)) * 2.5
+                bob_offset = glm.sin(self.step_counter) * 0.05
+            self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT + bob_offset, 0)
+            
+            self.handle_interaction()
+
             # Void fall prevention
             if self.position.y < -20:
                 self.feet_pos = glm.vec3(PLAYER_POS)
@@ -48,10 +59,12 @@ class Player(Camera):
         # adding and removing voxels with clicks
         if event.type == pg.MOUSEBUTTONDOWN:
             voxel_handler = self.app.scene.world.voxel_handler
-            if event.button == 1:
-                voxel_handler.set_voxel()
-            if event.button == 3:
-                voxel_handler.switch_mode()
+            if event.button == 1: # Left click to break
+                voxel_handler.set_voxel(mode='remove')
+                self.interaction_timer = pg.time.get_ticks()
+            if event.button == 3: # Right click to place
+                voxel_handler.set_voxel(mode='add')
+                self.interaction_timer = pg.time.get_ticks()
             if event.button == 4:  # Scroll Up
                 voxel_handler.change_block(1)
             if event.button == 5:  # Scroll Down
@@ -63,6 +76,19 @@ class Player(Camera):
             self.rotate_yaw(delta_x=mouse_dx * MOUSE_SENSITIVITY)
         if mouse_dy:
             self.rotate_pitch(delta_y=mouse_dy * MOUSE_SENSITIVITY)
+
+    def handle_interaction(self):
+        mouse_pressed = pg.mouse.get_pressed()
+        voxel_handler = self.app.scene.world.voxel_handler
+        
+        if mouse_pressed[0] or mouse_pressed[2]: # Left or Right click held
+            current_time = pg.time.get_ticks()
+            if current_time - self.interaction_timer > self.interaction_delay:
+                if mouse_pressed[0]:
+                    voxel_handler.set_voxel(mode='remove')
+                elif mouse_pressed[2]:
+                    voxel_handler.set_voxel(mode='add')
+                self.interaction_timer = current_time
 
     def keyboard_control(self):
         if self.free_fly:

@@ -15,7 +15,8 @@ class VoxelHandler:
         self.voxel_world_pos = None
         self.voxel_normal = None
 
-        self.interaction_mode = 0  # 0: remove voxel   1: add voxel
+        # Keep for voxel_marker compatibility, permanently set to 0 for standard Minecraft highlighting
+        self.interaction_mode = 0  
         self.new_voxel_id = DIRT
 
     def change_block(self, direction):
@@ -71,14 +72,11 @@ class VoxelHandler:
             self.chunk.mesh.rebuild()
             self.rebuild_adjacent_chunks()
 
-    def set_voxel(self):
-        if self.interaction_mode:
+    def set_voxel(self, mode='remove'):
+        if mode == 'add':
             self.add_voxel()
-        else:
+        elif mode == 'remove':
             self.remove_voxel()
-
-    def switch_mode(self):
-        self.interaction_mode = not self.interaction_mode
 
     def update(self):
         self.ray_cast()
