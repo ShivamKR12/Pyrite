@@ -45,6 +45,16 @@ class ShaderProgram:
         self.water['m_view'].write(self.player.m_view)
         self.water['u_time'] = self.app.time
         self.clouds['m_view'].write(self.player.m_view)
+        
+        # Day / Night Cycle Lighting
+        time_speed = 1.0 # Adjust this to make the day longer or shorter
+        sun_y = glm.cos(self.app.time * time_speed)
+        sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
+        self.chunk['u_sun_direction'].write(sun_dir)
+        
+        bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
+        self.chunk['bg_color'].write(bg_color)
+        self.clouds['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
         with open(f'shaders/{shader_name}.vert') as file:
