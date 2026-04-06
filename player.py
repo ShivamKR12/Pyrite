@@ -20,6 +20,9 @@ class Player(Camera):
         self.target_voxel_pos = None
         self.mining_time = 0.0
         self.mining_duration = 0.0 # updated dynamically
+        
+        self.hotbar = [DIRT, GRASS, STONE, SAND, WOOD, LEAVES, SNOW, DIRT, GRASS]
+        self.hotbar_index = 0
 
     def update(self):
         self.mouse_control()
@@ -60,6 +63,12 @@ class Player(Camera):
                     # sync camera to feet when exiting free fly
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
+            
+            # Hotbar numbers 1-9
+            if pg.K_1 <= event.key <= pg.K_9:
+                self.hotbar_index = event.key - pg.K_1
+                self.app.scene.world.voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
+                
         # adding and removing voxels with clicks
         if event.type == pg.MOUSEBUTTONDOWN:
             voxel_handler = self.app.scene.world.voxel_handler
@@ -67,9 +76,11 @@ class Player(Camera):
                 voxel_handler.set_voxel(mode='add')
                 self.interaction_timer = pg.time.get_ticks()
             if event.button == 4:  # Scroll Up
-                voxel_handler.change_block(1)
+                self.hotbar_index = (self.hotbar_index - 1) % 9
+                voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
             if event.button == 5:  # Scroll Down
-                voxel_handler.change_block(-1)
+                self.hotbar_index = (self.hotbar_index + 1) % 9
+                voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
 
     def mouse_control(self):
         mouse_dx, mouse_dy = pg.mouse.get_rel()
@@ -107,7 +118,7 @@ class Player(Camera):
     def keyboard_control(self):
         if self.free_fly:
             key_state = pg.key.get_pressed()
-            vel = PLAYER_SPEED * self.app.delta_time
+            vel = PLAYER_SPEED * 5 * self.app.delta_time
             if key_state[pg.K_w]:
                 self.move_forward(vel)
             if key_state[pg.K_s]:

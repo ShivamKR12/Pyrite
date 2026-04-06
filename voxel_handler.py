@@ -17,14 +17,7 @@ class VoxelHandler:
 
         # Keep for voxel_marker compatibility, permanently set to 0 for standard Minecraft highlighting
         self.interaction_mode = 0  
-        self.new_voxel_id = DIRT
-
-    def change_block(self, direction):
-        self.new_voxel_id += direction
-        if self.new_voxel_id > WOOD:
-            self.new_voxel_id = SAND
-        elif self.new_voxel_id < SAND:
-            self.new_voxel_id = WOOD
+        self.new_voxel_id = self.app.player.hotbar[self.app.player.hotbar_index]
 
     def add_voxel(self):
         if self.voxel_id:

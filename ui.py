@@ -39,12 +39,10 @@ class BlockIconMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
-        s = 0.08  # Scale of the icon
-        x, y = 0.85, -0.85  # Bottom right corner of the screen
-        sx = s / ASPECT_RATIO  # Aspect ratio correction
+        # Standard normalized quad [-1, 1]
         vertices = [
-            (x-sx, y-s), (x+sx, y-s), (x+sx, y+s),
-            (x-sx, y-s), (x+sx, y+s), (x-sx, y+s)
+            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
+            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
         ]
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
         return np.hstack([vertices, tex_coords]).astype('float32')
@@ -63,6 +61,19 @@ class BlockIcon:
         self.mesh = BlockIconMesh(app)
         
     def render(self):
-        # Dynamically pass the currently selected voxel ID to the shader
-        self.mesh.program['voxel_id'] = self.app.scene.world.voxel_handler.new_voxel_id
-        self.mesh.render()
+        player = self.app.player
+        s = 0.05  # Base scale
+        spacing = 0.12
+        start_x = -4 * spacing
+        y = -0.85
+        
+        for i in range(9):
+            voxel_id = player.hotbar[i]
+            x = start_x + i * spacing
+            is_selected = (i == player.hotbar_index)
+            current_scale = s * 1.3 if is_selected else s
+            
+            self.mesh.program['u_scale'] = (current_scale / ASPECT_RATIO, current_scale)
+            self.mesh.program['u_offset'] = (x, y)
+            self.mesh.program['voxel_id'] = voxel_id
+            self.mesh.render()

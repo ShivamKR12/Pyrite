@@ -3,7 +3,7 @@ from settings import *
 
 class Frustum:
     def __init__(self, camera):
-        self.cam: Camera = camera
+        self.cam: Camera = camera # type: ignore
 
         self.factor_y = 1.0 / math.cos(half_y := V_FOV * 0.5)
         self.tan_y = math.tan(half_y)
