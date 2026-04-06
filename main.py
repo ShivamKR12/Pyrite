@@ -64,6 +64,8 @@ class VoxelEngine:
             self.handle_events()
             self.update()
             self.render()
+            
+        self.scene.world.save()
         pg.quit()
         sys.exit()
 

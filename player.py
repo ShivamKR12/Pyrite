@@ -148,6 +148,8 @@ class Player(Camera):
                 move_dir -= self.right
             if glm.length(move_dir):
                 move_dir = glm.normalize(move_dir)
+            if keys[pg.K_LSHIFT]:
+                speed *= 1.5
             self.velocity.x = move_dir.x * speed
             self.velocity.z = move_dir.z * speed
             if self.on_ground and keys[pg.K_SPACE]:
