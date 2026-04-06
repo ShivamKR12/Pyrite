@@ -16,6 +16,10 @@ class Player(Camera):
         self.step_counter = 0
         self.interaction_timer = 0
         self.interaction_delay = 150 # ms delay for continuous mining/placing
+        
+        self.target_voxel_pos = None
+        self.mining_time = 0.0
+        self.mining_duration = 600.0 # ms to break a block
 
     def update(self):
         self.mouse_control()
@@ -59,9 +63,6 @@ class Player(Camera):
         # adding and removing voxels with clicks
         if event.type == pg.MOUSEBUTTONDOWN:
             voxel_handler = self.app.scene.world.voxel_handler
-            if event.button == 1: # Left click to break
-                voxel_handler.set_voxel(mode='remove')
-                self.interaction_timer = pg.time.get_ticks()
             if event.button == 3: # Right click to place
                 voxel_handler.set_voxel(mode='add')
                 self.interaction_timer = pg.time.get_ticks()
@@ -81,13 +82,25 @@ class Player(Camera):
         mouse_pressed = pg.mouse.get_pressed()
         voxel_handler = self.app.scene.world.voxel_handler
         
-        if mouse_pressed[0] or mouse_pressed[2]: # Left or Right click held
-            current_time = pg.time.get_ticks()
-            if current_time - self.interaction_timer > self.interaction_delay:
-                if mouse_pressed[0]:
+        current_time = pg.time.get_ticks()
+        
+        # Mining logic (Left click)
+        if mouse_pressed[0] and voxel_handler.voxel_id:
+            if self.target_voxel_pos == voxel_handler.voxel_world_pos:
+                self.mining_time += self.app.delta_time
+                if self.mining_time >= self.mining_duration:
                     voxel_handler.set_voxel(mode='remove')
-                elif mouse_pressed[2]:
-                    voxel_handler.set_voxel(mode='add')
+                    self.mining_time = 0.0
+            else:
+                self.target_voxel_pos = voxel_handler.voxel_world_pos
+                self.mining_time = 0.0
+        else:
+            self.mining_time = 0.0
+            
+        # Placing logic (Right click)
+        if mouse_pressed[2]:
+            if current_time - self.interaction_timer > self.interaction_delay:
+                voxel_handler.set_voxel(mode='add')
                 self.interaction_timer = current_time
 
     def keyboard_control(self):

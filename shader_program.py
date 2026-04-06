@@ -27,6 +27,8 @@ class ShaderProgram:
         self.voxel_marker['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_model'].write(glm.mat4())
         self.voxel_marker['u_texture_0'] = 0
+        self.voxel_marker['u_texture_breaking'] = 3
+        self.voxel_marker['mining_progress'] = 0.0
 
         # water
         self.water['m_proj'].write(self.player.m_proj)
@@ -51,6 +53,9 @@ class ShaderProgram:
         self.water['m_view'].write(self.player.m_view)
         self.water['u_time'] = self.app.time
         self.clouds['m_view'].write(self.player.m_view)
+        
+        mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
+        self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
         time_speed = 1.0 # Adjust this to make the day longer or shorter
