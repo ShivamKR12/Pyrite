@@ -19,7 +19,7 @@ class Player(Camera):
         
         self.target_voxel_pos = None
         self.mining_time = 0.0
-        self.mining_duration = 600.0 # ms to break a block
+        self.mining_duration = 0.0 # updated dynamically
 
     def update(self):
         self.mouse_control()
@@ -94,6 +94,7 @@ class Player(Camera):
             else:
                 self.target_voxel_pos = voxel_handler.voxel_world_pos
                 self.mining_time = 0.0
+                self.mining_duration = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
         else:
             self.mining_time = 0.0
             
@@ -139,7 +140,7 @@ class Player(Camera):
             self.velocity.x = move_dir.x * speed
             self.velocity.z = move_dir.z * speed
             if self.on_ground and keys[pg.K_SPACE]:
-                self.feet_pos.y += JUMP_HEIGHT
+                self.velocity.y = JUMP_VELOCITY
                 self.on_ground = False
 
     def apply_gravity(self):

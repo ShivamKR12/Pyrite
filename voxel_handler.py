@@ -29,10 +29,18 @@ class VoxelHandler:
     def add_voxel(self):
         if self.voxel_id:
             # check voxel id along normal
-            result = self.get_voxel_id(self.voxel_world_pos + self.voxel_normal)
+            new_voxel_pos = self.voxel_world_pos + self.voxel_normal
+            result = self.get_voxel_id(new_voxel_pos)
 
             # is the new place empty?
             if not result[0]:
+                # prevent placing blocks inside the player
+                player_min, player_max = self.app.player.get_aabb()
+                voxel_min = glm.vec3(new_voxel_pos)
+                voxel_max = voxel_min + 1.0
+                if self.app.player.aabb_intersect(player_min, player_max, voxel_min, voxel_max):
+                    return
+
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = self.new_voxel_id
                 chunk.mesh.rebuild()
