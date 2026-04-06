@@ -11,6 +11,7 @@ class ShaderProgram:
         self.voxel_marker = self.get_program(shader_name='voxel_marker')
         self.water = self.get_program('water')
         self.clouds = self.get_program('clouds')
+        self.quad = self.get_program('quad')
         # ------------------------- #
         self.set_uniforms_on_init()
 
@@ -38,6 +39,11 @@ class ShaderProgram:
         self.clouds['center'] = CENTER_XZ
         self.clouds['bg_color'].write(BG_COLOR)
         self.clouds['cloud_scale'] = CLOUD_SCALE
+        
+        # quad (used for 2D UI)
+        self.quad['m_proj'].write(glm.mat4())
+        self.quad['m_view'].write(glm.mat4())
+        self.quad['m_model'].write(glm.mat4())
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)

@@ -28,7 +28,7 @@ class Chunk:
         self.mesh = ChunkMesh(self)
 
     def render(self):
-        if not self.is_empty and self.is_on_frustum(self):
+        if not self.is_empty and self.is_on_frustum(self) and self.mesh and self.mesh.vao:
             self.set_uniform()
             self.mesh.render()
 

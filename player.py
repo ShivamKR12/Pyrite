@@ -25,6 +25,12 @@ class Player(Camera):
             self.apply_gravity()
             self.move_and_collide()
             self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
+            
+            # Void fall prevention
+            if self.position.y < -20:
+                self.feet_pos = glm.vec3(PLAYER_POS)
+                self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
+                self.velocity = glm.vec3(0)
         super().update()
 
     def handle_event(self, event):

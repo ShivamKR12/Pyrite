@@ -4,6 +4,7 @@ from world import World
 from world_objects.voxel_marker import VoxelMarker
 from world_objects.water import Water
 from world_objects.clouds import Clouds
+from ui import Crosshair
 
 
 class Scene:
@@ -13,6 +14,7 @@ class Scene:
         self.voxel_marker = VoxelMarker(self.world.voxel_handler)
         self.water = Water(app)
         self.clouds = Clouds(app)
+        self.crosshair = Crosshair(app)
 
     def update(self):
         self.world.update()
@@ -31,3 +33,8 @@ class Scene:
 
         # voxel selection
         self.voxel_marker.render()
+        
+        # UI rendering (disable depth testing so it draws over everything)
+        self.app.ctx.disable(mgl.DEPTH_TEST)
+        self.crosshair.render()
+        self.app.ctx.enable(mgl.DEPTH_TEST)
