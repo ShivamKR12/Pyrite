@@ -5,6 +5,7 @@ from world_objects.voxel_marker import VoxelMarker
 from world_objects.water import Water
 from world_objects.clouds import Clouds
 from ui import Crosshair
+from ui import BlockIcon
 
 
 class Scene:
@@ -15,6 +16,7 @@ class Scene:
         self.water = Water(app)
         self.clouds = Clouds(app)
         self.crosshair = Crosshair(app)
+        self.block_icon = BlockIcon(app)
 
     def update(self):
         self.world.update()
@@ -37,4 +39,5 @@ class Scene:
         # UI rendering (disable depth testing so it draws over everything)
         self.app.ctx.disable(mgl.DEPTH_TEST)
         self.crosshair.render()
+        self.block_icon.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)

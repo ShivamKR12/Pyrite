@@ -12,6 +12,7 @@ class ShaderProgram:
         self.water = self.get_program('water')
         self.clouds = self.get_program('clouds')
         self.quad = self.get_program('quad')
+        self.ui_block = self.get_program('ui_block')
         # ------------------------- #
         self.set_uniforms_on_init()
 
@@ -46,6 +47,9 @@ class ShaderProgram:
         self.quad['m_proj'].write(glm.mat4())
         self.quad['m_view'].write(glm.mat4())
         self.quad['m_model'].write(glm.mat4())
+        
+        # ui block
+        self.ui_block['u_texture_array_0'] = 1
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
