@@ -18,6 +18,13 @@ class VoxelHandler:
         self.interaction_mode = 0  # 0: remove voxel   1: add voxel
         self.new_voxel_id = DIRT
 
+    def change_block(self, direction):
+        self.new_voxel_id += direction
+        if self.new_voxel_id > WOOD:
+            self.new_voxel_id = SAND
+        elif self.new_voxel_id < SAND:
+            self.new_voxel_id = WOOD
+
     def add_voxel(self):
         if self.voxel_id:
             # check voxel id along normal
