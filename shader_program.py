@@ -43,6 +43,7 @@ class ShaderProgram:
         self.chunk['m_view'].write(self.player.m_view)
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.water['m_view'].write(self.player.m_view)
+        self.water['u_time'] = self.app.time
         self.clouds['m_view'].write(self.player.m_view)
 
     def get_program(self, shader_name):

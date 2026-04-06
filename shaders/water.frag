@@ -9,10 +9,12 @@ in vec2 uv;
 
 uniform sampler2D u_texture_0;
 uniform float water_line;
+uniform float u_time;
 
 
 void main() {
-    vec3 tex_col = texture(u_texture_0, uv).rgb;
+    vec2 animated_uv = uv + vec2(u_time * 0.2, u_time * 0.2);
+    vec3 tex_col = texture(u_texture_0, animated_uv).rgb;
     tex_col = pow(tex_col, gamma);
 
     // fog
