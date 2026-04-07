@@ -47,6 +47,23 @@ class BlockIconMesh(BaseMesh):
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
         return np.hstack([vertices, tex_coords]).astype('float32')
 
+class UIColorMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.ui_color
+        self.vbo_format = '2f'
+        self.attrs = ('in_position',)
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        vertices = [
+            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
+            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
+        ]
+        return np.array(vertices, dtype='float32')
+
 class Crosshair:
     def __init__(self, app):
         self.app = app
@@ -55,25 +72,47 @@ class Crosshair:
     def render(self):
         self.mesh.render()
 
-class BlockIcon:
+class Hotbar:
     def __init__(self, app):
         self.app = app
-        self.mesh = BlockIconMesh(app)
+        self.block_mesh = BlockIconMesh(app)
+        self.color_mesh = UIColorMesh(app)
         
     def render(self):
         player = self.app.player
-        s = 0.05  # Base scale
-        spacing = 0.12
+        s = 0.045  # Base scale for blocks
+        slot_s = 0.06 # Scale of slot background
+        spacing = 0.13
         start_x = -4 * spacing
         y = -0.85
         
+        # 1. Draw the transparent slot backgrounds and selection frame
         for i in range(9):
-            voxel_id = player.hotbar[i]
             x = start_x + i * spacing
             is_selected = (i == player.hotbar_index)
-            current_scale = s * 1.3 if is_selected else s
             
-            self.mesh.program['u_scale'] = (current_scale / ASPECT_RATIO, current_scale)
-            self.mesh.program['u_offset'] = (x, y)
-            self.mesh.program['voxel_id'] = voxel_id
-            self.mesh.render()
+            if is_selected:
+                # Draw white outline frame
+                sel_s = slot_s + 0.006
+                self.color_mesh.program['u_scale'] = (sel_s / ASPECT_RATIO, sel_s)
+                self.color_mesh.program['u_offset'] = (x, y)
+                self.color_mesh.program['u_color'] = (0.9, 0.9, 0.9, 0.9)
+                self.color_mesh.render()
+                
+                # Draw slightly lighter inner background
+                self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
+                self.color_mesh.program['u_color'] = (0.5, 0.5, 0.5, 0.7)
+                self.color_mesh.render()
+            else:
+                # Draw standard dark background
+                self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
+                self.color_mesh.program['u_offset'] = (x, y)
+                self.color_mesh.program['u_color'] = (0.2, 0.2, 0.2, 0.6)
+                self.color_mesh.render()
+
+        # 2. Draw the 3D block icons inside the slots
+        for i in range(9):
+            self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+            self.block_mesh.program['u_offset'] = (start_x + i * spacing, y)
+            self.block_mesh.program['voxel_id'] = player.hotbar[i]
+            self.block_mesh.render()

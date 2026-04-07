@@ -13,6 +13,7 @@ class ShaderProgram:
         self.clouds = self.get_program('clouds')
         self.quad = self.get_program('quad')
         self.ui_block = self.get_program('ui_block')
+        self.ui_color = self.get_program('ui_color')
         # ------------------------- #
         self.set_uniforms_on_init()
 

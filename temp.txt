@@ -48,6 +48,7 @@ class ChunkMesh(BaseMesh):
         self.format_size = sum(int(fmt[:1]) for fmt in self.vbo_format.split())
         self.attrs = ('packed_data',)
         self.vao = None
+        self.vbo = None
         self.vertex_data = None
 
     def render(self):
@@ -55,14 +56,18 @@ class ChunkMesh(BaseMesh):
             super().render()
 
     def rebuild(self):
+        if self.vao:
+            self.vao.release()
+        if self.vbo:
+            self.vbo.release()
         self.vertex_data = self.get_vertex_data()
         self.vao = self.get_vao()
 
     def get_vao(self):
         vertex_data = self.get_vertex_data() if self.vertex_data is None else self.vertex_data
-        vbo = self.ctx.buffer(vertex_data)
+        self.vbo = self.ctx.buffer(vertex_data)
         vao = self.ctx.vertex_array(
-            self.program, [(vbo, self.vbo_format, *self.attrs)], skip_errors=True
+            self.program, [(self.vbo, self.vbo_format, *self.attrs)], skip_errors=True
         )
         return vao
 
@@ -590,7 +595,7 @@ void main() {
 
     vec3 normal = face_normals[face_id];
     float diffuse = max(0.0, dot(normal, u_sun_direction));
-    float ambient = 0.3;
+    float ambient = max(0.05, 0.3 * (u_sun_direction.y + 0.5)); // smooth transition for night
     shading = (ambient + diffuse * 0.7) * ao_values[ao_id];
 
     frag_world_pos = (m_model * vec4(in_position, 1.0)).xyz;
@@ -1350,7 +1355,7 @@ class Player(Camera):
                 self.move_down(vel)
         else:
             keys = pg.key.get_pressed()
-            speed = PLAYER_SPEED * self.app.delta_time
+            speed = PLAYER_SPEED
             self.is_sprinting = False
             move_dir = glm.vec3(0)
             flat_forward = glm.vec3(self.forward.x, 0, self.forward.z)
@@ -1381,15 +1386,15 @@ class Player(Camera):
     def move_and_collide(self):
         # X axis
         # self.position.x += self.velocity.x
-        self.feet_pos.x += self.velocity.x
+        self.feet_pos.x += self.velocity.x * self.app.delta_time
         self.resolve_axis('x')
         # Y axis
         # self.position.y += self.velocity.y
-        self.feet_pos.y += self.velocity.y
+        self.feet_pos.y += self.velocity.y * self.app.delta_time
         self.resolve_axis('y')
         # Z axis
         # self.position.z += self.velocity.z
-        self.feet_pos.z += self.velocity.z
+        self.feet_pos.z += self.velocity.z * self.app.delta_time
         self.resolve_axis('z')
 
     def resolve_axis(self, axis):
@@ -1616,8 +1621,8 @@ PLAYER_HEIGHT = 1.8
 PLAYER_HALF_W = PLAYER_WIDTH / 2
 PLAYER_EYE_HEIGHT = 1.6
 
-GRAVITY = -0.0004
-JUMP_VELOCITY = 0.12
+GRAVITY = -0.000025
+JUMP_VELOCITY = 0.0075
 
 ===== D:\Minecraft\shader_program.py =====
 
