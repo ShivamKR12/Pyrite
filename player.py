@@ -16,6 +16,7 @@ class Player(Camera):
         self.step_counter = 0
         self.interaction_timer = 0
         self.interaction_delay = 150 # ms delay for continuous mining/placing
+        self.last_step_time = 0
         
         self.target_voxel_pos = None
         self.mining_time = 0.0
@@ -31,15 +32,30 @@ class Player(Camera):
             self.keyboard_control()
         else:
             # player mode — physics + collisions
+            was_on_ground = self.on_ground
             self.keyboard_control()
             self.apply_gravity()
+            self.on_ground = False
+            
+            prev_feet_pos = glm.vec3(self.feet_pos)
             self.move_and_collide()
             
+            if self.on_ground and not was_on_ground:
+                self.app.sounds.play_jump()
+
             # View Bobbing
             bob_offset = 0.0
-            if self.on_ground and glm.length(glm.vec2(self.velocity.x, self.velocity.z)) > 0.001:
-                self.step_counter += glm.length(glm.vec2(self.velocity.x, self.velocity.z)) * 2.5
+            # Calculate actual horizontal distance moved to prevent footsteps when stuck against a wall
+            actual_move_dist = glm.length(glm.vec2(self.feet_pos.x - prev_feet_pos.x, self.feet_pos.z - prev_feet_pos.z))
+            is_walking = self.on_ground and actual_move_dist > 0.0001
+            if is_walking:
+                self.step_counter += actual_move_dist * 2.5
                 bob_offset = glm.sin(self.step_counter) * 0.05
+
+                current_time = pg.time.get_ticks()
+                if current_time - self.last_step_time > 400: # ms between steps
+                    self.app.sounds.play_footstep()
+                    self.last_step_time = current_time
             self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT + bob_offset, 0)
             
             self.handle_interaction()
@@ -106,6 +122,7 @@ class Player(Camera):
                 self.target_voxel_pos = voxel_handler.voxel_world_pos
                 self.mining_time = 0.0
                 self.mining_duration = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
+                self.app.sounds.play_mining()
         else:
             self.mining_time = 0.0
             

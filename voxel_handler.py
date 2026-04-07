@@ -72,6 +72,7 @@ class VoxelHandler:
 
             self.chunk.mesh.rebuild()
             self.rebuild_adjacent_chunks()
+            self.app.sounds.play_break_block()
 
     def set_voxel(self, mode='remove'):
         if mode == 'add':

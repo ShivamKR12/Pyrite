@@ -16,7 +16,8 @@ class World:
         
         # Check if a saved world exists!
         if os.path.exists('world_data.npy'):
-            self.voxels = np.load('world_data.npy')
+            with open('world_data.npy', 'rb') as f:
+                self.voxels = np.load(f)
             self.build_chunks(load_from_disk=True)
         else:
             self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
