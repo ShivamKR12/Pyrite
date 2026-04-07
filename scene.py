@@ -6,6 +6,7 @@ from world_objects.water import Water
 from world_objects.clouds import Clouds
 from ui import Crosshair
 from ui import Hotbar
+from world_objects.item import ItemManager
 
 
 class Scene:
@@ -17,15 +18,18 @@ class Scene:
         self.clouds = Clouds(app)
         self.crosshair = Crosshair(app)
         self.hotbar = Hotbar(app)
+        self.item_manager = ItemManager(app)
 
     def update(self):
         self.world.update()
         self.voxel_marker.update()
         self.clouds.update()
+        self.item_manager.update()
 
     def render(self):
         # chunks rendering
         self.world.render()
+        self.item_manager.render()
 
         # rendering without cull face
         self.app.ctx.disable(mgl.CULL_FACE)

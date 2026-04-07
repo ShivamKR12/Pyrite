@@ -14,6 +14,7 @@ class ShaderProgram:
         self.quad = self.get_program('quad')
         self.ui_block = self.get_program('ui_block')
         self.ui_color = self.get_program('ui_color')
+        self.item = self.get_program('item')
         # ------------------------- #
         self.set_uniforms_on_init()
 
@@ -51,6 +52,12 @@ class ShaderProgram:
         
         # ui block
         self.ui_block['u_texture_array_0'] = 1
+        
+        # item
+        self.item['m_proj'].write(self.player.m_proj)
+        self.item['m_model'].write(glm.mat4())
+        self.item['u_texture_array_0'] = 1
+        self.item['bg_color'].write(BG_COLOR)
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
@@ -58,12 +65,14 @@ class ShaderProgram:
         self.water['m_view'].write(self.player.m_view)
         self.water['u_time'] = self.app.time
         self.clouds['m_view'].write(self.player.m_view)
+        self.item['m_view'].write(self.player.m_view)
         
         # Update projection matrix dynamically for FOV zooming
         self.chunk['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_proj'].write(self.player.m_proj)
         self.water['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
+        self.item['m_proj'].write(self.player.m_proj)
 
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
@@ -76,11 +85,14 @@ class ShaderProgram:
         # Safely write sun direction only if the shader currently supports it
         if 'u_sun_direction' in self.chunk:
             self.chunk['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.item:
+            self.item['u_sun_direction'].write(sun_dir)
         
         bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
         self.app.bg_color = bg_color
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)
+        self.item['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
         with open(f'shaders/{shader_name}.vert') as file:

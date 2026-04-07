@@ -74,6 +74,9 @@ class VoxelHandler:
             self.chunk.mesh.rebuild()
             self.rebuild_adjacent_chunks()
             self.app.sounds.play_break_block()
+            
+            # Spawn dropped item
+            self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
 
     def set_voxel(self, mode='remove'):
         if mode == 'add':
