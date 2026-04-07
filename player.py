@@ -162,7 +162,7 @@ class Player(Camera):
                 self.move_down(vel)
         else:
             keys = pg.key.get_pressed()
-            speed = PLAYER_SPEED * self.app.delta_time
+            speed = PLAYER_SPEED
             self.is_sprinting = False
             move_dir = glm.vec3(0)
             flat_forward = glm.vec3(self.forward.x, 0, self.forward.z)
@@ -193,15 +193,15 @@ class Player(Camera):
     def move_and_collide(self):
         # X axis
         # self.position.x += self.velocity.x
-        self.feet_pos.x += self.velocity.x
+        self.feet_pos.x += self.velocity.x * self.app.delta_time
         self.resolve_axis('x')
         # Y axis
         # self.position.y += self.velocity.y
-        self.feet_pos.y += self.velocity.y
+        self.feet_pos.y += self.velocity.y * self.app.delta_time
         self.resolve_axis('y')
         # Z axis
         # self.position.z += self.velocity.z
-        self.feet_pos.z += self.velocity.z
+        self.feet_pos.z += self.velocity.z * self.app.delta_time
         self.resolve_axis('z')
 
     def resolve_axis(self, axis):
