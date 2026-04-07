@@ -4,11 +4,13 @@ from settings import *
 class Frustum:
     def __init__(self, camera):
         self.cam: Camera = camera # type: ignore
-
-        self.factor_y = 1.0 / math.cos(half_y := V_FOV * 0.5)
+        self.update_factors(V_FOV, H_FOV)
+        
+    def update_factors(self, v_fov, h_fov):
+        self.factor_y = 1.0 / math.cos(half_y := v_fov * 0.5)
         self.tan_y = math.tan(half_y)
 
-        self.factor_x = 1.0 / math.cos(half_x := H_FOV * 0.5)
+        self.factor_x = 1.0 / math.cos(half_x := h_fov * 0.5)
         self.tan_x = math.tan(half_x)
 
     def is_on_frustum(self, chunk):

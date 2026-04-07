@@ -1,5 +1,6 @@
 import pygame as pg
 import glm
+import math
 from camera import Camera
 from settings import *
 
@@ -24,6 +25,9 @@ class Player(Camera):
         
         self.hotbar = [DIRT, GRASS, STONE, SAND, WOOD, LEAVES, SNOW, DIRT, GRASS]
         self.hotbar_index = 0
+        
+        self.fov = V_FOV
+        self.is_sprinting = False
 
     def update(self):
         self.mouse_control()
@@ -56,6 +60,14 @@ class Player(Camera):
                 if current_time - self.last_step_time > 400: # ms between steps
                     self.app.sounds.play_footstep()
                     self.last_step_time = current_time
+                    
+            # Dynamic FOV for sprinting
+            target_fov = V_FOV + glm.radians(10.0) if self.is_sprinting and is_walking else V_FOV
+            self.fov += (target_fov - self.fov) * 0.08 * self.app.delta_time
+            self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
+            h_fov = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
+            self.frustum.update_factors(self.fov, h_fov)
+
             self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT + bob_offset, 0)
             
             self.handle_interaction()
@@ -151,6 +163,7 @@ class Player(Camera):
         else:
             keys = pg.key.get_pressed()
             speed = PLAYER_SPEED * self.app.delta_time
+            self.is_sprinting = False
             move_dir = glm.vec3(0)
             flat_forward = glm.vec3(self.forward.x, 0, self.forward.z)
             if glm.length(flat_forward) > 0:
@@ -167,6 +180,7 @@ class Player(Camera):
                 move_dir = glm.normalize(move_dir)
             if keys[pg.K_LSHIFT]:
                 speed *= 1.5
+                self.is_sprinting = True
             self.velocity.x = move_dir.x * speed
             self.velocity.z = move_dir.z * speed
             if self.on_ground and keys[pg.K_SPACE]:

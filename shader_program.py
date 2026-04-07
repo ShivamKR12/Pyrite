@@ -58,6 +58,12 @@ class ShaderProgram:
         self.water['u_time'] = self.app.time
         self.clouds['m_view'].write(self.player.m_view)
         
+        # Update projection matrix dynamically for FOV zooming
+        self.chunk['m_proj'].write(self.player.m_proj)
+        self.voxel_marker['m_proj'].write(self.player.m_proj)
+        self.water['m_proj'].write(self.player.m_proj)
+        self.clouds['m_proj'].write(self.player.m_proj)
+
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
         

@@ -37,6 +37,7 @@ class VoxelHandler:
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = self.new_voxel_id
                 chunk.mesh.rebuild()
+                self.app.sounds.play_place_block()
 
                 # was it an empty chunk
                 if chunk.is_empty:

@@ -56,3 +56,6 @@ class Sounds:
         
     def play_mining(self):
         random.choice(self.mining).play()
+
+    def play_place_block(self):
+        random.choice(self.footsteps).play()
