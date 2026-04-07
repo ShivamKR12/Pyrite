@@ -1,0 +1,2275 @@
+
+===== D:\Minecraft\meshes\base_mesh.py =====
+
+import numpy as np
+
+
+class BaseMesh:
+    def __init__(self):
+        # OpenGL context
+        self.ctx = None
+        # shader program
+        self.program = None
+        # vertex buffer data type format: "3f 3f"
+        self.vbo_format = None
+        # attribute names according to the format: ("in_position", "in_color")
+        self.attrs: tuple[str, ...] = None
+        # vertex array object
+        self.vao = None
+
+    def get_vertex_data(self) -> np.array: ...
+
+    def get_vao(self):
+        vertex_data = self.get_vertex_data()
+        vbo = self.ctx.buffer(vertex_data)
+        vao = self.ctx.vertex_array(
+            self.program, [(vbo, self.vbo_format, *self.attrs)], skip_errors=True
+        )
+        return vao
+
+    def render(self):
+        self.vao.render()
+
+===== D:\Minecraft\meshes\chunk_mesh.py =====
+
+from meshes.base_mesh import BaseMesh
+from meshes.chunk_mesh_builder import build_chunk_mesh
+
+
+class ChunkMesh(BaseMesh):
+    def __init__(self, chunk):
+        super().__init__()
+        self.app = chunk.app
+        self.chunk = chunk
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.chunk
+
+        self.vbo_format = '1u4'
+        self.format_size = sum(int(fmt[:1]) for fmt in self.vbo_format.split())
+        self.attrs = ('packed_data',)
+        self.vao = None
+        self.vertex_data = None
+
+    def render(self):
+        if self.vao:
+            super().render()
+
+    def rebuild(self):
+        self.vertex_data = self.get_vertex_data()
+        self.vao = self.get_vao()
+
+    def get_vao(self):
+        vertex_data = self.get_vertex_data() if self.vertex_data is None else self.vertex_data
+        vbo = self.ctx.buffer(vertex_data)
+        vao = self.ctx.vertex_array(
+            self.program, [(vbo, self.vbo_format, *self.attrs)], skip_errors=True
+        )
+        return vao
+
+    def get_vertex_data(self):
+        mesh = build_chunk_mesh(
+            chunk_voxels=self.chunk.voxels,
+            format_size=self.format_size,
+            chunk_pos=self.chunk.position,
+            world_voxels=self.chunk.world.voxels
+        )
+        return mesh
+
+===== D:\Minecraft\meshes\chunk_mesh_builder.py =====
+
+from settings import *
+from numba import uint8
+
+
+@njit
+def get_ao(local_pos, world_pos, world_voxels, plane):
+    x, y, z = local_pos
+    wx, wy, wz = world_pos
+
+    if plane == 'Y':
+        a = is_void((x    , y, z - 1), (wx    , wy, wz - 1), world_voxels)
+        b = is_void((x - 1, y, z - 1), (wx - 1, wy, wz - 1), world_voxels)
+        c = is_void((x - 1, y, z    ), (wx - 1, wy, wz    ), world_voxels)
+        d = is_void((x - 1, y, z + 1), (wx - 1, wy, wz + 1), world_voxels)
+        e = is_void((x    , y, z + 1), (wx    , wy, wz + 1), world_voxels)
+        f = is_void((x + 1, y, z + 1), (wx + 1, wy, wz + 1), world_voxels)
+        g = is_void((x + 1, y, z    ), (wx + 1, wy, wz    ), world_voxels)
+        h = is_void((x + 1, y, z - 1), (wx + 1, wy, wz - 1), world_voxels)
+
+    elif plane == 'X':
+        a = is_void((x, y    , z - 1), (wx, wy    , wz - 1), world_voxels)
+        b = is_void((x, y - 1, z - 1), (wx, wy - 1, wz - 1), world_voxels)
+        c = is_void((x, y - 1, z    ), (wx, wy - 1, wz    ), world_voxels)
+        d = is_void((x, y - 1, z + 1), (wx, wy - 1, wz + 1), world_voxels)
+        e = is_void((x, y    , z + 1), (wx, wy    , wz + 1), world_voxels)
+        f = is_void((x, y + 1, z + 1), (wx, wy + 1, wz + 1), world_voxels)
+        g = is_void((x, y + 1, z    ), (wx, wy + 1, wz    ), world_voxels)
+        h = is_void((x, y + 1, z - 1), (wx, wy + 1, wz - 1), world_voxels)
+
+    else:  # Z plane
+        a = is_void((x - 1, y    , z), (wx - 1, wy    , wz), world_voxels)
+        b = is_void((x - 1, y - 1, z), (wx - 1, wy - 1, wz), world_voxels)
+        c = is_void((x    , y - 1, z), (wx    , wy - 1, wz), world_voxels)
+        d = is_void((x + 1, y - 1, z), (wx + 1, wy - 1, wz), world_voxels)
+        e = is_void((x + 1, y    , z), (wx + 1, wy    , wz), world_voxels)
+        f = is_void((x + 1, y + 1, z), (wx + 1, wy + 1, wz), world_voxels)
+        g = is_void((x    , y + 1, z), (wx    , wy + 1, wz), world_voxels)
+        h = is_void((x - 1, y + 1, z), (wx - 1, wy + 1, wz), world_voxels)
+
+    ao = (a + b + c), (g + h + a), (e + f + g), (c + d + e)
+    return ao
+
+
+@njit
+def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
+    # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
+    a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
+
+    b_bit, c_bit, d_bit, e_bit, f_bit, g_bit = 6, 6, 8, 3, 2, 1
+    fg_bit = f_bit + g_bit
+    efg_bit = e_bit + fg_bit
+    defg_bit = d_bit + efg_bit
+    cdefg_bit = c_bit + defg_bit
+    bcdefg_bit = b_bit + cdefg_bit
+
+    packed_data = (
+        a << bcdefg_bit |
+        b << cdefg_bit |
+        c << defg_bit |
+        d << efg_bit |
+        e << fg_bit |
+        f << g_bit | g
+    )
+    return packed_data
+
+
+@njit
+def get_chunk_index(world_voxel_pos):
+    wx, wy, wz = world_voxel_pos
+    cx = wx // CHUNK_SIZE
+    cy = wy // CHUNK_SIZE
+    cz = wz // CHUNK_SIZE
+    if not (0 <= cx < WORLD_W and 0 <= cy < WORLD_H and 0 <= cz < WORLD_D):
+        return -1
+
+    index = cx + WORLD_W * cz + WORLD_AREA * cy
+    return index
+
+
+@njit
+def is_void(local_voxel_pos, world_voxel_pos, world_voxels):
+    chunk_index = get_chunk_index(world_voxel_pos)
+    if chunk_index == -1:
+        return False
+    chunk_voxels = world_voxels[chunk_index]
+
+    x, y, z = local_voxel_pos
+    voxel_index = x % CHUNK_SIZE + z % CHUNK_SIZE * CHUNK_SIZE + y % CHUNK_SIZE * CHUNK_AREA
+
+    if chunk_voxels[voxel_index]:
+        return False
+    return True
+
+
+@njit
+def add_data(vertex_data, index, *vertices):
+    for vertex in vertices:
+        vertex_data[index] = vertex
+        index += 1
+    return index
+
+
+@njit
+def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
+    vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
+    index = 0
+
+    for x in range(CHUNK_SIZE):
+        for y in range(CHUNK_SIZE):
+            for z in range(CHUNK_SIZE):
+                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+
+                if not voxel_id:
+                    continue
+
+                # voxel world position
+                cx, cy, cz = chunk_pos
+                wx = x + cx * CHUNK_SIZE
+                wy = y + cy * CHUNK_SIZE
+                wz = z + cz * CHUNK_SIZE
+
+                # top face
+                if is_void((x, y + 1, z), (wx, wy + 1, wz), world_voxels):
+                    # get ao values
+                    ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, plane='Y')
+                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+
+                    # format: x, y, z, voxel_id, face_id, ao_id, flip_id
+                    v0 = pack_data(x    , y + 1, z    , voxel_id, 0, ao[0], flip_id)
+                    v1 = pack_data(x + 1, y + 1, z    , voxel_id, 0, ao[1], flip_id)
+                    v2 = pack_data(x + 1, y + 1, z + 1, voxel_id, 0, ao[2], flip_id)
+                    v3 = pack_data(x    , y + 1, z + 1, voxel_id, 0, ao[3], flip_id)
+
+                    if flip_id:
+                        index = add_data(vertex_data, index, v1, v0, v3, v1, v3, v2)
+                    else:
+                        index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
+
+                # bottom face
+                if is_void((x, y - 1, z), (wx, wy - 1, wz), world_voxels):
+                    ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, plane='Y')
+                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+
+                    v0 = pack_data(x    , y, z    , voxel_id, 1, ao[0], flip_id)
+                    v1 = pack_data(x + 1, y, z    , voxel_id, 1, ao[1], flip_id)
+                    v2 = pack_data(x + 1, y, z + 1, voxel_id, 1, ao[2], flip_id)
+                    v3 = pack_data(x    , y, z + 1, voxel_id, 1, ao[3], flip_id)
+
+                    if flip_id:
+                        index = add_data(vertex_data, index, v1, v3, v0, v1, v2, v3)
+                    else:
+                        index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
+
+                # right face
+                if is_void((x + 1, y, z), (wx + 1, wy, wz), world_voxels):
+                    ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, plane='X')
+                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+
+                    v0 = pack_data(x + 1, y    , z    , voxel_id, 2, ao[0], flip_id)
+                    v1 = pack_data(x + 1, y + 1, z    , voxel_id, 2, ao[1], flip_id)
+                    v2 = pack_data(x + 1, y + 1, z + 1, voxel_id, 2, ao[2], flip_id)
+                    v3 = pack_data(x + 1, y    , z + 1, voxel_id, 2, ao[3], flip_id)
+
+                    if flip_id:
+                        index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
+                    else:
+                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+
+                # left face
+                if is_void((x - 1, y, z), (wx - 1, wy, wz), world_voxels):
+                    ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, plane='X')
+                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+
+                    v0 = pack_data(x, y    , z    , voxel_id, 3, ao[0], flip_id)
+                    v1 = pack_data(x, y + 1, z    , voxel_id, 3, ao[1], flip_id)
+                    v2 = pack_data(x, y + 1, z + 1, voxel_id, 3, ao[2], flip_id)
+                    v3 = pack_data(x, y    , z + 1, voxel_id, 3, ao[3], flip_id)
+
+                    if flip_id:
+                        index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
+                    else:
+                        index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+
+                # back face
+                if is_void((x, y, z - 1), (wx, wy, wz - 1), world_voxels):
+                    ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, plane='Z')
+                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+
+                    v0 = pack_data(x,     y,     z, voxel_id, 4, ao[0], flip_id)
+                    v1 = pack_data(x,     y + 1, z, voxel_id, 4, ao[1], flip_id)
+                    v2 = pack_data(x + 1, y + 1, z, voxel_id, 4, ao[2], flip_id)
+                    v3 = pack_data(x + 1, y,     z, voxel_id, 4, ao[3], flip_id)
+
+                    if flip_id:
+                        index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
+                    else:
+                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+
+                # front face
+                if is_void((x, y, z + 1), (wx, wy, wz + 1), world_voxels):
+                    ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, plane='Z')
+                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+
+                    v0 = pack_data(x    , y    , z + 1, voxel_id, 5, ao[0], flip_id)
+                    v1 = pack_data(x    , y + 1, z + 1, voxel_id, 5, ao[1], flip_id)
+                    v2 = pack_data(x + 1, y + 1, z + 1, voxel_id, 5, ao[2], flip_id)
+                    v3 = pack_data(x + 1, y    , z + 1, voxel_id, 5, ao[3], flip_id)
+
+                    if flip_id:
+                        index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
+                    else:
+                        index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+
+    return vertex_data[:index + 1]
+
+===== D:\Minecraft\meshes\cloud_mesh.py =====
+
+from settings import *
+from meshes.base_mesh import BaseMesh
+from noise import *
+
+
+class CloudMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.clouds
+        self.vbo_format = '3u2'
+        self.attrs = ('in_position',)
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        cloud_data = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
+        self.gen_clouds(cloud_data)
+
+        return self.build_mesh(cloud_data)
+
+    @staticmethod
+    @njit
+    def gen_clouds(cloud_data):
+        for x in range(WORLD_W * CHUNK_SIZE):
+            for z in range(WORLD_D * CHUNK_SIZE):
+
+                if noise2(0.13 * x, 0.13 * z) < 0.2:
+                    continue
+                cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
+
+    @staticmethod
+    @njit
+    def build_mesh(cloud_data):
+        mesh = np.empty(WORLD_AREA * CHUNK_AREA * 6 * 3, dtype='uint16')
+        index = 0
+        width = WORLD_W * CHUNK_SIZE
+        depth = WORLD_D * CHUNK_SIZE
+
+        y = CLOUD_HEIGHT
+        visited = set()
+
+        for z in range(depth):
+            for x in range(width):
+
+                idx = x + width * z
+                if not cloud_data[idx] or idx in visited:
+                    continue
+
+                # find number of continuous quads along x
+                x_count = 1
+                idx = (x + x_count) + width * z
+                while x + x_count < width and cloud_data[idx] and idx not in visited:
+                    x_count += 1
+                    idx = (x + x_count) + width * z
+
+                # find the number of continuous quads along z for each x
+                z_count_list = []
+                for ix in range(x_count):
+                    z_count = 1
+                    idx = (x + ix) + width * (z + z_count)
+                    while (z + z_count) < depth and cloud_data[idx] and idx not in visited:
+                        z_count += 1
+                        idx = (x + ix) + width * (z + z_count)
+                    z_count_list.append(z_count)
+
+                # find min count z to form a large quad
+                z_count = min(z_count_list) if z_count_list else 1
+
+                # mark all unit quads of the large quad as visited
+                for ix in range(x_count):
+                    for iz in range(z_count):
+                        visited.add((x + ix) + width * (z + iz))
+
+                v0 = x, y, z
+                v1 = x + x_count, y, z + z_count
+                v2 = x + x_count, y, z
+                v3 = x, y, z + z_count
+
+                for vertex in (v0, v1, v2, v0, v3, v1):
+                    for attr in vertex:
+                        mesh[index] = attr
+                        index += 1
+
+        mesh = mesh[:index + 1]
+        return mesh
+
+===== D:\Minecraft\meshes\cube_mesh.py =====
+
+from settings import *
+from meshes.base_mesh import BaseMesh
+
+
+class CubeMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.voxel_marker
+
+        self.vbo_format = '2f2 3f2'
+        self.attrs = ('in_tex_coord_0', 'in_position',)
+        self.vao = self.get_vao()
+
+    @staticmethod
+    def get_data(vertices, indices):
+        data = [vertices[ind] for triangle in indices for ind in triangle]
+        return np.array(data, dtype='float16')
+
+    def get_vertex_data(self):
+        vertices = [
+            (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1),
+            (0, 1, 0), (0, 0, 0), (1, 0, 0), (1, 1, 0)
+        ]
+        indices = [
+            (0, 2, 3), (0, 1, 2),
+            (1, 7, 2), (1, 6, 7),
+            (6, 5, 4), (4, 7, 6),
+            (3, 4, 5), (3, 5, 0),
+            (3, 7, 4), (3, 2, 7),
+            (0, 6, 1), (0, 5, 6)
+        ]
+        vertex_data = self.get_data(vertices, indices)
+
+        tex_coord_vertices = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        tex_coord_indices = [
+            (0, 2, 3), (0, 1, 2),
+            (0, 2, 3), (0, 1, 2),
+            (0, 1, 2), (2, 3, 0),
+            (2, 3, 0), (2, 0, 1),
+            (0, 2, 3), (0, 1, 2),
+            (3, 1, 2), (3, 0, 1),
+        ]
+        tex_coord_data = self.get_data(tex_coord_vertices, tex_coord_indices)
+        vertex_data = np.hstack([tex_coord_data, vertex_data])
+        return vertex_data
+
+===== D:\Minecraft\meshes\quad_mesh.py =====
+
+from settings import *
+from meshes.base_mesh import BaseMesh
+
+
+class QuadMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.water
+        self.vbo_format = '2u1 3u1'
+        self.attrs = ('in_tex_coord', 'in_position')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        vertices = np.array([
+            (0, 0, 0), (1, 0, 1), (1, 0, 0),
+            (0, 0, 0), (0, 0, 1), (1, 0, 1)
+        ], dtype='uint8')
+
+        tex_coords = np.array([
+            (0, 0), (1, 1), (1, 0),
+            (0, 0), (0, 1), (1, 1)
+        ], dtype='uint8')
+
+        vertex_data = np.hstack([tex_coords, vertices])
+        return vertex_data
+
+===== D:\Minecraft\shaders\chunk.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+const vec3 gamma = vec3(2.2);
+const vec3 inv_gamma = 1 / gamma;
+
+uniform sampler2DArray u_texture_array_0;
+uniform vec3 bg_color;
+uniform float water_line;
+
+in vec2 uv;
+in float shading;
+in vec3 frag_world_pos;
+
+flat in int face_id;
+flat in int voxel_id;
+
+
+void main() {
+    vec2 face_uv = uv;
+    face_uv.x = uv.x / 3.0 - min(face_id, 2) / 3.0;
+
+    vec3 tex_col = texture(u_texture_array_0, vec3(face_uv, voxel_id)).rgb;
+    tex_col = pow(tex_col, gamma);
+
+    tex_col *= shading;
+
+    // underwater effect
+    if (frag_world_pos.y < water_line) tex_col *= vec3(0.0, 0.3, 1.0);
+
+    //fog
+    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
+    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-0.00001 * fog_dist * fog_dist)));
+
+    tex_col = pow(tex_col, inv_gamma);
+    fragColor = vec4(tex_col, 1.0);
+}
+
+===== D:\Minecraft\shaders\chunk.vert =====
+
+#version 330 core
+
+layout (location = 0) in uint packed_data;
+
+int x, y, z;
+int ao_id;
+int flip_id;
+
+uniform mat4 m_proj;
+uniform mat4 m_view;
+uniform mat4 m_model;
+uniform vec3 u_sun_direction;
+
+flat out int voxel_id;
+flat out int face_id;
+
+//out vec3 voxel_color;
+out vec2 uv;
+out float shading;
+out vec3 frag_world_pos;
+
+const float ao_values[4] = float[4](0.1, 0.25, 0.5, 1.0);
+
+const vec3 face_normals[6] = vec3[6](
+    vec3( 0.0,  1.0,  0.0), // top
+    vec3( 0.0, -1.0,  0.0), // bottom
+    vec3( 1.0,  0.0,  0.0), // right
+    vec3(-1.0,  0.0,  0.0), // left
+    vec3( 0.0,  0.0, -1.0), // back
+    vec3( 0.0,  0.0,  1.0)  // front
+);
+
+const vec2 uv_coords[4] = vec2[4](
+    vec2(0, 0), vec2(0, 1),
+    vec2(1, 0), vec2(1, 1)
+);
+
+const int uv_indices[24] = int[24](
+    1, 0, 2, 1, 2, 3,  // tex coords indices for vertices of an even face
+    3, 0, 2, 3, 1, 0,  // odd face
+    3, 1, 0, 3, 0, 2,  // even flipped face
+    1, 2, 3, 1, 0, 2   // odd flipped face
+);
+
+
+vec3 hash31(float p) {
+    vec3 p3 = fract(vec3(p * 21.2) * vec3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xxy + p3.yzz) * p3.zyx) + 0.05;
+}
+
+
+void unpack(uint packed_data) {
+    // a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
+    uint b_bit = 6u, c_bit = 6u, d_bit = 8u, e_bit = 3u, f_bit = 2u, g_bit = 1u;
+    uint b_mask = 63u, c_mask = 63u, d_mask = 255u, e_mask = 7u, f_mask = 3u, g_mask = 1u;
+    //
+    uint fg_bit = f_bit + g_bit;
+    uint efg_bit = e_bit + fg_bit;
+    uint defg_bit = d_bit + efg_bit;
+    uint cdefg_bit = c_bit + defg_bit;
+    uint bcdefg_bit = b_bit + cdefg_bit;
+    // unpacking vertex data
+    x = int(packed_data >> bcdefg_bit);
+    y = int((packed_data >> cdefg_bit) & b_mask);
+    z = int((packed_data >> defg_bit) & c_mask);
+    //
+    voxel_id = int((packed_data >> efg_bit) & d_mask);
+    face_id = int((packed_data >> fg_bit) & e_mask);
+    ao_id = int((packed_data >> g_bit) & f_mask);
+    flip_id = int(packed_data & g_mask);
+}
+
+
+void main() {
+    unpack(packed_data);
+
+    vec3 in_position = vec3(x, y, z);
+    int uv_index = gl_VertexID % 6  + ((face_id & 1) + flip_id * 2) * 6;
+
+    uv = uv_coords[uv_indices[uv_index]];
+
+    vec3 normal = face_normals[face_id];
+    float diffuse = max(0.0, dot(normal, u_sun_direction));
+    float ambient = 0.3;
+    shading = (ambient + diffuse * 0.7) * ao_values[ao_id];
+
+    frag_world_pos = (m_model * vec4(in_position, 1.0)).xyz;
+
+    gl_Position = m_proj * m_view * vec4(frag_world_pos, 1.0);
+}
+
+===== D:\Minecraft\shaders\clouds.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+const vec3 cloud_color = vec3(1);
+
+uniform vec3 bg_color;
+
+void main() {
+    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
+    vec3 col = mix(cloud_color, bg_color, 1.0 - exp(-0.000001 * fog_dist * fog_dist));
+
+    fragColor = vec4(col, 0.8);
+}
+
+===== D:\Minecraft\shaders\clouds.vert =====
+
+#version 330 core
+
+layout (location = 0) in vec3 in_position;
+
+uniform mat4 m_proj;
+uniform mat4 m_view;
+uniform mat4 m_view_proj;
+uniform int center;
+uniform float u_time;
+uniform float cloud_scale;
+
+void main() {
+    vec3 pos = vec3(in_position);
+    pos.xz -= center;
+    pos.xz *= cloud_scale;
+    pos.xz += center;
+
+    float time = 300 * sin(0.01 * u_time);
+    pos.xz += time;
+    gl_Position = m_proj * m_view * vec4(pos, 1.0);
+//    gl_Position = m_view_proj * vec4(pos, 1.0);
+}
+
+===== D:\Minecraft\shaders\quad.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+in vec3 color;
+
+
+void main() {
+    fragColor = vec4(color, 1.0);
+}
+
+===== D:\Minecraft\shaders\quad.vert =====
+
+#version 330 core
+
+layout (location = 0) in vec3 in_position;
+layout (location = 1) in vec3 in_color;
+
+uniform mat4 m_proj;
+uniform mat4 m_view;
+uniform mat4 m_model;
+
+out vec3 color;
+
+
+void main() {
+    color = in_color;
+    gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
+}
+
+===== D:\Minecraft\shaders\ui_block.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+in vec2 uv;
+
+uniform sampler2DArray u_texture_array_0;
+uniform int voxel_id;
+
+void main() {
+    vec2 face_uv = vec2(uv.x / 3.0, uv.y); // Sample the top face of the block
+    fragColor = texture(u_texture_array_0, vec3(face_uv, voxel_id));
+}
+
+===== D:\Minecraft\shaders\ui_block.vert =====
+
+#version 330 core
+
+layout (location = 0) in vec2 in_position;
+layout (location = 1) in vec2 in_tex_coord;
+
+out vec2 uv;
+
+uniform vec2 u_offset;
+uniform vec2 u_scale;
+
+void main() {
+    uv = in_tex_coord;
+    gl_Position = vec4((in_position * u_scale) + u_offset, 0.0, 1.0);
+}
+
+===== D:\Minecraft\shaders\voxel_marker.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+in vec3 marker_color;
+in vec2 uv;
+
+uniform sampler2D u_texture_0;
+uniform sampler2D u_texture_breaking;
+uniform float mining_progress;
+
+void main() {
+    // Base frame color (the black outline)
+    vec4 frame_col = texture(u_texture_0, uv);
+    frame_col.rgb += marker_color;
+    
+    // Breaking animation overlay
+    vec4 break_col = vec4(0.0);
+    if (mining_progress > 0.0) {
+        // Calculate which of the 8 frames to use based on progress
+        int frame = int(mining_progress * 8.0);
+        frame = clamp(frame, 0, 7);
+
+        // The texture is 16x128 (8 frames vertically). 
+        // Each frame is 1/8th of the height (0.125)
+        vec2 break_uv = vec2(uv.x, (uv.y + float(frame)) / 8.0);
+        break_col = texture(u_texture_breaking, break_uv);
+    }
+    
+    fragColor = frame_col;
+    if (break_col.a > 0.1) {
+        fragColor = vec4(mix(fragColor.rgb, break_col.rgb, break_col.a), 1.0);
+    }
+    fragColor.a = max(frame_col.a, break_col.a);
+}
+
+===== D:\Minecraft\shaders\voxel_marker.vert =====
+
+#version 330 core
+
+layout (location = 0) in vec2 in_tex_coord_0;
+layout (location = 1) in vec3 in_position;
+
+uniform mat4 m_proj;
+uniform mat4 m_view;
+uniform mat4 m_model;
+uniform uint mode_id;
+
+const vec3 marker_colors[2] = vec3[2](vec3(1, 0, 0), vec3(0, 0, 1));
+
+out vec3 marker_color;
+out vec2 uv;
+
+
+void main() {
+    uv = in_tex_coord_0;
+    marker_color = marker_colors[mode_id];
+    gl_Position = m_proj * m_view * m_model * vec4((in_position - 0.5) * 1.01 + 0.5, 1.0);
+}
+
+===== D:\Minecraft\shaders\water.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+const vec3 gamma = vec3(2.2);
+const vec3 inv_gamma = 1 / gamma;
+
+in vec2 uv;
+
+uniform sampler2D u_texture_0;
+uniform float water_line;
+uniform float u_time;
+
+
+void main() {
+    vec2 animated_uv = uv + vec2(u_time * 0.2, u_time * 0.2);
+    vec3 tex_col = texture(u_texture_0, animated_uv).rgb;
+    tex_col = pow(tex_col, gamma);
+
+    // fog
+    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
+    float alpha = mix(0.5, 0.0, 1.0 - exp(-0.000002 * fog_dist * fog_dist));
+
+    // gamma corretion
+    tex_col = pow(tex_col, inv_gamma);
+    fragColor = vec4(tex_col, alpha);
+}
+
+===== D:\Minecraft\shaders\water.vert =====
+
+#version 330 core
+
+layout (location = 0) in vec2 in_tex_coord;
+layout (location = 1) in vec3 in_position;
+
+uniform mat4 m_proj;
+uniform mat4 m_view;
+uniform mat4 m_view_proj;
+uniform int water_area;
+uniform float water_line;
+
+out vec2 uv;
+
+
+void main() {
+    vec3 pos = in_position;
+    pos.xz *= water_area;
+    pos.xz -= 0.33 * water_area;
+
+    pos.y += water_line;
+    uv = in_tex_coord * water_area;
+    gl_Position = m_proj * m_view * vec4(pos, 1.0);
+}
+
+===== D:\Minecraft\world_objects\chunk.py =====
+
+from settings import *
+from meshes.chunk_mesh import ChunkMesh
+import random
+from terrain_gen import *
+
+
+class Chunk:
+    def __init__(self, world, position):
+        self.app = world.app
+        self.world = world
+        self.position = position
+        self.m_model = self.get_model_matrix()
+        self.voxels: np.array = None
+        self.mesh: ChunkMesh = None
+        self.is_empty = True
+
+        self.center = (glm.vec3(self.position) + 0.5) * CHUNK_SIZE
+        self.is_on_frustum = self.app.player.frustum.is_on_frustum
+
+    def get_model_matrix(self):
+        m_model = glm.translate(glm.mat4(), glm.vec3(self.position) * CHUNK_SIZE)
+        return m_model
+
+    def set_uniform(self):
+        self.mesh.program['m_model'].write(self.m_model)
+
+    def build_mesh(self):
+        self.mesh = ChunkMesh(self)
+
+    def render(self):
+        if not self.is_empty and self.is_on_frustum(self) and self.mesh and self.mesh.vao:
+            self.set_uniform()
+            self.mesh.render()
+
+    def build_voxels(self):
+        voxels = np.zeros(CHUNK_VOL, dtype='uint8')
+
+        cx, cy, cz = glm.ivec3(self.position) * CHUNK_SIZE
+        self.generate_terrain(voxels, cx, cy, cz)
+
+        if np.any(voxels):
+            self.is_empty = False
+        return voxels
+
+    @staticmethod
+    @njit
+    def generate_terrain(voxels, cx, cy, cz):
+        for x in range(CHUNK_SIZE):
+            wx = x + cx
+            for z in range(CHUNK_SIZE):
+                wz = z + cz
+                world_height = get_height(wx, wz)
+                local_height = min(world_height - cy, CHUNK_SIZE)
+
+                for y in range(local_height):
+                    wy = y + cy
+                    set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height)
+
+===== D:\Minecraft\world_objects\clouds.py =====
+
+from settings import *
+from meshes.cloud_mesh import CloudMesh
+
+
+class Clouds:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = CloudMesh(app)
+
+    def update(self):
+        self.mesh.program['u_time'] = self.app.time
+
+    def render(self):
+        self.mesh.render()
+
+===== D:\Minecraft\world_objects\voxel_marker.py =====
+
+from settings import *
+from meshes.cube_mesh import CubeMesh
+
+
+class VoxelMarker:
+    def __init__(self, voxel_handler):
+        self.app = voxel_handler.app
+        self.handler = voxel_handler
+        self.position = glm.vec3(0)
+        self.m_model = self.get_model_matrix()
+        self.mesh = CubeMesh(self.app)
+
+    def update(self):
+        if self.handler.voxel_id:
+            if self.handler.interaction_mode:
+                self.position = self.handler.voxel_world_pos + self.handler.voxel_normal
+            else:
+                self.position = self.handler.voxel_world_pos
+
+    def set_uniform(self):
+        self.mesh.program['mode_id'] = self.handler.interaction_mode
+        self.mesh.program['m_model'].write(self.get_model_matrix())
+
+    def get_model_matrix(self):
+        m_model = glm.translate(glm.mat4(), glm.vec3(self.position))
+        return m_model
+
+    def render(self):
+        if self.handler.voxel_id:
+            self.set_uniform()
+            self.mesh.render()
+
+===== D:\Minecraft\world_objects\water.py =====
+
+from meshes.quad_mesh import QuadMesh
+from settings import *
+
+
+class Water:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = QuadMesh(app)
+
+    def render(self):
+        self.mesh.render()
+
+===== D:\Minecraft\audio_length.py =====
+
+import pygame
+
+pygame.mixer.init()
+
+sounds = [
+    "Grass_break.mp3",
+    "Grass_dig1.ogg",
+    "Grass_dig2.ogg",
+    "Grass_dig3.ogg",
+    "Grass_dig4.ogg",
+    "Grass_hit1.ogg",
+    "Grass_hit2.ogg",
+    "Grass_hit3.ogg",
+    "Grass_hit4.ogg",
+    "Grass_hit5.ogg",
+    "Grass_hit6.ogg",
+    "Grass_jump1.wav.mp3",
+    "Grass_jump2.wav.mp3",
+    "Grass_jump3.wav.mp3",
+    "Grass_jump4.wav.mp3",
+    "Grass_mining1.ogg",
+    "Grass_mining2.ogg",
+    "Grass_mining3.ogg.mp3",
+    "Grass_mining4.ogg",
+    "Grass_mining5.ogg",
+    "Grass_mining6.ogg"
+]
+
+for sound in sounds:
+    Sound = pygame.mixer.Sound(f"sounds/{sound}")
+    length = Sound.get_length()
+    print(f"Audio length for {sound}: {length} seconds")
+
+===== D:\Minecraft\camera.py =====
+
+from settings import *
+from frustum import Frustum
+
+
+class Camera:
+    def __init__(self, position, yaw, pitch):
+        self.position = glm.vec3(position)
+        self.yaw = glm.radians(yaw)
+        self.pitch = glm.radians(pitch)
+
+        self.up = glm.vec3(0, 1, 0)
+        self.right = glm.vec3(1, 0, 0)
+        self.forward = glm.vec3(0, 0, -1)
+
+        self.m_proj = glm.perspective(V_FOV, ASPECT_RATIO, NEAR, FAR)
+        self.m_view = glm.mat4()
+
+        self.frustum = Frustum(self)
+
+    def update(self):
+        self.update_vectors()
+        self.update_view_matrix()
+
+    def update_view_matrix(self):
+        self.m_view = glm.lookAt(self.position, self.position + self.forward, self.up)
+
+    def update_vectors(self):
+        self.forward.x = glm.cos(self.yaw) * glm.cos(self.pitch)
+        self.forward.y = glm.sin(self.pitch)
+        self.forward.z = glm.sin(self.yaw) * glm.cos(self.pitch)
+
+        self.forward = glm.normalize(self.forward)
+        self.right = glm.normalize(glm.cross(self.forward, glm.vec3(0, 1, 0)))
+        self.up = glm.normalize(glm.cross(self.right, self.forward))
+
+    def rotate_pitch(self, delta_y):
+        self.pitch -= delta_y
+        self.pitch = glm.clamp(self.pitch, -PITCH_MAX, PITCH_MAX)
+
+    def rotate_yaw(self, delta_x):
+        self.yaw += delta_x
+
+    def move_left(self, velocity):
+        self.position -= self.right * velocity
+
+    def move_right(self, velocity):
+        self.position += self.right * velocity
+
+    def move_up(self, velocity):
+        self.position += self.up * velocity
+
+    def move_down(self, velocity):
+        self.position -= self.up * velocity
+
+    def move_forward(self, velocity):
+        self.position += self.forward * velocity
+
+    def move_back(self, velocity):
+        self.position -= self.forward * velocity
+
+===== D:\Minecraft\frustum.py =====
+
+from settings import *
+
+
+class Frustum:
+    def __init__(self, camera):
+        self.cam: Camera = camera # type: ignore
+        self.update_factors(V_FOV, H_FOV)
+        
+    def update_factors(self, v_fov, h_fov):
+        self.factor_y = 1.0 / math.cos(half_y := v_fov * 0.5)
+        self.tan_y = math.tan(half_y)
+
+        self.factor_x = 1.0 / math.cos(half_x := h_fov * 0.5)
+        self.tan_x = math.tan(half_x)
+
+    def is_on_frustum(self, chunk):
+        # vector to sphere center
+        sphere_vec = chunk.center - self.cam.position
+
+        # outside the NEAR and FAR planes?
+        sz = glm.dot(sphere_vec, self.cam.forward)
+        if not (NEAR - CHUNK_SPHERE_RADIUS <= sz <= FAR + CHUNK_SPHERE_RADIUS):
+            return False
+
+        # outside the TOP and BOTTOM planes?
+        sy = glm.dot(sphere_vec, self.cam.up)
+        dist = self.factor_y * CHUNK_SPHERE_RADIUS + sz * self.tan_y
+        if not (-dist <= sy <= dist):
+            return False
+
+        # outside the LEFT and RIGHT planes?
+        sx = glm.dot(sphere_vec, self.cam.right)
+        dist = self.factor_x * CHUNK_SPHERE_RADIUS + sz * self.tan_x
+        if not (-dist <= sx <= dist):
+            return False
+
+        return True
+
+===== D:\Minecraft\main.py =====
+
+from settings import *
+import moderngl as mgl
+import pygame as pg
+import sys
+from shader_program import ShaderProgram
+from scene import Scene
+from player import Player
+from sounds import Sounds
+from textures import Textures
+
+
+class VoxelEngine:
+    def __init__(self):
+        pg.init()
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, MAJOR_VER)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, MINOR_VER)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
+        pg.display.gl_set_attribute(pg.GL_DEPTH_SIZE, DEPTH_SIZE)
+        pg.display.gl_set_attribute(pg.GL_MULTISAMPLESAMPLES, NUM_SAMPLES)
+
+        pg.display.set_mode(WIN_RES, flags=pg.OPENGL | pg.DOUBLEBUF)
+        self.ctx = mgl.create_context()
+
+        self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE | mgl.BLEND)
+        self.ctx.gc_mode = 'auto'
+
+        self.clock = pg.time.Clock()
+        self.delta_time = 0
+        self.time = 0
+        self.bg_color = BG_COLOR
+
+        pg.event.set_grab(True)
+        pg.mouse.set_visible(False)
+
+        self.is_running = True
+        self.on_init()
+
+    def on_init(self):
+        self.textures = Textures(self)
+        self.player = Player(self)
+        self.sounds = Sounds(self)
+        self.shader_program = ShaderProgram(self)
+        self.scene = Scene(self)
+
+    def update(self):
+        self.player.update()
+        self.shader_program.update()
+        self.scene.update()
+
+        self.delta_time = self.clock.tick()
+        self.time = pg.time.get_ticks() * 0.001
+        pg.display.set_caption(f'{self.clock.get_fps() :.0f}')
+
+    def render(self):
+        self.ctx.clear(color=self.bg_color)
+        self.scene.render()
+        pg.display.flip()
+
+    def handle_events(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+                self.is_running = False
+            self.player.handle_event(event=event)
+
+    def run(self):
+        while self.is_running:
+            self.handle_events()
+            self.update()
+            self.render()
+            
+        self.scene.world.save()
+        pg.quit()
+        sys.exit()
+
+
+if __name__ == '__main__':
+    app = VoxelEngine()
+    app.run()
+
+===== D:\Minecraft\noise.py =====
+
+from settings import SEED
+from numba import njit
+from opensimplex.internals import _noise2, _noise3, _init
+
+perm, perm_grad_index3 = _init(seed=SEED)
+
+
+@njit(cache=True)
+def noise2(x, y):
+    return _noise2(x, y, perm)
+
+
+@njit(cache=True)
+def noise3(x, y, z):
+    return _noise3(x, y, z, perm, perm_grad_index3)
+
+===== D:\Minecraft\player.py =====
+
+import pygame as pg
+import glm
+import math
+from camera import Camera
+from settings import *
+
+
+class Player(Camera):
+    def __init__(self, app, position=PLAYER_POS, yaw=-90, pitch=0):
+        self.app = app
+        super().__init__(position, yaw, pitch)
+        # physics state
+        self.velocity = glm.vec3(0)
+        self.on_ground = False
+        self.feet_pos = glm.vec3(position)
+        self.free_fly = False
+        self.step_counter = 0
+        self.interaction_timer = 0
+        self.interaction_delay = 150 # ms delay for continuous mining/placing
+        self.last_step_time = 0
+        
+        self.target_voxel_pos = None
+        self.mining_time = 0.0
+        self.mining_duration = 0.0 # updated dynamically
+        
+        self.hotbar = [DIRT, GRASS, STONE, SAND, WOOD, LEAVES, SNOW, DIRT, GRASS]
+        self.hotbar_index = 0
+        
+        self.fov = V_FOV
+        self.is_sprinting = False
+
+    def update(self):
+        self.mouse_control()
+        if self.free_fly:
+            # free camera mode — NO PHYSICS
+            self.keyboard_control()
+        else:
+            # player mode — physics + collisions
+            was_on_ground = self.on_ground
+            self.keyboard_control()
+            self.apply_gravity()
+            self.on_ground = False
+            
+            prev_feet_pos = glm.vec3(self.feet_pos)
+            self.move_and_collide()
+            
+            if self.on_ground and not was_on_ground:
+                self.app.sounds.play_jump()
+
+            # View Bobbing
+            bob_offset = 0.0
+            # Calculate actual horizontal distance moved to prevent footsteps when stuck against a wall
+            actual_move_dist = glm.length(glm.vec2(self.feet_pos.x - prev_feet_pos.x, self.feet_pos.z - prev_feet_pos.z))
+            is_walking = self.on_ground and actual_move_dist > 0.0001
+            if is_walking:
+                self.step_counter += actual_move_dist * 2.5
+                bob_offset = glm.sin(self.step_counter) * 0.05
+
+                current_time = pg.time.get_ticks()
+                if current_time - self.last_step_time > 400: # ms between steps
+                    self.app.sounds.play_footstep()
+                    self.last_step_time = current_time
+                    
+            # Dynamic FOV for sprinting
+            target_fov = V_FOV + glm.radians(10.0) if self.is_sprinting and is_walking else V_FOV
+            self.fov += (target_fov - self.fov) * 0.08 * self.app.delta_time
+            self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
+            h_fov = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
+            self.frustum.update_factors(self.fov, h_fov)
+
+            self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT + bob_offset, 0)
+            
+            self.handle_interaction()
+
+            # Void fall prevention
+            if self.position.y < -20:
+                self.feet_pos = glm.vec3(PLAYER_POS)
+                self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
+                self.velocity = glm.vec3(0)
+        super().update()
+
+    def handle_event(self, event):
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_f:
+                self.free_fly = not self.free_fly
+                if self.free_fly:
+                    # sync feet to camera when entering free fly
+                    self.feet_pos = glm.vec3(self.position)
+                    self.velocity = glm.vec3(0)
+                else:
+                    # sync camera to feet when exiting free fly
+                    self.feet_pos = glm.vec3(self.position)
+                    self.velocity = glm.vec3(0)
+            
+            # Hotbar numbers 1-9
+            if pg.K_1 <= event.key <= pg.K_9:
+                self.hotbar_index = event.key - pg.K_1
+                self.app.scene.world.voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
+                
+        # adding and removing voxels with clicks
+        if event.type == pg.MOUSEBUTTONDOWN:
+            voxel_handler = self.app.scene.world.voxel_handler
+            if event.button == 3: # Right click to place
+                voxel_handler.set_voxel(mode='add')
+                self.interaction_timer = pg.time.get_ticks()
+            if event.button == 4:  # Scroll Up
+                self.hotbar_index = (self.hotbar_index - 1) % 9
+                voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
+            if event.button == 5:  # Scroll Down
+                self.hotbar_index = (self.hotbar_index + 1) % 9
+                voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
+
+    def mouse_control(self):
+        mouse_dx, mouse_dy = pg.mouse.get_rel()
+        if mouse_dx:
+            self.rotate_yaw(delta_x=mouse_dx * MOUSE_SENSITIVITY)
+        if mouse_dy:
+            self.rotate_pitch(delta_y=mouse_dy * MOUSE_SENSITIVITY)
+
+    def handle_interaction(self):
+        mouse_pressed = pg.mouse.get_pressed()
+        voxel_handler = self.app.scene.world.voxel_handler
+        
+        current_time = pg.time.get_ticks()
+        
+        # Mining logic (Left click)
+        if mouse_pressed[0] and voxel_handler.voxel_id:
+            if self.target_voxel_pos == voxel_handler.voxel_world_pos:
+                self.mining_time += self.app.delta_time
+                if self.mining_time >= self.mining_duration:
+                    voxel_handler.set_voxel(mode='remove')
+                    self.mining_time = 0.0
+            else:
+                self.target_voxel_pos = voxel_handler.voxel_world_pos
+                self.mining_time = 0.0
+                self.mining_duration = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
+                self.app.sounds.play_mining()
+        else:
+            self.mining_time = 0.0
+            
+        # Placing logic (Right click)
+        if mouse_pressed[2]:
+            if current_time - self.interaction_timer > self.interaction_delay:
+                voxel_handler.set_voxel(mode='add')
+                self.interaction_timer = current_time
+
+    def keyboard_control(self):
+        if self.free_fly:
+            key_state = pg.key.get_pressed()
+            vel = PLAYER_SPEED * 5 * self.app.delta_time
+            if key_state[pg.K_w]:
+                self.move_forward(vel)
+            if key_state[pg.K_s]:
+                self.move_back(vel)
+            if key_state[pg.K_d]:
+                self.move_right(vel)
+            if key_state[pg.K_a]:
+                self.move_left(vel)
+            if key_state[pg.K_q]:
+                self.move_up(vel)
+            if key_state[pg.K_e]:
+                self.move_down(vel)
+        else:
+            keys = pg.key.get_pressed()
+            speed = PLAYER_SPEED * self.app.delta_time
+            self.is_sprinting = False
+            move_dir = glm.vec3(0)
+            flat_forward = glm.vec3(self.forward.x, 0, self.forward.z)
+            if glm.length(flat_forward) > 0:
+                flat_forward = glm.normalize(flat_forward)
+            if keys[pg.K_w]:
+                move_dir += flat_forward
+            if keys[pg.K_s]:
+                move_dir -= flat_forward
+            if keys[pg.K_d]:
+                move_dir += self.right
+            if keys[pg.K_a]:
+                move_dir -= self.right
+            if glm.length(move_dir):
+                move_dir = glm.normalize(move_dir)
+            if keys[pg.K_LSHIFT]:
+                speed *= 1.5
+                self.is_sprinting = True
+            self.velocity.x = move_dir.x * speed
+            self.velocity.z = move_dir.z * speed
+            if self.on_ground and keys[pg.K_SPACE]:
+                self.velocity.y = JUMP_VELOCITY
+                self.on_ground = False
+
+    def apply_gravity(self):
+        self.velocity.y += GRAVITY * self.app.delta_time
+
+    def move_and_collide(self):
+        # X axis
+        # self.position.x += self.velocity.x
+        self.feet_pos.x += self.velocity.x
+        self.resolve_axis('x')
+        # Y axis
+        # self.position.y += self.velocity.y
+        self.feet_pos.y += self.velocity.y
+        self.resolve_axis('y')
+        # Z axis
+        # self.position.z += self.velocity.z
+        self.feet_pos.z += self.velocity.z
+        self.resolve_axis('z')
+
+    def resolve_axis(self, axis):
+        aabb_min, aabb_max = self.get_aabb()
+        min_x = int(glm.floor(aabb_min.x))
+        max_x = int(glm.floor(aabb_max.x))
+        min_y = int(glm.floor(aabb_min.y))
+        max_y = int(glm.floor(aabb_max.y))
+        min_z = int(glm.floor(aabb_min.z))
+        max_z = int(glm.floor(aabb_max.z))
+        world = self.app.scene.world
+        for x in range(min_x, max_x + 1):
+            for y in range(min_y, max_y + 1):
+                for z in range(min_z, max_z + 1):
+                    voxel_id, *_ = world.voxel_handler.get_voxel_id(glm.ivec3(x, y, z))
+                    if not voxel_id:
+                        continue
+                    voxel_min = glm.vec3(x, y, z)
+                    voxel_max = voxel_min + 1
+                    if self.aabb_intersect(aabb_min, aabb_max, voxel_min, voxel_max):
+                        if axis == 'x':
+                            if self.velocity.x > 0:
+                                # self.position.x = voxel_min.x - PLAYER_HALF_W
+                                self.feet_pos.x = voxel_min.x - PLAYER_HALF_W
+                            else:
+                                # self.position.x = voxel_max.x + PLAYER_HALF_W
+                                self.feet_pos.x = voxel_max.x + PLAYER_HALF_W
+                            self.velocity.x = 0
+                        elif axis == 'y':
+                            if self.velocity.y > 0:
+                                # self.position.y = voxel_min.y - PLAYER_HEIGHT
+                                self.feet_pos.y = voxel_min.y - PLAYER_HEIGHT
+                            else:
+                                # self.position.y = voxel_max.y
+                                self.feet_pos.y = voxel_max.y
+                                self.on_ground = True
+                            self.velocity.y = 0
+                        elif axis == 'z':
+                            if self.velocity.z > 0:
+                                # self.position.z = voxel_min.z - PLAYER_HALF_W
+                                self.feet_pos.z = voxel_min.z - PLAYER_HALF_W
+                            else:
+                                # self.position.z = voxel_max.z + PLAYER_HALF_W
+                                self.feet_pos.z = voxel_max.z + PLAYER_HALF_W
+                            self.velocity.z = 0
+                        aabb_min, aabb_max = self.get_aabb()
+
+    def get_aabb(self):
+        min_v = glm.vec3(
+            # self.position.x - PLAYER_HALF_W,
+            self.feet_pos.x - PLAYER_HALF_W,
+            # self.position.y,
+            self.feet_pos.y,
+            # self.position.z - PLAYER_HALF_W
+            self.feet_pos.z - PLAYER_HALF_W
+        )
+        max_v = glm.vec3(
+            # self.position.x + PLAYER_HALF_W,
+            self.feet_pos.x + PLAYER_HALF_W,
+            # self.position.y + PLAYER_HEIGHT,
+            self.feet_pos.y + PLAYER_HEIGHT,
+            # self.position.z + PLAYER_HALF_W
+            self.feet_pos.z + PLAYER_HALF_W
+        )
+        return min_v, max_v
+
+    @staticmethod
+    def aabb_intersect(a_min, a_max, b_min, b_max):
+        return (
+            a_min.x < b_max.x and a_max.x > b_min.x and
+            a_min.y < b_max.y and a_max.y > b_min.y and
+            a_min.z < b_max.z and a_max.z > b_min.z
+        )
+
+===== D:\Minecraft\scene.py =====
+
+from settings import *
+import moderngl as mgl
+from world import World
+from world_objects.voxel_marker import VoxelMarker
+from world_objects.water import Water
+from world_objects.clouds import Clouds
+from ui import Crosshair
+from ui import BlockIcon
+
+
+class Scene:
+    def __init__(self, app):
+        self.app = app
+        self.world = World(self.app)
+        self.voxel_marker = VoxelMarker(self.world.voxel_handler)
+        self.water = Water(app)
+        self.clouds = Clouds(app)
+        self.crosshair = Crosshair(app)
+        self.block_icon = BlockIcon(app)
+
+    def update(self):
+        self.world.update()
+        self.voxel_marker.update()
+        self.clouds.update()
+
+    def render(self):
+        # chunks rendering
+        self.world.render()
+
+        # rendering without cull face
+        self.app.ctx.disable(mgl.CULL_FACE)
+        self.clouds.render()
+        self.water.render()
+        self.app.ctx.enable(mgl.CULL_FACE)
+
+        # voxel selection
+        self.voxel_marker.render()
+        
+        # UI rendering (disable depth testing so it draws over everything)
+        self.app.ctx.disable(mgl.DEPTH_TEST)
+        self.crosshair.render()
+        self.block_icon.render()
+        self.app.ctx.enable(mgl.DEPTH_TEST)
+
+===== D:\Minecraft\settings.py =====
+
+from numba import njit
+import numpy as np
+import glm
+import math
+import pygame
+
+# OpenGL settings
+MAJOR_VER, MINOR_VER = 3, 3
+DEPTH_SIZE = 24
+NUM_SAMPLES = 1  # antialiasing
+
+# resolution
+pygame.init()
+info = pygame.display.Info()
+WIN_RES = glm.vec2(info.current_w,info.current_h-60)
+pygame.quit()
+
+# world generation
+SEED = 16
+
+# ray casting
+MAX_RAY_DIST = 6
+
+# chunk
+CHUNK_SIZE = 48
+H_CHUNK_SIZE = CHUNK_SIZE // 2
+CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE
+CHUNK_VOL = CHUNK_AREA * CHUNK_SIZE
+CHUNK_SPHERE_RADIUS = H_CHUNK_SIZE * math.sqrt(3)
+
+# world
+WORLD_W, WORLD_H = 20, 2
+WORLD_D = WORLD_W
+WORLD_AREA = WORLD_W * WORLD_D
+WORLD_VOL = WORLD_AREA * WORLD_H
+
+# world center
+CENTER_XZ = WORLD_W * H_CHUNK_SIZE
+CENTER_Y = WORLD_H * H_CHUNK_SIZE
+
+# camera
+ASPECT_RATIO = WIN_RES.x / WIN_RES.y
+FOV_DEG = 50
+V_FOV = glm.radians(FOV_DEG)  # vertical FOV
+H_FOV = 2 * math.atan(math.tan(V_FOV * 0.5) * ASPECT_RATIO)  # horizontal FOV
+NEAR = 0.1
+FAR = 2000.0
+PITCH_MAX = glm.radians(89)
+
+# player
+PLAYER_SPEED = 0.005
+PLAYER_ROT_SPEED = 0.003
+# PLAYER_POS = glm.vec3(CENTER_XZ, WORLD_H * CHUNK_SIZE, CENTER_XZ)
+PLAYER_POS = glm.vec3(CENTER_XZ, CHUNK_SIZE, CENTER_XZ)
+MOUSE_SENSITIVITY = 0.002
+
+# colors
+BG_COLOR = glm.vec3(0.58, 0.83, 0.99)
+
+# textures
+SAND = 1
+GRASS = 2
+DIRT = 3
+STONE = 4
+SNOW = 5
+LEAVES = 6
+WOOD = 7
+
+# terrain levels
+SNOW_LVL = 54
+STONE_LVL = 49
+DIRT_LVL = 40
+GRASS_LVL = 8
+SAND_LVL = 7
+
+# tree settings
+TREE_PROBABILITY = 0.02
+TREE_WIDTH, TREE_HEIGHT = 4, 8
+TREE_H_WIDTH, TREE_H_HEIGHT = TREE_WIDTH // 2, TREE_HEIGHT // 2
+
+# block hardness (ms to break)
+BLOCK_HARDNESS = {
+    SAND: 300,
+    GRASS: 450,
+    DIRT: 400,
+    STONE: 1500,
+    SNOW: 200,
+    LEAVES: 150,
+    WOOD: 1000
+}
+
+# water
+WATER_LINE = 5.6
+WATER_AREA = 5 * CHUNK_SIZE * WORLD_W
+
+# cloud
+CLOUD_SCALE = 25
+CLOUD_HEIGHT = WORLD_H * CHUNK_SIZE * 2
+
+PLAYER_WIDTH  = 0.6
+PLAYER_HEIGHT = 1.8
+PLAYER_HALF_W = PLAYER_WIDTH / 2
+PLAYER_EYE_HEIGHT = 1.6
+
+GRAVITY = -0.0004
+JUMP_VELOCITY = 0.12
+
+===== D:\Minecraft\shader_program.py =====
+
+from settings import *
+
+
+class ShaderProgram:
+    def __init__(self, app):
+        self.app = app
+        self.ctx = app.ctx
+        self.player = app.player
+        # -------- shaders -------- #
+        self.chunk = self.get_program(shader_name='chunk')
+        self.voxel_marker = self.get_program(shader_name='voxel_marker')
+        self.water = self.get_program('water')
+        self.clouds = self.get_program('clouds')
+        self.quad = self.get_program('quad')
+        self.ui_block = self.get_program('ui_block')
+        # ------------------------- #
+        self.set_uniforms_on_init()
+
+    def set_uniforms_on_init(self):
+        # chunk
+        self.chunk['m_proj'].write(self.player.m_proj)
+        self.chunk['m_model'].write(glm.mat4())
+        self.chunk['u_texture_array_0'] = 1
+        self.chunk['bg_color'].write(BG_COLOR)
+        self.chunk['water_line'] = WATER_LINE
+
+        # marker
+        self.voxel_marker['m_proj'].write(self.player.m_proj)
+        self.voxel_marker['m_model'].write(glm.mat4())
+        self.voxel_marker['u_texture_0'] = 0
+        self.voxel_marker['u_texture_breaking'] = 3
+        self.voxel_marker['mining_progress'] = 0.0
+
+        # water
+        self.water['m_proj'].write(self.player.m_proj)
+        self.water['u_texture_0'] = 2
+        self.water['water_area'] = WATER_AREA
+        self.water['water_line'] = WATER_LINE
+
+        # clouds
+        self.clouds['m_proj'].write(self.player.m_proj)
+        self.clouds['center'] = CENTER_XZ
+        self.clouds['bg_color'].write(BG_COLOR)
+        self.clouds['cloud_scale'] = CLOUD_SCALE
+        
+        # quad (used for 2D UI)
+        self.quad['m_proj'].write(glm.mat4())
+        self.quad['m_view'].write(glm.mat4())
+        self.quad['m_model'].write(glm.mat4())
+        
+        # ui block
+        self.ui_block['u_texture_array_0'] = 1
+
+    def update(self):
+        self.chunk['m_view'].write(self.player.m_view)
+        self.voxel_marker['m_view'].write(self.player.m_view)
+        self.water['m_view'].write(self.player.m_view)
+        self.water['u_time'] = self.app.time
+        self.clouds['m_view'].write(self.player.m_view)
+        
+        # Update projection matrix dynamically for FOV zooming
+        self.chunk['m_proj'].write(self.player.m_proj)
+        self.voxel_marker['m_proj'].write(self.player.m_proj)
+        self.water['m_proj'].write(self.player.m_proj)
+        self.clouds['m_proj'].write(self.player.m_proj)
+
+        mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
+        self.voxel_marker['mining_progress'] = mining_progress
+        
+        # Day / Night Cycle Lighting
+        time_speed = 1.0 # Adjust this to make the day longer or shorter
+        sun_y = glm.cos(self.app.time * time_speed)
+        sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
+        
+        # Safely write sun direction only if the shader currently supports it
+        if 'u_sun_direction' in self.chunk:
+            self.chunk['u_sun_direction'].write(sun_dir)
+        
+        bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
+        self.app.bg_color = bg_color
+        self.chunk['bg_color'].write(bg_color)
+        self.clouds['bg_color'].write(bg_color)
+
+    def get_program(self, shader_name):
+        with open(f'shaders/{shader_name}.vert') as file:
+            vertex_shader = file.read()
+
+        with open(f'shaders/{shader_name}.frag') as file:
+            fragment_shader = file.read()
+
+        program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
+        return program
+
+===== D:\Minecraft\sounds.py =====
+
+import pygame as pg
+import random
+
+
+class Sounds:
+    def __init__(self, app):
+        self.app = app
+        pg.mixer.init()
+
+        # Load multiple sounds into lists!
+        # Update these strings to match the exact names of your downloaded files.
+        self.footsteps = [
+            pg.mixer.Sound('sounds/Grass_hit1.ogg'),
+            # pg.mixer.Sound('sounds/Grass_hit2.ogg'),
+            # pg.mixer.Sound('sounds/Grass_hit3.ogg'),
+            # pg.mixer.Sound('sounds/Grass_hit4.ogg'),
+            # pg.mixer.Sound('sounds/Grass_hit5.ogg'),
+            # pg.mixer.Sound('sounds/Grass_hit6.ogg')
+        ]
+        
+        self.break_blocks = [
+            pg.mixer.Sound('sounds/Grass_break.mp3'),
+            # pg.mixer.Sound('sounds/Grass_dig1.ogg'),
+            # pg.mixer.Sound('sounds/Grass_dig2.ogg'),
+            # pg.mixer.Sound('sounds/Grass_dig3.ogg'),
+            # pg.mixer.Sound('sounds/Grass_dig4.ogg')
+        ]
+        
+        self.jumps = [
+            pg.mixer.Sound('sounds/Grass_jump1.wav.mp3'),
+            # pg.mixer.Sound('sounds/Grass_jump2.wav.mp3'),
+            # pg.mixer.Sound('sounds/Grass_jump3.wav.mp3'),
+            # pg.mixer.Sound('sounds/Grass_jump4.wav.mp3')
+        ]
+        
+        self.mining = [
+            # pg.mixer.Sound('sounds/Grass_mining1.ogg'),
+            pg.mixer.Sound('sounds/Grass_mining2.ogg'),
+            # pg.mixer.Sound('sounds/Grass_mining3.ogg.mp3'),
+            # pg.mixer.Sound('sounds/Grass_mining4.ogg'),
+            # pg.mixer.Sound('sounds/Grass_mining5.ogg'),
+            # pg.mixer.Sound('sounds/Grass_mining6.ogg')
+        ]
+
+        for sound in self.footsteps + self.jumps + self.mining:
+            sound.set_volume(0.2)
+
+    def play_footstep(self):
+        random.choice(self.footsteps).play()
+
+    def play_break_block(self):
+        random.choice(self.break_blocks).play()
+
+    def play_jump(self):
+        random.choice(self.jumps).play()
+        
+    def play_mining(self):
+        random.choice(self.mining).play()
+
+    def play_place_block(self):
+        random.choice(self.footsteps).play()
+
+===== D:\Minecraft\terrain_gen.py =====
+
+from noise import noise2, noise3
+from random import random
+from settings import *
+
+
+@njit
+def get_height(x, z):
+    # island mask
+    island = 1 / (pow(0.0025 * math.hypot(x - CENTER_XZ, z - CENTER_XZ), 20) + 0.0001)
+    island = min(island, 1)
+
+    # amplitude
+    a1 = CENTER_Y
+    a2, a4, a8 = a1 * 0.5, a1 * 0.25, a1 * 0.125
+
+    # frequency
+    f1 = 0.005
+    f2, f4, f8 = f1 * 2, f1 * 4, f1 * 8
+
+    if noise2(0.1 * x, 0.1 * z) < 0:
+        a1 /= 1.07
+
+    height = 0
+    height += noise2(x * f1, z * f1) * a1 + a1
+    height += noise2(x * f2, z * f2) * a2 - a2
+    height += noise2(x * f4, z * f4) * a4 + a4
+    height += noise2(x * f8, z * f8) * a8 - a8
+
+    height = max(height,  noise2(x * f8, z * f8) + 2)
+    height *= island
+
+    return int(height)
+
+
+@njit
+def get_index(x, y, z):
+    return x + CHUNK_SIZE * z + CHUNK_AREA * y
+
+
+@njit
+def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
+    voxel_id = 0
+
+    if wy < world_height - 1:
+        # create caves
+        if (noise3(wx * 0.09, wy * 0.09, wz * 0.09) > 0 and
+                noise2(wx * 0.1, wz * 0.1) * 3 + 3 < wy < world_height - 10):
+            voxel_id = 0
+
+        else:
+            voxel_id = STONE
+    else:
+        rng = int(7 * random())
+        ry = wy - rng
+        if SNOW_LVL <= ry < world_height:
+            voxel_id = SNOW
+
+        elif STONE_LVL <= ry < SNOW_LVL:
+            voxel_id = STONE
+
+        elif DIRT_LVL <= ry < STONE_LVL:
+            voxel_id = DIRT
+
+        elif GRASS_LVL <= ry < DIRT_LVL:
+            voxel_id = GRASS
+
+        else:
+            voxel_id = SAND
+
+    # setting ID
+    voxels[get_index(x, y, z)] = voxel_id
+
+    # place tree
+    if wy < DIRT_LVL:
+        place_tree(voxels, x, y, z, voxel_id)
+
+
+@njit
+def place_tree(voxels, x, y, z, voxel_id):
+    rnd = random()
+    if voxel_id != GRASS or rnd > TREE_PROBABILITY:
+        return None
+    if y + TREE_HEIGHT >= CHUNK_SIZE:
+        return None
+    if x - TREE_H_WIDTH < 0 or x + TREE_H_WIDTH >= CHUNK_SIZE:
+        return None
+    if z - TREE_H_WIDTH < 0 or z + TREE_H_WIDTH >= CHUNK_SIZE:
+        return None
+
+    # dirt under the tree
+    voxels[get_index(x, y, z)] = DIRT
+
+    # leaves
+    m = 0
+    for n, iy in enumerate(range(TREE_H_HEIGHT, TREE_HEIGHT - 1)):
+        k = iy % 2
+        rng = int(random() * 2)
+        for ix in range(-TREE_H_WIDTH + m, TREE_H_WIDTH - m * rng):
+            for iz in range(-TREE_H_WIDTH + m * rng, TREE_H_WIDTH - m):
+                if (ix + iz) % 4:
+                    voxels[get_index(x + ix + k, y + iy, z + iz + k)] = LEAVES
+        m += 1 if n > 0 else 3 if n > 1 else 0
+
+    # tree trunk
+    for iy in range(1, TREE_HEIGHT - 2):
+        voxels[get_index(x, y + iy, z)] = WOOD
+
+    # top
+    voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
+
+===== D:\Minecraft\textures.py =====
+
+import pygame as pg
+import moderngl as mgl
+
+
+class Textures:
+    def __init__(self, app):
+        self.app = app
+        self.ctx = app.ctx
+
+        # load textures
+        self.texture_0 = self.load('frame.png')
+        self.texture_1 = self.load('water.png')
+        self.texture_array_0 = self.load('tex_array_0.png', is_tex_array=True)
+        self.texture_breaking = self.load('block_breaking_texture.png')
+
+        # assign texture unit
+        self.texture_0.use(location=0)
+        self.texture_array_0.use(location=1)
+        self.texture_1.use(location=2)
+        self.texture_breaking.use(location=3)
+
+    def load(self, file_name, is_tex_array=False):
+        texture = pg.image.load(f'assets/{file_name}')
+        texture = pg.transform.flip(texture, flip_x=True, flip_y=False)
+
+        if is_tex_array:
+            num_layers = 3 * texture.get_height() // texture.get_width()  # 3 textures per layer
+            texture = self.app.ctx.texture_array(
+                size=(texture.get_width(), texture.get_height() // num_layers, num_layers),
+                components=4,
+                data=pg.image.tostring(texture, 'RGBA')
+            )
+        else:
+            texture = self.ctx.texture(
+                size=texture.get_size(),
+                components=4,
+                data=pg.image.tostring(texture, 'RGBA', False)
+            )
+        texture.anisotropy = 32.0
+        texture.build_mipmaps()
+        texture.filter = (mgl.NEAREST, mgl.NEAREST)
+        return texture
+
+===== D:\Minecraft\ui.py =====
+
+from settings import *
+from meshes.base_mesh import BaseMesh
+import numpy as np
+import glm
+
+class CrosshairMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.quad
+        self.vbo_format = '3f 3f'
+        self.attrs = ('in_position', 'in_color')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        w = 0.015
+        h = w * ASPECT_RATIO
+        # Creates a perfect '+' sign in the center of the screen
+        vertices = [
+            # Horizontal line
+            (-w, -0.002 * ASPECT_RATIO, 0.0), (w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0),
+            (-w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0), (-w, 0.002 * ASPECT_RATIO, 0.0),
+            # Vertical line
+            (-0.002, -h, 0.0), (0.002, -h, 0.0), (0.002, h, 0.0),
+            (-0.002, -h, 0.0), (0.002, h, 0.0), (-0.002, h, 0.0)
+        ]
+        colors = [(0.9, 0.9, 0.9) for _ in vertices]
+        return np.hstack([vertices, colors]).astype('float32')
+
+class BlockIconMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.ui_block
+        self.vbo_format = '2f 2f'
+        self.attrs = ('in_position', 'in_tex_coord')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        # Standard normalized quad [-1, 1]
+        vertices = [
+            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
+            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
+        ]
+        tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
+        return np.hstack([vertices, tex_coords]).astype('float32')
+
+class Crosshair:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = CrosshairMesh(app)
+
+    def render(self):
+        self.mesh.render()
+
+class BlockIcon:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = BlockIconMesh(app)
+        
+    def render(self):
+        player = self.app.player
+        s = 0.05  # Base scale
+        spacing = 0.12
+        start_x = -4 * spacing
+        y = -0.85
+        
+        for i in range(9):
+            voxel_id = player.hotbar[i]
+            x = start_x + i * spacing
+            is_selected = (i == player.hotbar_index)
+            current_scale = s * 1.3 if is_selected else s
+            
+            self.mesh.program['u_scale'] = (current_scale / ASPECT_RATIO, current_scale)
+            self.mesh.program['u_offset'] = (x, y)
+            self.mesh.program['voxel_id'] = voxel_id
+            self.mesh.render()
+
+===== D:\Minecraft\voxel_handler.py =====
+
+from settings import *
+from meshes.chunk_mesh_builder import get_chunk_index
+
+
+class VoxelHandler:
+    def __init__(self, world):
+        self.app = world.app
+        self.chunks = world.chunks
+
+        # ray casting result
+        self.chunk = None
+        self.voxel_id = None
+        self.voxel_index = None
+        self.voxel_local_pos = None
+        self.voxel_world_pos = None
+        self.voxel_normal = None
+
+        # Keep for voxel_marker compatibility, permanently set to 0 for standard Minecraft highlighting
+        self.interaction_mode = 0  
+        self.new_voxel_id = self.app.player.hotbar[self.app.player.hotbar_index]
+
+    def add_voxel(self):
+        if self.voxel_id:
+            # check voxel id along normal
+            new_voxel_pos = self.voxel_world_pos + self.voxel_normal
+            result = self.get_voxel_id(new_voxel_pos)
+
+            # is the new place empty?
+            if not result[0]:
+                # prevent placing blocks inside the player
+                player_min, player_max = self.app.player.get_aabb()
+                voxel_min = glm.vec3(new_voxel_pos)
+                voxel_max = voxel_min + 1.0
+                if self.app.player.aabb_intersect(player_min, player_max, voxel_min, voxel_max):
+                    return
+
+                _, voxel_index, _, chunk = result
+                chunk.voxels[voxel_index] = self.new_voxel_id
+                chunk.mesh.rebuild()
+                self.app.sounds.play_place_block()
+
+                # was it an empty chunk
+                if chunk.is_empty:
+                    chunk.is_empty = False
+
+    def rebuild_adj_chunk(self, adj_voxel_pos):
+        index = get_chunk_index(adj_voxel_pos)
+        if index != -1:
+            self.chunks[index].mesh.rebuild()
+
+    def rebuild_adjacent_chunks(self):
+        lx, ly, lz = self.voxel_local_pos
+        wx, wy, wz = self.voxel_world_pos
+
+        if lx == 0:
+            self.rebuild_adj_chunk((wx - 1, wy, wz))
+        elif lx == CHUNK_SIZE - 1:
+            self.rebuild_adj_chunk((wx + 1, wy, wz))
+
+        if ly == 0:
+            self.rebuild_adj_chunk((wx, wy - 1, wz))
+        elif ly == CHUNK_SIZE - 1:
+            self.rebuild_adj_chunk((wx, wy + 1, wz))
+
+        if lz == 0:
+            self.rebuild_adj_chunk((wx, wy, wz - 1))
+        elif lz == CHUNK_SIZE - 1:
+            self.rebuild_adj_chunk((wx, wy, wz + 1))
+
+    def remove_voxel(self):
+        if self.voxel_id:
+            self.chunk.voxels[self.voxel_index] = 0
+
+            self.chunk.mesh.rebuild()
+            self.rebuild_adjacent_chunks()
+            self.app.sounds.play_break_block()
+
+    def set_voxel(self, mode='remove'):
+        if mode == 'add':
+            self.add_voxel()
+        elif mode == 'remove':
+            self.remove_voxel()
+
+    def update(self):
+        self.ray_cast()
+
+    def ray_cast(self):
+        # start point
+        x1, y1, z1 = self.app.player.position
+        # end point
+        x2, y2, z2 = self.app.player.position + self.app.player.forward * MAX_RAY_DIST
+
+        current_voxel_pos = glm.ivec3(x1, y1, z1)
+        self.voxel_id = 0
+        self.voxel_normal = glm.ivec3(0)
+        step_dir = -1
+
+        dx = glm.sign(x2 - x1)
+        delta_x = min(dx / (x2 - x1), 10000000.0) if dx != 0 else 10000000.0
+        max_x = delta_x * (1.0 - glm.fract(x1)) if dx > 0 else delta_x * glm.fract(x1)
+
+        dy = glm.sign(y2 - y1)
+        delta_y = min(dy / (y2 - y1), 10000000.0) if dy != 0 else 10000000.0
+        max_y = delta_y * (1.0 - glm.fract(y1)) if dy > 0 else delta_y * glm.fract(y1)
+
+        dz = glm.sign(z2 - z1)
+        delta_z = min(dz / (z2 - z1), 10000000.0) if dz != 0 else 10000000.0
+        max_z = delta_z * (1.0 - glm.fract(z1)) if dz > 0 else delta_z * glm.fract(z1)
+
+        while not (max_x > 1.0 and max_y > 1.0 and max_z > 1.0):
+
+            result = self.get_voxel_id(voxel_world_pos=current_voxel_pos)
+            if result[0]:
+                self.voxel_id, self.voxel_index, self.voxel_local_pos, self.chunk = result
+                self.voxel_world_pos = current_voxel_pos
+
+                if step_dir == 0:
+                    self.voxel_normal.x = -dx
+                elif step_dir == 1:
+                    self.voxel_normal.y = -dy
+                else:
+                    self.voxel_normal.z = -dz
+                return True
+
+            if max_x < max_y:
+                if max_x < max_z:
+                    current_voxel_pos.x += dx
+                    max_x += delta_x
+                    step_dir = 0
+                else:
+                    current_voxel_pos.z += dz
+                    max_z += delta_z
+                    step_dir = 2
+            else:
+                if max_y < max_z:
+                    current_voxel_pos.y += dy
+                    max_y += delta_y
+                    step_dir = 1
+                else:
+                    current_voxel_pos.z += dz
+                    max_z += delta_z
+                    step_dir = 2
+        return False
+
+    def get_voxel_id(self, voxel_world_pos):
+        cx, cy, cz = chunk_pos = voxel_world_pos / CHUNK_SIZE
+
+        if 0 <= cx < WORLD_W and 0 <= cy < WORLD_H and 0 <= cz < WORLD_D:
+            chunk_index = cx + WORLD_W * cz + WORLD_AREA * cy
+            chunk = self.chunks[chunk_index]
+
+            lx, ly, lz = voxel_local_pos = voxel_world_pos - chunk_pos * CHUNK_SIZE
+
+            voxel_index = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
+            voxel_id = chunk.voxels[voxel_index]
+
+            return voxel_id, voxel_index, voxel_local_pos, chunk
+        return 0, 0, 0, 0
+
+===== D:\Minecraft\world.py =====
+
+from settings import *
+from world_objects.chunk import Chunk
+from voxel_handler import VoxelHandler
+import concurrent.futures
+import os
+
+
+class World:
+    def __init__(self, app):
+        self.app = app
+        self.chunks = [None for _ in range(WORLD_VOL)]
+        
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+        self.mesh_queue = []
+        self.build_queue = []
+        
+        # Check if a saved world exists!
+        if os.path.exists('world_data.npy'):
+            with open('world_data.npy', 'rb') as f:
+                self.voxels = np.load(f)
+            self.build_chunks(load_from_disk=True)
+        else:
+            self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
+            self.build_chunks(load_from_disk=False)
+        self.build_chunk_mesh()
+        self.voxel_handler = VoxelHandler(self)
+
+    def update(self):
+        self.voxel_handler.update()
+        
+        # Submit tasks gradually to prevent ThreadPool starvation and startup lag
+        while self.build_queue and len(self.mesh_queue) < 4:
+            chunk = self.build_queue.pop()
+            future = self.executor.submit(chunk.mesh.get_vertex_data)
+            self.mesh_queue.append((chunk, future))
+            
+        self.process_mesh_queue()
+
+    def process_mesh_queue(self):
+        # Safely create OpenGL VAOs on the main thread
+        ready_count = 0
+        for item in list(self.mesh_queue):
+            chunk, future = item
+            if future.done():
+                chunk.mesh.vertex_data = future.result()
+                chunk.mesh.vao = chunk.mesh.get_vao()
+                self.mesh_queue.remove(item)
+                ready_count += 1
+                if ready_count >= 2:  # Process max 2 per frame to keep FPS high
+                    break
+
+    def build_chunks(self, load_from_disk=False):
+        for x in range(WORLD_W):
+            for y in range(WORLD_H):
+                for z in range(WORLD_D):
+                    chunk = Chunk(self, position=(x, y, z))
+
+                    chunk_index = x + WORLD_W * z + WORLD_AREA * y
+                    self.chunks[chunk_index] = chunk
+
+                    # put the chunk voxels in a separate array
+                    if not load_from_disk:
+                        self.voxels[chunk_index] = chunk.build_voxels()
+
+                    # get pointer to voxels
+                    chunk.voxels = self.voxels[chunk_index]
+                    
+                    if load_from_disk and np.any(chunk.voxels):
+                        chunk.is_empty = False
+
+    def build_chunk_mesh(self):
+        self.build_queue = []
+        for chunk in self.chunks:
+            chunk.build_mesh()
+            self.build_queue.append(chunk)
+            
+        # Sort chunks so the ones closest to the player are built first
+        player_pos = self.app.player.position
+        self.build_queue.sort(key=lambda chunk: glm.distance(chunk.center, player_pos), reverse=True)
+        
+        # WARM UP NUMBA COMPILER:
+        # Process the very first chunk on the main thread.
+        # This prevents the ThreadPool from deadlocking while trying to JIT compile simultaneously!
+        if self.build_queue:
+            chunk = self.build_queue.pop()
+            chunk.mesh.rebuild()
+
+    def render(self):
+        for chunk in self.chunks:
+            chunk.render()
+            
+    def save(self):
+        np.save('world_data.npy', self.voxels)

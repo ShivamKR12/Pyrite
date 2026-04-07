@@ -71,9 +71,13 @@ class ShaderProgram:
         time_speed = 1.0 # Adjust this to make the day longer or shorter
         sun_y = glm.cos(self.app.time * time_speed)
         sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
-        self.chunk['u_sun_direction'].write(sun_dir)
+        
+        # Safely write sun direction only if the shader currently supports it
+        if 'u_sun_direction' in self.chunk:
+            self.chunk['u_sun_direction'].write(sun_dir)
         
         bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
+        self.app.bg_color = bg_color
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)
 

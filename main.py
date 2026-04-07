@@ -27,6 +27,7 @@ class VoxelEngine:
         self.clock = pg.time.Clock()
         self.delta_time = 0
         self.time = 0
+        self.bg_color = BG_COLOR
 
         pg.event.set_grab(True)
         pg.mouse.set_visible(False)
@@ -51,7 +52,7 @@ class VoxelEngine:
         pg.display.set_caption(f'{self.clock.get_fps() :.0f}')
 
     def render(self):
-        self.ctx.clear(color=BG_COLOR)
+        self.ctx.clear(color=self.bg_color)
         self.scene.render()
         pg.display.flip()
 

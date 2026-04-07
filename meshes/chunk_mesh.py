@@ -14,6 +14,7 @@ class ChunkMesh(BaseMesh):
         self.format_size = sum(int(fmt[:1]) for fmt in self.vbo_format.split())
         self.attrs = ('packed_data',)
         self.vao = None
+        self.vbo = None
         self.vertex_data = None
 
     def render(self):
@@ -21,14 +22,18 @@ class ChunkMesh(BaseMesh):
             super().render()
 
     def rebuild(self):
+        if self.vao:
+            self.vao.release()
+        if self.vbo:
+            self.vbo.release()
         self.vertex_data = self.get_vertex_data()
         self.vao = self.get_vao()
 
     def get_vao(self):
         vertex_data = self.get_vertex_data() if self.vertex_data is None else self.vertex_data
-        vbo = self.ctx.buffer(vertex_data)
+        self.vbo = self.ctx.buffer(vertex_data)
         vao = self.ctx.vertex_array(
-            self.program, [(vbo, self.vbo_format, *self.attrs)], skip_errors=True
+            self.program, [(self.vbo, self.vbo_format, *self.attrs)], skip_errors=True
         )
         return vao
 

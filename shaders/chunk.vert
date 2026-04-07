@@ -82,7 +82,7 @@ void main() {
 
     vec3 normal = face_normals[face_id];
     float diffuse = max(0.0, dot(normal, u_sun_direction));
-    float ambient = 0.3;
+    float ambient = max(0.05, 0.3 * (u_sun_direction.y + 0.5)); // smooth transition for night
     shading = (ambient + diffuse * 0.7) * ao_values[ao_id];
 
     frag_world_pos = (m_model * vec4(in_position, 1.0)).xyz;
