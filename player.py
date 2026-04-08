@@ -23,7 +23,8 @@ class Player(Camera):
         self.mining_time = 0.0
         self.mining_duration = 0.0 # updated dynamically
         
-        self.hotbar = [DIRT, GRASS, STONE, SAND, WOOD, LEAVES, SNOW, DIRT, GRASS]
+        self.hotbar = [0] * 9 # 0 means empty slot
+        self.hotbar_counts = [0] * 9
         self.hotbar_index = 0
         
         self.fov = V_FOV
@@ -101,7 +102,6 @@ class Player(Camera):
             # Hotbar numbers 1-9
             if pg.K_1 <= event.key <= pg.K_9:
                 self.hotbar_index = event.key - pg.K_1
-                self.app.scene.world.voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
                 
         # adding and removing voxels with clicks
         if event.type == pg.MOUSEBUTTONDOWN:
@@ -111,10 +111,8 @@ class Player(Camera):
                 self.interaction_timer = pg.time.get_ticks()
             if event.button == 4:  # Scroll Up
                 self.hotbar_index = (self.hotbar_index - 1) % 9
-                voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
             if event.button == 5:  # Scroll Down
                 self.hotbar_index = (self.hotbar_index + 1) % 9
-                voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
 
     def mouse_control(self):
         mouse_dx, mouse_dy = pg.mouse.get_rel()
@@ -282,3 +280,17 @@ class Player(Camera):
             a_min.y < b_max.y and a_max.y > b_min.y and
             a_min.z < b_max.z and a_max.z > b_min.z
         )
+
+    def add_item(self, voxel_id):
+        # Check if we already have a stack of this item
+        for i in range(9):
+            if self.hotbar[i] == voxel_id:
+                self.hotbar_counts[i] += 1
+                return True
+        # Find an empty slot
+        for i in range(9):
+            if self.hotbar[i] == 0:
+                self.hotbar[i] = voxel_id
+                self.hotbar_counts[i] = 1
+                return True
+        return False # Inventory is full!

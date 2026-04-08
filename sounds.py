@@ -50,7 +50,7 @@ class Sounds:
         self.last_hit_time = 0
         self.mining_index = -1
         
-        self.pop_sound = load('minecraft-drop-block-sound-effect.ogg')
+        self.pop_sound = load('pickup-sound.ogg')
         
         # Background Music
         self.music_tracks = [

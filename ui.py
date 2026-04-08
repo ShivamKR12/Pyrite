@@ -112,7 +112,9 @@ class Hotbar:
 
         # 2. Draw the 3D block icons inside the slots
         for i in range(9):
-            self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-            self.block_mesh.program['u_offset'] = (start_x + i * spacing, y)
-            self.block_mesh.program['voxel_id'] = player.hotbar[i]
-            self.block_mesh.render()
+            voxel_id = player.hotbar[i]
+            if voxel_id != 0:
+                self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+                self.block_mesh.program['u_offset'] = (start_x + i * spacing, y)
+                self.block_mesh.program['voxel_id'] = voxel_id
+                self.block_mesh.render()

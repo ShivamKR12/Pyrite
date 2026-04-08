@@ -34,8 +34,9 @@ class Item:
         
         if pg.time.get_ticks() > self.pickup_delay:
             if glm.distance(self.position, self.app.player.position) < 1.5:
-                self.is_dead = True
-                self.app.sounds.play_place_block() # Pop sound!
+                if self.app.player.add_item(self.voxel_id):
+                    self.is_dead = True
+                    self.app.sounds.play_place_block() # Pop sound!
 
     def get_model_matrix(self):
         m_model = glm.translate(glm.mat4(), self.position)

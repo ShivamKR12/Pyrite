@@ -78,7 +78,7 @@ class ShaderProgram:
         self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
-        time_speed = 0.5 # Adjust this to make the day longer or shorter
+        time_speed = 0.1 # Adjust this to make the day longer or shorter
         sun_y = glm.cos(self.app.time * time_speed)
         sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
         

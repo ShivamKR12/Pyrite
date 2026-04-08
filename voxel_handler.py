@@ -17,10 +17,13 @@ class VoxelHandler:
 
         # Keep for voxel_marker compatibility, permanently set to 0 for standard Minecraft highlighting
         self.interaction_mode = 0  
-        self.new_voxel_id = self.app.player.hotbar[self.app.player.hotbar_index]
 
     def add_voxel(self):
         if self.voxel_id:
+            current_id = self.app.player.hotbar[self.app.player.hotbar_index]
+            if current_id == 0:
+                return # Can't place empty air
+
             # check voxel id along normal
             new_voxel_pos = self.voxel_world_pos + self.voxel_normal
             result = self.get_voxel_id(new_voxel_pos)
@@ -35,9 +38,14 @@ class VoxelHandler:
                     return
 
                 _, voxel_index, _, chunk = result
-                chunk.voxels[voxel_index] = self.new_voxel_id
+                chunk.voxels[voxel_index] = current_id
                 chunk.mesh.rebuild()
-                self.app.sounds.play_dig(self.new_voxel_id)
+                self.app.sounds.play_dig(current_id)
+
+                # Consume item from hotbar
+                self.app.player.hotbar_counts[self.app.player.hotbar_index] -= 1
+                if self.app.player.hotbar_counts[self.app.player.hotbar_index] <= 0:
+                    self.app.player.hotbar[self.app.player.hotbar_index] = 0
 
                 # was it an empty chunk
                 if chunk.is_empty:
