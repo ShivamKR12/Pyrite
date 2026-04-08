@@ -1095,7 +1095,7 @@ class Item:
         if world.voxel_handler.get_voxel_id(check_pos)[0]:
             self.position.y = check_pos.y + 1.0 + self.scale / 2
             self.velocity.x *= 0.8 # Friction
-            self.velocity.z *= 0.8
+            self.velocity.z *= 0.2
             self.velocity.y = 0
         elif self.position.y < -10:
             self.is_dead = True
@@ -1726,6 +1726,7 @@ from world_objects.water import Water
 from world_objects.clouds import Clouds
 from ui import Crosshair
 from ui import Hotbar
+from ui import HeldBlock
 from world_objects.item import ItemManager
 
 
@@ -1738,6 +1739,7 @@ class Scene:
         self.clouds = Clouds(app)
         self.crosshair = Crosshair(app)
         self.hotbar = Hotbar(app)
+        self.held_block = HeldBlock(app)
         self.item_manager = ItemManager(app)
 
     def update(self):
@@ -1760,6 +1762,10 @@ class Scene:
         # voxel selection
         self.voxel_marker.render()
         
+        # view model (held block)
+        self.app.ctx.clear(depth=1.0, color=None) # Clears depth so the hand draws over walls
+        self.held_block.render()
+
         # UI rendering (disable depth testing so it draws over everything)
         self.app.ctx.disable(mgl.DEPTH_TEST)
         self.crosshair.render()
@@ -1935,7 +1941,7 @@ class ShaderProgram:
         self.ui_block['u_texture_array_0'] = 1
         
         # ui text
-        self.ui_text['u_texture_0'] = 0
+        self.ui_text['u_texture_0'] = 4
         
         # item
         self.item['m_proj'].write(self.player.m_proj)
@@ -2056,7 +2062,8 @@ class Sounds:
         self.last_hit_time = 0
         self.mining_index = -1
         
-        self.pop_sound = load('pickup-sound.ogg')
+        self.pop_sound = pg.mixer.Sound('sounds/pickup-sound.ogg')
+        self.pop_sound.set_volume(1.0)
         
         # Background Music
         self.music_tracks = [
@@ -2273,6 +2280,8 @@ from meshes.base_mesh import BaseMesh
 import numpy as np
 import moderngl as mgl
 import pygame as pg
+import glm
+from meshes.item_mesh import ItemMesh
 
 class CrosshairMesh(BaseMesh):
     def __init__(self, app):
@@ -2434,9 +2443,9 @@ class Hotbar:
         # 3. Draw the stack counts
         for i in range(9):
             count = player.hotbar_counts[i]
-            if count > 1:
+            if count > 0:
                 tex = self.text_renderer.get_texture(str(count))
-                tex.use(location=0)
+                tex.use(location=4)
                 
                 tex_w, tex_h = tex.size
                 scale_y = 0.015
@@ -2448,6 +2457,58 @@ class Hotbar:
                 self.text_mesh.program['u_scale'] = (scale_x, scale_y)
                 self.text_mesh.program['u_offset'] = (offset_x, offset_y)
                 self.text_mesh.render()
+
+class HeldBlock:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = ItemMesh(app)
+
+    def render(self):
+        player = self.app.player
+        voxel_id = player.hotbar[player.hotbar_index]
+        if voxel_id == 0:
+            return
+
+        # 1. View bobbing
+        bob_offset_y = glm.sin(player.step_counter) * 0.03
+        bob_offset_x = glm.cos(player.step_counter * 0.5) * 0.02
+
+        # 2. Swinging animation
+        swing_offset_y = 0.0
+        swing_offset_z = 0.0
+        swing_rot_x = 0.0
+        
+        if player.mining_time > 0.0:
+            swing_val = max(0, glm.sin(player.mining_time * 0.03))
+            swing_offset_y = swing_val * 0.15
+            swing_offset_z = -swing_val * 0.1
+            swing_rot_x = swing_val * 0.4
+        else:
+            time_since_place = pg.time.get_ticks() - player.interaction_timer
+            if time_since_place < player.interaction_delay:
+                progress = time_since_place / player.interaction_delay
+                swing_val = glm.sin(progress * glm.pi())
+                swing_offset_y = swing_val * 0.2
+                swing_rot_x = swing_val * 0.3
+
+        # 3. Position the block in the bottom right (in local camera space)
+        pos = glm.vec3(0.5 + bob_offset_x, -0.4 + bob_offset_y - swing_offset_y, -1.0 + swing_offset_z)
+        
+        # Compute Model Matrix in World Space for perfectly accurate lighting
+        m_model = glm.inverse(player.m_view)
+        m_model = glm.translate(m_model, pos)
+        m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
+        m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
+        m_model = glm.scale(m_model, glm.vec3(0.35))
+
+        self.mesh.program['m_proj'].write(player.m_proj)
+        self.mesh.program['m_view'].write(player.m_view) 
+        self.mesh.program['m_model'].write(m_model)
+        self.mesh.program['voxel_id'] = voxel_id
+
+        self.app.ctx.disable(mgl.CULL_FACE) # Don't accidentally cull interior faces if clipping
+        self.mesh.render()
+        self.app.ctx.enable(mgl.CULL_FACE)
 
 ===== D:\Minecraft\voxel_handler.py =====
 

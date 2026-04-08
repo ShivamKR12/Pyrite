@@ -64,7 +64,8 @@ class Sounds:
         self.last_hit_time = 0
         self.mining_index = -1
         
-        self.pop_sound = load('pickup-sound.ogg')
+        self.pop_sound = pg.mixer.Sound('sounds/pickup-sound.ogg')
+        self.pop_sound.set_volume(1.0)
         
         # Background Music
         self.music_tracks = [

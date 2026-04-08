@@ -3,6 +3,8 @@ from meshes.base_mesh import BaseMesh
 import numpy as np
 import moderngl as mgl
 import pygame as pg
+import glm
+from meshes.item_mesh import ItemMesh
 
 class CrosshairMesh(BaseMesh):
     def __init__(self, app):
@@ -164,7 +166,7 @@ class Hotbar:
         # 3. Draw the stack counts
         for i in range(9):
             count = player.hotbar_counts[i]
-            if count > 1:
+            if count > 0:
                 tex = self.text_renderer.get_texture(str(count))
                 tex.use(location=4)
                 
@@ -178,3 +180,55 @@ class Hotbar:
                 self.text_mesh.program['u_scale'] = (scale_x, scale_y)
                 self.text_mesh.program['u_offset'] = (offset_x, offset_y)
                 self.text_mesh.render()
+
+class HeldBlock:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = ItemMesh(app)
+
+    def render(self):
+        player = self.app.player
+        voxel_id = player.hotbar[player.hotbar_index]
+        if voxel_id == 0:
+            return
+
+        # 1. View bobbing
+        bob_offset_y = glm.sin(player.step_counter) * 0.03
+        bob_offset_x = glm.cos(player.step_counter * 0.5) * 0.02
+
+        # 2. Swinging animation
+        swing_offset_y = 0.0
+        swing_offset_z = 0.0
+        swing_rot_x = 0.0
+        
+        if player.mining_time > 0.0:
+            swing_val = max(0, glm.sin(player.mining_time * 0.03))
+            swing_offset_y = swing_val * 0.15
+            swing_offset_z = -swing_val * 0.1
+            swing_rot_x = swing_val * 0.4
+        else:
+            time_since_place = pg.time.get_ticks() - player.interaction_timer
+            if time_since_place < player.interaction_delay:
+                progress = time_since_place / player.interaction_delay
+                swing_val = glm.sin(progress * glm.pi())
+                swing_offset_y = swing_val * 0.2
+                swing_rot_x = swing_val * 0.3
+
+        # 3. Position the block in the bottom right (in local camera space)
+        pos = glm.vec3(0.5 + bob_offset_x, -0.4 + bob_offset_y - swing_offset_y, -1.0 + swing_offset_z)
+        
+        # Compute Model Matrix in World Space for perfectly accurate lighting
+        m_model = glm.inverse(player.m_view)
+        m_model = glm.translate(m_model, pos)
+        m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
+        m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
+        m_model = glm.scale(m_model, glm.vec3(0.35))
+
+        self.mesh.program['m_proj'].write(player.m_proj)
+        self.mesh.program['m_view'].write(player.m_view) 
+        self.mesh.program['m_model'].write(m_model)
+        self.mesh.program['voxel_id'] = voxel_id
+
+        self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
+        self.mesh.render()
+        self.app.ctx.enable(mgl.DEPTH_TEST)
