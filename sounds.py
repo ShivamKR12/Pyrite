@@ -1,61 +1,104 @@
 import pygame as pg
 import random
+from settings import *
 
 
 class Sounds:
     def __init__(self, app):
         self.app = app
         pg.mixer.init()
+        pg.mixer.set_num_channels(32)
 
-        # Load multiple sounds into lists!
-        # Update these strings to match the exact names of your downloaded files.
-        self.footsteps = [
-            pg.mixer.Sound('sounds/Grass_hit1.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit2.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit3.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit4.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit5.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit6.ogg')
-        ]
+        def load(filename):
+            s = pg.mixer.Sound(f'sounds/{filename}')
+            s.set_volume(0.2)
+            return s
+
+        self.sounds = {}
         
-        self.break_blocks = [
-            pg.mixer.Sound('sounds/Grass_break.mp3'),
-            # pg.mixer.Sound('sounds/Grass_dig1.ogg'),
-            # pg.mixer.Sound('sounds/Grass_dig2.ogg'),
-            # pg.mixer.Sound('sounds/Grass_dig3.ogg'),
-            # pg.mixer.Sound('sounds/Grass_dig4.ogg')
-        ]
+        # SAND
+        self.sounds[SAND] = {
+            'dig': [load(f"sand/Sand_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"sand/Sand_hit{i}.ogg") for i in range(1, 6)],
+            'jump': [load(f"sand/Sand_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"sand/Sand_mining{i}.ogg") for i in range(1, 6)]
+        }
         
-        self.jumps = [
-            pg.mixer.Sound('sounds/Grass_jump1.wav.mp3'),
-            # pg.mixer.Sound('sounds/Grass_jump2.wav.mp3'),
-            # pg.mixer.Sound('sounds/Grass_jump3.wav.mp3'),
-            # pg.mixer.Sound('sounds/Grass_jump4.wav.mp3')
-        ]
+        # GRASS
+        self.sounds[GRASS] = {
+            'dig': [load(f"grass/Grass_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"grass/Grass_hit{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"grass/Grass_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"grass/Grass_mining{i}.ogg") for i in range(1, 7)]
+        }
         
-        self.mining = [
-            # pg.mixer.Sound('sounds/Grass_mining1.ogg'),
-            pg.mixer.Sound('sounds/Grass_mining2.ogg'),
-            # pg.mixer.Sound('sounds/Grass_mining3.ogg.mp3'),
-            # pg.mixer.Sound('sounds/Grass_mining4.ogg'),
-            # pg.mixer.Sound('sounds/Grass_mining5.ogg'),
-            # pg.mixer.Sound('sounds/Grass_mining6.ogg')
-        ]
+        # WOOD
+        self.sounds[WOOD] = {
+            'dig': [load(f"wood/Wood_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"wood/Wood_hit{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"wood/Wood_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"wood/Wood_mining{i}.ogg") for i in range(1, 7)]
+        }
 
-        for sound in self.footsteps + self.jumps + self.mining:
-            sound.set_volume(0.2)
+        # Fallbacks
+        self.sounds[DIRT] = self.sounds[GRASS]
+        self.sounds[STONE] = self.sounds[GRASS]
+        self.sounds[SNOW] = self.sounds[GRASS]
+        self.sounds[LEAVES] = self.sounds[GRASS]
 
-    def play_footstep(self):
-        random.choice(self.footsteps).play()
-
-    def play_break_block(self):
-        random.choice(self.break_blocks).play()
-
-    def play_jump(self):
-        random.choice(self.jumps).play()
+        self.hit_index = 0
+        self.last_hit_time = 0
+        self.mining_index = -1
         
-    def play_mining(self):
-        random.choice(self.mining).play()
+        self.pop_sound = load('minecraft-drop-block-sound-effect.ogg')
+        
+        # Background Music
+        self.music_tracks = [
+            'sounds/c418-aria-math-(minecraft-volume-beta).ogg',
+            'sounds/c418-minecraft.ogg'
+        ]
+        pg.mixer.music.load(random.choice(self.music_tracks))
+        pg.mixer.music.set_volume(0.1)
+        pg.mixer.music.play(-1) # Loop forever in the background
 
-    def play_place_block(self):
-        random.choice(self.footsteps).play()
+    def play_hit(self, voxel_id):
+        current_time = pg.time.get_ticks()
+        if current_time - self.last_hit_time > 500: # Reset to 1 if you stop walking
+            self.hit_index = 0
+            
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        hits = s_dict['hit']
+        
+        if self.hit_index >= len(hits):
+            self.hit_index = 0
+            
+        hits[self.hit_index].play()
+        self.hit_index += 1
+        self.last_hit_time = current_time
+
+    def play_dig(self, voxel_id):
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        random.choice(s_dict['dig']).play()
+
+    def play_jump(self, voxel_id):
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        random.choice(s_dict['jump']).play()
+        
+    def play_mining(self, voxel_id, mining_time, mining_duration):
+        if mining_time == 0.0:
+            self.mining_index = -1
+            
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        mining_sounds = s_dict['mining']
+        num_sounds = len(mining_sounds)
+        
+        progress = mining_time / mining_duration
+        target_index = int(progress * num_sounds)
+        target_index = min(target_index, num_sounds - 1)
+        
+        if target_index > self.mining_index:
+            mining_sounds[target_index].play()
+            self.mining_index = target_index
+
+    def play_place_block(self): # Played when items pop into the player's inventory
+        self.pop_sound.play()

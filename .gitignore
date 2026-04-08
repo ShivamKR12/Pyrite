@@ -1,4 +1,10 @@
 __pycache__/
 meshes/__pycache__/
 world_objects/__pycache__/
+sounds/other/
+*.mp3
+*.pyc
+*.nbc
+*.nbi
 command.txt
+convert_audio.ps1

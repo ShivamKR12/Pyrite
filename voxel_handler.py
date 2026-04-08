@@ -37,7 +37,7 @@ class VoxelHandler:
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = self.new_voxel_id
                 chunk.mesh.rebuild()
-                self.app.sounds.play_place_block()
+                self.app.sounds.play_dig(self.new_voxel_id)
 
                 # was it an empty chunk
                 if chunk.is_empty:
@@ -73,7 +73,7 @@ class VoxelHandler:
 
             self.chunk.mesh.rebuild()
             self.rebuild_adjacent_chunks()
-            self.app.sounds.play_break_block()
+            self.app.sounds.play_dig(self.voxel_id)
             
             # Spawn dropped item
             self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)

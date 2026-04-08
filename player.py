@@ -44,8 +44,14 @@ class Player(Camera):
             prev_feet_pos = glm.vec3(self.feet_pos)
             self.move_and_collide()
             
+            # Get block under player
+            block_under_pos = glm.ivec3(glm.floor(self.feet_pos.x), glm.floor(self.feet_pos.y - 0.05), glm.floor(self.feet_pos.z))
+            voxel_under, *_ = self.app.scene.world.voxel_handler.get_voxel_id(block_under_pos)
+            if not voxel_under: 
+                voxel_under = GRASS
+
             if self.on_ground and not was_on_ground:
-                self.app.sounds.play_jump()
+                self.app.sounds.play_jump(voxel_under)
 
             # View Bobbing
             bob_offset = 0.0
@@ -58,7 +64,7 @@ class Player(Camera):
 
                 current_time = pg.time.get_ticks()
                 if current_time - self.last_step_time > 400: # ms between steps
-                    self.app.sounds.play_footstep()
+                    self.app.sounds.play_hit(voxel_under)
                     self.last_step_time = current_time
                     
             # Dynamic FOV for sprinting
@@ -127,6 +133,7 @@ class Player(Camera):
         if mouse_pressed[0] and voxel_handler.voxel_id:
             if self.target_voxel_pos == voxel_handler.voxel_world_pos:
                 self.mining_time += self.app.delta_time
+                self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
                 if self.mining_time >= self.mining_duration:
                     voxel_handler.set_voxel(mode='remove')
                     self.mining_time = 0.0
@@ -134,7 +141,7 @@ class Player(Camera):
                 self.target_voxel_pos = voxel_handler.voxel_world_pos
                 self.mining_time = 0.0
                 self.mining_duration = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
-                self.app.sounds.play_mining()
+                self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
         else:
             self.mining_time = 0.0
             

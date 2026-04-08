@@ -437,6 +437,46 @@ class CubeMesh(BaseMesh):
         vertex_data = np.hstack([tex_coord_data, vertex_data])
         return vertex_data
 
+===== D:\Minecraft\meshes\item_mesh.py =====
+
+import numpy as np
+from meshes.base_mesh import BaseMesh
+
+class ItemMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.item
+        self.vbo_format = '3f 2f 1f'
+        self.attrs = ('in_position', 'in_tex_coord', 'in_face_id')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        # format: pos(3), uv(2), face_id(1)
+        # face_ids: 0: top, 1: bottom, 2: right, 3: left, 4: back, 5: front
+        vertices = [
+            # Top
+            0,1,1, 0,1, 0,  1,1,1, 1,1, 0,  1,1,0, 1,0, 0,
+            0,1,1, 0,1, 0,  1,1,0, 1,0, 0,  0,1,0, 0,0, 0,
+            # Bottom
+            0,0,0, 0,0, 1,  1,0,0, 1,0, 1,  1,0,1, 1,1, 1,
+            0,0,0, 0,0, 1,  1,0,1, 1,1, 1,  0,0,1, 0,1, 1,
+            # Right
+            1,0,1, 0,1, 2,  1,0,0, 1,1, 2,  1,1,0, 1,0, 2,
+            1,0,1, 0,1, 2,  1,1,0, 1,0, 2,  1,1,1, 0,0, 2,
+            # Left
+            0,0,0, 0,1, 3,  0,0,1, 1,1, 3,  0,1,1, 1,0, 3,
+            0,0,0, 0,1, 3,  0,1,1, 1,0, 3,  0,1,0, 0,0, 3,
+            # Back
+            1,0,0, 0,1, 4,  0,0,0, 1,1, 4,  0,1,0, 1,0, 4,
+            1,0,0, 0,1, 4,  0,1,0, 1,0, 4,  1,1,0, 0,0, 4,
+            # Front
+            0,0,1, 0,1, 5,  1,0,1, 1,1, 5,  1,1,1, 1,0, 5,
+            0,0,1, 0,1, 5,  1,1,1, 1,0, 5,  0,1,1, 0,0, 5,
+        ]
+        return np.array(vertices, dtype='float32')
+
 ===== D:\Minecraft\meshes\quad_mesh.py =====
 
 from settings import *
@@ -643,6 +683,68 @@ void main() {
     pos.xz += time;
     gl_Position = m_proj * m_view * vec4(pos, 1.0);
 //    gl_Position = m_view_proj * vec4(pos, 1.0);
+}
+
+===== D:\Minecraft\shaders\item.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+in vec2 uv;
+flat in int face_id;
+in float shading;
+
+uniform sampler2DArray u_texture_array_0;
+uniform int voxel_id;
+uniform vec3 bg_color;
+
+const vec3 gamma = vec3(2.2);
+const vec3 inv_gamma = 1 / gamma;
+
+void main() {
+    vec2 face_uv = vec2(uv.x / 3.0 - min(face_id, 2) / 3.0, uv.y);
+    vec3 tex_col = texture(u_texture_array_0, vec3(face_uv, voxel_id)).rgb;
+    
+    tex_col = pow(tex_col, gamma) * shading;
+    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
+    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-0.00001 * fog_dist * fog_dist)));
+
+    fragColor = vec4(pow(tex_col, inv_gamma), 1.0);
+}
+
+===== D:\Minecraft\shaders\item.vert =====
+
+#version 330 core
+
+layout (location = 0) in vec3 in_position;
+layout (location = 1) in vec2 in_tex_coord;
+layout (location = 2) in float in_face_id;
+
+uniform mat4 m_proj;
+uniform mat4 m_view;
+uniform mat4 m_model;
+uniform vec3 u_sun_direction;
+
+out vec2 uv;
+flat out int face_id;
+out float shading;
+
+const vec3 face_normals[6] = vec3[6](
+    vec3( 0.0,  1.0,  0.0), vec3( 0.0, -1.0,  0.0), vec3( 1.0,  0.0,  0.0),
+    vec3(-1.0,  0.0,  0.0), vec3( 0.0,  0.0, -1.0), vec3( 0.0,  0.0,  1.0)
+);
+
+void main() {
+    uv = in_tex_coord;
+    face_id = int(in_face_id);
+    
+    mat3 normal_matrix = transpose(inverse(mat3(m_model)));
+    vec3 world_normal = normalize(normal_matrix * face_normals[face_id]);
+    float diffuse = max(0.0, dot(world_normal, u_sun_direction));
+    shading = max(0.05, 0.3 * (u_sun_direction.y + 0.5)) + diffuse * 0.7;
+
+    gl_Position = m_proj * m_view * m_model * vec4(in_position - 0.5, 1.0); // Center at origin
 }
 
 ===== D:\Minecraft\shaders\quad.frag =====
@@ -928,6 +1030,72 @@ class Clouds:
 
     def render(self):
         self.mesh.render()
+
+===== D:\Minecraft\world_objects\item.py =====
+
+import random
+import pygame as pg
+from settings import *
+import glm
+from meshes.item_mesh import ItemMesh
+
+class Item:
+    def __init__(self, app, position, voxel_id):
+        self.app = app
+        self.position = glm.vec3(position) + 0.5 # Burst from the center of the block
+        self.velocity = glm.vec3((random.random() - 0.5) * 0.005, 0.01, (random.random() - 0.5) * 0.005)
+        self.voxel_id = voxel_id
+        self.rotation = 0.0
+        self.scale = 0.25
+        self.is_dead = False
+        self.pickup_delay = pg.time.get_ticks() + 600 # Wait a bit before picking it up
+
+    def update(self):
+        self.velocity.y += GRAVITY * self.app.delta_time
+        self.position += self.velocity * self.app.delta_time
+        
+        world = self.app.scene.world
+        check_pos = glm.ivec3(self.position.x, self.position.y - self.scale / 2, self.position.z)
+        
+        if world.voxel_handler.get_voxel_id(check_pos)[0]:
+            self.position.y = check_pos.y + 1.0 + self.scale / 2
+            self.velocity.x *= 0.8 # Friction
+            self.velocity.z *= 0.8
+            self.velocity.y = 0
+        elif self.position.y < -10:
+            self.is_dead = True
+            
+        self.rotation += 0.003 * self.app.delta_time
+        
+        if pg.time.get_ticks() > self.pickup_delay:
+            if glm.distance(self.position, self.app.player.position) < 1.5:
+                self.is_dead = True
+                self.app.sounds.play_place_block() # Pop sound!
+
+    def get_model_matrix(self):
+        m_model = glm.translate(glm.mat4(), self.position)
+        m_model = glm.rotate(m_model, self.rotation, glm.vec3(0, 1, 0))
+        return glm.scale(m_model, glm.vec3(self.scale))
+
+class ItemManager:
+    def __init__(self, app):
+        self.app = app
+        self.items = []
+        self.mesh = ItemMesh(app)
+
+    def add_item(self, position, voxel_id):
+        self.items.append(Item(self.app, position, voxel_id))
+
+    def update(self):
+        for item in self.items: item.update()
+        self.items = [item for item in self.items if not item.is_dead]
+
+    def render(self):
+        self.app.ctx.disable(self.app.ctx.CULL_FACE) # Don't cull rotating cubes
+        for item in self.items:
+            self.mesh.program['m_model'].write(item.get_model_matrix())
+            self.mesh.program['voxel_id'] = item.voxel_id
+            self.mesh.render()
 
 ===== D:\Minecraft\world_objects\voxel_marker.py =====
 
@@ -1261,8 +1429,14 @@ class Player(Camera):
             prev_feet_pos = glm.vec3(self.feet_pos)
             self.move_and_collide()
             
+            # Get block under player
+            block_under_pos = glm.ivec3(glm.floor(self.feet_pos.x), glm.floor(self.feet_pos.y - 0.05), glm.floor(self.feet_pos.z))
+            voxel_under, *_ = self.app.scene.world.voxel_handler.get_voxel_id(block_under_pos)
+            if not voxel_under: 
+                voxel_under = GRASS
+
             if self.on_ground and not was_on_ground:
-                self.app.sounds.play_jump()
+                self.app.sounds.play_jump(voxel_under)
 
             # View Bobbing
             bob_offset = 0.0
@@ -1275,7 +1449,7 @@ class Player(Camera):
 
                 current_time = pg.time.get_ticks()
                 if current_time - self.last_step_time > 400: # ms between steps
-                    self.app.sounds.play_footstep()
+                    self.app.sounds.play_hit(voxel_under)
                     self.last_step_time = current_time
                     
             # Dynamic FOV for sprinting
@@ -1344,6 +1518,7 @@ class Player(Camera):
         if mouse_pressed[0] and voxel_handler.voxel_id:
             if self.target_voxel_pos == voxel_handler.voxel_world_pos:
                 self.mining_time += self.app.delta_time
+                self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
                 if self.mining_time >= self.mining_duration:
                     voxel_handler.set_voxel(mode='remove')
                     self.mining_time = 0.0
@@ -1351,7 +1526,7 @@ class Player(Camera):
                 self.target_voxel_pos = voxel_handler.voxel_world_pos
                 self.mining_time = 0.0
                 self.mining_duration = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
-                self.app.sounds.play_mining()
+                self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
         else:
             self.mining_time = 0.0
             
@@ -1503,6 +1678,7 @@ from world_objects.water import Water
 from world_objects.clouds import Clouds
 from ui import Crosshair
 from ui import Hotbar
+from world_objects.item import ItemManager
 
 
 class Scene:
@@ -1514,15 +1690,18 @@ class Scene:
         self.clouds = Clouds(app)
         self.crosshair = Crosshair(app)
         self.hotbar = Hotbar(app)
+        self.item_manager = ItemManager(app)
 
     def update(self):
         self.world.update()
         self.voxel_marker.update()
         self.clouds.update()
+        self.item_manager.update()
 
     def render(self):
         # chunks rendering
         self.world.render()
+        self.item_manager.render()
 
         # rendering without cull face
         self.app.ctx.disable(mgl.CULL_FACE)
@@ -1666,6 +1845,7 @@ class ShaderProgram:
         self.quad = self.get_program('quad')
         self.ui_block = self.get_program('ui_block')
         self.ui_color = self.get_program('ui_color')
+        self.item = self.get_program('item')
         # ------------------------- #
         self.set_uniforms_on_init()
 
@@ -1703,6 +1883,12 @@ class ShaderProgram:
         
         # ui block
         self.ui_block['u_texture_array_0'] = 1
+        
+        # item
+        self.item['m_proj'].write(self.player.m_proj)
+        self.item['m_model'].write(glm.mat4())
+        self.item['u_texture_array_0'] = 1
+        self.item['bg_color'].write(BG_COLOR)
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
@@ -1710,29 +1896,34 @@ class ShaderProgram:
         self.water['m_view'].write(self.player.m_view)
         self.water['u_time'] = self.app.time
         self.clouds['m_view'].write(self.player.m_view)
+        self.item['m_view'].write(self.player.m_view)
         
         # Update projection matrix dynamically for FOV zooming
         self.chunk['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_proj'].write(self.player.m_proj)
         self.water['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
+        self.item['m_proj'].write(self.player.m_proj)
 
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
-        time_speed = 1.0 # Adjust this to make the day longer or shorter
+        time_speed = 0.5 # Adjust this to make the day longer or shorter
         sun_y = glm.cos(self.app.time * time_speed)
         sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
         
         # Safely write sun direction only if the shader currently supports it
         if 'u_sun_direction' in self.chunk:
             self.chunk['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.item:
+            self.item['u_sun_direction'].write(sun_dir)
         
         bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
         self.app.bg_color = bg_color
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)
+        self.item['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
         with open(f'shaders/{shader_name}.vert') as file:
@@ -1748,65 +1939,116 @@ class ShaderProgram:
 
 import pygame as pg
 import random
+from settings import *
 
 
 class Sounds:
     def __init__(self, app):
         self.app = app
         pg.mixer.init()
+        pg.mixer.set_num_channels(32)
 
-        # Load multiple sounds into lists!
-        # Update these strings to match the exact names of your downloaded files.
-        self.footsteps = [
-            pg.mixer.Sound('sounds/Grass_hit1.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit2.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit3.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit4.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit5.ogg'),
-            # pg.mixer.Sound('sounds/Grass_hit6.ogg')
-        ]
+        def load(filename):
+            s = pg.mixer.Sound(f'sounds/{filename}')
+            s.set_volume(0.2)
+            return s
+
+        self.sounds = {}
         
-        self.break_blocks = [
-            pg.mixer.Sound('sounds/Grass_break.mp3'),
-            # pg.mixer.Sound('sounds/Grass_dig1.ogg'),
-            # pg.mixer.Sound('sounds/Grass_dig2.ogg'),
-            # pg.mixer.Sound('sounds/Grass_dig3.ogg'),
-            # pg.mixer.Sound('sounds/Grass_dig4.ogg')
-        ]
+        # SAND
+        self.sounds[SAND] = {
+            'dig': [load(f"sand/Sand_dig{i}.ogg.mp3") for i in range(1, 5)],
+            'hit': [load(f"sand/Sand_hit{i}.ogg.mp3") for i in range(1, 6)],
+            'jump': [load(f"sand/Sand_jump{i}.wav.mp3") for i in range(1, 5)],
+            'mining': [load(f"sand/Sand_mining{i}.ogg.mp3") for i in range(1, 6)]
+        }
         
-        self.jumps = [
-            pg.mixer.Sound('sounds/Grass_jump1.wav.mp3'),
-            # pg.mixer.Sound('sounds/Grass_jump2.wav.mp3'),
-            # pg.mixer.Sound('sounds/Grass_jump3.wav.mp3'),
-            # pg.mixer.Sound('sounds/Grass_jump4.wav.mp3')
-        ]
+        # GRASS
+        self.sounds[GRASS] = {
+            'dig': [load(f"grass/Grass_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"grass/Grass_hit{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"grass/Grass_jump{i}.wav.mp3") for i in range(1, 5)],
+            'mining': [
+                load("grass/Grass_mining1.ogg"),
+                load("grass/Grass_mining2.ogg"),
+                load("grass/Grass_mining3.ogg.mp3"),
+                load("grass/Grass_mining4.ogg"),
+                load("grass/Grass_mining5.ogg"),
+                load("grass/Grass_mining6.ogg")
+            ]
+        }
         
-        self.mining = [
-            # pg.mixer.Sound('sounds/Grass_mining1.ogg'),
-            pg.mixer.Sound('sounds/Grass_mining2.ogg'),
-            # pg.mixer.Sound('sounds/Grass_mining3.ogg.mp3'),
-            # pg.mixer.Sound('sounds/Grass_mining4.ogg'),
-            # pg.mixer.Sound('sounds/Grass_mining5.ogg'),
-            # pg.mixer.Sound('sounds/Grass_mining6.ogg')
-        ]
+        # WOOD
+        self.sounds[WOOD] = {
+            'dig': [
+                load("wood/Wood_dig1.ogg.mp3"),
+                load("wood/Wood_dig2.ogg.mp3"),
+                load("wood/Wood_dig3.ogg.mp3"),
+                load("wood/Wood_dig4.ogg")
+            ],
+            'hit': [
+                load("wood/Wood_hit1.ogg"),
+                load("wood/Wood_hit2.ogg"),
+                load("wood/Wood_hit3.ogg.mp3"),
+                load("wood/Wood_hit4.ogg"),
+                load("wood/Wood_hit5.ogg.mp3"),
+                load("wood/Wood_hit6.ogg.mp3")
+            ],
+            'jump': [load(f"wood/Wood_jump{i}.wav.mp3") for i in range(1, 5)],
+            'mining': [load(f"wood/Wood_mining{i}.ogg") for i in range(1, 7)]
+        }
 
-        for sound in self.footsteps + self.jumps + self.mining:
-            sound.set_volume(0.2)
+        # Fallbacks
+        self.sounds[DIRT] = self.sounds[GRASS]
+        self.sounds[STONE] = self.sounds[GRASS]
+        self.sounds[SNOW] = self.sounds[GRASS]
+        self.sounds[LEAVES] = self.sounds[GRASS]
 
-    def play_footstep(self):
-        random.choice(self.footsteps).play()
+        self.hit_index = 0
+        self.last_hit_time = 0
+        self.mining_index = -1
 
-    def play_break_block(self):
-        random.choice(self.break_blocks).play()
-
-    def play_jump(self):
-        random.choice(self.jumps).play()
+    def play_hit(self, voxel_id):
+        current_time = pg.time.get_ticks()
+        if current_time - self.last_hit_time > 500: # Reset to 1 if you stop walking
+            self.hit_index = 0
+            
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        hits = s_dict['hit']
         
-    def play_mining(self):
-        random.choice(self.mining).play()
+        if self.hit_index >= len(hits):
+            self.hit_index = 0
+            
+        hits[self.hit_index].play()
+        self.hit_index += 1
+        self.last_hit_time = current_time
 
-    def play_place_block(self):
-        random.choice(self.footsteps).play()
+    def play_dig(self, voxel_id):
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        random.choice(s_dict['dig']).play()
+
+    def play_jump(self, voxel_id):
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        random.choice(s_dict['jump']).play()
+        
+    def play_mining(self, voxel_id, mining_time, mining_duration):
+        if mining_time == 0.0:
+            self.mining_index = -1
+            
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        mining_sounds = s_dict['mining']
+        num_sounds = len(mining_sounds)
+        
+        progress = mining_time / mining_duration
+        target_index = int(progress * num_sounds)
+        target_index = min(target_index, num_sounds - 1)
+        
+        if target_index > self.mining_index:
+            mining_sounds[target_index].play()
+            self.mining_index = target_index
+
+    def play_place_block(self): # Fallback for items popping into inventory
+        self.play_hit(GRASS)
 
 ===== D:\Minecraft\terrain_gen.py =====
 
@@ -2127,7 +2369,7 @@ class VoxelHandler:
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = self.new_voxel_id
                 chunk.mesh.rebuild()
-                self.app.sounds.play_place_block()
+                self.app.sounds.play_dig(self.new_voxel_id)
 
                 # was it an empty chunk
                 if chunk.is_empty:
@@ -2163,7 +2405,10 @@ class VoxelHandler:
 
             self.chunk.mesh.rebuild()
             self.rebuild_adjacent_chunks()
-            self.app.sounds.play_break_block()
+            self.app.sounds.play_dig(self.voxel_id)
+            
+            # Spawn dropped item
+            self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
 
     def set_voxel(self, mode='remove'):
         if mode == 'add':
