@@ -232,3 +232,99 @@ class HeldBlock:
         self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
         self.mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
+
+class Button:
+    def __init__(self, app, text, pos, size, action):
+        self.app = app
+        self.text = text
+        self.pos = pos
+        self.size = size
+        self.action = action
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', 40, bold=True)
+        self.text_mesh = UITextMesh(app)
+
+        self.is_hovered = False
+        self.base_color = (0.2, 0.2, 0.2, 0.7)
+        self.hover_color = (0.3, 0.3, 0.3, 0.8)
+
+    def check_hover(self, mouse_pos):
+        x, y = self.pos
+        w, h = self.size
+        
+        # Convert normalized screen coords to pixel coords
+        mouse_x, mouse_y = mouse_pos
+        win_w, win_h = WIN_RES
+        
+        # Convert button normalized pos/size to pixel coords
+        btn_x = (x + 1) * 0.5 * win_w
+        btn_y = (-y + 1) * 0.5 * win_h
+        btn_w = w * 0.5 * win_w
+        btn_h = h * 0.5 * win_h
+        
+        self.is_hovered = btn_x - btn_w < mouse_x < btn_x + btn_w and \
+                          btn_y - btn_h < mouse_y < btn_y + btn_h
+        return self.is_hovered
+
+    def render(self):
+        # 1. Render background
+        color = self.hover_color if self.is_hovered else self.base_color
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = color
+        self.color_mesh.render()
+
+        # 2. Render text
+        tex = self.text_renderer.get_texture(self.text)
+        tex.use(location=4)
+        
+        tex_w, tex_h = tex.size
+        scale_y = self.size[1] * 0.5
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.render()
+
+class Menu:
+    def __init__(self, app):
+        self.app = app
+        self.title_renderer = TextRenderer(app)
+        self.title_renderer.font = pg.font.SysFont('arial', 100, bold=True)
+        self.title_mesh = UITextMesh(app)
+
+        self.buttons = [
+            Button(app, 'Start Game', (0, 0.1), (0.2, 0.07), self.app.init_game_session),
+            Button(app, 'Quit', (0, -0.1), (0.2, 0.07), self.app.quit_game)
+        ]
+
+    def update(self):
+        mouse_pos = pg.mouse.get_pos()
+        for button in self.buttons:
+            button.check_hover(mouse_pos)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            for button in self.buttons:
+                if button.is_hovered:
+                    button.action()
+                    break
+
+    def render(self):
+        # Render title
+        tex = self.title_renderer.get_texture("Voxel Engine")
+        tex.use(location=4)
+        
+        tex_w, tex_h = tex.size
+        scale_y = 0.1
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.title_mesh.program['u_offset'] = (0.0, 0.5)
+        self.title_mesh.render()
+
+        # Render buttons
+        for button in self.buttons:
+            button.render()
