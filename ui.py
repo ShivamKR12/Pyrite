@@ -328,3 +328,57 @@ class Menu:
         # Render buttons
         for button in self.buttons:
             button.render()
+
+class PauseMenu:
+    def __init__(self, app):
+        self.app = app
+        self.title_renderer = TextRenderer(app)
+        self.title_renderer.font = pg.font.SysFont('arial', 80, bold=True)
+        self.title_mesh = UITextMesh(app)
+        self.bg_mesh = UIColorMesh(app)
+
+        self.buttons = [
+            Button(app, 'Resume', (0, 0.1), (0.3, 0.07), self.resume_game),
+            Button(app, 'Quit to Menu', (0, -0.1), (0.3, 0.07), self.quit_to_menu)
+        ]
+
+    def resume_game(self):
+        self.app.game_state = 'IN_GAME'
+        pg.event.set_grab(True)
+        pg.mouse.set_visible(False)
+
+    def quit_to_menu(self):
+        self.app.game_state = 'MAIN_MENU'
+        if self.app.scene:
+            self.app.scene.world.save()
+            self.app.scene = None # Unload the world to free memory
+
+    def update(self):
+        mouse_pos = pg.mouse.get_pos()
+        for button in self.buttons:
+            button.check_hover(mouse_pos)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            for button in self.buttons:
+                if button.is_hovered:
+                    button.action()
+                    break
+
+    def render(self):
+        self.bg_mesh.program['u_scale'] = (1.0, 1.0)
+        self.bg_mesh.program['u_offset'] = (0.0, 0.0)
+        self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6)
+        self.bg_mesh.render()
+
+        tex = self.title_renderer.get_texture("Game Paused")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = 0.08
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.title_mesh.program['u_offset'] = (0.0, 0.4)
+        self.title_mesh.render()
+
+        for button in self.buttons:
+            button.render()

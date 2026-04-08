@@ -7,7 +7,7 @@ from scene import Scene
 from player import Player
 from sounds import Sounds
 from textures import Textures
-from ui import TextRenderer, UITextMesh, Menu
+from ui import TextRenderer, UITextMesh, Menu, PauseMenu
 
 
 class VoxelEngine:
@@ -45,6 +45,7 @@ class VoxelEngine:
         self.sounds = Sounds(self)
         self.shader_program = ShaderProgram(self)
         self.menu = Menu(self)
+        self.pause_menu = PauseMenu(self)
 
     def init_game_session(self):
         self.game_state = 'LOADING'
@@ -85,11 +86,15 @@ class VoxelEngine:
             self.player.update()
             self.shader_program.update()
             self.scene.update()
+        elif self.game_state == 'PAUSED':
+            self.pause_menu.update()
 
-        self.delta_time = self.clock.tick()
+        self.delta_time = min(self.clock.tick(), 50) # Cap delta time to avoid physics lag spikes
         self.time = pg.time.get_ticks() * 0.001
         if self.game_state == 'IN_GAME':
             pg.display.set_caption(f'{self.clock.get_fps() :.0f}')
+        elif self.game_state == 'PAUSED':
+            pg.display.set_caption('Game Paused')
         else:
             pg.display.set_caption('Voxel Engine')
 
@@ -101,21 +106,34 @@ class VoxelEngine:
             self.ctx.enable(mgl.DEPTH_TEST)
         elif self.game_state == 'IN_GAME':
             self.scene.render()
+        elif self.game_state == 'PAUSED':
+            if self.scene:
+                self.scene.render()
+            self.ctx.disable(mgl.DEPTH_TEST)
+            self.pause_menu.render()
+            self.ctx.enable(mgl.DEPTH_TEST)
         pg.display.flip()
 
     def handle_events(self):
         for event in pg.event.get():
-            if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+            if event.type == pg.QUIT:
+                self.quit_game()
+            elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if self.game_state == 'IN_GAME':
-                    # TODO: Implement pause menu state
-                    self.quit_game()
-                else:
+                    self.game_state = 'PAUSED'
+                    pg.event.set_grab(False)
+                    pg.mouse.set_visible(True)
+                elif self.game_state == 'PAUSED':
+                    self.pause_menu.resume_game()
+                else: # Esc inside Main Menu quits the game
                     self.quit_game()
             
             if self.game_state == 'MAIN_MENU':
                 self.menu.handle_event(event)
             elif self.game_state == 'IN_GAME':
                 self.player.handle_event(event=event)
+            elif self.game_state == 'PAUSED':
+                self.pause_menu.handle_event(event)
 
     def quit_game(self):
         self.is_running = False
