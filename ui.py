@@ -296,9 +296,14 @@ class Menu:
         self.title_mesh = UITextMesh(app)
 
         self.buttons = [
-            Button(app, 'Start Game', (0, 0.1), (0.2, 0.07), self.app.init_game_session),
-            Button(app, 'Quit', (0, -0.1), (0.2, 0.07), self.app.quit_game)
+            Button(app, 'Start Game', (0, 0.15), (0.2, 0.07), self.app.init_game_session),
+            Button(app, 'Options', (0, 0.0), (0.2, 0.07), self.open_options),
+            Button(app, 'Quit', (0, -0.15), (0.2, 0.07), self.app.quit_game)
         ]
+
+    def open_options(self):
+        self.app.options_menu.previous_state = 'MAIN_MENU'
+        self.app.game_state = 'OPTIONS'
 
     def update(self):
         mouse_pos = pg.mouse.get_pos()
@@ -338,9 +343,14 @@ class PauseMenu:
         self.bg_mesh = UIColorMesh(app)
 
         self.buttons = [
-            Button(app, 'Resume', (0, 0.1), (0.3, 0.07), self.resume_game),
-            Button(app, 'Quit to Menu', (0, -0.1), (0.3, 0.07), self.quit_to_menu)
+            Button(app, 'Resume', (0, 0.15), (0.3, 0.07), self.resume_game),
+            Button(app, 'Options', (0, 0.0), (0.3, 0.07), self.open_options),
+            Button(app, 'Quit to Menu', (0, -0.15), (0.3, 0.07), self.quit_to_menu)
         ]
+
+    def open_options(self):
+        self.app.options_menu.previous_state = 'PAUSED'
+        self.app.game_state = 'OPTIONS'
 
     def resume_game(self):
         self.app.game_state = 'IN_GAME'
@@ -382,3 +392,145 @@ class PauseMenu:
 
         for button in self.buttons:
             button.render()
+
+class Slider:
+    def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None):
+        self.app = app
+        self.text = text
+        self.pos = pos
+        self.size = size
+        self.min_val = min_val
+        self.max_val = max_val
+        self.config_key = config_key
+        self.action = action
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', 30, bold=True)
+        self.text_mesh = UITextMesh(app)
+
+        self.is_hovered = False
+        self.is_dragging = False
+
+    def update(self):
+        mouse_pos = pg.mouse.get_pos()
+        x, y = self.pos
+        w, h = self.size
+        win_w, win_h = WIN_RES
+        
+        btn_x = (x + 1) * 0.5 * win_w
+        btn_y = (-y + 1) * 0.5 * win_h
+        btn_w = w * 0.5 * win_w
+        btn_h = h * 0.5 * win_h
+        
+        self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
+                          btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+
+        if self.is_dragging:
+            if not pg.mouse.get_pressed()[0]:
+                self.is_dragging = False
+                self.app.save_config()
+            else:
+                progress = (mouse_pos[0] - (btn_x - btn_w)) / (btn_w * 2)
+                progress = max(0.0, min(1.0, progress))
+                val = self.min_val + progress * (self.max_val - self.min_val)
+                self.app.config[self.config_key] = val
+                if self.action:
+                    self.action(val)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.is_hovered:
+                self.is_dragging = True
+
+    def render(self):
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8)
+        self.color_mesh.render()
+        
+        val = self.app.config[self.config_key]
+        progress = (val - self.min_val) / (self.max_val - self.min_val)
+        
+        fill_w = self.size[0] * progress
+        fill_x = self.pos[0] - self.size[0] + fill_w
+        
+        self.color_mesh.program['u_scale'] = (fill_w, self.size[1])
+        self.color_mesh.program['u_offset'] = (fill_x, self.pos[1])
+        self.color_mesh.program['u_color'] = (0.2, 0.6, 0.3, 0.8)
+        self.color_mesh.render()
+
+        if self.config_key == 'fov':
+            display_val = int(val)
+        elif self.config_key == 'volume':
+            display_val = int(val * 100) # Percentage
+        else:
+            display_val = f"{val:.4f}"
+            
+        tex = self.text_renderer.get_texture(f"{self.text}: {display_val}")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = self.size[1] * 0.6
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.render()
+
+class OptionsMenu:
+    def __init__(self, app):
+        self.app = app
+        self.title_renderer = TextRenderer(app)
+        self.title_renderer.font = pg.font.SysFont('arial', 80, bold=True)
+        self.title_mesh = UITextMesh(app)
+        self.bg_mesh = UIColorMesh(app)
+
+        self.sliders = [
+            Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov),
+            Slider(app, 'Sensitivity', (0, 0.0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
+            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0.0, 1.0, 'volume', self.update_volume)
+        ]
+        self.back_button = Button(app, 'Back', (0, -0.45), (0.2, 0.07), self.go_back)
+        self.previous_state = 'MAIN_MENU'
+
+    def update_fov(self, val):
+        if self.app.scene:
+            self.app.player.fov = glm.radians(val)
+
+    def update_volume(self, val):
+        pg.mixer.music.set_volume(val)
+
+    def go_back(self):
+        self.app.game_state = self.previous_state
+
+    def update(self):
+        for slider in self.sliders:
+            slider.update()
+        self.back_button.check_hover(pg.mouse.get_pos())
+
+    def handle_event(self, event):
+        for slider in self.sliders:
+            slider.handle_event(event)
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.back_button.is_hovered:
+                self.back_button.action()
+
+    def render(self):
+        if self.previous_state == 'PAUSED':
+            self.bg_mesh.program['u_scale'] = (1.0, 1.0)
+            self.bg_mesh.program['u_offset'] = (0.0, 0.0)
+            self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8)
+            self.bg_mesh.render()
+
+        tex = self.title_renderer.get_texture("Options")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = 0.08
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.title_mesh.program['u_offset'] = (0.0, 0.45)
+        self.title_mesh.render()
+
+        for slider in self.sliders:
+            slider.render()
+        self.back_button.render()

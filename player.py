@@ -27,7 +27,7 @@ class Player(Camera):
         self.hotbar_counts = [0] * 9
         self.hotbar_index = 0
         
-        self.fov = V_FOV
+        self.fov = glm.radians(self.app.config['fov'])
         self.is_sprinting = False
 
     def update(self):
@@ -69,7 +69,8 @@ class Player(Camera):
                     self.last_step_time = current_time
                     
             # Dynamic FOV for sprinting
-            target_fov = V_FOV + glm.radians(10.0) if self.is_sprinting and is_walking else V_FOV
+            base_fov = glm.radians(self.app.config['fov'])
+            target_fov = base_fov + glm.radians(10.0) if self.is_sprinting and is_walking else base_fov
             self.fov += (target_fov - self.fov) * 0.08 * self.app.delta_time
             self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
             h_fov = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
@@ -116,10 +117,11 @@ class Player(Camera):
 
     def mouse_control(self):
         mouse_dx, mouse_dy = pg.mouse.get_rel()
+        sens = self.app.config['sensitivity']
         if mouse_dx:
-            self.rotate_yaw(delta_x=mouse_dx * MOUSE_SENSITIVITY)
+            self.rotate_yaw(delta_x=mouse_dx * sens)
         if mouse_dy:
-            self.rotate_pitch(delta_y=mouse_dy * MOUSE_SENSITIVITY)
+            self.rotate_pitch(delta_y=mouse_dy * sens)
 
     def handle_interaction(self):
         mouse_pressed = pg.mouse.get_pressed()

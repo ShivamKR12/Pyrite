@@ -73,7 +73,7 @@ class Sounds:
             'sounds/c418-minecraft.ogg'
         ]
         pg.mixer.music.load(random.choice(self.music_tracks))
-        pg.mixer.music.set_volume(0.1)
+        pg.mixer.music.set_volume(self.app.config['volume'])
         pg.mixer.music.play(-1) # Loop forever in the background
 
     def play_hit(self, voxel_id):

@@ -1,13 +1,15 @@
 from settings import *
 import moderngl as mgl
 import pygame as pg
+import json
+import os
 import sys
 from shader_program import ShaderProgram
 from scene import Scene
 from player import Player
 from sounds import Sounds
 from textures import Textures
-from ui import TextRenderer, UITextMesh, Menu, PauseMenu
+from ui import TextRenderer, UITextMesh, Menu, PauseMenu, OptionsMenu
 
 
 class VoxelEngine:
@@ -33,11 +35,27 @@ class VoxelEngine:
         self.is_running = True
         self.game_state = 'MAIN_MENU'
         
+        self.config = {
+            'fov': FOV_DEG,
+            'sensitivity': MOUSE_SENSITIVITY,
+            'volume': 0.1
+        }
+        self.load_config()
+        
         # Placeholders for game session objects
         self.scene = None
         self.menu = None
 
         self.on_init()
+
+    def load_config(self):
+        if os.path.exists('config.json'):
+            with open('config.json', 'r') as f:
+                self.config.update(json.load(f))
+
+    def save_config(self):
+        with open('config.json', 'w') as f:
+            json.dump(self.config, f)
 
     def on_init(self):
         self.textures = Textures(self)
@@ -46,6 +64,7 @@ class VoxelEngine:
         self.shader_program = ShaderProgram(self)
         self.menu = Menu(self)
         self.pause_menu = PauseMenu(self)
+        self.options_menu = OptionsMenu(self)
 
     def init_game_session(self):
         self.game_state = 'LOADING'
@@ -88,6 +107,8 @@ class VoxelEngine:
             self.scene.update()
         elif self.game_state == 'PAUSED':
             self.pause_menu.update()
+        elif self.game_state == 'OPTIONS':
+            self.options_menu.update()
 
         self.delta_time = min(self.clock.tick(), 50) # Cap delta time to avoid physics lag spikes
         self.time = pg.time.get_ticks() * 0.001
@@ -112,6 +133,13 @@ class VoxelEngine:
             self.ctx.disable(mgl.DEPTH_TEST)
             self.pause_menu.render()
             self.ctx.enable(mgl.DEPTH_TEST)
+        elif self.game_state == 'OPTIONS':
+            if self.options_menu.previous_state == 'PAUSED' and self.scene:
+                self.scene.render()
+            self.ctx.disable(mgl.DEPTH_TEST)
+            self.options_menu.render()
+            self.ctx.enable(mgl.DEPTH_TEST)
+            
         pg.display.flip()
 
     def handle_events(self):
@@ -125,6 +153,8 @@ class VoxelEngine:
                     pg.mouse.set_visible(True)
                 elif self.game_state == 'PAUSED':
                     self.pause_menu.resume_game()
+                elif self.game_state == 'OPTIONS':
+                    self.options_menu.go_back()
                 else: # Esc inside Main Menu quits the game
                     self.quit_game()
             
@@ -134,6 +164,8 @@ class VoxelEngine:
                 self.player.handle_event(event=event)
             elif self.game_state == 'PAUSED':
                 self.pause_menu.handle_event(event)
+            elif self.game_state == 'OPTIONS':
+                self.options_menu.handle_event(event)
 
     def quit_game(self):
         self.is_running = False
