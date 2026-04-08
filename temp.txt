@@ -60,12 +60,17 @@ class ChunkMesh(BaseMesh):
             self.vao.release()
         if self.vbo:
             self.vbo.release()
-        self.vertex_data = self.get_vertex_data()
+        self.vertex_data = None
         self.vao = self.get_vao()
 
     def get_vao(self):
-        vertex_data = self.get_vertex_data() if self.vertex_data is None else self.vertex_data
-        self.vbo = self.ctx.buffer(vertex_data)
+        if self.vertex_data is None:
+            self.vertex_data = self.get_vertex_data()
+
+        if self.vertex_data.size == 0:
+            return None
+
+        self.vbo = self.ctx.buffer(self.vertex_data)
         vao = self.ctx.vertex_array(
             self.program, [(self.vbo, self.vbo_format, *self.attrs)], skip_errors=True
         )
@@ -295,7 +300,7 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
                     else:
                         index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
 
-    return vertex_data[:index + 1]
+    return vertex_data[:index]
 
 ===== D:\Minecraft\meshes\cloud_mesh.py =====
 
@@ -836,6 +841,36 @@ void main() {
     gl_Position = vec4((in_position * u_scale) + u_offset, 0.0, 1.0);
 }
 
+===== D:\Minecraft\shaders\ui_text.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+in vec2 uv;
+uniform sampler2D u_texture_0;
+
+void main() {
+    fragColor = texture(u_texture_0, uv);
+}
+
+===== D:\Minecraft\shaders\ui_text.vert =====
+
+#version 330 core
+
+layout (location = 0) in vec2 in_position;
+layout (location = 1) in vec2 in_tex_coord;
+
+out vec2 uv;
+
+uniform vec2 u_offset;
+uniform vec2 u_scale;
+
+void main() {
+    uv = in_tex_coord;
+    gl_Position = vec4((in_position * u_scale) + u_offset, 0.0, 1.0);
+}
+
 ===== D:\Minecraft\shaders\voxel_marker.frag =====
 
 #version 330 core
@@ -1069,8 +1104,9 @@ class Item:
         
         if pg.time.get_ticks() > self.pickup_delay:
             if glm.distance(self.position, self.app.player.position) < 1.5:
-                self.is_dead = True
-                self.app.sounds.play_place_block() # Pop sound!
+                if self.app.player.add_item(self.voxel_id):
+                    self.is_dead = True
+                    self.app.sounds.play_place_block() # Pop sound!
 
     def get_model_matrix(self):
         m_model = glm.translate(glm.mat4(), self.position)
@@ -1408,7 +1444,8 @@ class Player(Camera):
         self.mining_time = 0.0
         self.mining_duration = 0.0 # updated dynamically
         
-        self.hotbar = [DIRT, GRASS, STONE, SAND, WOOD, LEAVES, SNOW, DIRT, GRASS]
+        self.hotbar = [0] * 9 # 0 means empty slot
+        self.hotbar_counts = [0] * 9
         self.hotbar_index = 0
         
         self.fov = V_FOV
@@ -1486,7 +1523,6 @@ class Player(Camera):
             # Hotbar numbers 1-9
             if pg.K_1 <= event.key <= pg.K_9:
                 self.hotbar_index = event.key - pg.K_1
-                self.app.scene.world.voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
                 
         # adding and removing voxels with clicks
         if event.type == pg.MOUSEBUTTONDOWN:
@@ -1496,10 +1532,8 @@ class Player(Camera):
                 self.interaction_timer = pg.time.get_ticks()
             if event.button == 4:  # Scroll Up
                 self.hotbar_index = (self.hotbar_index - 1) % 9
-                voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
             if event.button == 5:  # Scroll Down
                 self.hotbar_index = (self.hotbar_index + 1) % 9
-                voxel_handler.new_voxel_id = self.hotbar[self.hotbar_index]
 
     def mouse_control(self):
         mouse_dx, mouse_dy = pg.mouse.get_rel()
@@ -1668,6 +1702,20 @@ class Player(Camera):
             a_min.z < b_max.z and a_max.z > b_min.z
         )
 
+    def add_item(self, voxel_id):
+        # Check if we already have a stack of this item
+        for i in range(9):
+            if self.hotbar[i] == voxel_id and self.hotbar_counts[i] < 64:
+                self.hotbar_counts[i] += 1
+                return True
+        # Find an empty slot
+        for i in range(9):
+            if self.hotbar[i] == 0:
+                self.hotbar[i] = voxel_id
+                self.hotbar_counts[i] = 1
+                return True
+        return False # Inventory is full!
+
 ===== D:\Minecraft\scene.py =====
 
 from settings import *
@@ -1787,6 +1835,7 @@ STONE = 4
 SNOW = 5
 LEAVES = 6
 WOOD = 7
+GRAVEL = 8
 
 # terrain levels
 SNOW_LVL = 54
@@ -1845,6 +1894,7 @@ class ShaderProgram:
         self.quad = self.get_program('quad')
         self.ui_block = self.get_program('ui_block')
         self.ui_color = self.get_program('ui_color')
+        self.ui_text = self.get_program('ui_text')
         self.item = self.get_program('item')
         # ------------------------- #
         self.set_uniforms_on_init()
@@ -1884,6 +1934,9 @@ class ShaderProgram:
         # ui block
         self.ui_block['u_texture_array_0'] = 1
         
+        # ui text
+        self.ui_text['u_texture_0'] = 0
+        
         # item
         self.item['m_proj'].write(self.player.m_proj)
         self.item['m_model'].write(glm.mat4())
@@ -1909,7 +1962,7 @@ class ShaderProgram:
         self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
-        time_speed = 0.5 # Adjust this to make the day longer or shorter
+        time_speed = 0.1 # Adjust this to make the day longer or shorter
         sun_y = glm.cos(self.app.time * time_speed)
         sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
         
@@ -1957,56 +2010,62 @@ class Sounds:
         
         # SAND
         self.sounds[SAND] = {
-            'dig': [load(f"sand/Sand_dig{i}.ogg.mp3") for i in range(1, 5)],
-            'hit': [load(f"sand/Sand_hit{i}.ogg.mp3") for i in range(1, 6)],
-            'jump': [load(f"sand/Sand_jump{i}.wav.mp3") for i in range(1, 5)],
-            'mining': [load(f"sand/Sand_mining{i}.ogg.mp3") for i in range(1, 6)]
+            'dig': [load(f"sand/Sand_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"sand/Sand_hit{i}.ogg") for i in range(1, 6)],
+            'jump': [load(f"sand/Sand_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"sand/Sand_mining{i}.ogg") for i in range(1, 6)]
         }
         
         # GRASS
         self.sounds[GRASS] = {
             'dig': [load(f"grass/Grass_dig{i}.ogg") for i in range(1, 5)],
             'hit': [load(f"grass/Grass_hit{i}.ogg") for i in range(1, 7)],
-            'jump': [load(f"grass/Grass_jump{i}.wav.mp3") for i in range(1, 5)],
-            'mining': [
-                load("grass/Grass_mining1.ogg"),
-                load("grass/Grass_mining2.ogg"),
-                load("grass/Grass_mining3.ogg.mp3"),
-                load("grass/Grass_mining4.ogg"),
-                load("grass/Grass_mining5.ogg"),
-                load("grass/Grass_mining6.ogg")
-            ]
+            'jump': [load(f"grass/Grass_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"grass/Grass_mining{i}.ogg") for i in range(1, 7)]
         }
         
         # WOOD
         self.sounds[WOOD] = {
-            'dig': [
-                load("wood/Wood_dig1.ogg.mp3"),
-                load("wood/Wood_dig2.ogg.mp3"),
-                load("wood/Wood_dig3.ogg.mp3"),
-                load("wood/Wood_dig4.ogg")
-            ],
-            'hit': [
-                load("wood/Wood_hit1.ogg"),
-                load("wood/Wood_hit2.ogg"),
-                load("wood/Wood_hit3.ogg.mp3"),
-                load("wood/Wood_hit4.ogg"),
-                load("wood/Wood_hit5.ogg.mp3"),
-                load("wood/Wood_hit6.ogg.mp3")
-            ],
-            'jump': [load(f"wood/Wood_jump{i}.wav.mp3") for i in range(1, 5)],
+            'dig': [load(f"wood/Wood_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"wood/Wood_hit{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"wood/Wood_jump{i}.ogg") for i in range(1, 5)],
             'mining': [load(f"wood/Wood_mining{i}.ogg") for i in range(1, 7)]
         }
 
+        # DIRT ( gravel and dirt have the same sounds in Minecraft )
+        self.sounds[DIRT] = {
+            'dig': [load(f"dirt/Gravel_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"dirt/Gravel_hit{i}.ogg") for i in range(1, 5)],
+            'jump': [load(f"dirt/Gravel_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"dirt/Gravel_mining{i}.ogg") for i in range(1, 5)]
+        }
+        
+        # STONE
+        self.sounds[STONE] = {
+            'dig': [load(f"stone/Stone_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"stone/Stone_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"stone/Stone_mining{i}.ogg") for i in range(1, 7)]
+        }
+
         # Fallbacks
-        self.sounds[DIRT] = self.sounds[GRASS]
-        self.sounds[STONE] = self.sounds[GRASS]
         self.sounds[SNOW] = self.sounds[GRASS]
         self.sounds[LEAVES] = self.sounds[GRASS]
 
         self.hit_index = 0
         self.last_hit_time = 0
         self.mining_index = -1
+        
+        self.pop_sound = load('pickup-sound.ogg')
+        
+        # Background Music
+        self.music_tracks = [
+            'sounds/c418-aria-math-(minecraft-volume-beta).ogg',
+            'sounds/c418-minecraft.ogg'
+        ]
+        pg.mixer.music.load(random.choice(self.music_tracks))
+        pg.mixer.music.set_volume(0.1)
+        pg.mixer.music.play(-1) # Loop forever in the background
 
     def play_hit(self, voxel_id):
         current_time = pg.time.get_ticks()
@@ -2047,8 +2106,8 @@ class Sounds:
             mining_sounds[target_index].play()
             self.mining_index = target_index
 
-    def play_place_block(self): # Fallback for items popping into inventory
-        self.play_hit(GRASS)
+    def play_place_block(self): # Played when items pop into the player's inventory
+        self.pop_sound.play()
 
 ===== D:\Minecraft\terrain_gen.py =====
 
@@ -2176,7 +2235,7 @@ class Textures:
         # load textures
         self.texture_0 = self.load('frame.png')
         self.texture_1 = self.load('water.png')
-        self.texture_array_0 = self.load('tex_array_0.png', is_tex_array=True)
+        self.texture_array_0 = self.load('tex_array_2.png', is_tex_array=True)
         self.texture_breaking = self.load('block_breaking_texture.png')
 
         # assign texture unit
@@ -2212,7 +2271,8 @@ class Textures:
 from settings import *
 from meshes.base_mesh import BaseMesh
 import numpy as np
-import glm
+import moderngl as mgl
+import pygame as pg
 
 class CrosshairMesh(BaseMesh):
     def __init__(self, app):
@@ -2275,6 +2335,45 @@ class UIColorMesh(BaseMesh):
         ]
         return np.array(vertices, dtype='float32')
 
+class UITextMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.ui_text
+        self.vbo_format = '2f 2f'
+        self.attrs = ('in_position', 'in_tex_coord')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        vertices = [
+            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
+            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
+        ]
+        tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
+        return np.hstack([vertices, tex_coords]).astype('float32')
+
+class TextRenderer:
+    def __init__(self, app):
+        self.app = app
+        self.ctx = app.ctx
+        pg.font.init()
+        self.font = pg.font.SysFont('arial', 20, bold=True)
+        self.textures = {}
+
+    def get_texture(self, text):
+        if text in self.textures:
+            return self.textures[text]
+        surf = self.font.render(text, True, (255, 255, 255))
+        bg_surf = pg.Surface((surf.get_width() + 2, surf.get_height() + 2), pg.SRCALPHA)
+        shadow = self.font.render(text, True, (40, 40, 40))
+        bg_surf.blit(shadow, (2, 2))
+        bg_surf.blit(surf, (0, 0))
+        texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
+        texture.filter = (mgl.LINEAR, mgl.LINEAR)
+        self.textures[text] = texture
+        return texture
+
 class Crosshair:
     def __init__(self, app):
         self.app = app
@@ -2288,6 +2387,8 @@ class Hotbar:
         self.app = app
         self.block_mesh = BlockIconMesh(app)
         self.color_mesh = UIColorMesh(app)
+        self.text_mesh = UITextMesh(app)
+        self.text_renderer = TextRenderer(app)
         
     def render(self):
         player = self.app.player
@@ -2323,10 +2424,30 @@ class Hotbar:
 
         # 2. Draw the 3D block icons inside the slots
         for i in range(9):
-            self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-            self.block_mesh.program['u_offset'] = (start_x + i * spacing, y)
-            self.block_mesh.program['voxel_id'] = player.hotbar[i]
-            self.block_mesh.render()
+            voxel_id = player.hotbar[i]
+            if voxel_id != 0:
+                self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+                self.block_mesh.program['u_offset'] = (start_x + i * spacing, y)
+                self.block_mesh.program['voxel_id'] = voxel_id
+                self.block_mesh.render()
+
+        # 3. Draw the stack counts
+        for i in range(9):
+            count = player.hotbar_counts[i]
+            if count > 1:
+                tex = self.text_renderer.get_texture(str(count))
+                tex.use(location=0)
+                
+                tex_w, tex_h = tex.size
+                scale_y = 0.015
+                scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+                
+                offset_x = start_x + i * spacing + 0.015
+                offset_y = y - 0.025
+                
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.text_mesh.render()
 
 ===== D:\Minecraft\voxel_handler.py =====
 
@@ -2349,10 +2470,13 @@ class VoxelHandler:
 
         # Keep for voxel_marker compatibility, permanently set to 0 for standard Minecraft highlighting
         self.interaction_mode = 0  
-        self.new_voxel_id = self.app.player.hotbar[self.app.player.hotbar_index]
 
     def add_voxel(self):
         if self.voxel_id:
+            current_id = self.app.player.hotbar[self.app.player.hotbar_index]
+            if current_id == 0:
+                return # Can't place empty air
+
             # check voxel id along normal
             new_voxel_pos = self.voxel_world_pos + self.voxel_normal
             result = self.get_voxel_id(new_voxel_pos)
@@ -2367,9 +2491,14 @@ class VoxelHandler:
                     return
 
                 _, voxel_index, _, chunk = result
-                chunk.voxels[voxel_index] = self.new_voxel_id
+                chunk.voxels[voxel_index] = current_id
                 chunk.mesh.rebuild()
-                self.app.sounds.play_dig(self.new_voxel_id)
+                self.app.sounds.play_dig(current_id)
+
+                # Consume item from hotbar
+                self.app.player.hotbar_counts[self.app.player.hotbar_index] -= 1
+                if self.app.player.hotbar_counts[self.app.player.hotbar_index] <= 0:
+                    self.app.player.hotbar[self.app.player.hotbar_index] = 0
 
                 # was it an empty chunk
                 if chunk.is_empty:

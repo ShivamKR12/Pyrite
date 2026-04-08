@@ -14,6 +14,7 @@ class ShaderProgram:
         self.quad = self.get_program('quad')
         self.ui_block = self.get_program('ui_block')
         self.ui_color = self.get_program('ui_color')
+        self.ui_text = self.get_program('ui_text')
         self.item = self.get_program('item')
         # ------------------------- #
         self.set_uniforms_on_init()
@@ -52,6 +53,9 @@ class ShaderProgram:
         
         # ui block
         self.ui_block['u_texture_array_0'] = 1
+        
+        # ui text
+        self.ui_text['u_texture_0'] = 4
         
         # item
         self.item['m_proj'].write(self.player.m_proj)

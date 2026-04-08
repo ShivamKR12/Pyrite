@@ -1,7 +1,8 @@
 from settings import *
 from meshes.base_mesh import BaseMesh
 import numpy as np
-import glm
+import moderngl as mgl
+import pygame as pg
 
 class CrosshairMesh(BaseMesh):
     def __init__(self, app):
@@ -64,6 +65,45 @@ class UIColorMesh(BaseMesh):
         ]
         return np.array(vertices, dtype='float32')
 
+class UITextMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.ui_text
+        self.vbo_format = '2f 2f'
+        self.attrs = ('in_position', 'in_tex_coord')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        vertices = [
+            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
+            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
+        ]
+        tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
+        return np.hstack([vertices, tex_coords]).astype('float32')
+
+class TextRenderer:
+    def __init__(self, app):
+        self.app = app
+        self.ctx = app.ctx
+        pg.font.init()
+        self.font = pg.font.SysFont('arial', 20, bold=True)
+        self.textures = {}
+
+    def get_texture(self, text):
+        if text in self.textures:
+            return self.textures[text]
+        surf = self.font.render(text, True, (255, 255, 255))
+        bg_surf = pg.Surface((surf.get_width() + 2, surf.get_height() + 2), pg.SRCALPHA)
+        shadow = self.font.render(text, True, (40, 40, 40))
+        bg_surf.blit(shadow, (2, 2))
+        bg_surf.blit(surf, (0, 0))
+        texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
+        texture.filter = (mgl.LINEAR, mgl.LINEAR)
+        self.textures[text] = texture
+        return texture
+
 class Crosshair:
     def __init__(self, app):
         self.app = app
@@ -77,6 +117,8 @@ class Hotbar:
         self.app = app
         self.block_mesh = BlockIconMesh(app)
         self.color_mesh = UIColorMesh(app)
+        self.text_mesh = UITextMesh(app)
+        self.text_renderer = TextRenderer(app)
         
     def render(self):
         player = self.app.player
@@ -118,3 +160,21 @@ class Hotbar:
                 self.block_mesh.program['u_offset'] = (start_x + i * spacing, y)
                 self.block_mesh.program['voxel_id'] = voxel_id
                 self.block_mesh.render()
+
+        # 3. Draw the stack counts
+        for i in range(9):
+            count = player.hotbar_counts[i]
+            if count > 1:
+                tex = self.text_renderer.get_texture(str(count))
+                tex.use(location=4)
+                
+                tex_w, tex_h = tex.size
+                scale_y = 0.015
+                scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+                
+                offset_x = start_x + i * spacing + 0.015
+                offset_y = y - 0.025
+                
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.text_mesh.render()

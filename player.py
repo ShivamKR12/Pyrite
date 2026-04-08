@@ -284,7 +284,7 @@ class Player(Camera):
     def add_item(self, voxel_id):
         # Check if we already have a stack of this item
         for i in range(9):
-            if self.hotbar[i] == voxel_id:
+            if self.hotbar[i] == voxel_id and self.hotbar_counts[i] < 64:
                 self.hotbar_counts[i] += 1
                 return True
         # Find an empty slot

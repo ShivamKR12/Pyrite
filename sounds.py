@@ -40,9 +40,23 @@ class Sounds:
             'mining': [load(f"wood/Wood_mining{i}.ogg") for i in range(1, 7)]
         }
 
+        # DIRT ( gravel and dirt have the same sounds in Minecraft )
+        self.sounds[DIRT] = {
+            'dig': [load(f"dirt/Gravel_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"dirt/Gravel_hit{i}.ogg") for i in range(1, 5)],
+            'jump': [load(f"dirt/Gravel_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"dirt/Gravel_mining{i}.ogg") for i in range(1, 5)]
+        }
+        
+        # STONE
+        self.sounds[STONE] = {
+            'dig': [load(f"stone/Stone_dig{i}.ogg") for i in range(1, 5)],
+            'hit': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"stone/Stone_jump{i}.ogg") for i in range(1, 5)],
+            'mining': [load(f"stone/Stone_mining{i}.ogg") for i in range(1, 7)]
+        }
+
         # Fallbacks
-        self.sounds[DIRT] = self.sounds[GRASS]
-        self.sounds[STONE] = self.sounds[GRASS]
         self.sounds[SNOW] = self.sounds[GRASS]
         self.sounds[LEAVES] = self.sounds[GRASS]
 

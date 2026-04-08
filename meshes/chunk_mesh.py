@@ -26,12 +26,17 @@ class ChunkMesh(BaseMesh):
             self.vao.release()
         if self.vbo:
             self.vbo.release()
-        self.vertex_data = self.get_vertex_data()
+        self.vertex_data = None
         self.vao = self.get_vao()
 
     def get_vao(self):
-        vertex_data = self.get_vertex_data() if self.vertex_data is None else self.vertex_data
-        self.vbo = self.ctx.buffer(vertex_data)
+        if self.vertex_data is None:
+            self.vertex_data = self.get_vertex_data()
+
+        if self.vertex_data.size == 0:
+            return None
+
+        self.vbo = self.ctx.buffer(self.vertex_data)
         vao = self.ctx.vertex_array(
             self.program, [(self.vbo, self.vbo_format, *self.attrs)], skip_errors=True
         )
