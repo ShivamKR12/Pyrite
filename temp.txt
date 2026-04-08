@@ -1763,7 +1763,6 @@ class Scene:
         self.voxel_marker.render()
         
         # view model (held block)
-        self.app.ctx.clear(depth=1.0, color=None) # Clears depth so the hand draws over walls
         self.held_block.render()
 
         # UI rendering (disable depth testing so it draws over everything)
@@ -2506,9 +2505,9 @@ class HeldBlock:
         self.mesh.program['m_model'].write(m_model)
         self.mesh.program['voxel_id'] = voxel_id
 
-        self.app.ctx.disable(mgl.CULL_FACE) # Don't accidentally cull interior faces if clipping
+        self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
         self.mesh.render()
-        self.app.ctx.enable(mgl.CULL_FACE)
+        self.app.ctx.enable(mgl.DEPTH_TEST)
 
 ===== D:\Minecraft\voxel_handler.py =====
 
