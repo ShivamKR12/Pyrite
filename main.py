@@ -38,13 +38,15 @@ class VoxelEngine:
         self.config = {
             'fov': FOV_DEG,
             'sensitivity': MOUSE_SENSITIVITY,
-            'volume': 0.1
+            'volume': 0.1,
+            'render_distance': 4
         }
         self.load_config()
         
         # Placeholders for game session objects
         self.scene = None
         self.menu = None
+        self.wireframe = False
 
         self.on_init()
 
@@ -146,6 +148,8 @@ class VoxelEngine:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.quit_game()
+            elif event.type == pg.KEYDOWN and event.key == pg.K_p:
+                self.wireframe = not self.wireframe
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if self.game_state == 'IN_GAME':
                     self.game_state = 'PAUSED'

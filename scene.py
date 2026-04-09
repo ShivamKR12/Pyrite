@@ -29,6 +29,9 @@ class Scene:
         self.item_manager.update()
 
     def render(self):
+        if self.app.wireframe:
+            self.app.ctx.wireframe = True
+
         # chunks rendering
         self.world.render()
         self.item_manager.render()
@@ -38,6 +41,9 @@ class Scene:
         self.clouds.render()
         self.water.render()
         self.app.ctx.enable(mgl.CULL_FACE)
+        
+        if self.app.wireframe:
+            self.app.ctx.wireframe = False
 
         # voxel selection
         self.voxel_marker.render()

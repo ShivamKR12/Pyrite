@@ -488,9 +488,10 @@ class OptionsMenu:
         self.sliders = [
             Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov),
             Slider(app, 'Sensitivity', (0, 0.0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
-            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0.0, 1.0, 'volume', self.update_volume)
+            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0.0, 1.0, 'volume', self.update_volume),
+            Slider(app, 'Render Dist', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance')
         ]
-        self.back_button = Button(app, 'Back', (0, -0.45), (0.2, 0.07), self.go_back)
+        self.back_button = Button(app, 'Back', (0, -0.6), (0.2, 0.07), self.go_back)
         self.previous_state = 'MAIN_MENU'
 
     def update_fov(self, val):

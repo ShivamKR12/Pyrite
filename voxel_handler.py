@@ -52,9 +52,10 @@ class VoxelHandler:
                     chunk.is_empty = False
 
     def rebuild_adj_chunk(self, adj_voxel_pos):
-        index = get_chunk_index(adj_voxel_pos)
-        if index != -1:
-            self.chunks[index].mesh.rebuild()
+        cx, cy, cz = int(adj_voxel_pos[0] // CHUNK_SIZE), int(adj_voxel_pos[1] // CHUNK_SIZE), int(adj_voxel_pos[2] // CHUNK_SIZE)
+        chunk_pos = (cx, cy, cz)
+        if chunk_pos in self.app.scene.world.active_chunks:
+            self.app.scene.world.active_chunks[chunk_pos].mesh.rebuild()
 
     def rebuild_adjacent_chunks(self):
         lx, ly, lz = self.voxel_local_pos
@@ -154,13 +155,14 @@ class VoxelHandler:
         return False
 
     def get_voxel_id(self, voxel_world_pos):
-        cx, cy, cz = chunk_pos = voxel_world_pos / CHUNK_SIZE
+        cx = int(glm.floor(voxel_world_pos.x / CHUNK_SIZE))
+        cy = int(glm.floor(voxel_world_pos.y / CHUNK_SIZE))
+        cz = int(glm.floor(voxel_world_pos.z / CHUNK_SIZE))
+        chunk_pos = (cx, cy, cz)
 
-        if 0 <= cx < WORLD_W and 0 <= cy < WORLD_H and 0 <= cz < WORLD_D:
-            chunk_index = cx + WORLD_W * cz + WORLD_AREA * cy
-            chunk = self.chunks[chunk_index]
-
-            lx, ly, lz = voxel_local_pos = voxel_world_pos - chunk_pos * CHUNK_SIZE
+        if chunk_pos in self.app.scene.world.active_chunks:
+            chunk = self.app.scene.world.active_chunks[chunk_pos]
+            lx, ly, lz = voxel_local_pos = glm.ivec3(voxel_world_pos) - glm.ivec3(cx, cy, cz) * CHUNK_SIZE
 
             voxel_index = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
             voxel_id = chunk.voxels[voxel_index]
