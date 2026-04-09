@@ -18,10 +18,13 @@ flat in int voxel_id;
 
 
 void main() {
-    vec2 face_uv = uv;
-    face_uv.x = uv.x / 3.0 - min(face_id, 2) / 3.0;
+    vec2 dx = dFdx(uv);
+    vec2 dy = dFdy(uv);
 
-    vec3 tex_col = texture(u_texture_array_0, vec3(face_uv, voxel_id)).rgb;
+    vec2 face_uv = fract(uv);
+    face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
+
+    vec3 tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
     tex_col = pow(tex_col, gamma);
 
     tex_col *= shading;

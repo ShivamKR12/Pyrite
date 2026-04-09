@@ -107,110 +107,242 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0
 
-    for x in range(CHUNK_SIZE):
-        for y in range(CHUNK_SIZE):
+    cx, cy, cz = chunk_pos
+    mask0 = np.empty((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
+    mask1 = np.empty((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
+
+    # ================== Y PLANES (Top/Bottom) ==================
+    for y in range(CHUNK_SIZE):
+        mask0.fill(0)
+        mask1.fill(0)
+        wy = y + cy * CHUNK_SIZE
+        for x in range(CHUNK_SIZE):
+            wx = x + cx * CHUNK_SIZE
             for z in range(CHUNK_SIZE):
-                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
-
-                if not voxel_id:
-                    continue
-
-                # voxel world position
-                cx, cy, cz = chunk_pos
-                wx = x + cx * CHUNK_SIZE
-                wy = y + cy * CHUNK_SIZE
                 wz = z + cz * CHUNK_SIZE
+                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+                if not voxel_id: continue
 
-                # top face
                 if is_void((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions):
-                    # get ao values
                     ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    mask0[x, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                    # format: x, y, z, voxel_id, face_id, ao_id, flip_id
-                    v0 = pack_data(x    , y + 1, z    , voxel_id, 0, ao[0], flip_id)
-                    v1 = pack_data(x + 1, y + 1, z    , voxel_id, 0, ao[1], flip_id)
-                    v2 = pack_data(x + 1, y + 1, z + 1, voxel_id, 0, ao[2], flip_id)
-                    v3 = pack_data(x    , y + 1, z + 1, voxel_id, 0, ao[3], flip_id)
-
-                    if flip_id:
-                        index = add_data(vertex_data, index, v1, v0, v3, v1, v3, v2)
-                    else:
-                        index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
-
-                # bottom face
                 if is_void((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions):
                     ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    mask1[x, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                    v0 = pack_data(x    , y, z    , voxel_id, 1, ao[0], flip_id)
-                    v1 = pack_data(x + 1, y, z    , voxel_id, 1, ao[1], flip_id)
-                    v2 = pack_data(x + 1, y, z + 1, voxel_id, 1, ao[2], flip_id)
-                    v3 = pack_data(x    , y, z + 1, voxel_id, 1, ao[3], flip_id)
+        for x in range(CHUNK_SIZE):
+            for z in range(CHUNK_SIZE):
+                val = mask0[x, z]
+                if val:
+                    w, h = 1, 1
+                    while x + w < CHUNK_SIZE and mask0[x + w, z] == val: w += 1
+                    done = False
+                    while z + h < CHUNK_SIZE:
+                        for ix in range(w):
+                            if mask0[x + ix, z + h] != val: done = True; break
+                        if done: break
+                        h += 1
+                    
+                    voxel_id = (val >> 10) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    flip_id = val & 1
 
-                    if flip_id:
-                        index = add_data(vertex_data, index, v1, v3, v0, v1, v2, v3)
-                    else:
-                        index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
+                    v0 = pack_data(x    , y + 1, z    , voxel_id, 0, ao0, flip_id)
+                    v1 = pack_data(x + w, y + 1, z    , voxel_id, 0, ao1, flip_id)
+                    v2 = pack_data(x + w, y + 1, z + h, voxel_id, 0, ao2, flip_id)
+                    v3 = pack_data(x    , y + 1, z + h, voxel_id, 0, ao3, flip_id)
 
-                # right face
+                    if flip_id: index = add_data(vertex_data, index, v1, v0, v3, v1, v3, v2)
+                    else:       index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
+
+                    for ix in range(w):
+                        for iz in range(h): mask0[x + ix, z + iz] = 0
+
+        for x in range(CHUNK_SIZE):
+            for z in range(CHUNK_SIZE):
+                val = mask1[x, z]
+                if val:
+                    w, h = 1, 1
+                    while x + w < CHUNK_SIZE and mask1[x + w, z] == val: w += 1
+                    done = False
+                    while z + h < CHUNK_SIZE:
+                        for ix in range(w):
+                            if mask1[x + ix, z + h] != val: done = True; break
+                        if done: break
+                        h += 1
+                    
+                    voxel_id = (val >> 10) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    flip_id = val & 1
+
+                    v0 = pack_data(x    , y, z    , voxel_id, 1, ao0, flip_id)
+                    v1 = pack_data(x + w, y, z    , voxel_id, 1, ao1, flip_id)
+                    v2 = pack_data(x + w, y, z + h, voxel_id, 1, ao2, flip_id)
+                    v3 = pack_data(x    , y, z + h, voxel_id, 1, ao3, flip_id)
+
+                    if flip_id: index = add_data(vertex_data, index, v1, v3, v0, v1, v2, v3)
+                    else:       index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
+
+                    for ix in range(w):
+                        for iz in range(h): mask1[x + ix, z + iz] = 0
+
+    # ================== X PLANES (Right/Left) ==================
+    for x in range(CHUNK_SIZE):
+        mask0.fill(0)
+        mask1.fill(0)
+        wx = x + cx * CHUNK_SIZE
+        for y in range(CHUNK_SIZE):
+            wy = y + cy * CHUNK_SIZE
+            for z in range(CHUNK_SIZE):
+                wz = z + cz * CHUNK_SIZE
+                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+                if not voxel_id: continue
+
                 if is_void((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions):
                     ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    mask0[y, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                    v0 = pack_data(x + 1, y    , z    , voxel_id, 2, ao[0], flip_id)
-                    v1 = pack_data(x + 1, y + 1, z    , voxel_id, 2, ao[1], flip_id)
-                    v2 = pack_data(x + 1, y + 1, z + 1, voxel_id, 2, ao[2], flip_id)
-                    v3 = pack_data(x + 1, y    , z + 1, voxel_id, 2, ao[3], flip_id)
-
-                    if flip_id:
-                        index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
-                    else:
-                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
-
-                # left face
                 if is_void((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions):
                     ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    mask1[y, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                    v0 = pack_data(x, y    , z    , voxel_id, 3, ao[0], flip_id)
-                    v1 = pack_data(x, y + 1, z    , voxel_id, 3, ao[1], flip_id)
-                    v2 = pack_data(x, y + 1, z + 1, voxel_id, 3, ao[2], flip_id)
-                    v3 = pack_data(x, y    , z + 1, voxel_id, 3, ao[3], flip_id)
+        for y in range(CHUNK_SIZE):
+            for z in range(CHUNK_SIZE):
+                val = mask0[y, z]
+                if val:
+                    w, h = 1, 1
+                    while y + w < CHUNK_SIZE and mask0[y + w, z] == val: w += 1
+                    done = False
+                    while z + h < CHUNK_SIZE:
+                        for iy in range(w):
+                            if mask0[y + iy, z + h] != val: done = True; break
+                        if done: break
+                        h += 1
+                    
+                    voxel_id = (val >> 10) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    flip_id = val & 1
 
-                    if flip_id:
-                        index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
-                    else:
-                        index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+                    v0 = pack_data(x + 1, y    , z    , voxel_id, 2, ao0, flip_id)
+                    v1 = pack_data(x + 1, y + w, z    , voxel_id, 2, ao1, flip_id)
+                    v2 = pack_data(x + 1, y + w, z + h, voxel_id, 2, ao2, flip_id)
+                    v3 = pack_data(x + 1, y    , z + h, voxel_id, 2, ao3, flip_id)
 
-                # back face
+                    if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
+                    else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+
+                    for iy in range(w):
+                        for iz in range(h): mask0[y + iy, z + iz] = 0
+
+        for y in range(CHUNK_SIZE):
+            for z in range(CHUNK_SIZE):
+                val = mask1[y, z]
+                if val:
+                    w, h = 1, 1
+                    while y + w < CHUNK_SIZE and mask1[y + w, z] == val: w += 1
+                    done = False
+                    while z + h < CHUNK_SIZE:
+                        for iy in range(w):
+                            if mask1[y + iy, z + h] != val: done = True; break
+                        if done: break
+                        h += 1
+                    
+                    voxel_id = (val >> 10) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    flip_id = val & 1
+
+                    v0 = pack_data(x, y    , z    , voxel_id, 3, ao0, flip_id)
+                    v1 = pack_data(x, y + w, z    , voxel_id, 3, ao1, flip_id)
+                    v2 = pack_data(x, y + w, z + h, voxel_id, 3, ao2, flip_id)
+                    v3 = pack_data(x, y    , z + h, voxel_id, 3, ao3, flip_id)
+
+                    if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
+                    else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+
+                    for iy in range(w):
+                        for iz in range(h): mask1[y + iy, z + iz] = 0
+
+    # ================== Z PLANES (Back/Front) ==================
+    for z in range(CHUNK_SIZE):
+        mask0.fill(0)
+        mask1.fill(0)
+        wz = z + cz * CHUNK_SIZE
+        for x in range(CHUNK_SIZE):
+            wx = x + cx * CHUNK_SIZE
+            for y in range(CHUNK_SIZE):
+                wy = y + cy * CHUNK_SIZE
+                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+                if not voxel_id: continue
+
                 if is_void((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions):
                     ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    mask0[x, y] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                    v0 = pack_data(x,     y,     z, voxel_id, 4, ao[0], flip_id)
-                    v1 = pack_data(x,     y + 1, z, voxel_id, 4, ao[1], flip_id)
-                    v2 = pack_data(x + 1, y + 1, z, voxel_id, 4, ao[2], flip_id)
-                    v3 = pack_data(x + 1, y,     z, voxel_id, 4, ao[3], flip_id)
-
-                    if flip_id:
-                        index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
-                    else:
-                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
-
-                # front face
                 if is_void((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions):
                     ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    mask1[x, y] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                    v0 = pack_data(x    , y    , z + 1, voxel_id, 5, ao[0], flip_id)
-                    v1 = pack_data(x    , y + 1, z + 1, voxel_id, 5, ao[1], flip_id)
-                    v2 = pack_data(x + 1, y + 1, z + 1, voxel_id, 5, ao[2], flip_id)
-                    v3 = pack_data(x + 1, y    , z + 1, voxel_id, 5, ao[3], flip_id)
+        for x in range(CHUNK_SIZE):
+            for y in range(CHUNK_SIZE):
+                val = mask0[x, y]
+                if val:
+                    w, h = 1, 1
+                    while x + w < CHUNK_SIZE and mask0[x + w, y] == val: w += 1
+                    done = False
+                    while y + h < CHUNK_SIZE:
+                        for ix in range(w):
+                            if mask0[x + ix, y + h] != val: done = True; break
+                        if done: break
+                        h += 1
+                    
+                    voxel_id = (val >> 10) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    flip_id = val & 1
 
-                    if flip_id:
-                        index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
-                    else:
-                        index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+                    v0 = pack_data(x    , y    , z, voxel_id, 4, ao0, flip_id)
+                    v1 = pack_data(x    , y + h, z, voxel_id, 4, ao1, flip_id)
+                    v2 = pack_data(x + w, y + h, z, voxel_id, 4, ao2, flip_id)
+                    v3 = pack_data(x + w, y    , z, voxel_id, 4, ao3, flip_id)
+
+                    if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
+                    else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+
+                    for ix in range(w):
+                        for iy in range(h): mask0[x + ix, y + iy] = 0
+
+        for x in range(CHUNK_SIZE):
+            for y in range(CHUNK_SIZE):
+                val = mask1[x, y]
+                if val:
+                    w, h = 1, 1
+                    while x + w < CHUNK_SIZE and mask1[x + w, y] == val: w += 1
+                    done = False
+                    while y + h < CHUNK_SIZE:
+                        for ix in range(w):
+                            if mask1[x + ix, y + h] != val: done = True; break
+                        if done: break
+                        h += 1
+                    
+                    voxel_id = (val >> 10) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    flip_id = val & 1
+
+                    v0 = pack_data(x    , y    , z + 1, voxel_id, 5, ao0, flip_id)
+                    v1 = pack_data(x    , y + h, z + 1, voxel_id, 5, ao1, flip_id)
+                    v2 = pack_data(x + w, y + h, z + 1, voxel_id, 5, ao2, flip_id)
+                    v3 = pack_data(x + w, y    , z + 1, voxel_id, 5, ao3, flip_id)
+
+                    if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
+                    else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+
+                    for ix in range(w):
+                        for iy in range(h): mask1[x + ix, y + iy] = 0
 
     return vertex_data[:index]

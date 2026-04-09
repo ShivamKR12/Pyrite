@@ -30,18 +30,6 @@ const vec3 face_normals[6] = vec3[6](
     vec3( 0.0,  0.0,  1.0)  // front
 );
 
-const vec2 uv_coords[4] = vec2[4](
-    vec2(0, 0), vec2(0, 1),
-    vec2(1, 0), vec2(1, 1)
-);
-
-const int uv_indices[24] = int[24](
-    1, 0, 2, 1, 2, 3,  // tex coords indices for vertices of an even face
-    3, 0, 2, 3, 1, 0,  // odd face
-    3, 1, 0, 3, 0, 2,  // even flipped face
-    1, 2, 3, 1, 0, 2   // odd flipped face
-);
-
 
 vec3 hash31(float p) {
     vec3 p3 = fract(vec3(p * 21.2) * vec3(0.1031, 0.1030, 0.0973));
@@ -76,9 +64,13 @@ void main() {
     unpack(packed_data);
 
     vec3 in_position = vec3(x, y, z);
-    int uv_index = gl_VertexID % 6  + ((face_id & 1) + flip_id * 2) * 6;
-
-    uv = uv_coords[uv_indices[uv_index]];
+    // Generate naturally tiling UVs scaled to the size of the greedy quad!
+    if (face_id == 0)      uv = vec2(x, -z);
+    else if (face_id == 1) uv = vec2(x, z);
+    else if (face_id == 2) uv = vec2(-z, -y);
+    else if (face_id == 3) uv = vec2(z, -y);
+    else if (face_id == 4) uv = vec2(x, -y);
+    else                   uv = vec2(-x, -y);
 
     vec3 normal = face_normals[face_id];
     float diffuse = max(0.0, dot(normal, u_sun_direction));
