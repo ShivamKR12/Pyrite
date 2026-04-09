@@ -23,14 +23,6 @@ class ChunkMesh(BaseMesh):
         if self.vao:
             self.vao.render(vertices=self.vertex_count)
 
-    def rebuild(self):
-        if self.vao and self.vbo:
-            self.app.scene.world.vbo_pool.append((self.vbo, self.vao))
-            self.vao = None
-            self.vbo = None
-        self.vertex_data = None
-        self.vao = self.get_vao()
-
     def get_vao(self):
         if self.vertex_data is None:
             self.vertex_data = self.get_vertex_data()

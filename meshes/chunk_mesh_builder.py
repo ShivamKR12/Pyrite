@@ -2,7 +2,7 @@ from settings import *
 from numba import uint8
 
 
-@njit
+@njit(cache=True)
 def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     x, y, z = local_pos
     wx, wy, wz = world_pos
@@ -41,7 +41,7 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     return ao
 
 
-@njit
+@njit(cache=True)
 def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
@@ -64,7 +64,7 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
     return packed_data
 
 
-@njit
+@njit(cache=True)
 def get_chunk_index(world_voxel_pos, chunk_positions):
     wx, wy, wz = world_voxel_pos
     cx = wx // CHUNK_SIZE
@@ -79,7 +79,7 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
     return -1
 
 
-@njit
+@njit(cache=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
@@ -94,7 +94,7 @@ def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     return True
 
 
-@njit
+@njit(cache=True)
 def add_data(vertex_data, index, *vertices):
     for vertex in vertices:
         vertex_data[index] = vertex
@@ -102,7 +102,7 @@ def add_data(vertex_data, index, *vertices):
     return index
 
 
-@njit
+@njit(cache=True)
 def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0

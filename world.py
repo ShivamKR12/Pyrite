@@ -3,7 +3,12 @@ from world_objects.chunk import Chunk
 from meshes.cube_mesh import CubeMesh
 from voxel_handler import VoxelHandler
 import concurrent.futures
+import numpy as np
 import os
+import sqlite3
+import zlib
+import threading
+import time
 
 
 class World:
@@ -21,18 +26,38 @@ class World:
         self.voxel_handler = VoxelHandler(self)
         self.vbo_pool = []
         self.bbox_mesh = CubeMesh(app)
+
+        self.save_path = 'save.db'
+        self.db_lock = threading.Lock()
+        self.conn = sqlite3.connect(self.save_path, check_same_thread=False)
+        self.cursor = self.conn.cursor()
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS chunks (
+                                x INTEGER, y INTEGER, z INTEGER, 
+                                data BLOB,
+                                PRIMARY KEY (x, y, z))''')
+        self.conn.commit()
         
         # WARM UP NUMBA COMPILER:
         # Generate a dummy mesh on the main thread to compile Numba JIT safely
+        print("[SYSTEM] Warming up Numba JIT Compiler... this may take a few seconds.")
+        t0 = time.perf_counter()
         _dummy = Chunk(self, position=(0,0,0))
-        _dummy.voxels = np.zeros(CHUNK_VOL, dtype='uint8')
+        _dummy.voxels = _dummy.build_voxels()
         _dummy.build_mesh()
-        _dummy.mesh.rebuild()
+        _dummy.mesh.vertex_data = _dummy.mesh.get_vertex_data()
+        _dummy.mesh.vao = _dummy.mesh.get_vao()
+        print(f"[SYSTEM] Numba compilation finished in {time.perf_counter() - t0:.3f} seconds!")
 
     def update(self):
+        self.db_load_time = 0.0
+        self.terrain_gen_time = 0.0
+
         self.voxel_handler.update()
         self.stream_chunks()
         
+        if self.db_load_time > 0 or self.terrain_gen_time > 0:
+            print(f"[FRAME TIME] Chunk Loading -> DB Read: {self.db_load_time:.4f}s | Terrain Gen: {self.terrain_gen_time:.4f}s")
+
         # Submit tasks gradually to prevent ThreadPool starvation and startup lag
         while self.build_queue and len(self.mesh_queue) < 4:
             chunk = self.build_queue.pop()
@@ -48,6 +73,11 @@ class World:
             chunk, future = item
             if future.done():
                 chunk.mesh.vertex_data = future.result()
+                
+                # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
+                if chunk.mesh.vao and chunk.mesh.vbo:
+                    self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                    
                 chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
                 ready_count += 1
@@ -86,7 +116,23 @@ class World:
         self.active_chunks[(x, y, z)] = chunk
         self.chunk_positions[chunk_index] = (x, y, z)
         
-        self.voxels[chunk_index] = chunk.build_voxels()
+        t0 = time.perf_counter()
+        with self.db_lock:
+            self.cursor.execute('SELECT data FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
+            row = self.cursor.fetchone()
+            
+        if row:
+            voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8')
+            self.voxels[chunk_index] = voxel_data
+            if not np.any(voxel_data):
+                chunk.is_empty = True
+            else:
+                chunk.is_empty = False
+            self.db_load_time += time.perf_counter() - t0
+        else:
+            self.voxels[chunk_index] = chunk.build_voxels()
+            self.terrain_gen_time += time.perf_counter() - t0
+
         chunk.voxels = self.voxels[chunk_index]
         
         chunk.build_mesh()
@@ -98,12 +144,21 @@ class World:
             if n_pos in self.active_chunks:
                 n_chunk = self.active_chunks[n_pos]
                 if n_chunk not in self.build_queue:
-                    n_chunk.mesh.rebuild()
                     self.build_queue.append(n_chunk)
+
+    def save_chunk_to_db(self, x, y, z, voxels):
+        data = zlib.compress(voxels.tobytes())
+        with self.db_lock:
+            self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data) VALUES (?, ?, ?, ?)', (x, y, z, data))
+            self.conn.commit()
 
     def unload_chunk(self, pos):
         if pos in self.active_chunks:
             chunk = self.active_chunks.pop(pos)
+
+            if not chunk.is_empty:
+                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels)
+
             chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
             self.chunks[chunk_index] = None
             self.chunk_positions[chunk_index] = (-999, -999, -999)
@@ -191,5 +246,11 @@ class World:
             ctx.depth_func = '<'
             
     def save(self):
-        # Region-based dynamic saving will be built in the future!
-        pass
+        # Save all currently active chunks synchronously
+        for chunk in self.active_chunks.values():
+            if not chunk.is_empty:
+                self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels)
+
+        # Wait for any pending asynchronous saves from unload_chunk to complete
+        self.executor.shutdown(wait=True)
+        self.conn.close()

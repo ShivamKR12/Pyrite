@@ -39,7 +39,8 @@ class VoxelHandler:
 
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = current_id
-                chunk.mesh.rebuild()
+                if chunk not in self.app.scene.world.build_queue:
+                    self.app.scene.world.build_queue.append(chunk)
                 self.app.sounds.play_dig(current_id)
 
                 # Consume item from hotbar
@@ -55,7 +56,9 @@ class VoxelHandler:
         cx, cy, cz = int(adj_voxel_pos[0] // CHUNK_SIZE), int(adj_voxel_pos[1] // CHUNK_SIZE), int(adj_voxel_pos[2] // CHUNK_SIZE)
         chunk_pos = (cx, cy, cz)
         if chunk_pos in self.app.scene.world.active_chunks:
-            self.app.scene.world.active_chunks[chunk_pos].mesh.rebuild()
+            chunk = self.app.scene.world.active_chunks[chunk_pos]
+            if chunk not in self.app.scene.world.build_queue:
+                self.app.scene.world.build_queue.append(chunk)
 
     def rebuild_adjacent_chunks(self):
         lx, ly, lz = self.voxel_local_pos
@@ -80,7 +83,8 @@ class VoxelHandler:
         if self.voxel_id:
             self.chunk.voxels[self.voxel_index] = 0
 
-            self.chunk.mesh.rebuild()
+            if self.chunk not in self.app.scene.world.build_queue:
+                self.app.scene.world.build_queue.append(self.chunk)
             self.rebuild_adjacent_chunks()
             self.app.sounds.play_dig(self.voxel_id)
             

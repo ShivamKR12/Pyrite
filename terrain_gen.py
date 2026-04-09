@@ -3,7 +3,7 @@ from random import random
 from settings import *
 
 
-@njit
+@njit(cache=True)
 def get_height(x, z):
     # island mask
     island = 1 / (pow(0.0025 * math.hypot(x - CENTER_XZ, z - CENTER_XZ), 20) + 0.0001)
@@ -32,12 +32,12 @@ def get_height(x, z):
     return int(height)
 
 
-@njit
+@njit(cache=True)
 def get_index(x, y, z):
     return x + CHUNK_SIZE * z + CHUNK_AREA * y
 
 
-@njit
+@njit(cache=True)
 def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
     voxel_id = 0
 
@@ -75,7 +75,7 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
         place_tree(voxels, x, y, z, voxel_id)
 
 
-@njit
+@njit(cache=True)
 def place_tree(voxels, x, y, z, voxel_id):
     rnd = random()
     if voxel_id != GRASS or rnd > TREE_PROBABILITY:

@@ -21,7 +21,7 @@ class CloudMesh(BaseMesh):
         return self.build_mesh(cloud_data)
 
     @staticmethod
-    @njit
+    @njit(cache=True)
     def gen_clouds(cloud_data):
         for x in range(WORLD_W * CHUNK_SIZE):
             for z in range(WORLD_D * CHUNK_SIZE):
@@ -31,7 +31,7 @@ class CloudMesh(BaseMesh):
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
     @staticmethod
-    @njit
+    @njit(cache=True)
     def build_mesh(cloud_data):
         mesh = np.empty(WORLD_AREA * CHUNK_AREA * 6 * 3, dtype='uint16')
         index = 0

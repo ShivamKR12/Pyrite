@@ -1043,8 +1043,14 @@ in vec2 uv;
 uniform sampler2D u_texture_0;
 uniform sampler2D u_texture_breaking;
 uniform float mining_progress;
+uniform int is_bbox;
 
 void main() {
+    if (is_bbox == 1) {
+        fragColor = vec4(0.0);
+        return;
+    }
+    
     // Base frame color (the black outline)
     vec4 frame_col = texture(u_texture_0, uv);
     frame_col.rgb += marker_color;
@@ -1080,6 +1086,7 @@ uniform mat4 m_proj;
 uniform mat4 m_view;
 uniform mat4 m_model;
 uniform uint mode_id;
+uniform int is_bbox;
 
 const vec3 marker_colors[2] = vec3[2](vec3(1, 0, 0), vec3(0, 0, 1));
 
@@ -1090,7 +1097,11 @@ out vec2 uv;
 void main() {
     uv = in_tex_coord_0;
     marker_color = marker_colors[mode_id];
-    gl_Position = m_proj * m_view * m_model * vec4((in_position - 0.5) * 1.01 + 0.5, 1.0);
+    if (is_bbox == 1) {
+        gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
+    } else {
+        gl_Position = m_proj * m_view * m_model * vec4((in_position - 0.5) * 1.01 + 0.5, 1.0);
+    }
 }
 
 ===== D:\Minecraft\shaders\water.frag =====
@@ -1153,7 +1164,6 @@ void main() {
 
 from settings import *
 from meshes.chunk_mesh import ChunkMesh
-import random
 from terrain_gen import *
 
 
@@ -1166,6 +1176,10 @@ class Chunk:
         self.voxels: np.array = None
         self.mesh: ChunkMesh = None
         self.is_empty = True
+
+        self.query = self.app.ctx.query(samples=True)
+        self.is_visible = True
+        self.query_submitted = False
 
         self.center = (glm.vec3(self.position) + 0.5) * CHUNK_SIZE
         self.is_on_frustum = self.app.player.frustum.is_on_frustum
@@ -1181,7 +1195,7 @@ class Chunk:
         self.mesh = ChunkMesh(self)
 
     def render(self):
-        if not self.is_empty and self.is_on_frustum(self) and self.mesh and self.mesh.vao:
+        if not self.is_empty and self.mesh and self.mesh.vao:
             self.set_uniform()
             self.mesh.render()
 
@@ -1529,6 +1543,7 @@ class VoxelEngine:
         self.scene = None
         self.menu = None
         self.wireframe = False
+        self.freeze_culling = False
 
         self.on_init()
 
@@ -1632,6 +1647,8 @@ class VoxelEngine:
                 self.quit_game()
             elif event.type == pg.KEYDOWN and event.key == pg.K_p:
                 self.wireframe = not self.wireframe
+            elif event.type == pg.KEYDOWN and event.key == pg.K_o:
+                self.freeze_culling = not self.freeze_culling
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if self.game_state == 'IN_GAME':
                     self.game_state = 'PAUSED'
@@ -2199,6 +2216,7 @@ class ShaderProgram:
         self.voxel_marker['u_texture_0'] = 0
         self.voxel_marker['u_texture_breaking'] = 3
         self.voxel_marker['mining_progress'] = 0.0
+        self.voxel_marker['is_bbox'] = 0
 
         # water
         self.water['m_proj'].write(self.player.m_proj)
@@ -3271,9 +3289,9 @@ class VoxelHandler:
 
 from settings import *
 from world_objects.chunk import Chunk
+from meshes.cube_mesh import CubeMesh
 from voxel_handler import VoxelHandler
 import concurrent.futures
-from meshes.cube_mesh import CubeMesh
 import os
 
 
@@ -3291,6 +3309,7 @@ class World:
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
         self.voxel_handler = VoxelHandler(self)
         self.vbo_pool = []
+        self.bbox_mesh = CubeMesh(app)
         
         # WARM UP NUMBA COMPILER:
         # Generate a dummy mesh on the main thread to compile Numba JIT safely
@@ -3391,8 +3410,74 @@ class World:
             self.active_chunks.values(),
             key=lambda c: (c.center.x - player_pos.x)**2 + (c.center.y - player_pos.y)**2 + (c.center.z - player_pos.z)**2
         )
+
+        freeze = getattr(self.app, 'freeze_culling', False)
+        
+        # 1. Update visibility from occlusion queries
+        if not freeze:
+            for chunk in sorted_chunks:
+                if chunk.is_empty:
+                    chunk.is_visible = False
+                    continue
+                    
+                if chunk.query_submitted:
+                    chunk.is_visible = chunk.query.samples > 0
+                else:
+                    chunk.is_visible = True
+
+        # 2. Render visible chunks AND query them simultaneously
         for chunk in sorted_chunks:
-            chunk.render()
+            if chunk.is_visible:
+                if not freeze and not chunk.is_on_frustum(chunk):
+                    chunk.is_visible = False
+                    chunk.query_submitted = False
+                    continue
+                    
+                if not freeze:
+                    with chunk.query:
+                        chunk.render()
+                    chunk.query_submitted = True
+                else:
+                    chunk.render()
+                
+        # 3. Issue occlusion queries for INVISIBLE chunks
+        if not freeze:
+            ctx = self.app.ctx
+            # Reliably get the active framebuffer across all ModernGL versions
+            fbo = getattr(ctx, 'fbo', getattr(ctx, 'screen', getattr(ctx, 'default_framebuffer', None)))
+                
+            if fbo:
+                fbo.color_mask = (False, False, False, False)
+                fbo.depth_mask = False
+            ctx.depth_func = '<='
+            
+            # Grab our lightweight voxel_marker shader and the tiny cube mesh
+            bbox_prog = self.app.shader_program.voxel_marker
+            bbox_vao = self.bbox_mesh.vao
+            
+            bbox_prog['is_bbox'] = 1
+            
+            for chunk in sorted_chunks:
+                if not chunk.is_visible:
+                    if chunk.is_empty or not chunk.is_on_frustum(chunk):
+                        chunk.query_submitted = False
+                        continue
+                        
+                    # Render a tiny 12-triangle bounding box instead of the massive chunk mesh!
+                    m_model = glm.translate(glm.mat4(), glm.vec3(chunk.position) * CHUNK_SIZE)
+                    m_model = glm.scale(m_model, glm.vec3(CHUNK_SIZE))
+                    bbox_prog['m_model'].write(m_model)
+                    
+                    with chunk.query:
+                        bbox_vao.render()
+                    chunk.query_submitted = True
+                    
+            bbox_prog['is_bbox'] = 0
+                    
+            if fbo:
+                fbo.color_mask = (True, True, True, True)
+                fbo.depth_mask = True
+            ctx.depth_func = '<'
             
     def save(self):
         # Region-based dynamic saving will be built in the future!

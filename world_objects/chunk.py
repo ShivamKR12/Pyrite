@@ -46,7 +46,7 @@ class Chunk:
         return voxels
 
     @staticmethod
-    @njit
+    @njit(cache=True)
     def generate_terrain(voxels, cx, cy, cz):
         for x in range(CHUNK_SIZE):
             wx = x + cx
