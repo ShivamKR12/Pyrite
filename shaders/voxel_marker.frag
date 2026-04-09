@@ -8,8 +8,14 @@ in vec2 uv;
 uniform sampler2D u_texture_0;
 uniform sampler2D u_texture_breaking;
 uniform float mining_progress;
+uniform int is_bbox;
 
 void main() {
+    if (is_bbox == 1) {
+        fragColor = vec4(0.0);
+        return;
+    }
+    
     // Base frame color (the black outline)
     vec4 frame_col = texture(u_texture_0, uv);
     frame_col.rgb += marker_color;

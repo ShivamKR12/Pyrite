@@ -1,6 +1,5 @@
 from settings import *
 from meshes.chunk_mesh import ChunkMesh
-import random
 from terrain_gen import *
 
 
@@ -13,6 +12,10 @@ class Chunk:
         self.voxels: np.array = None
         self.mesh: ChunkMesh = None
         self.is_empty = True
+
+        self.query = self.app.ctx.query(samples=True)
+        self.is_visible = True
+        self.query_submitted = False
 
         self.center = (glm.vec3(self.position) + 0.5) * CHUNK_SIZE
         self.is_on_frustum = self.app.player.frustum.is_on_frustum
@@ -28,7 +31,7 @@ class Chunk:
         self.mesh = ChunkMesh(self)
 
     def render(self):
-        if not self.is_empty and self.is_on_frustum(self) and self.mesh and self.mesh.vao:
+        if not self.is_empty and self.mesh and self.mesh.vao:
             self.set_uniform()
             self.mesh.render()
 

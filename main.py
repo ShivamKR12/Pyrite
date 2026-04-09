@@ -47,6 +47,7 @@ class VoxelEngine:
         self.scene = None
         self.menu = None
         self.wireframe = False
+        self.freeze_culling = False
 
         self.on_init()
 
@@ -150,6 +151,8 @@ class VoxelEngine:
                 self.quit_game()
             elif event.type == pg.KEYDOWN and event.key == pg.K_p:
                 self.wireframe = not self.wireframe
+            elif event.type == pg.KEYDOWN and event.key == pg.K_o:
+                self.freeze_culling = not self.freeze_culling
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if self.game_state == 'IN_GAME':
                     self.game_state = 'PAUSED'

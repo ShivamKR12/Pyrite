@@ -1,5 +1,6 @@
 from settings import *
 from world_objects.chunk import Chunk
+from meshes.cube_mesh import CubeMesh
 from voxel_handler import VoxelHandler
 import concurrent.futures
 import os
@@ -19,6 +20,7 @@ class World:
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
         self.voxel_handler = VoxelHandler(self)
         self.vbo_pool = []
+        self.bbox_mesh = CubeMesh(app)
         
         # WARM UP NUMBA COMPILER:
         # Generate a dummy mesh on the main thread to compile Numba JIT safely
@@ -113,8 +115,80 @@ class World:
                 self.build_queue.remove(chunk)
 
     def render(self):
-        for chunk in self.active_chunks.values():
-            chunk.render()
+        # Sort chunks front-to-back for Early-Z hardware depth culling
+        player_pos = self.app.player.position
+        sorted_chunks = sorted(
+            self.active_chunks.values(),
+            key=lambda c: (c.center.x - player_pos.x)**2 + (c.center.y - player_pos.y)**2 + (c.center.z - player_pos.z)**2
+        )
+
+        freeze = getattr(self.app, 'freeze_culling', False)
+        
+        # 1. Update visibility from occlusion queries
+        if not freeze:
+            for chunk in sorted_chunks:
+                if chunk.is_empty:
+                    chunk.is_visible = False
+                    continue
+                    
+                if chunk.query_submitted:
+                    chunk.is_visible = chunk.query.samples > 0
+                else:
+                    chunk.is_visible = True
+
+        # 2. Render visible chunks AND query them simultaneously
+        for chunk in sorted_chunks:
+            if chunk.is_visible:
+                if not freeze and not chunk.is_on_frustum(chunk):
+                    chunk.is_visible = False
+                    chunk.query_submitted = False
+                    continue
+                    
+                if not freeze:
+                    with chunk.query:
+                        chunk.render()
+                    chunk.query_submitted = True
+                else:
+                    chunk.render()
+                
+        # 3. Issue occlusion queries for INVISIBLE chunks
+        if not freeze:
+            ctx = self.app.ctx
+            # Reliably get the active framebuffer across all ModernGL versions
+            fbo = getattr(ctx, 'fbo', getattr(ctx, 'screen', getattr(ctx, 'default_framebuffer', None)))
+                
+            if fbo:
+                fbo.color_mask = (False, False, False, False)
+                fbo.depth_mask = False
+            ctx.depth_func = '<='
+            
+            # Grab our lightweight voxel_marker shader and the tiny cube mesh
+            bbox_prog = self.app.shader_program.voxel_marker
+            bbox_vao = self.bbox_mesh.vao
+            
+            bbox_prog['is_bbox'] = 1
+            
+            for chunk in sorted_chunks:
+                if not chunk.is_visible:
+                    if chunk.is_empty or not chunk.is_on_frustum(chunk):
+                        chunk.query_submitted = False
+                        continue
+                        
+                    # Render a tiny 12-triangle bounding box instead of the massive chunk mesh!
+                    m_model = glm.translate(glm.mat4(), glm.vec3(chunk.position) * CHUNK_SIZE)
+                    m_model = glm.scale(m_model, glm.vec3(CHUNK_SIZE))
+                    bbox_prog['m_model'].write(m_model)
+                    
+                    with chunk.query:
+                        bbox_vao.render()
+                    chunk.query_submitted = True
+                    
+            bbox_prog['is_bbox'] = 0
+                    
+            if fbo:
+                fbo.color_mask = (True, True, True, True)
+                fbo.depth_mask = True
+            ctx.depth_func = '<'
             
     def save(self):
         # Region-based dynamic saving will be built in the future!

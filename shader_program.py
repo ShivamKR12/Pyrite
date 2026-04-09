@@ -33,6 +33,7 @@ class ShaderProgram:
         self.voxel_marker['u_texture_0'] = 0
         self.voxel_marker['u_texture_breaking'] = 3
         self.voxel_marker['mining_progress'] = 0.0
+        self.voxel_marker['is_bbox'] = 0
 
         # water
         self.water['m_proj'].write(self.player.m_proj)

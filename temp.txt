@@ -3273,6 +3273,7 @@ from settings import *
 from world_objects.chunk import Chunk
 from voxel_handler import VoxelHandler
 import concurrent.futures
+from meshes.cube_mesh import CubeMesh
 import os
 
 
@@ -3384,7 +3385,13 @@ class World:
                 self.build_queue.remove(chunk)
 
     def render(self):
-        for chunk in self.active_chunks.values():
+        # Sort chunks front-to-back for Early-Z hardware depth culling
+        player_pos = self.app.player.position
+        sorted_chunks = sorted(
+            self.active_chunks.values(),
+            key=lambda c: (c.center.x - player_pos.x)**2 + (c.center.y - player_pos.y)**2 + (c.center.z - player_pos.z)**2
+        )
+        for chunk in sorted_chunks:
             chunk.render()
             
     def save(self):
