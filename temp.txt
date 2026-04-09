@@ -81,7 +81,8 @@ class ChunkMesh(BaseMesh):
             chunk_voxels=self.chunk.voxels,
             format_size=self.format_size,
             chunk_pos=self.chunk.position,
-            world_voxels=self.chunk.world.voxels
+            world_voxels=self.chunk.world.voxels,
+            chunk_positions=self.chunk.world.chunk_positions
         )
         return mesh
 
@@ -92,39 +93,39 @@ from numba import uint8
 
 
 @njit
-def get_ao(local_pos, world_pos, world_voxels, plane):
+def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     x, y, z = local_pos
     wx, wy, wz = world_pos
 
     if plane == 'Y':
-        a = is_void((x    , y, z - 1), (wx    , wy, wz - 1), world_voxels)
-        b = is_void((x - 1, y, z - 1), (wx - 1, wy, wz - 1), world_voxels)
-        c = is_void((x - 1, y, z    ), (wx - 1, wy, wz    ), world_voxels)
-        d = is_void((x - 1, y, z + 1), (wx - 1, wy, wz + 1), world_voxels)
-        e = is_void((x    , y, z + 1), (wx    , wy, wz + 1), world_voxels)
-        f = is_void((x + 1, y, z + 1), (wx + 1, wy, wz + 1), world_voxels)
-        g = is_void((x + 1, y, z    ), (wx + 1, wy, wz    ), world_voxels)
-        h = is_void((x + 1, y, z - 1), (wx + 1, wy, wz - 1), world_voxels)
+        a = is_void((x    , y, z - 1), (wx    , wy, wz - 1), world_voxels, chunk_positions)
+        b = is_void((x - 1, y, z - 1), (wx - 1, wy, wz - 1), world_voxels, chunk_positions)
+        c = is_void((x - 1, y, z    ), (wx - 1, wy, wz    ), world_voxels, chunk_positions)
+        d = is_void((x - 1, y, z + 1), (wx - 1, wy, wz + 1), world_voxels, chunk_positions)
+        e = is_void((x    , y, z + 1), (wx    , wy, wz + 1), world_voxels, chunk_positions)
+        f = is_void((x + 1, y, z + 1), (wx + 1, wy, wz + 1), world_voxels, chunk_positions)
+        g = is_void((x + 1, y, z    ), (wx + 1, wy, wz    ), world_voxels, chunk_positions)
+        h = is_void((x + 1, y, z - 1), (wx + 1, wy, wz - 1), world_voxels, chunk_positions)
 
     elif plane == 'X':
-        a = is_void((x, y    , z - 1), (wx, wy    , wz - 1), world_voxels)
-        b = is_void((x, y - 1, z - 1), (wx, wy - 1, wz - 1), world_voxels)
-        c = is_void((x, y - 1, z    ), (wx, wy - 1, wz    ), world_voxels)
-        d = is_void((x, y - 1, z + 1), (wx, wy - 1, wz + 1), world_voxels)
-        e = is_void((x, y    , z + 1), (wx, wy    , wz + 1), world_voxels)
-        f = is_void((x, y + 1, z + 1), (wx, wy + 1, wz + 1), world_voxels)
-        g = is_void((x, y + 1, z    ), (wx, wy + 1, wz    ), world_voxels)
-        h = is_void((x, y + 1, z - 1), (wx, wy + 1, wz - 1), world_voxels)
+        a = is_void((x, y    , z - 1), (wx, wy    , wz - 1), world_voxels, chunk_positions)
+        b = is_void((x, y - 1, z - 1), (wx, wy - 1, wz - 1), world_voxels, chunk_positions)
+        c = is_void((x, y - 1, z    ), (wx, wy - 1, wz    ), world_voxels, chunk_positions)
+        d = is_void((x, y - 1, z + 1), (wx, wy - 1, wz + 1), world_voxels, chunk_positions)
+        e = is_void((x, y    , z + 1), (wx, wy    , wz + 1), world_voxels, chunk_positions)
+        f = is_void((x, y + 1, z + 1), (wx, wy + 1, wz + 1), world_voxels, chunk_positions)
+        g = is_void((x, y + 1, z    ), (wx, wy + 1, wz    ), world_voxels, chunk_positions)
+        h = is_void((x, y + 1, z - 1), (wx, wy + 1, wz - 1), world_voxels, chunk_positions)
 
     else:  # Z plane
-        a = is_void((x - 1, y    , z), (wx - 1, wy    , wz), world_voxels)
-        b = is_void((x - 1, y - 1, z), (wx - 1, wy - 1, wz), world_voxels)
-        c = is_void((x    , y - 1, z), (wx    , wy - 1, wz), world_voxels)
-        d = is_void((x + 1, y - 1, z), (wx + 1, wy - 1, wz), world_voxels)
-        e = is_void((x + 1, y    , z), (wx + 1, wy    , wz), world_voxels)
-        f = is_void((x + 1, y + 1, z), (wx + 1, wy + 1, wz), world_voxels)
-        g = is_void((x    , y + 1, z), (wx    , wy + 1, wz), world_voxels)
-        h = is_void((x - 1, y + 1, z), (wx - 1, wy + 1, wz), world_voxels)
+        a = is_void((x - 1, y    , z), (wx - 1, wy    , wz), world_voxels, chunk_positions)
+        b = is_void((x - 1, y - 1, z), (wx - 1, wy - 1, wz), world_voxels, chunk_positions)
+        c = is_void((x    , y - 1, z), (wx    , wy - 1, wz), world_voxels, chunk_positions)
+        d = is_void((x + 1, y - 1, z), (wx + 1, wy - 1, wz), world_voxels, chunk_positions)
+        e = is_void((x + 1, y    , z), (wx + 1, wy    , wz), world_voxels, chunk_positions)
+        f = is_void((x + 1, y + 1, z), (wx + 1, wy + 1, wz), world_voxels, chunk_positions)
+        g = is_void((x    , y + 1, z), (wx    , wy + 1, wz), world_voxels, chunk_positions)
+        h = is_void((x - 1, y + 1, z), (wx - 1, wy + 1, wz), world_voxels, chunk_positions)
 
     ao = (a + b + c), (g + h + a), (e + f + g), (c + d + e)
     return ao
@@ -154,21 +155,23 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
 
 
 @njit
-def get_chunk_index(world_voxel_pos):
+def get_chunk_index(world_voxel_pos, chunk_positions):
     wx, wy, wz = world_voxel_pos
     cx = wx // CHUNK_SIZE
     cy = wy // CHUNK_SIZE
     cz = wz // CHUNK_SIZE
-    if not (0 <= cx < WORLD_W and 0 <= cy < WORLD_H and 0 <= cz < WORLD_D):
+    if not (0 <= cy < WORLD_H):
         return -1
 
-    index = cx + WORLD_W * cz + WORLD_AREA * cy
-    return index
+    index = (cx % WORLD_W) + WORLD_W * (cz % WORLD_D) + WORLD_AREA * (cy % WORLD_H)
+    if chunk_positions[index][0] == cx and chunk_positions[index][1] == cy and chunk_positions[index][2] == cz:
+        return index
+    return -1
 
 
 @njit
-def is_void(local_voxel_pos, world_voxel_pos, world_voxels):
-    chunk_index = get_chunk_index(world_voxel_pos)
+def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+    chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
         return False
     chunk_voxels = world_voxels[chunk_index]
@@ -190,7 +193,7 @@ def add_data(vertex_data, index, *vertices):
 
 
 @njit
-def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
+def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0
 
@@ -209,9 +212,9 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
                 wz = z + cz * CHUNK_SIZE
 
                 # top face
-                if is_void((x, y + 1, z), (wx, wy + 1, wz), world_voxels):
+                if is_void((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions):
                     # get ao values
-                    ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, plane='Y')
+                    ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
 
                     # format: x, y, z, voxel_id, face_id, ao_id, flip_id
@@ -226,8 +229,8 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
                         index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
 
                 # bottom face
-                if is_void((x, y - 1, z), (wx, wy - 1, wz), world_voxels):
-                    ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, plane='Y')
+                if is_void((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions):
+                    ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
 
                     v0 = pack_data(x    , y, z    , voxel_id, 1, ao[0], flip_id)
@@ -241,8 +244,8 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
                         index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
 
                 # right face
-                if is_void((x + 1, y, z), (wx + 1, wy, wz), world_voxels):
-                    ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, plane='X')
+                if is_void((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions):
+                    ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
 
                     v0 = pack_data(x + 1, y    , z    , voxel_id, 2, ao[0], flip_id)
@@ -256,8 +259,8 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
                         index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
 
                 # left face
-                if is_void((x - 1, y, z), (wx - 1, wy, wz), world_voxels):
-                    ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, plane='X')
+                if is_void((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions):
+                    ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
 
                     v0 = pack_data(x, y    , z    , voxel_id, 3, ao[0], flip_id)
@@ -271,8 +274,8 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
                         index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
 
                 # back face
-                if is_void((x, y, z - 1), (wx, wy, wz - 1), world_voxels):
-                    ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, plane='Z')
+                if is_void((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions):
+                    ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
 
                     v0 = pack_data(x,     y,     z, voxel_id, 4, ao[0], flip_id)
@@ -286,8 +289,8 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
                         index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
 
                 # front face
-                if is_void((x, y, z + 1), (wx, wy, wz + 1), world_voxels):
-                    ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, plane='Z')
+                if is_void((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions):
+                    ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
 
                     v0 = pack_data(x    , y    , z + 1, voxel_id, 5, ao[0], flip_id)
@@ -1323,13 +1326,15 @@ class Frustum:
 from settings import *
 import moderngl as mgl
 import pygame as pg
+import json
+import os
 import sys
 from shader_program import ShaderProgram
 from scene import Scene
 from player import Player
 from sounds import Sounds
 from textures import Textures
-from ui import TextRenderer, UITextMesh, Menu, PauseMenu
+from ui import TextRenderer, UITextMesh, Menu, PauseMenu, OptionsMenu
 
 
 class VoxelEngine:
@@ -1355,11 +1360,29 @@ class VoxelEngine:
         self.is_running = True
         self.game_state = 'MAIN_MENU'
         
+        self.config = {
+            'fov': FOV_DEG,
+            'sensitivity': MOUSE_SENSITIVITY,
+            'volume': 0.1,
+            'render_distance': 4
+        }
+        self.load_config()
+        
         # Placeholders for game session objects
         self.scene = None
         self.menu = None
+        self.wireframe = False
 
         self.on_init()
+
+    def load_config(self):
+        if os.path.exists('config.json'):
+            with open('config.json', 'r') as f:
+                self.config.update(json.load(f))
+
+    def save_config(self):
+        with open('config.json', 'w') as f:
+            json.dump(self.config, f)
 
     def on_init(self):
         self.textures = Textures(self)
@@ -1368,6 +1391,7 @@ class VoxelEngine:
         self.shader_program = ShaderProgram(self)
         self.menu = Menu(self)
         self.pause_menu = PauseMenu(self)
+        self.options_menu = OptionsMenu(self)
 
     def init_game_session(self):
         self.game_state = 'LOADING'
@@ -1410,6 +1434,8 @@ class VoxelEngine:
             self.scene.update()
         elif self.game_state == 'PAUSED':
             self.pause_menu.update()
+        elif self.game_state == 'OPTIONS':
+            self.options_menu.update()
 
         self.delta_time = min(self.clock.tick(), 50) # Cap delta time to avoid physics lag spikes
         self.time = pg.time.get_ticks() * 0.001
@@ -1434,12 +1460,21 @@ class VoxelEngine:
             self.ctx.disable(mgl.DEPTH_TEST)
             self.pause_menu.render()
             self.ctx.enable(mgl.DEPTH_TEST)
+        elif self.game_state == 'OPTIONS':
+            if self.options_menu.previous_state == 'PAUSED' and self.scene:
+                self.scene.render()
+            self.ctx.disable(mgl.DEPTH_TEST)
+            self.options_menu.render()
+            self.ctx.enable(mgl.DEPTH_TEST)
+            
         pg.display.flip()
 
     def handle_events(self):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.quit_game()
+            elif event.type == pg.KEYDOWN and event.key == pg.K_p:
+                self.wireframe = not self.wireframe
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if self.game_state == 'IN_GAME':
                     self.game_state = 'PAUSED'
@@ -1447,6 +1482,8 @@ class VoxelEngine:
                     pg.mouse.set_visible(True)
                 elif self.game_state == 'PAUSED':
                     self.pause_menu.resume_game()
+                elif self.game_state == 'OPTIONS':
+                    self.options_menu.go_back()
                 else: # Esc inside Main Menu quits the game
                     self.quit_game()
             
@@ -1456,6 +1493,8 @@ class VoxelEngine:
                 self.player.handle_event(event=event)
             elif self.game_state == 'PAUSED':
                 self.pause_menu.handle_event(event)
+            elif self.game_state == 'OPTIONS':
+                self.options_menu.handle_event(event)
 
     def quit_game(self):
         self.is_running = False
@@ -1525,7 +1564,7 @@ class Player(Camera):
         self.hotbar_counts = [0] * 9
         self.hotbar_index = 0
         
-        self.fov = V_FOV
+        self.fov = glm.radians(self.app.config['fov'])
         self.is_sprinting = False
 
     def update(self):
@@ -1567,7 +1606,8 @@ class Player(Camera):
                     self.last_step_time = current_time
                     
             # Dynamic FOV for sprinting
-            target_fov = V_FOV + glm.radians(10.0) if self.is_sprinting and is_walking else V_FOV
+            base_fov = glm.radians(self.app.config['fov'])
+            target_fov = base_fov + glm.radians(10.0) if self.is_sprinting and is_walking else base_fov
             self.fov += (target_fov - self.fov) * 0.08 * self.app.delta_time
             self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
             h_fov = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
@@ -1614,10 +1654,11 @@ class Player(Camera):
 
     def mouse_control(self):
         mouse_dx, mouse_dy = pg.mouse.get_rel()
+        sens = self.app.config['sensitivity']
         if mouse_dx:
-            self.rotate_yaw(delta_x=mouse_dx * MOUSE_SENSITIVITY)
+            self.rotate_yaw(delta_x=mouse_dx * sens)
         if mouse_dy:
-            self.rotate_pitch(delta_y=mouse_dy * MOUSE_SENSITIVITY)
+            self.rotate_pitch(delta_y=mouse_dy * sens)
 
     def handle_interaction(self):
         mouse_pressed = pg.mouse.get_pressed()
@@ -1826,6 +1867,9 @@ class Scene:
         self.item_manager.update()
 
     def render(self):
+        if self.app.wireframe:
+            self.app.ctx.wireframe = True
+
         # chunks rendering
         self.world.render()
         self.item_manager.render()
@@ -1835,6 +1879,9 @@ class Scene:
         self.clouds.render()
         self.water.render()
         self.app.ctx.enable(mgl.CULL_FACE)
+        
+        if self.app.wireframe:
+            self.app.ctx.wireframe = False
 
         # voxel selection
         self.voxel_marker.render()
@@ -1881,7 +1928,7 @@ CHUNK_VOL = CHUNK_AREA * CHUNK_SIZE
 CHUNK_SPHERE_RADIUS = H_CHUNK_SIZE * math.sqrt(3)
 
 # world
-WORLD_W, WORLD_H = 20, 2
+WORLD_W, WORLD_H = 30, 2
 WORLD_D = WORLD_W
 WORLD_AREA = WORLD_W * WORLD_D
 WORLD_VOL = WORLD_AREA * WORLD_H
@@ -2147,7 +2194,7 @@ class Sounds:
             'sounds/c418-minecraft.ogg'
         ]
         pg.mixer.music.load(random.choice(self.music_tracks))
-        pg.mixer.music.set_volume(0.1)
+        pg.mixer.music.set_volume(self.app.config['volume'])
         pg.mixer.music.play(-1) # Loop forever in the background
 
     def play_hit(self, voxel_id):
@@ -2649,9 +2696,14 @@ class Menu:
         self.title_mesh = UITextMesh(app)
 
         self.buttons = [
-            Button(app, 'Start Game', (0, 0.1), (0.2, 0.07), self.app.init_game_session),
-            Button(app, 'Quit', (0, -0.1), (0.2, 0.07), self.app.quit_game)
+            Button(app, 'Start Game', (0, 0.15), (0.2, 0.07), self.app.init_game_session),
+            Button(app, 'Options', (0, 0.0), (0.2, 0.07), self.open_options),
+            Button(app, 'Quit', (0, -0.15), (0.2, 0.07), self.app.quit_game)
         ]
+
+    def open_options(self):
+        self.app.options_menu.previous_state = 'MAIN_MENU'
+        self.app.game_state = 'OPTIONS'
 
     def update(self):
         mouse_pos = pg.mouse.get_pos()
@@ -2691,9 +2743,14 @@ class PauseMenu:
         self.bg_mesh = UIColorMesh(app)
 
         self.buttons = [
-            Button(app, 'Resume', (0, 0.1), (0.3, 0.07), self.resume_game),
-            Button(app, 'Quit to Menu', (0, -0.1), (0.3, 0.07), self.quit_to_menu)
+            Button(app, 'Resume', (0, 0.15), (0.3, 0.07), self.resume_game),
+            Button(app, 'Options', (0, 0.0), (0.3, 0.07), self.open_options),
+            Button(app, 'Quit to Menu', (0, -0.15), (0.3, 0.07), self.quit_to_menu)
         ]
+
+    def open_options(self):
+        self.app.options_menu.previous_state = 'PAUSED'
+        self.app.game_state = 'OPTIONS'
 
     def resume_game(self):
         self.app.game_state = 'IN_GAME'
@@ -2735,6 +2792,149 @@ class PauseMenu:
 
         for button in self.buttons:
             button.render()
+
+class Slider:
+    def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None):
+        self.app = app
+        self.text = text
+        self.pos = pos
+        self.size = size
+        self.min_val = min_val
+        self.max_val = max_val
+        self.config_key = config_key
+        self.action = action
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', 30, bold=True)
+        self.text_mesh = UITextMesh(app)
+
+        self.is_hovered = False
+        self.is_dragging = False
+
+    def update(self):
+        mouse_pos = pg.mouse.get_pos()
+        x, y = self.pos
+        w, h = self.size
+        win_w, win_h = WIN_RES
+        
+        btn_x = (x + 1) * 0.5 * win_w
+        btn_y = (-y + 1) * 0.5 * win_h
+        btn_w = w * 0.5 * win_w
+        btn_h = h * 0.5 * win_h
+        
+        self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
+                          btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+
+        if self.is_dragging:
+            if not pg.mouse.get_pressed()[0]:
+                self.is_dragging = False
+                self.app.save_config()
+            else:
+                progress = (mouse_pos[0] - (btn_x - btn_w)) / (btn_w * 2)
+                progress = max(0.0, min(1.0, progress))
+                val = self.min_val + progress * (self.max_val - self.min_val)
+                self.app.config[self.config_key] = val
+                if self.action:
+                    self.action(val)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.is_hovered:
+                self.is_dragging = True
+
+    def render(self):
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8)
+        self.color_mesh.render()
+        
+        val = self.app.config[self.config_key]
+        progress = (val - self.min_val) / (self.max_val - self.min_val)
+        
+        fill_w = self.size[0] * progress
+        fill_x = self.pos[0] - self.size[0] + fill_w
+        
+        self.color_mesh.program['u_scale'] = (fill_w, self.size[1])
+        self.color_mesh.program['u_offset'] = (fill_x, self.pos[1])
+        self.color_mesh.program['u_color'] = (0.2, 0.6, 0.3, 0.8)
+        self.color_mesh.render()
+
+        if self.config_key == 'fov':
+            display_val = int(val)
+        elif self.config_key == 'volume':
+            display_val = int(val * 100) # Percentage
+        else:
+            display_val = f"{val:.4f}"
+            
+        tex = self.text_renderer.get_texture(f"{self.text}: {display_val}")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = self.size[1] * 0.6
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.render()
+
+class OptionsMenu:
+    def __init__(self, app):
+        self.app = app
+        self.title_renderer = TextRenderer(app)
+        self.title_renderer.font = pg.font.SysFont('arial', 80, bold=True)
+        self.title_mesh = UITextMesh(app)
+        self.bg_mesh = UIColorMesh(app)
+
+        self.sliders = [
+            Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov),
+            Slider(app, 'Sensitivity', (0, 0.0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
+            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0.0, 1.0, 'volume', self.update_volume),
+            Slider(app, 'Render Dist', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance')
+        ]
+        self.back_button = Button(app, 'Back', (0, -0.6), (0.2, 0.07), self.go_back)
+        self.previous_state = 'MAIN_MENU'
+
+    def update_fov(self, val):
+        if self.app.scene:
+            self.app.player.fov = glm.radians(val)
+
+    def update_volume(self, val):
+        pg.mixer.music.set_volume(val)
+
+    def go_back(self):
+        self.app.game_state = self.previous_state
+
+    def update(self):
+        for slider in self.sliders:
+            slider.update()
+        self.back_button.check_hover(pg.mouse.get_pos())
+
+    def handle_event(self, event):
+        for slider in self.sliders:
+            slider.handle_event(event)
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.back_button.is_hovered:
+                self.back_button.action()
+
+    def render(self):
+        if self.previous_state == 'PAUSED':
+            self.bg_mesh.program['u_scale'] = (1.0, 1.0)
+            self.bg_mesh.program['u_offset'] = (0.0, 0.0)
+            self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8)
+            self.bg_mesh.render()
+
+        tex = self.title_renderer.get_texture("Options")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = 0.08
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.title_mesh.program['u_offset'] = (0.0, 0.45)
+        self.title_mesh.render()
+
+        for slider in self.sliders:
+            slider.render()
+        self.back_button.render()
 
 ===== D:\Minecraft\voxel_handler.py =====
 
@@ -2792,9 +2992,10 @@ class VoxelHandler:
                     chunk.is_empty = False
 
     def rebuild_adj_chunk(self, adj_voxel_pos):
-        index = get_chunk_index(adj_voxel_pos)
-        if index != -1:
-            self.chunks[index].mesh.rebuild()
+        cx, cy, cz = int(adj_voxel_pos[0] // CHUNK_SIZE), int(adj_voxel_pos[1] // CHUNK_SIZE), int(adj_voxel_pos[2] // CHUNK_SIZE)
+        chunk_pos = (cx, cy, cz)
+        if chunk_pos in self.app.scene.world.active_chunks:
+            self.app.scene.world.active_chunks[chunk_pos].mesh.rebuild()
 
     def rebuild_adjacent_chunks(self):
         lx, ly, lz = self.voxel_local_pos
@@ -2894,13 +3095,14 @@ class VoxelHandler:
         return False
 
     def get_voxel_id(self, voxel_world_pos):
-        cx, cy, cz = chunk_pos = voxel_world_pos / CHUNK_SIZE
+        cx = int(glm.floor(voxel_world_pos.x / CHUNK_SIZE))
+        cy = int(glm.floor(voxel_world_pos.y / CHUNK_SIZE))
+        cz = int(glm.floor(voxel_world_pos.z / CHUNK_SIZE))
+        chunk_pos = (cx, cy, cz)
 
-        if 0 <= cx < WORLD_W and 0 <= cy < WORLD_H and 0 <= cz < WORLD_D:
-            chunk_index = cx + WORLD_W * cz + WORLD_AREA * cy
-            chunk = self.chunks[chunk_index]
-
-            lx, ly, lz = voxel_local_pos = voxel_world_pos - chunk_pos * CHUNK_SIZE
+        if chunk_pos in self.app.scene.world.active_chunks:
+            chunk = self.app.scene.world.active_chunks[chunk_pos]
+            lx, ly, lz = voxel_local_pos = glm.ivec3(voxel_world_pos) - glm.ivec3(cx, cy, cz) * CHUNK_SIZE
 
             voxel_index = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
             voxel_id = chunk.voxels[voxel_index]
@@ -2921,24 +3123,26 @@ class World:
     def __init__(self, app):
         self.app = app
         self.chunks = [None for _ in range(WORLD_VOL)]
+        self.active_chunks = {}
+        self.chunk_positions = np.full((WORLD_VOL, 3), -999, dtype='int32')
         
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
         self.mesh_queue = []
         self.build_queue = []
         
-        # Check if a saved world exists!
-        if os.path.exists('world_data.npy'):
-            with open('world_data.npy', 'rb') as f:
-                self.voxels = np.load(f)
-            self.build_chunks(load_from_disk=True)
-        else:
-            self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
-            self.build_chunks(load_from_disk=False)
-        self.build_chunk_mesh()
+        self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
         self.voxel_handler = VoxelHandler(self)
+        
+        # WARM UP NUMBA COMPILER:
+        # Generate a dummy mesh on the main thread to compile Numba JIT safely
+        _dummy = Chunk(self, position=(0,0,0))
+        _dummy.voxels = np.zeros(CHUNK_VOL, dtype='uint8')
+        _dummy.build_mesh()
+        _dummy.mesh.rebuild()
 
     def update(self):
         self.voxel_handler.update()
+        self.stream_chunks()
         
         # Submit tasks gradually to prevent ThreadPool starvation and startup lag
         while self.build_queue and len(self.mesh_queue) < 4:
@@ -2961,45 +3165,69 @@ class World:
                 if ready_count >= 2:  # Process max 2 per frame to keep FPS high
                     break
 
-    def build_chunks(self, load_from_disk=False):
-        for x in range(WORLD_W):
-            for y in range(WORLD_H):
-                for z in range(WORLD_D):
-                    chunk = Chunk(self, position=(x, y, z))
-
-                    chunk_index = x + WORLD_W * z + WORLD_AREA * y
-                    self.chunks[chunk_index] = chunk
-
-                    # put the chunk voxels in a separate array
-                    if not load_from_disk:
-                        self.voxels[chunk_index] = chunk.build_voxels()
-
-                    # get pointer to voxels
-                    chunk.voxels = self.voxels[chunk_index]
-                    
-                    if load_from_disk and np.any(chunk.voxels):
-                        chunk.is_empty = False
-
-    def build_chunk_mesh(self):
-        self.build_queue = []
-        for chunk in self.chunks:
-            chunk.build_mesh()
-            self.build_queue.append(chunk)
-            
-        # Sort chunks so the ones closest to the player are built first
-        player_pos = self.app.player.position
-        self.build_queue.sort(key=lambda chunk: glm.distance(chunk.center, player_pos), reverse=True)
+    def stream_chunks(self):
+        render_dist = int(self.app.config.get('render_distance', 4))
+        player_cx = int(self.app.player.position.x // CHUNK_SIZE)
+        player_cz = int(self.app.player.position.z // CHUNK_SIZE)
         
-        # WARM UP NUMBA COMPILER:
-        # Process the very first chunk on the main thread.
-        # This prevents the ThreadPool from deadlocking while trying to JIT compile simultaneously!
-        if self.build_queue:
-            chunk = self.build_queue.pop()
-            chunk.mesh.rebuild()
+        # 1. Unload chunks out of range
+        for pos in list(self.active_chunks.keys()):
+            x, y, z = pos
+            if (x - player_cx)**2 + (z - player_cz)**2 > (render_dist + 1)**2:
+                self.unload_chunk(pos)
+                
+        # 2. Load chunks in range
+        for x in range(player_cx - render_dist, player_cx + render_dist + 1):
+            for z in range(player_cz - render_dist, player_cz + render_dist + 1):
+                if (x - player_cx)**2 + (z - player_cz)**2 > render_dist**2:
+                    continue
+                for y in range(WORLD_H):
+                    if (x, y, z) not in self.active_chunks:
+                        self.load_chunk(x, y, z)
+                        
+    def load_chunk(self, x, y, z):
+        chunk_index = (x % WORLD_W) + WORLD_W * (z % WORLD_D) + WORLD_AREA * (y % WORLD_H)
+        
+        old_chunk = self.chunks[chunk_index]
+        if old_chunk:
+            self.unload_chunk(old_chunk.position)
+            
+        chunk = Chunk(self, position=(x, y, z))
+        self.chunks[chunk_index] = chunk
+        self.active_chunks[(x, y, z)] = chunk
+        self.chunk_positions[chunk_index] = (x, y, z)
+        
+        self.voxels[chunk_index] = chunk.build_voxels()
+        chunk.voxels = self.voxels[chunk_index]
+        
+        chunk.build_mesh()
+        self.build_queue.append(chunk)
+        
+        # Force remesh of neighbors to clean up boundaries
+        for dx, dz in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            n_pos = (x + dx, y, z + dz)
+            if n_pos in self.active_chunks:
+                n_chunk = self.active_chunks[n_pos]
+                if n_chunk not in self.build_queue:
+                    n_chunk.mesh.rebuild()
+                    self.build_queue.append(n_chunk)
+
+    def unload_chunk(self, pos):
+        if pos in self.active_chunks:
+            chunk = self.active_chunks.pop(pos)
+            chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
+            self.chunks[chunk_index] = None
+            self.chunk_positions[chunk_index] = (-999, -999, -999)
+            if chunk.mesh:
+                if chunk.mesh.vao: chunk.mesh.vao.release()
+                if chunk.mesh.vbo: chunk.mesh.vbo.release()
+            if chunk in self.build_queue:
+                self.build_queue.remove(chunk)
 
     def render(self):
-        for chunk in self.chunks:
+        for chunk in self.active_chunks.values():
             chunk.render()
             
     def save(self):
-        np.save('world_data.npy', self.voxels)
+        # Region-based dynamic saving will be built in the future!
+        pass

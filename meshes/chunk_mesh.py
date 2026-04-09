@@ -1,5 +1,6 @@
 from meshes.base_mesh import BaseMesh
 from meshes.chunk_mesh_builder import build_chunk_mesh
+import math
 
 
 class ChunkMesh(BaseMesh):
@@ -16,16 +17,17 @@ class ChunkMesh(BaseMesh):
         self.vao = None
         self.vbo = None
         self.vertex_data = None
+        self.vertex_count = 0
 
     def render(self):
         if self.vao:
-            super().render()
+            self.vao.render(vertices=self.vertex_count)
 
     def rebuild(self):
-        if self.vao:
-            self.vao.release()
-        if self.vbo:
-            self.vbo.release()
+        if self.vao and self.vbo:
+            self.app.scene.world.vbo_pool.append((self.vbo, self.vao))
+            self.vao = None
+            self.vbo = None
         self.vertex_data = None
         self.vao = self.get_vao()
 
@@ -36,7 +38,35 @@ class ChunkMesh(BaseMesh):
         if self.vertex_data.size == 0:
             return None
 
-        self.vbo = self.ctx.buffer(self.vertex_data)
+        self.vertex_count = self.vertex_data.size // self.format_size
+        byte_size = self.vertex_data.nbytes
+        pool = self.app.scene.world.vbo_pool
+
+        # Find the smallest VBO in the pool that can safely fit our new mesh data
+        best_i = -1
+        best_size = float('inf')
+        for i, (p_vbo, p_vao) in enumerate(pool):
+            if p_vbo.size >= byte_size and p_vbo.size < best_size:
+                best_i = i
+                best_size = p_vbo.size
+
+        if best_i != -1:
+            self.vbo, self.vao = pool.pop(best_i)
+            self.vbo.write(self.vertex_data)
+            return self.vao
+
+        # Keep the pool from growing infinitely if you fly around too fast
+        if len(pool) > 150:
+            p_vbo, p_vao = pool.pop(0)
+            p_vbo.release()
+            p_vao.release()
+
+        # Allocate a new VBO, but round the size up to the nearest power of 2
+        # This ensures the VBOs are generic sizes (e.g. 128KB, 256KB) and highly reusable!
+        reserve_size = 2 ** math.ceil(math.log2(byte_size)) if byte_size > 0 else 0
+        self.vbo = self.ctx.buffer(reserve=reserve_size)
+        self.vbo.write(self.vertex_data)
+        
         vao = self.ctx.vertex_array(
             self.program, [(self.vbo, self.vbo_format, *self.attrs)], skip_errors=True
         )

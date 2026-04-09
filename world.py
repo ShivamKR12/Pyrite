@@ -18,6 +18,7 @@ class World:
         
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
         self.voxel_handler = VoxelHandler(self)
+        self.vbo_pool = []
         
         # WARM UP NUMBA COMPILER:
         # Generate a dummy mesh on the main thread to compile Numba JIT safely
@@ -105,8 +106,9 @@ class World:
             self.chunks[chunk_index] = None
             self.chunk_positions[chunk_index] = (-999, -999, -999)
             if chunk.mesh:
-                if chunk.mesh.vao: chunk.mesh.vao.release()
-                if chunk.mesh.vbo: chunk.mesh.vbo.release()
+                if chunk.mesh.vao and chunk.mesh.vbo:
+                    self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                chunk.mesh.vbo, chunk.mesh.vao = None, None
             if chunk in self.build_queue:
                 self.build_queue.remove(chunk)
 
