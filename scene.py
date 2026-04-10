@@ -4,6 +4,7 @@ from world import World
 from world_objects.voxel_marker import VoxelMarker
 from world_objects.water import Water
 from world_objects.clouds import Clouds
+from world_objects.sky import Sky
 from ui import Crosshair
 from ui import Hotbar
 from ui import HeldBlock
@@ -17,6 +18,7 @@ class Scene:
         self.voxel_marker = VoxelMarker(self.world.voxel_handler)
         self.water = Water(app)
         self.clouds = Clouds(app)
+        self.sky = Sky(app)
         self.crosshair = Crosshair(app)
         self.hotbar = Hotbar(app)
         self.held_block = HeldBlock(app)
@@ -31,6 +33,9 @@ class Scene:
     def render(self):
         if self.app.wireframe:
             self.app.ctx.wireframe = True
+        
+        # skybox rendering FIRST, entirely in the background
+        self.sky.render()
 
         # chunks rendering
         self.world.render()

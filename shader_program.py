@@ -11,6 +11,7 @@ class ShaderProgram:
         self.voxel_marker = self.get_program(shader_name='voxel_marker')
         self.water = self.get_program('water')
         self.clouds = self.get_program('clouds')
+        self.sky = self.get_program('sky')
         self.quad = self.get_program('quad')
         self.ui_block = self.get_program('ui_block')
         self.ui_color = self.get_program('ui_color')
@@ -47,6 +48,11 @@ class ShaderProgram:
         self.clouds['bg_color'].write(BG_COLOR)
         self.clouds['cloud_scale'] = CLOUD_SCALE
         
+        # sky
+        self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
+        self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
+        self.sky['bg_color'].write(BG_COLOR)
+        
         # quad (used for 2D UI)
         self.quad['m_proj'].write(glm.mat4())
         self.quad['m_view'].write(glm.mat4())
@@ -80,6 +86,8 @@ class ShaderProgram:
         self.water['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
         self.item['m_proj'].write(self.player.m_proj)
+        self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
+        self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
 
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
@@ -94,12 +102,15 @@ class ShaderProgram:
             self.chunk['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.item:
             self.item['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.sky:
+            self.sky['u_sun_direction'].write(sun_dir)
         
         bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
         self.app.bg_color = bg_color
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)
         self.item['bg_color'].write(bg_color)
+        self.sky['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
         with open(f'shaders/{shader_name}.vert') as file:
