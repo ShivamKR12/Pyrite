@@ -57,14 +57,6 @@ class ChunkMesh(BaseMesh):
         if self.vao:
             self.vao.render(vertices=self.vertex_count)
 
-    def rebuild(self):
-        if self.vao and self.vbo:
-            self.app.scene.world.vbo_pool.append((self.vbo, self.vao))
-            self.vao = None
-            self.vbo = None
-        self.vertex_data = None
-        self.vao = self.get_vao()
-
     def get_vao(self):
         if self.vertex_data is None:
             self.vertex_data = self.get_vertex_data()
@@ -122,7 +114,7 @@ from settings import *
 from numba import uint8
 
 
-@njit
+@njit(cache=True)
 def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     x, y, z = local_pos
     wx, wy, wz = world_pos
@@ -161,7 +153,7 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     return ao
 
 
-@njit
+@njit(cache=True)
 def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
@@ -184,7 +176,7 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
     return packed_data
 
 
-@njit
+@njit(cache=True)
 def get_chunk_index(world_voxel_pos, chunk_positions):
     wx, wy, wz = world_voxel_pos
     cx = wx // CHUNK_SIZE
@@ -199,7 +191,7 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
     return -1
 
 
-@njit
+@njit(cache=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
@@ -214,7 +206,7 @@ def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     return True
 
 
-@njit
+@njit(cache=True)
 def add_data(vertex_data, index, *vertices):
     for vertex in vertices:
         vertex_data[index] = vertex
@@ -222,7 +214,7 @@ def add_data(vertex_data, index, *vertices):
     return index
 
 
-@njit
+@njit(cache=True)
 def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0
@@ -492,7 +484,7 @@ class CloudMesh(BaseMesh):
         return self.build_mesh(cloud_data)
 
     @staticmethod
-    @njit
+    @njit(cache=True)
     def gen_clouds(cloud_data):
         for x in range(WORLD_W * CHUNK_SIZE):
             for z in range(WORLD_D * CHUNK_SIZE):
@@ -502,7 +494,7 @@ class CloudMesh(BaseMesh):
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
     @staticmethod
-    @njit
+    @njit(cache=True)
     def build_mesh(cloud_data):
         mesh = np.empty(WORLD_AREA * CHUNK_AREA * 6 * 3, dtype='uint16')
         index = 0
@@ -833,21 +825,20 @@ layout (location = 0) in vec3 in_position;
 
 uniform mat4 m_proj;
 uniform mat4 m_view;
-uniform mat4 m_view_proj;
 uniform int center;
 uniform float u_time;
 uniform float cloud_scale;
+uniform vec3 player_pos;
 
 void main() {
     vec3 pos = vec3(in_position);
     pos.xz -= center;
     pos.xz *= cloud_scale;
-    pos.xz += center;
+    pos.xz += player_pos.xz;
 
     float time = 300 * sin(0.01 * u_time);
     pos.xz += time;
     gl_Position = m_proj * m_view * vec4(pos, 1.0);
-//    gl_Position = m_view_proj * vec4(pos, 1.0);
 }
 
 ===== D:\Minecraft\shaders\item.frag =====
@@ -1143,9 +1134,9 @@ layout (location = 1) in vec3 in_position;
 
 uniform mat4 m_proj;
 uniform mat4 m_view;
-uniform mat4 m_view_proj;
 uniform int water_area;
 uniform float water_line;
+uniform vec3 player_pos;
 
 out vec2 uv;
 
@@ -1155,8 +1146,12 @@ void main() {
     pos.xz *= water_area;
     pos.xz -= 0.33 * water_area;
 
+    // Center the water quad around the player horizontally
+    pos.xz += player_pos.xz;
+
     pos.y += water_line;
-    uv = in_tex_coord * water_area;
+    // Shift the UV coordinates so the texture doesn't slide with the player
+    uv = (in_tex_coord * water_area) + (player_pos.xz * 0.5);
     gl_Position = m_proj * m_view * vec4(pos, 1.0);
 }
 
@@ -1210,7 +1205,7 @@ class Chunk:
         return voxels
 
     @staticmethod
-    @njit
+    @njit(cache=True)
     def generate_terrain(voxels, cx, cy, cz):
         for x in range(CHUNK_SIZE):
             wx = x + cx
@@ -2252,7 +2247,9 @@ class ShaderProgram:
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.water['m_view'].write(self.player.m_view)
         self.water['u_time'] = self.app.time
+        self.water['player_pos'].write(self.player.position)
         self.clouds['m_view'].write(self.player.m_view)
+        self.clouds['player_pos'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
         
         # Update projection matrix dynamically for FOV zooming
@@ -2421,12 +2418,8 @@ from random import random
 from settings import *
 
 
-@njit
+@njit(cache=True)
 def get_height(x, z):
-    # island mask
-    island = 1 / (pow(0.0025 * math.hypot(x - CENTER_XZ, z - CENTER_XZ), 20) + 0.0001)
-    island = min(island, 1)
-
     # amplitude
     a1 = CENTER_Y
     a2, a4, a8 = a1 * 0.5, a1 * 0.25, a1 * 0.125
@@ -2445,17 +2438,16 @@ def get_height(x, z):
     height += noise2(x * f8, z * f8) * a8 - a8
 
     height = max(height,  noise2(x * f8, z * f8) + 2)
-    height *= island
 
     return int(height)
 
 
-@njit
+@njit(cache=True)
 def get_index(x, y, z):
     return x + CHUNK_SIZE * z + CHUNK_AREA * y
 
 
-@njit
+@njit(cache=True)
 def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
     voxel_id = 0
 
@@ -2493,7 +2485,7 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
         place_tree(voxels, x, y, z, voxel_id)
 
 
-@njit
+@njit(cache=True)
 def place_tree(voxels, x, y, z, voxel_id):
     rnd = random()
     if voxel_id != GRASS or rnd > TREE_PROBABILITY:
@@ -3154,7 +3146,8 @@ class VoxelHandler:
 
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = current_id
-                chunk.mesh.rebuild()
+                if chunk not in self.app.scene.world.build_queue:
+                    self.app.scene.world.build_queue.append(chunk)
                 self.app.sounds.play_dig(current_id)
 
                 # Consume item from hotbar
@@ -3170,7 +3163,9 @@ class VoxelHandler:
         cx, cy, cz = int(adj_voxel_pos[0] // CHUNK_SIZE), int(adj_voxel_pos[1] // CHUNK_SIZE), int(adj_voxel_pos[2] // CHUNK_SIZE)
         chunk_pos = (cx, cy, cz)
         if chunk_pos in self.app.scene.world.active_chunks:
-            self.app.scene.world.active_chunks[chunk_pos].mesh.rebuild()
+            chunk = self.app.scene.world.active_chunks[chunk_pos]
+            if chunk not in self.app.scene.world.build_queue:
+                self.app.scene.world.build_queue.append(chunk)
 
     def rebuild_adjacent_chunks(self):
         lx, ly, lz = self.voxel_local_pos
@@ -3195,7 +3190,8 @@ class VoxelHandler:
         if self.voxel_id:
             self.chunk.voxels[self.voxel_index] = 0
 
-            self.chunk.mesh.rebuild()
+            if self.chunk not in self.app.scene.world.build_queue:
+                self.app.scene.world.build_queue.append(self.chunk)
             self.rebuild_adjacent_chunks()
             self.app.sounds.play_dig(self.voxel_id)
             
@@ -3292,7 +3288,12 @@ from world_objects.chunk import Chunk
 from meshes.cube_mesh import CubeMesh
 from voxel_handler import VoxelHandler
 import concurrent.futures
+import numpy as np
 import os
+import sqlite3
+import zlib
+import threading
+import time
 
 
 class World:
@@ -3310,18 +3311,38 @@ class World:
         self.voxel_handler = VoxelHandler(self)
         self.vbo_pool = []
         self.bbox_mesh = CubeMesh(app)
+
+        self.save_path = 'save.db'
+        self.db_lock = threading.Lock()
+        self.conn = sqlite3.connect(self.save_path, check_same_thread=False)
+        self.cursor = self.conn.cursor()
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS chunks (
+                                x INTEGER, y INTEGER, z INTEGER, 
+                                data BLOB,
+                                PRIMARY KEY (x, y, z))''')
+        self.conn.commit()
         
         # WARM UP NUMBA COMPILER:
         # Generate a dummy mesh on the main thread to compile Numba JIT safely
+        print("[SYSTEM] Warming up Numba JIT Compiler... this may take a few seconds.")
+        t0 = time.perf_counter()
         _dummy = Chunk(self, position=(0,0,0))
-        _dummy.voxels = np.zeros(CHUNK_VOL, dtype='uint8')
+        _dummy.voxels = _dummy.build_voxels()
         _dummy.build_mesh()
-        _dummy.mesh.rebuild()
+        _dummy.mesh.vertex_data = _dummy.mesh.get_vertex_data()
+        _dummy.mesh.vao = _dummy.mesh.get_vao()
+        print(f"[SYSTEM] Numba compilation finished in {time.perf_counter() - t0:.3f} seconds!")
 
     def update(self):
+        self.db_load_time = 0.0
+        self.terrain_gen_time = 0.0
+
         self.voxel_handler.update()
         self.stream_chunks()
         
+        if self.db_load_time > 0 or self.terrain_gen_time > 0:
+            print(f"[FRAME TIME] Chunk Loading -> DB Read: {self.db_load_time:.4f}s | Terrain Gen: {self.terrain_gen_time:.4f}s")
+
         # Submit tasks gradually to prevent ThreadPool starvation and startup lag
         while self.build_queue and len(self.mesh_queue) < 4:
             chunk = self.build_queue.pop()
@@ -3337,6 +3358,11 @@ class World:
             chunk, future = item
             if future.done():
                 chunk.mesh.vertex_data = future.result()
+                
+                # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
+                if chunk.mesh.vao and chunk.mesh.vbo:
+                    self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                    
                 chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
                 ready_count += 1
@@ -3375,7 +3401,23 @@ class World:
         self.active_chunks[(x, y, z)] = chunk
         self.chunk_positions[chunk_index] = (x, y, z)
         
-        self.voxels[chunk_index] = chunk.build_voxels()
+        t0 = time.perf_counter()
+        with self.db_lock:
+            self.cursor.execute('SELECT data FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
+            row = self.cursor.fetchone()
+            
+        if row:
+            voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8')
+            self.voxels[chunk_index] = voxel_data
+            if not np.any(voxel_data):
+                chunk.is_empty = True
+            else:
+                chunk.is_empty = False
+            self.db_load_time += time.perf_counter() - t0
+        else:
+            self.voxels[chunk_index] = chunk.build_voxels()
+            self.terrain_gen_time += time.perf_counter() - t0
+
         chunk.voxels = self.voxels[chunk_index]
         
         chunk.build_mesh()
@@ -3387,12 +3429,21 @@ class World:
             if n_pos in self.active_chunks:
                 n_chunk = self.active_chunks[n_pos]
                 if n_chunk not in self.build_queue:
-                    n_chunk.mesh.rebuild()
                     self.build_queue.append(n_chunk)
+
+    def save_chunk_to_db(self, x, y, z, voxels):
+        data = zlib.compress(voxels.tobytes())
+        with self.db_lock:
+            self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data) VALUES (?, ?, ?, ?)', (x, y, z, data))
+            self.conn.commit()
 
     def unload_chunk(self, pos):
         if pos in self.active_chunks:
             chunk = self.active_chunks.pop(pos)
+
+            if not chunk.is_empty:
+                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels)
+
             chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
             self.chunks[chunk_index] = None
             self.chunk_positions[chunk_index] = (-999, -999, -999)
@@ -3480,5 +3531,11 @@ class World:
             ctx.depth_func = '<'
             
     def save(self):
-        # Region-based dynamic saving will be built in the future!
-        pass
+        # Save all currently active chunks synchronously
+        for chunk in self.active_chunks.values():
+            if not chunk.is_empty:
+                self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels)
+
+        # Wait for any pending asynchronous saves from unload_chunk to complete
+        self.executor.shutdown(wait=True)
+        self.conn.close()

@@ -5,10 +5,6 @@ from settings import *
 
 @njit(cache=True)
 def get_height(x, z):
-    # island mask
-    island = 1 / (pow(0.0025 * math.hypot(x - CENTER_XZ, z - CENTER_XZ), 20) + 0.0001)
-    island = min(island, 1)
-
     # amplitude
     a1 = CENTER_Y
     a2, a4, a8 = a1 * 0.5, a1 * 0.25, a1 * 0.125
@@ -27,7 +23,6 @@ def get_height(x, z):
     height += noise2(x * f8, z * f8) * a8 - a8
 
     height = max(height,  noise2(x * f8, z * f8) + 2)
-    height *= island
 
     return int(height)
 

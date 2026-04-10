@@ -69,7 +69,9 @@ class ShaderProgram:
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.water['m_view'].write(self.player.m_view)
         self.water['u_time'] = self.app.time
+        self.water['player_pos'].write(self.player.position)
         self.clouds['m_view'].write(self.player.m_view)
+        self.clouds['player_pos'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
         
         # Update projection matrix dynamically for FOV zooming
