@@ -104,6 +104,8 @@ class ShaderProgram:
             self.item['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.sky:
             self.sky['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.clouds:
+            self.clouds['u_sun_direction'].write(sun_dir)
         
         bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
         self.app.bg_color = bg_color
