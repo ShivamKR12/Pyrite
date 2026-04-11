@@ -1,4 +1,4 @@
-"""
+# """
 from noise import noise2, noise3
 from random import random
 from settings import *
@@ -20,7 +20,7 @@ def get_height(x, z):
 
     # Continentalness: Controls overall elevation independently from climate
     # This creates distinct Plains, Hills, Plateaus, and Mountains!
-    cont = noise2(x * 0.003 + 500.0, z * 0.003 + 500.0)
+    cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0)
 
     # Base properties
     a1 = CENTER_Y
@@ -76,30 +76,38 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
     temp += dither
     moist += dither
     
-    if temp > 0.3 and moist < -0.2:
+    is_desert = temp > 0.3 and moist < -0.2
+    is_snow = temp < -0.2
+
+    # Define Water bodies and Beaches based on height!
+    # Any terrain dipping below WATER_LINE naturally acts as a lake/ocean.
+    is_underwater = world_height <= WATER_LINE
+    is_beach = world_height <= WATER_LINE + 2 and not is_underwater
+
+    # Exactly as requested: Sand ONLY in deserts, lakes, oceans, and beaches!
+    if is_underwater or is_beach:
         surface_id = SAND
-    elif temp < -0.2:
+        subsurface_id = SAND
+    elif is_desert:
+        surface_id = SAND
+        subsurface_id = SAND
+    elif is_snow:
         surface_id = SNOW
+        subsurface_id = DIRT
     else:
         surface_id = GRASS
-
-    # Beaches & Underwater (Forces sand safely underwater and firmly stops grass/snow lakes)
-    if wy <= WATER_LINE + 1:
-        surface_id = SAND
+        subsurface_id = DIRT
 
     # Depth logic
-    rng = int(7 * random())
-    dirt_depth = 3 + rng
+    # Deterministic noise for dirt depth mapping from 3 to 8 blocks deep
+    dirt_depth = int((noise2(wx * 0.1, wz * 0.1) * 0.5 + 0.5) * 5) + 3
 
     if wy > world_height - 1:
         pass # Air
     elif wy == world_height - 1:
         voxel_id = surface_id
     elif wy >= world_height - dirt_depth:
-        if surface_id in (GRASS, SNOW):
-            voxel_id = DIRT
-        else:
-            voxel_id = SAND
+        voxel_id = subsurface_id
     else:
         # create caves
         if (noise3(wx * 0.09, wy * 0.09, wz * 0.09) > 0 and
@@ -114,7 +122,7 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
         voxels[get_index(x, y, z)] = voxel_id
 
     # Place Tree: No trees underwater, no trees on high mountains, no trees on snow
-    if wy == world_height - 1 and wy > WATER_LINE + 1 and wy < STONE_LVL:
+    if wy == world_height - 1 and not is_underwater and not is_beach and wy < STONE_LVL:
         tree_prob = 0.0
         if surface_id == GRASS:
             if moist > 0.4: 
@@ -160,7 +168,7 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
 
     # top
     voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
-"""
+# """
 
 
 
@@ -168,7 +176,7 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
 # mimicing a simple biome system based on height (snow at high altitudes, 
 # sand near water, grass/dirt in between). No biome dithering, no continentalness, 
 # no temperature/moisture. Just pure noise-based terrain with caves and trees.
-# """
+"""
 from noise import noise2, noise3
 from random import random
 from settings import *
@@ -274,7 +282,7 @@ def place_tree(voxels, x, y, z, voxel_id):
     # top
     voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
 
-# """
+"""
 
 
 
