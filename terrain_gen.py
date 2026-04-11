@@ -104,25 +104,46 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
 
     if wy > world_height - 1:
         pass # Air
-    elif wy == world_height - 1:
-        voxel_id = surface_id
-    elif wy >= world_height - dirt_depth:
-        voxel_id = subsurface_id
     else:
-        # create caves
-        if (noise3(wx * 0.09, wy * 0.09, wz * 0.09) > 0 and
-                noise2(wx * 0.1, wz * 0.1) * 3 + 3 < wy < world_height - 10):
-            voxel_id = 0
-
+        # Determine default solid block type
+        if wy == world_height - 1:
+            voxel_id = surface_id
+        elif wy >= world_height - dirt_depth:
+            voxel_id = subsurface_id
         else:
             voxel_id = STONE
+
+        # Cave Carving using 3D noise
+        cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09)
+        
+        # Taper the cave noise threshold near the surface to create natural, narrow cave mouths
+        surface_dist = world_height - wy
+        cave_threshold = 0.0
+        if surface_dist < 14:
+            # 2D mask to restrict cave entrances to rare, specific locations (~1 per few chunks)
+            entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0)
+            
+            # Smoothly increase the threshold as we get closer to the surface
+            taper_factor = (14 - surface_dist) / 14.0
+            
+            # If entrance_mask is low, the target threshold is high (closing the cave dome)
+            # If entrance_mask is high (>0.5), it stays low (0.3), carving a small hole to the surface!
+            target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
+            
+            cave_threshold = target_threshold * taper_factor
+
+        # Check if the block falls within the cave noise and is above the bottom crust
+        if cave_noise > cave_threshold and wy > noise2(wx * 0.1, wz * 0.1) * 3 + 3:
+            # Keep water/beaches intact by blocking cave generation in the top sand/dirt layers
+            if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
+                voxel_id = 0
 
     # setting ID
     if voxel_id:
         voxels[get_index(x, y, z)] = voxel_id
 
-    # Place Tree: No trees underwater, no trees on high mountains, no trees on snow
-    if wy == world_height - 1 and not is_underwater and not is_beach and wy < STONE_LVL:
+    # Place Tree: No trees underwater, no trees on high mountains, no trees on snow, no floating trees!
+    if wy == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and wy < STONE_LVL:
         tree_prob = 0.0
         if surface_id == GRASS:
             if moist > 0.4: 
