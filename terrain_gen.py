@@ -55,6 +55,9 @@ def get_height(x, z):
             height = height * (1.0 - w) + flattened * w
 
     height = max(height,  noise2(x * f8, z * f8) + 2)
+    
+    # Absolute safety net: prevent terrain from ever exceeding the top chunk's limit
+    height = min(height, WORLD_H * CHUNK_SIZE - 2)
 
     return int(height)
 
