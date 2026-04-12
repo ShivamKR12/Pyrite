@@ -9,6 +9,7 @@ import sqlite3
 import zlib
 import threading
 import time
+import moderngl as mgl
 
 
 class World:
@@ -216,6 +217,7 @@ class World:
                 fbo.color_mask = (False, False, False, False)
                 fbo.depth_mask = False
             ctx.depth_func = '<='
+            ctx.disable(mgl.CULL_FACE)
             
             # Grab our lightweight voxel_marker shader and the tiny cube mesh
             bbox_prog = self.app.shader_program.voxel_marker
@@ -244,6 +246,7 @@ class World:
                 fbo.color_mask = (True, True, True, True)
                 fbo.depth_mask = True
             ctx.depth_func = '<'
+            ctx.enable(mgl.CULL_FACE)
             
     def save(self):
         # Save all currently active chunks synchronously
