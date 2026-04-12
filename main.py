@@ -86,7 +86,7 @@ class VoxelEngine:
         self.ctx.clear(color=(0.1, 0.1, 0.1))
         
         text_renderer = TextRenderer(self)
-        text_renderer.font = pg.font.SysFont('arial', 48, bold=True)
+        text_renderer.font = pg.font.SysFont('arial', 140, bold=True)
         tex = text_renderer.get_texture("LOADING WORLD...")
         tex.use(location=4)
         

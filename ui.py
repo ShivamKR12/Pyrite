@@ -96,13 +96,15 @@ class TextRenderer:
     def get_texture(self, text):
         if text in self.textures:
             return self.textures[text]
-        surf = self.font.render(text, True, (255, 255, 255))
-        bg_surf = pg.Surface((surf.get_width() + 2, surf.get_height() + 2), pg.SRCALPHA)
+        surf = self.font.render(text, True, (210, 210, 210)) # Light grey instead of pure white
+        shadow_offset = max(2, self.font.get_height() // 15)
+        bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
         shadow = self.font.render(text, True, (40, 40, 40))
-        bg_surf.blit(shadow, (2, 2))
+        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
         bg_surf.blit(surf, (0, 0))
         texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
-        texture.filter = (mgl.LINEAR, mgl.LINEAR)
+        texture.build_mipmaps()
+        texture.filter = (mgl.LINEAR_MIPMAP_LINEAR, mgl.LINEAR)
         self.textures[text] = texture
         return texture
 
@@ -292,7 +294,7 @@ class Menu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 100, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', 180, bold=True)
         self.title_mesh = UITextMesh(app)
 
         self.buttons = [
@@ -338,7 +340,7 @@ class PauseMenu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 80, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', 160, bold=True)
         self.title_mesh = UITextMesh(app)
         self.bg_mesh = UIColorMesh(app)
 
@@ -486,7 +488,7 @@ class OptionsMenu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 80, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', 160, bold=True)
         self.title_mesh = UITextMesh(app)
         self.bg_mesh = UIColorMesh(app)
 
