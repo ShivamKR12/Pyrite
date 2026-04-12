@@ -79,6 +79,7 @@ class ChunkMesh(BaseMesh):
         if best_i != -1:
             self.vbo, self.vao = pool.pop(best_i)
             self.vbo.write(self.vertex_data)
+            self.vertex_data = None
             return self.vao
 
         # Keep the pool from growing infinitely if you fly around too fast
@@ -96,6 +97,7 @@ class ChunkMesh(BaseMesh):
         vao = self.ctx.vertex_array(
             self.program, [(self.vbo, self.vbo_format, *self.attrs)], skip_errors=True
         )
+        self.vertex_data = None
         return vao
 
     def get_vertex_data(self):
@@ -457,7 +459,7 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                     for ix in range(w):
                         for iy in range(h): mask1[x + ix, y + iy] = 0
 
-    return vertex_data[:index]
+    return vertex_data[:index].copy()
 
 ===== D:\Minecraft\meshes\cloud_mesh.py =====
 
@@ -1660,7 +1662,10 @@ class VoxelEngine:
     def load_config(self):
         if os.path.exists('config.json'):
             with open('config.json', 'r') as f:
-                self.config.update(json.load(f))
+                try:
+                    self.config.update(json.load(f))
+                except json.JSONDecodeError:
+                    pass
 
     def save_config(self):
         with open('config.json', 'w') as f:
@@ -2217,14 +2222,14 @@ CHUNK_VOL = CHUNK_AREA * CHUNK_SIZE
 CHUNK_SPHERE_RADIUS = H_CHUNK_SIZE * math.sqrt(3)
 
 # world
-WORLD_W, WORLD_H = 30, 2
+WORLD_W, WORLD_H = 30, 5
 WORLD_D = WORLD_W
 WORLD_AREA = WORLD_W * WORLD_D
 WORLD_VOL = WORLD_AREA * WORLD_H
 
 # world center
 CENTER_XZ = WORLD_W * H_CHUNK_SIZE
-CENTER_Y = WORLD_H * H_CHUNK_SIZE
+CENTER_Y = 48
 
 # camera
 ASPECT_RATIO = WIN_RES.x / WIN_RES.y
@@ -2284,7 +2289,7 @@ WATER_AREA = 5 * CHUNK_SIZE * WORLD_W
 
 # cloud
 CLOUD_SCALE = 25
-CLOUD_HEIGHT = WORLD_H * CHUNK_SIZE * 2
+CLOUD_HEIGHT = 200
 
 PLAYER_WIDTH  = 0.6
 PLAYER_HEIGHT = 1.8
@@ -2603,6 +2608,9 @@ def get_height(x, z):
             height = height * (1.0 - w) + flattened * w
 
     height = max(height,  noise2(x * f8, z * f8) + 2)
+    
+    # Absolute safety net: prevent terrain from ever exceeding the top chunk's limit
+    height = min(height, WORLD_H * CHUNK_SIZE - 2)
 
     return int(height)
 

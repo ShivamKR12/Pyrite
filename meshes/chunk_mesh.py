@@ -45,6 +45,7 @@ class ChunkMesh(BaseMesh):
         if best_i != -1:
             self.vbo, self.vao = pool.pop(best_i)
             self.vbo.write(self.vertex_data)
+            self.vertex_data = None
             return self.vao
 
         # Keep the pool from growing infinitely if you fly around too fast
@@ -62,6 +63,7 @@ class ChunkMesh(BaseMesh):
         vao = self.ctx.vertex_array(
             self.program, [(self.vbo, self.vbo_format, *self.attrs)], skip_errors=True
         )
+        self.vertex_data = None
         return vao
 
     def get_vertex_data(self):

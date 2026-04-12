@@ -54,7 +54,10 @@ class VoxelEngine:
     def load_config(self):
         if os.path.exists('config.json'):
             with open('config.json', 'r') as f:
-                self.config.update(json.load(f))
+                try:
+                    self.config.update(json.load(f))
+                except json.JSONDecodeError:
+                    pass
 
     def save_config(self):
         with open('config.json', 'w') as f:

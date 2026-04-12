@@ -345,4 +345,4 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                     for ix in range(w):
                         for iy in range(h): mask1[x + ix, y + iy] = 0
 
-    return vertex_data[:index]
+    return vertex_data[:index].copy()
