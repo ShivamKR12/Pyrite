@@ -394,7 +394,7 @@ class PauseMenu:
             button.render()
 
 class Slider:
-    def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None):
+    def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None, is_int=False):
         self.app = app
         self.text = text
         self.pos = pos
@@ -403,6 +403,7 @@ class Slider:
         self.max_val = max_val
         self.config_key = config_key
         self.action = action
+        self.is_int = is_int
 
         self.color_mesh = UIColorMesh(app)
         self.text_renderer = TextRenderer(app)
@@ -434,6 +435,12 @@ class Slider:
                 progress = (mouse_pos[0] - (btn_x - btn_w)) / (btn_w * 2)
                 progress = max(0.0, min(1.0, progress))
                 val = self.min_val + progress * (self.max_val - self.min_val)
+                
+                if self.is_int:
+                    val = int(round(val))
+                elif self.config_key == 'sensitivity':
+                    val = round(val, 4)
+                    
                 self.app.config[self.config_key] = val
                 if self.action:
                     self.action(val)
@@ -460,10 +467,8 @@ class Slider:
         self.color_mesh.program['u_color'] = (0.2, 0.6, 0.3, 0.8)
         self.color_mesh.render()
 
-        if self.config_key == 'fov':
+        if self.is_int or self.config_key == 'fov':
             display_val = int(val)
-        elif self.config_key == 'volume':
-            display_val = int(val * 100) # Percentage
         else:
             display_val = f"{val:.4f}"
             
@@ -486,10 +491,10 @@ class OptionsMenu:
         self.bg_mesh = UIColorMesh(app)
 
         self.sliders = [
-            Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov),
+            Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
             Slider(app, 'Sensitivity', (0, 0.0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
-            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0.0, 1.0, 'volume', self.update_volume),
-            Slider(app, 'Render Dist', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance')
+            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
+            Slider(app, 'Render Distance', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
         ]
         self.back_button = Button(app, 'Back', (0, -0.6), (0.2, 0.07), self.go_back)
         self.previous_state = 'MAIN_MENU'
@@ -499,7 +504,7 @@ class OptionsMenu:
             self.app.player.fov = glm.radians(val)
 
     def update_volume(self, val):
-        pg.mixer.music.set_volume(val)
+        pg.mixer.music.set_volume(val / 100.0)
 
     def go_back(self):
         self.app.game_state = self.previous_state

@@ -38,7 +38,7 @@ class VoxelEngine:
         self.config = {
             'fov': FOV_DEG,
             'sensitivity': MOUSE_SENSITIVITY,
-            'volume': 0.1,
+            'volume': 10,
             'render_distance': 4
         }
         self.load_config()
