@@ -3,6 +3,7 @@ from world_objects.chunk import Chunk
 from meshes.cube_mesh import CubeMesh
 from voxel_handler import VoxelHandler
 import concurrent.futures
+import glm
 import numpy as np
 import os
 import sqlite3
@@ -10,6 +11,7 @@ import zlib
 import threading
 import time
 import moderngl as mgl
+from frustum import frustum_cull_fast
 
 
 class World:
@@ -19,13 +21,18 @@ class World:
         self.active_chunks = {}
         self.chunk_positions = np.full((WORLD_VOL, 3), -999, dtype='int32')
         
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max(4, (os.cpu_count() or 5) - 1))
         self.mesh_queue = []
         self.build_queue = []
+        self.load_queue = []
         
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
         self.voxel_handler = VoxelHandler(self)
         self.vbo_pool = []
+        self.last_player_chunk_pos = None
+        self.sorted_chunks = []
+        self.last_active_chunk_count = 0
+        self.chunk_centers = np.empty((0, 3), dtype='float32')
         self.bbox_mesh = CubeMesh(app)
 
         self.save_path = 'save.db'
@@ -55,6 +62,7 @@ class World:
 
         self.voxel_handler.update()
         self.stream_chunks()
+        self.process_load_queue()
         
         if self.db_load_time > 0 or self.terrain_gen_time > 0:
             print(f"[FRAME TIME] Chunk Loading -> DB Read: {self.db_load_time:.4f}s | Terrain Gen: {self.terrain_gen_time:.4f}s")
@@ -84,6 +92,57 @@ class World:
                 ready_count += 1
                 if ready_count >= 2:  # Process max 2 per frame to keep FPS high
                     break
+
+    def process_load_queue(self):
+        for item in list(self.load_queue):
+            chunk, future = item
+            if future.done():
+                source, elapsed_time, voxel_data, is_empty = future.result()
+                
+                if source == 'db':
+                    self.db_load_time += elapsed_time
+                else:
+                    self.terrain_gen_time += elapsed_time
+
+                # Only apply if the chunk wasn't unloaded while loading
+                if self.active_chunks.get(chunk.position) is chunk:
+                    chunk_index = (chunk.position[0] % WORLD_W) + WORLD_W * (chunk.position[2] % WORLD_D) + WORLD_AREA * (chunk.position[1] % WORLD_H)
+                    
+                    self.voxels[chunk_index] = voxel_data
+                    chunk.voxels = self.voxels[chunk_index]
+                    chunk.is_empty = is_empty
+                    self.chunk_positions[chunk_index] = chunk.position
+                    
+                    chunk.build_mesh()
+                    self.build_queue.append(chunk)
+
+                    # Force remesh of neighbors to clean up boundaries
+                    x, y, z = chunk.position
+                    for dx, dz in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                        n_pos = (x + dx, y, z + dz)
+                        if n_pos in self.active_chunks:
+                            n_chunk = self.active_chunks[n_pos]
+                            if n_chunk.voxels is not None and n_chunk not in self.build_queue:
+                                self.build_queue.append(n_chunk)
+                
+                self.load_queue.remove(item)
+
+    def _fetch_or_generate_voxels(self, x, y, z):
+        t0 = time.perf_counter()
+        with self.db_lock:
+            self.cursor.execute('SELECT data FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
+            row = self.cursor.fetchone()
+
+        if row:
+            voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8').copy()
+            is_empty = not np.any(voxel_data)
+            return ('db', time.perf_counter() - t0, voxel_data, is_empty)
+        else:
+            voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
+            cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
+            Chunk.generate_terrain(voxel_data, cx, cy, cz)
+            is_empty = not np.any(voxel_data)
+            return ('gen', time.perf_counter() - t0, voxel_data, is_empty)
 
     def stream_chunks(self):
         render_dist = int(self.app.config.get('render_distance', 4))
@@ -115,37 +174,10 @@ class World:
         chunk = Chunk(self, position=(x, y, z))
         self.chunks[chunk_index] = chunk
         self.active_chunks[(x, y, z)] = chunk
-        self.chunk_positions[chunk_index] = (x, y, z)
         
-        t0 = time.perf_counter()
-        with self.db_lock:
-            self.cursor.execute('SELECT data FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
-            row = self.cursor.fetchone()
-            
-        if row:
-            voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8')
-            self.voxels[chunk_index] = voxel_data
-            if not np.any(voxel_data):
-                chunk.is_empty = True
-            else:
-                chunk.is_empty = False
-            self.db_load_time += time.perf_counter() - t0
-        else:
-            self.voxels[chunk_index] = chunk.build_voxels()
-            self.terrain_gen_time += time.perf_counter() - t0
-
-        chunk.voxels = self.voxels[chunk_index]
-        
-        chunk.build_mesh()
-        self.build_queue.append(chunk)
-        
-        # Force remesh of neighbors to clean up boundaries
-        for dx, dz in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            n_pos = (x + dx, y, z + dz)
-            if n_pos in self.active_chunks:
-                n_chunk = self.active_chunks[n_pos]
-                if n_chunk not in self.build_queue:
-                    self.build_queue.append(n_chunk)
+        # Send the heavy load task to the background thread pool
+        future = self.executor.submit(self._fetch_or_generate_voxels, x, y, z)
+        self.load_queue.append((chunk, future))
 
     def save_chunk_to_db(self, x, y, z, voxels):
         data = zlib.compress(voxels.tobytes())
@@ -157,7 +189,7 @@ class World:
         if pos in self.active_chunks:
             chunk = self.active_chunks.pop(pos)
 
-            if not chunk.is_empty:
+            if not chunk.is_empty and chunk.voxels is not None:
                 self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels)
 
             chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
@@ -169,48 +201,69 @@ class World:
                 chunk.mesh.vbo, chunk.mesh.vao = None, None
             if chunk in self.build_queue:
                 self.build_queue.remove(chunk)
+            for item in list(self.load_queue):
+                if item[0] is chunk:
+                    self.load_queue.remove(item)
+                    break
 
     def render(self):
-        # Sort chunks front-to-back for Early-Z hardware depth culling
-        player_pos = self.app.player.position
-        sorted_chunks = sorted(
-            self.active_chunks.values(),
-            key=lambda c: (c.center.x - player_pos.x)**2 + (c.center.y - player_pos.y)**2 + (c.center.z - player_pos.z)**2
-        )
+        player = self.app.player
+        player_pos = player.position
+        player_chunk_pos = (int(player_pos.x // CHUNK_SIZE), int(player_pos.z // CHUNK_SIZE))
+        active_chunk_count = len(self.active_chunks)
 
+        # Re-sort chunks only when player moves to a new chunk or when chunks are loaded/unloaded
+        if player_chunk_pos != self.last_player_chunk_pos or active_chunk_count != self.last_active_chunk_count:
+            self.sorted_chunks = sorted(
+                self.active_chunks.values(),
+                key=lambda c: glm.distance2(c.center, player_pos)
+            )
+            # Update the chunk centers array for vectorized culling
+            if self.sorted_chunks:
+                self.chunk_centers = np.array([c.center for c in self.sorted_chunks], dtype='float32')
+            else:
+                self.chunk_centers = np.empty((0, 3), dtype='float32')
+            self.last_player_chunk_pos = player_chunk_pos
+            self.last_active_chunk_count = active_chunk_count
+            
         freeze = getattr(self.app, 'freeze_culling', False)
         
+        # Vectorized frustum culling
+        frustum_mask = np.ones(len(self.sorted_chunks), dtype=np.bool_)
+        if not freeze and len(self.chunk_centers) > 0:
+            frustum = player.frustum
+            frustum_mask = frustum_cull_fast(
+                self.chunk_centers, np.array(player_pos, dtype='float32'), 
+                np.array(player.forward, dtype='float32'), np.array(player.right, dtype='float32'), 
+                np.array(player.up, dtype='float32'),
+                frustum.tan_y, frustum.tan_x, frustum.factor_y, frustum.factor_x
+            )
+
         # 1. Update visibility from occlusion queries
         if not freeze:
-            for chunk in sorted_chunks:
-                if chunk.is_empty:
+            for i, chunk in enumerate(self.sorted_chunks):
+                if not frustum_mask[i] or chunk.is_empty:
                     chunk.is_visible = False
                     continue
                     
                 if chunk.query_submitted:
                     chunk.is_visible = chunk.query.samples > 0
                 else:
-                    chunk.is_visible = True
+                    chunk.is_visible = True # Assume visible until queried
 
         # 2. Render visible chunks AND query them simultaneously
-        for chunk in sorted_chunks:
+        for chunk in self.sorted_chunks:
             if chunk.is_visible:
-                if not freeze and not chunk.is_on_frustum(chunk):
-                    chunk.is_visible = False
-                    chunk.query_submitted = False
-                    continue
-                    
                 if not freeze:
                     with chunk.query:
                         chunk.render()
                     chunk.query_submitted = True
                 else:
                     chunk.render()
-                
+            
         # 3. Issue occlusion queries for INVISIBLE chunks
         if not freeze:
             ctx = self.app.ctx
-            # Reliably get the active framebuffer across all ModernGL versions
             fbo = getattr(ctx, 'fbo', getattr(ctx, 'screen', getattr(ctx, 'default_framebuffer', None)))
                 
             if fbo:
@@ -218,20 +271,17 @@ class World:
                 fbo.depth_mask = False
             ctx.depth_func = '<='
             ctx.disable(mgl.CULL_FACE)
-            
-            # Grab our lightweight voxel_marker shader and the tiny cube mesh
             bbox_prog = self.app.shader_program.voxel_marker
             bbox_vao = self.bbox_mesh.vao
-            
             bbox_prog['is_bbox'] = 1
             
-            for chunk in sorted_chunks:
+            for i, chunk in enumerate(self.sorted_chunks):
                 if not chunk.is_visible:
-                    if chunk.is_empty or not chunk.is_on_frustum(chunk):
+                    # Only query chunks that are IN the frustum but currently occluded
+                    if chunk.is_empty or not frustum_mask[i]:
                         chunk.query_submitted = False
                         continue
                         
-                    # Render a tiny 12-triangle bounding box instead of the massive chunk mesh!
                     m_model = glm.translate(glm.mat4(), glm.vec3(chunk.position) * CHUNK_SIZE)
                     m_model = glm.scale(m_model, glm.vec3(CHUNK_SIZE))
                     bbox_prog['m_model'].write(m_model)
@@ -241,7 +291,6 @@ class World:
                     chunk.query_submitted = True
                     
             bbox_prog['is_bbox'] = 0
-                    
             if fbo:
                 fbo.color_mask = (True, True, True, True)
                 fbo.depth_mask = True
@@ -251,7 +300,7 @@ class World:
     def save(self):
         # Save all currently active chunks synchronously
         for chunk in self.active_chunks.values():
-            if not chunk.is_empty:
+            if not chunk.is_empty and chunk.voxels is not None:
                 self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels)
 
         # Wait for any pending asynchronous saves from unload_chunk to complete

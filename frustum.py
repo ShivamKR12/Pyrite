@@ -1,5 +1,7 @@
 from settings import *
-
+from numba import njit
+import numpy as np
+import glm
 
 class Frustum:
     def __init__(self, camera):
@@ -35,3 +37,35 @@ class Frustum:
             return False
 
         return True
+
+@njit(cache=True)
+def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
+    is_visible = np.ones(len(chunk_centers), dtype=np.bool_)
+    
+    for i in range(len(chunk_centers)):
+        center = chunk_centers[i]
+        sphere_vec = center - cam_pos
+        
+        if np.linalg.norm(sphere_vec) < CHUNK_SPHERE_RADIUS * 1.2:
+            continue
+
+        sz = np.dot(sphere_vec, cam_forward)
+        if not (NEAR - CHUNK_SPHERE_RADIUS <= sz <= FAR + CHUNK_SPHERE_RADIUS):
+            is_visible[i] = False
+            continue
+            
+        sz = max(0.0, sz)
+
+        sy = np.dot(sphere_vec, cam_up)
+        dist_y = factor_y * CHUNK_SPHERE_RADIUS + sz * tan_y
+        if not (-dist_y <= sy <= dist_y):
+            is_visible[i] = False
+            continue
+
+        sx = np.dot(sphere_vec, cam_right)
+        dist_x = factor_x * CHUNK_SPHERE_RADIUS + sz * tan_x
+        if not (-dist_x <= sx <= dist_x):
+            is_visible[i] = False
+            continue
+            
+    return is_visible

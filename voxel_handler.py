@@ -166,6 +166,10 @@ class VoxelHandler:
 
         if chunk_pos in self.app.scene.world.active_chunks:
             chunk = self.app.scene.world.active_chunks[chunk_pos]
+            # Prevent errors if interacting with a chunk that is still loading asynchronously
+            if chunk.voxels is None:
+                return 0, 0, 0, 0
+                
             lx, ly, lz = voxel_local_pos = glm.ivec3(voxel_world_pos) - glm.ivec3(cx, cy, cz) * CHUNK_SIZE
 
             voxel_index = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
