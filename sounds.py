@@ -59,9 +59,9 @@ class Sounds:
         # SNOW
         self.sounds[SNOW] = {
             'dig': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)],
-            'hit': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 7)],
+            'hit': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)],
             'jump': [load(f"snow/Snow_jump{i}.ogg") for i in range(1, 5)],
-            'mining': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 7)]
+            'mining': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)]
         }
 
         # LEAVES
