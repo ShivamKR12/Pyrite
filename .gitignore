@@ -6,5 +6,6 @@ sounds/other/
 *.pyc
 *.nbc
 *.nbi
+save.db
 command.txt
 convert_audio.ps1
