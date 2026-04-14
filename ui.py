@@ -172,7 +172,7 @@ class Hotbar:
                 tex.use(location=4)
                 
                 tex_w, tex_h = tex.size
-                scale_y = 0.015
+                scale_y = 0.025
                 scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
                 
                 offset_x = start_x + i * HOTBAR_SPACING + 0.015

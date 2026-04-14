@@ -101,8 +101,8 @@ INTERACTION_DELAY = 150 # ms delay for continuous mining/placing
 
 # ui
 HOTBAR_SCALE = 0.045
-SLOT_SCALE = 0.06
-HOTBAR_SPACING = 0.13
+SLOT_SCALE = 0.05
+HOTBAR_SPACING = 0.1
 HOTBAR_Y = -0.85
 
 # water
