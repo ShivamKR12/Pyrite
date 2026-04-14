@@ -684,6 +684,7 @@ const vec3 inv_gamma = 1 / gamma;
 uniform sampler2DArray u_texture_array_0;
 uniform vec3 bg_color;
 uniform float water_line;
+uniform float u_fog_density;
 
 in vec2 uv;
 in float shading;
@@ -708,11 +709,12 @@ void main() {
     // underwater effect
     if (frag_world_pos.y < water_line) tex_col *= vec3(0.0, 0.3, 1.0);
 
+    tex_col = pow(tex_col, inv_gamma);
+
     //fog
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-0.00001 * fog_dist * fog_dist)));
+    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-u_fog_density * fog_dist * fog_dist)));
 
-    tex_col = pow(tex_col, inv_gamma);
     fragColor = vec4(tex_col, 1.0);
 }
 
@@ -810,6 +812,7 @@ layout (location = 0) out vec4 fragColor;
 
 uniform vec3 bg_color;
 uniform vec3 u_sun_direction;
+uniform float u_fog_density;
 
 void main() {
     vec3 cloud_color = vec3(1.0); // Base daytime color
@@ -824,7 +827,7 @@ void main() {
     }
 
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    vec3 col = mix(cloud_color, bg_color, 1.0 - exp(-0.000001 * fog_dist * fog_dist));
+    vec3 col = mix(cloud_color, bg_color, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
 
     fragColor = vec4(col, 0.8);
 }
@@ -866,6 +869,7 @@ in float shading;
 uniform sampler2DArray u_texture_array_0;
 uniform int voxel_id;
 uniform vec3 bg_color;
+uniform float u_fog_density;
 
 const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
@@ -875,10 +879,12 @@ void main() {
     vec3 tex_col = texture(u_texture_array_0, vec3(face_uv, voxel_id)).rgb;
     
     tex_col = pow(tex_col, gamma) * shading;
-    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-0.00001 * fog_dist * fog_dist)));
+    tex_col = pow(tex_col, inv_gamma);
 
-    fragColor = vec4(pow(tex_col, inv_gamma), 1.0);
+    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
+    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-u_fog_density * fog_dist * fog_dist)));
+
+    fragColor = vec4(tex_col, 1.0);
 }
 
 ===== D:\Minecraft\shaders\item.vert =====
@@ -1193,6 +1199,7 @@ in vec2 uv;
 uniform sampler2D u_texture_0;
 uniform float water_line;
 uniform float u_time;
+uniform float u_fog_density;
 
 
 void main() {
@@ -1202,7 +1209,7 @@ void main() {
 
     // fog
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    float alpha = mix(0.5, 0.0, 1.0 - exp(-0.000002 * fog_dist * fog_dist));
+    float alpha = mix(0.5, 0.0, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
 
     // gamma corretion
     tex_col = pow(tex_col, inv_gamma);
@@ -1728,7 +1735,7 @@ class VoxelEngine:
         self.ctx.clear(color=(0.1, 0.1, 0.1))
         
         text_renderer = TextRenderer(self)
-        text_renderer.font = pg.font.SysFont('arial', 48, bold=True)
+        text_renderer.font = pg.font.SysFont('arial', 140, bold=True)
         tex = text_renderer.get_texture("LOADING WORLD...")
         tex.use(location=4)
         
@@ -2425,6 +2432,24 @@ class ShaderProgram:
         self.item['m_proj'].write(self.player.m_proj)
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
+
+        # Dynamic fog density based on render distance
+        # Base distance for previous hardcoded values was 6 chunks
+        render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
+        
+        # Increased base densities to reach ~99% opacity exactly at the edge of the render distance
+        fog_density = 0.002 / (render_dist ** 2)
+        cloud_fog_density = 0.000036 / (render_dist ** 2)
+        water_fog_density = 0.0015 / (render_dist ** 2)
+        
+        if 'u_fog_density' in self.chunk:
+            self.chunk['u_fog_density'] = fog_density
+        if 'u_fog_density' in self.item:
+            self.item['u_fog_density'] = fog_density
+        if 'u_fog_density' in self.clouds:
+            self.clouds['u_fog_density'] = cloud_fog_density
+        if 'u_fog_density' in self.water:
+            self.water['u_fog_density'] = water_fog_density
 
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
@@ -3164,13 +3189,15 @@ class TextRenderer:
     def get_texture(self, text):
         if text in self.textures:
             return self.textures[text]
-        surf = self.font.render(text, True, (255, 255, 255))
-        bg_surf = pg.Surface((surf.get_width() + 2, surf.get_height() + 2), pg.SRCALPHA)
+        surf = self.font.render(text, True, (210, 210, 210)) # Light grey instead of pure white
+        shadow_offset = max(2, self.font.get_height() // 15)
+        bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
         shadow = self.font.render(text, True, (40, 40, 40))
-        bg_surf.blit(shadow, (2, 2))
+        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
         bg_surf.blit(surf, (0, 0))
         texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
-        texture.filter = (mgl.LINEAR, mgl.LINEAR)
+        texture.build_mipmaps()
+        texture.filter = (mgl.LINEAR_MIPMAP_LINEAR, mgl.LINEAR)
         self.textures[text] = texture
         return texture
 
@@ -3360,7 +3387,7 @@ class Menu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 100, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', 180, bold=True)
         self.title_mesh = UITextMesh(app)
 
         self.buttons = [
@@ -3406,7 +3433,7 @@ class PauseMenu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 80, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', 160, bold=True)
         self.title_mesh = UITextMesh(app)
         self.bg_mesh = UIColorMesh(app)
 
@@ -3554,7 +3581,7 @@ class OptionsMenu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 80, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', 160, bold=True)
         self.title_mesh = UITextMesh(app)
         self.bg_mesh = UIColorMesh(app)
 

@@ -10,6 +10,7 @@ in vec2 uv;
 uniform sampler2D u_texture_0;
 uniform float water_line;
 uniform float u_time;
+uniform float u_fog_density;
 
 
 void main() {
@@ -19,7 +20,7 @@ void main() {
 
     // fog
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    float alpha = mix(0.5, 0.0, 1.0 - exp(-0.000002 * fog_dist * fog_dist));
+    float alpha = mix(0.5, 0.0, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
 
     // gamma corretion
     tex_col = pow(tex_col, inv_gamma);

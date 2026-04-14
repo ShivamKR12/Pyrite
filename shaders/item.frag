@@ -9,6 +9,7 @@ in float shading;
 uniform sampler2DArray u_texture_array_0;
 uniform int voxel_id;
 uniform vec3 bg_color;
+uniform float u_fog_density;
 
 const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
@@ -18,8 +19,10 @@ void main() {
     vec3 tex_col = texture(u_texture_array_0, vec3(face_uv, voxel_id)).rgb;
     
     tex_col = pow(tex_col, gamma) * shading;
-    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-0.00001 * fog_dist * fog_dist)));
+    tex_col = pow(tex_col, inv_gamma);
 
-    fragColor = vec4(pow(tex_col, inv_gamma), 1.0);
+    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
+    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-u_fog_density * fog_dist * fog_dist)));
+
+    fragColor = vec4(tex_col, 1.0);
 }

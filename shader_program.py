@@ -89,6 +89,24 @@ class ShaderProgram:
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
 
+        # Dynamic fog density based on render distance
+        # Base distance for previous hardcoded values was 6 chunks
+        render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
+        
+        # Increased base densities to reach ~99% opacity exactly at the edge of the render distance
+        fog_density = 0.002 / (render_dist ** 2)
+        cloud_fog_density = 0.000036 / (render_dist ** 2)
+        water_fog_density = 0.0015 / (render_dist ** 2)
+        
+        if 'u_fog_density' in self.chunk:
+            self.chunk['u_fog_density'] = fog_density
+        if 'u_fog_density' in self.item:
+            self.item['u_fog_density'] = fog_density
+        if 'u_fog_density' in self.clouds:
+            self.clouds['u_fog_density'] = cloud_fog_density
+        if 'u_fog_density' in self.water:
+            self.water['u_fog_density'] = water_fog_density
+
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
         
