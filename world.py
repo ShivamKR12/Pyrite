@@ -17,6 +17,7 @@ from frustum import frustum_cull_fast
 class World:
     def __init__(self, app):
         self.app = app
+        self.app.render_loading_screen("ALLOCATING MEMORY...")
         self.chunks = [None for _ in range(WORLD_VOL)]
         self.active_chunks = {}
         self.chunk_positions = np.full((WORLD_VOL, 3), -999, dtype='int32')
@@ -35,6 +36,7 @@ class World:
         self.chunk_centers = np.empty((0, 3), dtype='float32')
         self.bbox_mesh = CubeMesh(app)
 
+        self.app.render_loading_screen("CONNECTING TO DATABASE...")
         self.save_path = 'save.db'
         self.db_lock = threading.Lock()
         self.conn = sqlite3.connect(self.save_path, check_same_thread=False)
@@ -47,6 +49,7 @@ class World:
         
         # WARM UP NUMBA COMPILER:
         # Generate a dummy mesh on the main thread to compile Numba JIT safely
+        self.app.render_loading_screen("COMPILING NUMBA JIT (MAY TAKE A MOMENT)...")
         print("[SYSTEM] Warming up Numba JIT Compiler... this may take a few seconds.")
         t0 = time.perf_counter()
         _dummy = Chunk(self, position=(0,0,0))
@@ -55,6 +58,7 @@ class World:
         _dummy.mesh.vertex_data = _dummy.mesh.get_vertex_data()
         _dummy.mesh.vao = _dummy.mesh.get_vao()
         print(f"[SYSTEM] Numba compilation finished in {time.perf_counter() - t0:.3f} seconds!")
+        self.app.render_loading_screen("NUMBA COMPILATION SUCCESSFUL!")
 
     def update(self):
         self.db_load_time = 0.0
@@ -79,7 +83,8 @@ class World:
                 self._last_queue_len = len(self.build_queue)
 
         # Submit tasks gradually to prevent ThreadPool starvation and startup lag
-        while self.build_queue and len(self.mesh_queue) < 4:
+        mesh_limit = 4 if self.app.game_state != 'LOADING' else 64
+        while self.build_queue and len(self.mesh_queue) < mesh_limit:
             chunk = self.build_queue.pop()
             future = self.executor.submit(chunk.mesh.get_vertex_data)
             self.mesh_queue.append((chunk, future))
@@ -101,7 +106,7 @@ class World:
                 chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
                 ready_count += 1
-                if ready_count >= 2:  # Process max 2 per frame to keep FPS high
+                if ready_count >= 2 and self.app.game_state != 'LOADING':  # Process max 2 per frame to keep FPS high
                     break
 
     def process_load_queue(self):

@@ -74,32 +74,73 @@ class VoxelEngine:
 
     def init_game_session(self):
         self.game_state = 'LOADING'
-        self.render_loading_screen()
         
         self.scene = Scene(self)
         
+        self.render_loading_screen("STARTING GAME...")
+        
+        # Pre-load initial chunks
+        self.scene.world.update()
+        
+        loading_progress = 0
+        
+        # Wait for all initial chunks to generate and mesh
+        while self.scene.world.load_queue or self.scene.world.build_queue or self.scene.world.mesh_queue:
+            self.scene.world.update()
+            
+            active = len(self.scene.world.active_chunks)
+            queues = len(self.scene.world.load_queue) + len(self.scene.world.build_queue) + len(self.scene.world.mesh_queue)
+            ready = active - queues
+            progress = max(0, min(100, int((ready / active) * 100) if active > 0 else 0))
+            loading_progress = max(loading_progress, progress)
+            
+            self.render_loading_screen(f"GENERATING TERRAIN... {loading_progress}%")
+        
+        # Clear the event queue one last time to prevent buffered inputs
+        pg.event.clear()
+        pg.mouse.get_rel() # Reset relative mouse movement to prevent sudden camera spinning
         pg.event.set_grab(True)
         pg.mouse.set_visible(False)
         self.game_state = 'IN_GAME'
 
-    def render_loading_screen(self):
+    def render_loading_screen(self, text="INITIALIZING..."):
+        # Discard pending events to prevent OS freezing and buffered inputs
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.quit_game()
+                sys.exit()
+
         self.ctx.clear(color=(0.1, 0.1, 0.1))
         
         text_renderer = TextRenderer(self)
+        text_mesh = UITextMesh(self)
+        
+        # 1. Main Title
         text_renderer.font = pg.font.SysFont('arial', 140, bold=True)
         tex = text_renderer.get_texture("LOADING WORLD...")
         tex.use(location=4)
-        
-        text_mesh = UITextMesh(self)
         
         tex_w, tex_h = tex.size
         scale_y = 0.1
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         text_mesh.program['u_scale'] = (scale_x, scale_y)
-        text_mesh.program['u_offset'] = (0.0, 0.0)
+        text_mesh.program['u_offset'] = (0.0, 0.1)
         
         self.ctx.disable(mgl.DEPTH_TEST)
+        text_mesh.render()
+        
+        # 2. Sub-status text
+        text_renderer.font = pg.font.SysFont('arial', 60, bold=False)
+        tex_sub = text_renderer.get_texture(text)
+        tex_sub.use(location=4)
+        
+        tex_w, tex_h = tex_sub.size
+        scale_y = 0.04
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        text_mesh.program['u_scale'] = (scale_x, scale_y)
+        text_mesh.program['u_offset'] = (0.0, -0.15)
         text_mesh.render()
         
         pg.display.flip()

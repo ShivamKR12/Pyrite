@@ -15,10 +15,13 @@ class Scene:
     def __init__(self, app):
         self.app = app
         self.world = World(self.app)
+        self.app.render_loading_screen("INITIALIZING MARKERS...")
         self.voxel_marker = VoxelMarker(self.world.voxel_handler)
+        self.app.render_loading_screen("INITIALIZING ENVIRONMENT...")
         self.water = Water(app)
         self.clouds = Clouds(app)
         self.sky = Sky(app)
+        self.app.render_loading_screen("INITIALIZING UI...")
         self.crosshair = Crosshair(app)
         self.hotbar = Hotbar(app)
         self.held_block = HeldBlock(app)
