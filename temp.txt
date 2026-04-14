@@ -1,4 +1,5 @@
 
+
 ===== D:\Minecraft\meshes\base_mesh.py =====
 
 import numpy as np
@@ -3889,6 +3890,17 @@ class World:
         if self.db_load_time > 0 or self.terrain_gen_time > 0:
             print(f"[FRAME TIME] Chunk Loading -> DB Read: {self.db_load_time:.4f}s | Terrain Gen: {self.terrain_gen_time:.4f}s")
 
+        # Sort the build queue so the closest chunks are popped from the end first
+        if self.build_queue:
+            player_cx = int(self.app.player.position.x // CHUNK_SIZE)
+            player_cz = int(self.app.player.position.z // CHUNK_SIZE)
+            
+            # Optimization: Only re-sort if the player moves to a new chunk or the queue size changes!
+            if getattr(self, '_last_sort_pos', None) != (player_cx, player_cz) or getattr(self, '_last_queue_len', None) != len(self.build_queue):
+                self.build_queue.sort(key=lambda c: (c.position[0] - player_cx)**2 + (c.position[2] - player_cz)**2, reverse=True)
+                self._last_sort_pos = (player_cx, player_cz)
+                self._last_queue_len = len(self.build_queue)
+
         # Submit tasks gradually to prevent ThreadPool starvation and startup lag
         while self.build_queue and len(self.mesh_queue) < 4:
             chunk = self.build_queue.pop()
@@ -3978,6 +3990,7 @@ class World:
                 self.unload_chunk(pos)
                 
         # 2. Load chunks in range
+        chunks_to_load = []
         for x in range(player_cx - render_dist, player_cx + render_dist + 1):
             for z in range(player_cz - render_dist, player_cz + render_dist + 1):
                 if (x - player_cx)**2 + (z - player_cz)**2 > render_dist**2:
@@ -3985,6 +3998,13 @@ class World:
                 for y in range(WORLD_H):
                     if (x, y, z) not in self.active_chunks:
                         self.load_chunk(x, y, z)
+                        chunks_to_load.append((x, y, z))
+                        
+        # Sort chunks by distance (closest first) so the ThreadPool executes them first
+        chunks_to_load.sort(key=lambda pos: (pos[0] - player_cx)**2 + (pos[2] - player_cz)**2)
+        
+        for pos in chunks_to_load:
+            self.load_chunk(*pos)
                         
     def load_chunk(self, x, y, z):
         chunk_index = (x % WORLD_W) + WORLD_W * (z % WORLD_D) + WORLD_AREA * (y % WORLD_H)
