@@ -142,10 +142,7 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
         if cave_noise > cave_threshold and wy > noise2(wx * 0.1, wz * 0.1) * 3 + 3:
             # Keep water/beaches intact by blocking cave generation in the top sand/dirt layers
             if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
-                if wy <= WATER_LINE:
-                    voxel_id = WATER
-                else:
-                    voxel_id = 0
+                voxel_id = 0
 
     # setting ID
     if voxel_id:

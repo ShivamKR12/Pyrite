@@ -768,7 +768,10 @@ class OptionsMenu:
             Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
             Slider(app, 'Render Distance', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
         ]
-        self.back_button = Button(app, 'Back', (0, -0.6), (0.2, 0.07), self.go_back)
+        self.buttons = [
+            Button(app, '', (0, -0.6), (0.3, 0.05), self.toggle_tint),
+            Button(app, 'Back', (0, -0.8), (0.2, 0.07), self.go_back)
+        ]
         self.previous_state = 'MAIN_MENU'
 
     def update_fov(self, val):
@@ -778,20 +781,34 @@ class OptionsMenu:
     def update_volume(self, val):
         pg.mixer.music.set_volume(val / 100.0)
 
+    def toggle_tint(self):
+        current_val = self.app.config.get('underwater_tint', False)
+        self.app.config['underwater_tint'] = not current_val
+        self.app.save_config()
+
     def go_back(self):
+        self.app.save_config()
         self.app.game_state = self.previous_state
 
     def update(self):
         for slider in self.sliders:
             slider.update()
-        self.back_button.check_hover(pg.mouse.get_pos())
+
+        tint_on = self.app.config.get('underwater_tint', False)
+        self.buttons[0].text = f"Underwater Tint: {'On' if tint_on else 'Off'}"
+
+        mouse_pos = pg.mouse.get_pos()
+        for button in self.buttons:
+            button.check_hover(mouse_pos)
 
     def handle_event(self, event):
         for slider in self.sliders:
             slider.handle_event(event)
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            if self.back_button.is_hovered:
-                self.back_button.action()
+            for button in self.buttons:
+                if button.is_hovered:
+                    button.action()
+                    break
 
     def render(self):
         if self.previous_state == 'PAUSED':
@@ -811,7 +828,8 @@ class OptionsMenu:
 
         for slider in self.sliders:
             slider.render()
-        self.back_button.render()
+        for button in self.buttons:
+            button.render()
 
 class DebugOverlay:
     def __init__(self, app):

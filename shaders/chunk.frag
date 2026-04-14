@@ -8,7 +8,7 @@ const vec3 inv_gamma = 1 / gamma;
 uniform sampler2DArray u_texture_array_0;
 uniform sampler2D u_texture_water;
 uniform vec3 bg_color;
-uniform float water_line;
+uniform bool u_underwater_tint;
 uniform float u_fog_density;
 uniform float u_fog_max_opacity;
 uniform float u_time;
@@ -19,6 +19,7 @@ in vec3 frag_world_pos;
 
 flat in int face_id;
 flat in int voxel_id;
+flat in int is_water_neighbor;
 
 
 void main() {
@@ -39,7 +40,9 @@ void main() {
     tex_col *= shading;
 
     // underwater effect
-    if (frag_world_pos.y < water_line && voxel_id != 9) tex_col *= vec3(0.0, 0.3, 1.0);
+    if (u_underwater_tint && is_water_neighbor == 1 && voxel_id != 9) {
+        tex_col *= vec3(0.0, 0.3, 1.0);
+    }
 
     tex_col = pow(tex_col, inv_gamma);
 

@@ -13,6 +13,7 @@ uniform vec3 u_sun_direction;
 
 flat out int voxel_id;
 flat out int face_id;
+flat out int is_water_neighbor;
 
 //out vec3 voxel_color;
 out vec2 uv;
@@ -53,7 +54,9 @@ void unpack(uint packed_data) {
     y = int((packed_data >> cdefg_bit) & b_mask);
     z = int((packed_data >> defg_bit) & c_mask);
     //
-    voxel_id = int((packed_data >> efg_bit) & d_mask);
+    int raw_voxel_id = int((packed_data >> efg_bit) & d_mask);
+    is_water_neighbor = (raw_voxel_id >= 128) ? 1 : 0;
+    voxel_id = raw_voxel_id & 127;
     face_id = int((packed_data >> fg_bit) & e_mask);
     ao_id = int((packed_data >> g_bit) & f_mask);
     flip_id = int(packed_data & g_mask);

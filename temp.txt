@@ -257,14 +257,16 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    mask0[x, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    mask0[x, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
                 # bottom face
                 neighbor_id = get_neighbor_voxel_id((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions)
                 if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    mask1[x, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    mask1[x, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
@@ -346,13 +348,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    mask0[y, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    mask0[y, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
                 neighbor_id = get_neighbor_voxel_id((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions)
                 if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    mask1[y, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    mask1[y, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
         for y in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
@@ -434,13 +438,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    mask0[x, y] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    mask0[x, y] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
                 neighbor_id = get_neighbor_voxel_id((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions)
                 if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    mask1[x, y] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    mask1[x, y] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
         for x in range(CHUNK_SIZE):
             for y in range(CHUNK_SIZE):
@@ -703,7 +709,7 @@ const vec3 inv_gamma = 1 / gamma;
 uniform sampler2DArray u_texture_array_0;
 uniform sampler2D u_texture_water;
 uniform vec3 bg_color;
-uniform float water_line;
+uniform bool u_underwater_tint;
 uniform float u_fog_density;
 uniform float u_fog_max_opacity;
 uniform float u_time;
@@ -714,6 +720,7 @@ in vec3 frag_world_pos;
 
 flat in int face_id;
 flat in int voxel_id;
+flat in int is_water_neighbor;
 
 
 void main() {
@@ -734,7 +741,9 @@ void main() {
     tex_col *= shading;
 
     // underwater effect
-    if (frag_world_pos.y < water_line && voxel_id != 9) tex_col *= vec3(0.0, 0.3, 1.0);
+    if (u_underwater_tint && is_water_neighbor == 1 && voxel_id != 9) {
+        tex_col *= vec3(0.0, 0.3, 1.0);
+    }
 
     tex_col = pow(tex_col, inv_gamma);
 
@@ -768,6 +777,7 @@ uniform vec3 u_sun_direction;
 
 flat out int voxel_id;
 flat out int face_id;
+flat out int is_water_neighbor;
 
 //out vec3 voxel_color;
 out vec2 uv;
@@ -808,7 +818,9 @@ void unpack(uint packed_data) {
     y = int((packed_data >> cdefg_bit) & b_mask);
     z = int((packed_data >> defg_bit) & c_mask);
     //
-    voxel_id = int((packed_data >> efg_bit) & d_mask);
+    int raw_voxel_id = int((packed_data >> efg_bit) & d_mask);
+    is_water_neighbor = (raw_voxel_id >= 128) ? 1 : 0;
+    voxel_id = raw_voxel_id & 127;
     face_id = int((packed_data >> fg_bit) & e_mask);
     ao_id = int((packed_data >> g_bit) & f_mask);
     flip_id = int(packed_data & g_mask);
@@ -1658,7 +1670,8 @@ class VoxelEngine:
             'fov': FOV_DEG,
             'sensitivity': MOUSE_SENSITIVITY,
             'volume': 10,
-            'render_distance': 4
+            'render_distance': 4,
+            'underwater_tint': False
         }
         self.load_config()
         
@@ -2559,7 +2572,6 @@ class ShaderProgram:
         # Send the standalone water.png directly to the terrain shader
         self.chunk['u_texture_water'] = 2
         self.chunk['bg_color'].write(BG_COLOR)
-        self.chunk['water_line'] = float(int(WATER_LINE) + 1)
 
         # marker
         self.voxel_marker['m_proj'].write(self.player.m_proj)
@@ -2617,7 +2629,7 @@ class ShaderProgram:
         time_speed = 0.1 # Adjust this to make the day longer or shorter
         sun_y = glm.cos(self.app.time * time_speed)
 
-        is_underwater = self.player.position.y < (int(WATER_LINE) + 1.0)
+        is_underwater = getattr(self.player, 'head_in_water', False)
         
         if is_underwater:
             # Underwater fog!
@@ -2641,6 +2653,8 @@ class ShaderProgram:
         if 'u_fog_density' in self.clouds:
             self.clouds['u_fog_density'] = cloud_fog_density
             if 'u_fog_max_opacity' in self.clouds: self.clouds['u_fog_max_opacity'] = fog_max_opacity
+        if 'u_underwater_tint' in self.chunk:
+            self.chunk['u_underwater_tint'] = self.app.config.get('underwater_tint', False)
 
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
@@ -2949,10 +2963,7 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
         if cave_noise > cave_threshold and wy > noise2(wx * 0.1, wz * 0.1) * 3 + 3:
             # Keep water/beaches intact by blocking cave generation in the top sand/dirt layers
             if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
-                if wy <= WATER_LINE:
-                    voxel_id = WATER
-                else:
-                    voxel_id = 0
+                voxel_id = 0
 
     # setting ID
     if voxel_id:
@@ -4055,7 +4066,10 @@ class OptionsMenu:
             Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
             Slider(app, 'Render Distance', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
         ]
-        self.back_button = Button(app, 'Back', (0, -0.6), (0.2, 0.07), self.go_back)
+        self.buttons = [
+            Button(app, '', (0, -0.6), (0.3, 0.05), self.toggle_tint),
+            Button(app, 'Back', (0, -0.8), (0.2, 0.07), self.go_back)
+        ]
         self.previous_state = 'MAIN_MENU'
 
     def update_fov(self, val):
@@ -4065,20 +4079,34 @@ class OptionsMenu:
     def update_volume(self, val):
         pg.mixer.music.set_volume(val / 100.0)
 
+    def toggle_tint(self):
+        current_val = self.app.config.get('underwater_tint', False)
+        self.app.config['underwater_tint'] = not current_val
+        self.app.save_config()
+
     def go_back(self):
+        self.app.save_config()
         self.app.game_state = self.previous_state
 
     def update(self):
         for slider in self.sliders:
             slider.update()
-        self.back_button.check_hover(pg.mouse.get_pos())
+
+        tint_on = self.app.config.get('underwater_tint', False)
+        self.buttons[0].text = f"Underwater Tint: {'On' if tint_on else 'Off'}"
+
+        mouse_pos = pg.mouse.get_pos()
+        for button in self.buttons:
+            button.check_hover(mouse_pos)
 
     def handle_event(self, event):
         for slider in self.sliders:
             slider.handle_event(event)
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            if self.back_button.is_hovered:
-                self.back_button.action()
+            for button in self.buttons:
+                if button.is_hovered:
+                    button.action()
+                    break
 
     def render(self):
         if self.previous_state == 'PAUSED':
@@ -4098,7 +4126,8 @@ class OptionsMenu:
 
         for slider in self.sliders:
             slider.render()
-        self.back_button.render()
+        for button in self.buttons:
+            button.render()
 
 class DebugOverlay:
     def __init__(self, app):

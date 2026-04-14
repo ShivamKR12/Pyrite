@@ -39,7 +39,8 @@ class VoxelEngine:
             'fov': FOV_DEG,
             'sensitivity': MOUSE_SENSITIVITY,
             'volume': 10,
-            'render_distance': 4
+            'render_distance': 4,
+            'underwater_tint': False
         }
         self.load_config()
         

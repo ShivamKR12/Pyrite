@@ -27,7 +27,6 @@ class ShaderProgram:
         # Send the standalone water.png directly to the terrain shader
         self.chunk['u_texture_water'] = 2
         self.chunk['bg_color'].write(BG_COLOR)
-        self.chunk['water_line'] = float(int(WATER_LINE) + 1)
 
         # marker
         self.voxel_marker['m_proj'].write(self.player.m_proj)
@@ -85,7 +84,7 @@ class ShaderProgram:
         time_speed = 0.1 # Adjust this to make the day longer or shorter
         sun_y = glm.cos(self.app.time * time_speed)
 
-        is_underwater = self.player.position.y < (int(WATER_LINE) + 1.0)
+        is_underwater = getattr(self.player, 'head_in_water', False)
         
         if is_underwater:
             # Underwater fog!
@@ -109,6 +108,8 @@ class ShaderProgram:
         if 'u_fog_density' in self.clouds:
             self.clouds['u_fog_density'] = cloud_fog_density
             if 'u_fog_max_opacity' in self.clouds: self.clouds['u_fog_max_opacity'] = fog_max_opacity
+        if 'u_underwater_tint' in self.chunk:
+            self.chunk['u_underwater_tint'] = self.app.config.get('underwater_tint', False)
 
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
