@@ -118,7 +118,7 @@ class VoxelEngine:
         text_mesh = UITextMesh(self)
         
         # 1. Main Title
-        text_renderer.font = pg.font.SysFont('arial', 140, bold=True)
+        text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_LOADING, bold=True)
         tex = text_renderer.get_texture("LOADING WORLD...")
         tex.use(location=4)
         
@@ -133,7 +133,7 @@ class VoxelEngine:
         text_mesh.render()
         
         # 2. Sub-status text
-        text_renderer.font = pg.font.SysFont('arial', 60, bold=False)
+        text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_SUBTITLE, bold=False)
         tex_sub = text_renderer.get_texture(text)
         tex_sub.use(location=4)
         

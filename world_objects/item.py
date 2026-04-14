@@ -11,9 +11,9 @@ class Item:
         self.velocity = glm.vec3((random.random() - 0.5) * 0.002, 0.005, (random.random() - 0.5) * 0.002)
         self.voxel_id = voxel_id
         self.rotation = 0.0
-        self.scale = 0.25
+        self.scale = ITEM_SCALE
         self.is_dead = False
-        self.pickup_delay = pg.time.get_ticks() + 200 # Wait a bit before picking it up
+        self.pickup_delay = pg.time.get_ticks() + ITEM_PICKUP_DELAY
 
     def update(self):
         self.velocity.y += GRAVITY * self.app.delta_time
@@ -33,7 +33,7 @@ class Item:
         self.rotation += 0.003 * self.app.delta_time
         
         if pg.time.get_ticks() > self.pickup_delay:
-            if glm.distance(self.position, self.app.player.position) < 2.5:
+            if glm.distance(self.position, self.app.player.position) < ITEM_PICKUP_RADIUS:
                 if self.app.player.add_item(self.voxel_id):
                     self.is_dead = True
                     self.app.sounds.play_place_block() # Pop sound!

@@ -90,16 +90,16 @@ class TextRenderer:
         self.app = app
         self.ctx = app.ctx
         pg.font.init()
-        self.font = pg.font.SysFont('arial', 20, bold=True)
+        self.font = pg.font.SysFont('arial', FONT_SIZE_STATS, bold=True)
         self.textures = {}
 
     def get_texture(self, text):
         if text in self.textures:
             return self.textures[text]
-        surf = self.font.render(text, True, (210, 210, 210)) # Light grey instead of pure white
+        surf = self.font.render(text, True, UI_TEXT_COLOR)
         shadow_offset = max(2, self.font.get_height() // 15)
         bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
-        shadow = self.font.render(text, True, (40, 40, 40))
+        shadow = self.font.render(text, True, UI_SHADOW_COLOR)
         bg_surf.blit(shadow, (shadow_offset, shadow_offset))
         bg_surf.blit(surf, (0, 0))
         texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
@@ -134,7 +134,7 @@ class Hotbar:
         y = HOTBAR_Y
         
         # 1. Draw the transparent slot backgrounds and selection frame
-        for i in range(9):
+        for i in range(HOTBAR_SIZE):
             x = start_x + i * x_spacing
             is_selected = (i == player.hotbar_index)
             
@@ -143,22 +143,22 @@ class Hotbar:
                 sel_s = slot_s + 0.006
                 self.color_mesh.program['u_scale'] = (sel_s / ASPECT_RATIO, sel_s)
                 self.color_mesh.program['u_offset'] = (x, y)
-                self.color_mesh.program['u_color'] = (0.9, 0.9, 0.9, 0.9)
+                self.color_mesh.program['u_color'] = UI_SLOT_SELECTED_FRAME_COLOR
                 self.color_mesh.render()
                 
                 # Draw slightly lighter inner background
                 self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
-                self.color_mesh.program['u_color'] = (0.5, 0.5, 0.5, 0.7)
+                self.color_mesh.program['u_color'] = UI_SLOT_SELECTED_BG_COLOR
                 self.color_mesh.render()
             else:
                 # Draw standard dark background
                 self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
                 self.color_mesh.program['u_offset'] = (x, y)
-                self.color_mesh.program['u_color'] = (0.2, 0.2, 0.2, 0.6)
+                self.color_mesh.program['u_color'] = UI_SLOT_BG_COLOR
                 self.color_mesh.render()
 
         # 2. Draw the 3D block icons inside the slots
-        for i in range(9):
+        for i in range(HOTBAR_SIZE):
             voxel_id = player.inventory[i]
             if voxel_id != 0:
                 self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
@@ -167,7 +167,7 @@ class Hotbar:
                 self.block_mesh.render()
 
         # 3. Draw the stack counts
-        for i in range(9):
+        for i in range(HOTBAR_SIZE):
             count = player.inventory_counts[i]
             if count > 0:
                 tex = self.text_renderer.get_texture(str(count))
@@ -292,12 +292,12 @@ class InventoryUI:
         x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
         y_spacing = SLOT_SCALE * 2 + gap
         
-        col = i % 9
+        col = i % HOTBAR_SIZE
         x = -4 * x_spacing + col * x_spacing
-        if i < 9:
+        if i < HOTBAR_SIZE:
             y = HOTBAR_Y # Hotbar
         else:
-            row = 2 - ((i - 9) // 9) # Map 9-17 to bottom row, 18-26 middle, 27-35 top
+            row = 2 - ((i - HOTBAR_SIZE) // HOTBAR_SIZE) 
             y = HOTBAR_Y + (row + 1.5) * y_spacing
         return x, y
 
@@ -308,7 +308,7 @@ class InventoryUI:
         slot_w = SLOT_SCALE / ASPECT_RATIO
         slot_h = SLOT_SCALE
         
-        for i in range(36):
+        for i in range(INVENTORY_SIZE):
             sx, sy = self.get_slot_pos(i)
             if sx - slot_w < mx < sx + slot_w and sy - slot_h < my < sy + slot_h:
                 return i
@@ -327,7 +327,7 @@ class InventoryUI:
         
         player = self.app.player
         
-        for i in range(36):
+        for i in range(INVENTORY_SIZE):
             sx, sy = self.get_slot_pos(i)
             dx = (mx - sx) * ASPECT_RATIO
             dy = my - sy
@@ -447,25 +447,25 @@ class InventoryUI:
         
         self.color_mesh.program['u_scale'] = (bg_w, bg_h)
         self.color_mesh.program['u_offset'] = (0.0, HOTBAR_Y + 2.5 * y_spacing)
-        self.color_mesh.program['u_color'] = (0.2, 0.2, 0.2, 0.95)
+        self.color_mesh.program['u_color'] = UI_BG_COLOR
         self.color_mesh.render()
 
         player = self.app.player
         hover_idx = self.get_slot_at_mouse(pg.mouse.get_pos())
         
-        for i in range(36):
+        for i in range(INVENTORY_SIZE):
             x, y = self.get_slot_pos(i)
             s = SLOT_SCALE
             
             if i == hover_idx:
                 self.color_mesh.program['u_scale'] = ((s+0.005) / ASPECT_RATIO, s+0.005)
                 self.color_mesh.program['u_offset'] = (x, y)
-                self.color_mesh.program['u_color'] = (0.9, 0.9, 0.9, 0.5)
+                self.color_mesh.program['u_color'] = UI_SLOT_HOVER_COLOR
                 self.color_mesh.render()
 
             self.color_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
             self.color_mesh.program['u_offset'] = (x, y)
-            self.color_mesh.program['u_color'] = (0.3, 0.3, 0.3, 0.8)
+            self.color_mesh.program['u_color'] = UI_SLOT_BG_COLOR
             self.color_mesh.render()
 
             voxel_id = player.inventory[i]
@@ -515,12 +515,12 @@ class Button:
 
         self.color_mesh = UIColorMesh(app)
         self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', 40, bold=True)
+        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=True)
         self.text_mesh = UITextMesh(app)
 
         self.is_hovered = False
-        self.base_color = (0.2, 0.2, 0.2, 0.7)
-        self.hover_color = (0.3, 0.3, 0.3, 0.8)
+        self.base_color = UI_BUTTON_COLOR
+        self.hover_color = UI_HOVER_COLOR
 
     def check_hover(self, mouse_pos):
         x, y = self.pos
@@ -564,7 +564,7 @@ class Menu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 180, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_TITLE, bold=True)
         self.title_mesh = UITextMesh(app)
 
         self.buttons = [
@@ -610,7 +610,7 @@ class PauseMenu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 160, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
         self.title_mesh = UITextMesh(app)
         self.bg_mesh = UIColorMesh(app)
 
@@ -679,7 +679,7 @@ class Slider:
 
         self.color_mesh = UIColorMesh(app)
         self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', 30, bold=True)
+        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_SLIDERS, bold=True)
         self.text_mesh = UITextMesh(app)
 
         self.is_hovered = False
@@ -758,7 +758,7 @@ class OptionsMenu:
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', 160, bold=True)
+        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
         self.title_mesh = UITextMesh(app)
         self.bg_mesh = UIColorMesh(app)
 
@@ -834,7 +834,7 @@ class OptionsMenu:
 class DebugOverlay:
     def __init__(self, app):
         self.app = app
-        self.font = pg.font.SysFont('arial', 18, bold=True)
+        self.font = pg.font.SysFont('arial', FONT_SIZE_DEBUG, bold=True)
         self.text_mesh = UITextMesh(app)
         self.dynamic_texture = None
 

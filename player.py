@@ -26,19 +26,19 @@ class Player(Camera):
         self.mining_time = 0.0
         self.mining_duration = 0.0 # updated dynamically
         
-        self.inventory = [0] * 36 # 0 means empty slot
-        self.inventory_counts = [0] * 36
+        self.inventory = [0] * INVENTORY_SIZE # 0 means empty slot
+        self.inventory_counts = [0] * INVENTORY_SIZE
         self.hotbar_index = 0
         
         self.fov = glm.radians(self.app.config['fov'])
         self.is_sprinting = False
 
         # --- Survival Stats ---
-        self.max_health = 20
+        self.max_health = MAX_HEALTH
         self.health = self.max_health
-        self.max_hunger = 20
+        self.max_hunger = MAX_HUNGER
         self.hunger = self.max_hunger
-        self.max_oxygen = 20
+        self.max_oxygen = MAX_OXYGEN
         self.oxygen = self.max_oxygen
         
         self.highest_y = position.y
@@ -116,8 +116,8 @@ class Player(Camera):
                 if self.spawn_immunity:
                     self.spawn_immunity = False
                 else:
-                    if fall_dist > 3.0 and not self.in_water:
-                        damage = int(math.floor(fall_dist - 3.0))
+                    if fall_dist > FALL_DAMAGE_THRESHOLD and not self.in_water:
+                        damage = int(math.floor(fall_dist - FALL_DAMAGE_THRESHOLD))
                         if damage > 0:
                             self.take_damage(damage)
                 self.highest_y = self.position.y
@@ -138,7 +138,7 @@ class Player(Camera):
                 bob_offset = glm.sin(self.step_counter) * 0.05
                 
                 # Drain hunger
-                hunger_drain = (0.002 if self.is_sprinting else 0.0005) * self.app.delta_time
+                hunger_drain = (HUNGER_DRAIN_SPRINT if self.is_sprinting else HUNGER_DRAIN_WALK) * self.app.delta_time
                 self.hunger = max(0.0, self.hunger - hunger_drain)
 
                 current_time = pg.time.get_ticks()
@@ -162,19 +162,19 @@ class Player(Camera):
             # Oxygen & Drowning Logic
             current_time = pg.time.get_ticks()
             if self.head_in_water:
-                if current_time - self.oxygen_timer > 1000: # Lose 1 oxygen per second
+                if current_time - self.oxygen_timer > OXYGEN_LOSE_TIMER:
                     self.oxygen -= 1
                     self.oxygen_timer = current_time
                     if self.oxygen < 0:
                         self.oxygen = 0
                         self.take_damage(1)
             else:
-                if self.oxygen < self.max_oxygen and current_time - self.oxygen_timer > 200:
+                if self.oxygen < self.max_oxygen and current_time - self.oxygen_timer > OXYGEN_GAIN_TIMER:
                     self.oxygen += 1
                     self.oxygen_timer = current_time
 
             # Void Fall Damage
-            if self.position.y < -20:
+            if self.position.y < VOID_DEATH_Y:
                 if current_time - self.last_damage_time > 500: # Take damage every half second
                     self.take_damage(4)
                     self.last_damage_time = current_time
@@ -193,8 +193,8 @@ class Player(Camera):
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
             
-            # Hotbar numbers 1-9
-            if pg.K_1 <= event.key <= pg.K_9:
+            # Hotbar numeric keys
+            if pg.K_1 <= event.key <= pg.K_1 + HOTBAR_SIZE - 1:
                 self.hotbar_index = event.key - pg.K_1
                 
         # adding and removing voxels with clicks
@@ -204,9 +204,9 @@ class Player(Camera):
                 voxel_handler.set_voxel(mode='add')
                 self.interaction_timer = pg.time.get_ticks()
             if event.button == 4:  # Scroll Up
-                self.hotbar_index = (self.hotbar_index - 1) % 9
+                self.hotbar_index = (self.hotbar_index - 1) % HOTBAR_SIZE
             if event.button == 5:  # Scroll Down
-                self.hotbar_index = (self.hotbar_index + 1) % 9
+                self.hotbar_index = (self.hotbar_index + 1) % HOTBAR_SIZE
 
     def mouse_control(self):
         mouse_dx, mouse_dy = pg.mouse.get_rel()
@@ -395,12 +395,12 @@ class Player(Camera):
 
     def add_item(self, voxel_id):
         # Check if we already have a stack of this item
-        for i in range(36):
+        for i in range(INVENTORY_SIZE):
             if self.inventory[i] == voxel_id and self.inventory_counts[i] < 64:
                 self.inventory_counts[i] += 1
                 return True
         # Find an empty slot
-        for i in range(36):
+        for i in range(INVENTORY_SIZE):
             if self.inventory[i] == 0:
                 self.inventory[i] = voxel_id
                 self.inventory_counts[i] = 1
