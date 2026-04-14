@@ -35,6 +35,11 @@ class Chunk:
             self.set_uniform()
             self.mesh.render()
 
+    def render_water(self):
+        if not self.is_empty and self.mesh and self.mesh.vao:
+            self.set_uniform()
+            self.mesh.render_water()
+
     def build_voxels(self):
         voxels = np.zeros(CHUNK_VOL, dtype='uint8')
 
@@ -53,8 +58,11 @@ class Chunk:
             for z in range(CHUNK_SIZE):
                 wz = z + cz
                 world_height = get_height(wx, wz)
-                local_height = min(world_height - cy, CHUNK_SIZE)
+                
+                # Ensure we also generate blocks up to the water line so lakes/oceans fill with water!
+                max_h = max(world_height, int(WATER_LINE) + 1)
+                local_height = min(max_h - cy, CHUNK_SIZE)
 
-                for y in range(local_height):
+                for y in range(max(0, local_height)):
                     wy = y + cy
                     set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height)

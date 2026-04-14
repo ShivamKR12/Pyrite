@@ -52,22 +52,29 @@ class ChunkMesh(BaseMesh):
         self.vao = None
         self.vbo = None
         self.vertex_data = None
-        self.vertex_count = 0
+        self.opaque_count = 0
+        self.water_count = 0
 
     def render(self):
-        if self.vao:
-            self.vao.render(vertices=self.vertex_count)
+        if self.vao and self.opaque_count > 0:
+            self.vao.render(vertices=self.opaque_count)
+
+    def render_water(self):
+        if self.vao and self.water_count > 0:
+            self.vao.render(vertices=self.water_count, first=self.opaque_count)
 
     def get_vao(self):
         if self.vertex_data is None:
-            self.vertex_data = self.get_vertex_data()
+            result = self.get_vertex_data()
+            self.vertex_data = result[0]
+            self.opaque_count = result[1]
+            self.water_count = result[2]
 
         if self.vertex_data.size == 0:
             return None
 
-        self.vertex_count = self.vertex_data.size // self.format_size
         byte_size = self.vertex_data.nbytes
-        pool = self.app.scene.world.vbo_pool
+        pool = self.chunk.world.vbo_pool
 
         # Find the smallest VBO in the pool that can safely fit our new mesh data
         best_i = -1
@@ -195,18 +202,23 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
 
 
 @njit(cache=True)
-def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
-        return False
+        return 0
     chunk_voxels = world_voxels[chunk_index]
 
     x, y, z = local_voxel_pos
     voxel_index = x % CHUNK_SIZE + z % CHUNK_SIZE * CHUNK_SIZE + y % CHUNK_SIZE * CHUNK_AREA
 
-    if chunk_voxels[voxel_index]:
-        return False
-    return True
+    return chunk_voxels[voxel_index]
+
+
+@njit(cache=True)
+def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+    val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions)
+    # 9 is WATER. Water does not cast AO shadows!
+    return val == 0 or val == WATER
 
 
 @njit(cache=True)
@@ -220,7 +232,9 @@ def add_data(vertex_data, index, *vertices):
 @njit(cache=True)
 def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
+    water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0
+    water_index = 0
 
     cx, cy, cz = chunk_pos
     mask0 = np.empty((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
@@ -238,12 +252,16 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
                 if not voxel_id: continue
 
-                if is_void((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions):
+                # top face
+                neighbor_id = get_neighbor_voxel_id((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask0[x, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                if is_void((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions):
+                # bottom face
+                neighbor_id = get_neighbor_voxel_id((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask1[x, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
@@ -261,17 +279,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y + 1, z    , voxel_id, 0, ao0, flip_id)
-                    v1 = pack_data(x + w, y + 1, z    , voxel_id, 0, ao1, flip_id)
-                    v2 = pack_data(x + w, y + 1, z + h, voxel_id, 0, ao2, flip_id)
-                    v3 = pack_data(x    , y + 1, z + h, voxel_id, 0, ao3, flip_id)
+                    v0 = pack_data(x    , y + 1, z    , v_id, 0, ao0, flip_id)
+                    v1 = pack_data(x + w, y + 1, z    , v_id, 0, ao1, flip_id)
+                    v2 = pack_data(x + w, y + 1, z + h, v_id, 0, ao2, flip_id)
+                    v3 = pack_data(x    , y + 1, z + h, v_id, 0, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v1, v0, v3, v1, v3, v2)
-                    else:       index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v1, v0, v3, v1, v3, v2)
+                        else:       water_index = add_data(water_data, water_index, v0, v3, v2, v0, v2, v1)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v1, v0, v3, v1, v3, v2)
+                        else:       index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
 
                     for ix in range(w):
                         for iz in range(h): mask0[x + ix, z + iz] = 0
@@ -289,17 +311,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y, z    , voxel_id, 1, ao0, flip_id)
-                    v1 = pack_data(x + w, y, z    , voxel_id, 1, ao1, flip_id)
-                    v2 = pack_data(x + w, y, z + h, voxel_id, 1, ao2, flip_id)
-                    v3 = pack_data(x    , y, z + h, voxel_id, 1, ao3, flip_id)
+                    v0 = pack_data(x    , y, z    , v_id, 1, ao0, flip_id)
+                    v1 = pack_data(x + w, y, z    , v_id, 1, ao1, flip_id)
+                    v2 = pack_data(x + w, y, z + h, v_id, 1, ao2, flip_id)
+                    v3 = pack_data(x    , y, z + h, v_id, 1, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v1, v3, v0, v1, v2, v3)
-                    else:       index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v1, v3, v0, v1, v2, v3)
+                        else:       water_index = add_data(water_data, water_index, v0, v2, v3, v0, v1, v2)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v1, v3, v0, v1, v2, v3)
+                        else:       index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
 
                     for ix in range(w):
                         for iz in range(h): mask1[x + ix, z + iz] = 0
@@ -316,12 +342,14 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
                 if not voxel_id: continue
 
-                if is_void((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions):
+                neighbor_id = get_neighbor_voxel_id((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask0[y, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                if is_void((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions):
+                neighbor_id = get_neighbor_voxel_id((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask1[y, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
@@ -339,17 +367,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x + 1, y    , z    , voxel_id, 2, ao0, flip_id)
-                    v1 = pack_data(x + 1, y + w, z    , voxel_id, 2, ao1, flip_id)
-                    v2 = pack_data(x + 1, y + w, z + h, voxel_id, 2, ao2, flip_id)
-                    v3 = pack_data(x + 1, y    , z + h, voxel_id, 2, ao3, flip_id)
+                    v0 = pack_data(x + 1, y    , z    , v_id, 2, ao0, flip_id)
+                    v1 = pack_data(x + 1, y + w, z    , v_id, 2, ao1, flip_id)
+                    v2 = pack_data(x + 1, y + w, z + h, v_id, 2, ao2, flip_id)
+                    v3 = pack_data(x + 1, y    , z + h, v_id, 2, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
-                    else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
+                        else:       water_index = add_data(water_data, water_index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
+                        else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
 
                     for iy in range(w):
                         for iz in range(h): mask0[y + iy, z + iz] = 0
@@ -367,17 +399,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x, y    , z    , voxel_id, 3, ao0, flip_id)
-                    v1 = pack_data(x, y + w, z    , voxel_id, 3, ao1, flip_id)
-                    v2 = pack_data(x, y + w, z + h, voxel_id, 3, ao2, flip_id)
-                    v3 = pack_data(x, y    , z + h, voxel_id, 3, ao3, flip_id)
+                    v0 = pack_data(x, y    , z    , v_id, 3, ao0, flip_id)
+                    v1 = pack_data(x, y + w, z    , v_id, 3, ao1, flip_id)
+                    v2 = pack_data(x, y + w, z + h, v_id, 3, ao2, flip_id)
+                    v3 = pack_data(x, y    , z + h, v_id, 3, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
-                    else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
+                        else:       water_index = add_data(water_data, water_index, v0, v2, v1, v0, v3, v2)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
+                        else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
 
                     for iy in range(w):
                         for iz in range(h): mask1[y + iy, z + iz] = 0
@@ -394,12 +430,14 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
                 if not voxel_id: continue
 
-                if is_void((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions):
+                neighbor_id = get_neighbor_voxel_id((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask0[x, y] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                if is_void((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions):
+                neighbor_id = get_neighbor_voxel_id((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask1[x, y] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
@@ -417,17 +455,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y    , z, voxel_id, 4, ao0, flip_id)
-                    v1 = pack_data(x    , y + h, z, voxel_id, 4, ao1, flip_id)
-                    v2 = pack_data(x + w, y + h, z, voxel_id, 4, ao2, flip_id)
-                    v3 = pack_data(x + w, y    , z, voxel_id, 4, ao3, flip_id)
+                    v0 = pack_data(x    , y    , z, v_id, 4, ao0, flip_id)
+                    v1 = pack_data(x    , y + h, z, v_id, 4, ao1, flip_id)
+                    v2 = pack_data(x + w, y + h, z, v_id, 4, ao2, flip_id)
+                    v3 = pack_data(x + w, y    , z, v_id, 4, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
-                    else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
+                        else:       water_index = add_data(water_data, water_index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
+                        else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
 
                     for ix in range(w):
                         for iy in range(h): mask0[x + ix, y + iy] = 0
@@ -445,22 +487,29 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y    , z + 1, voxel_id, 5, ao0, flip_id)
-                    v1 = pack_data(x    , y + h, z + 1, voxel_id, 5, ao1, flip_id)
-                    v2 = pack_data(x + w, y + h, z + 1, voxel_id, 5, ao2, flip_id)
-                    v3 = pack_data(x + w, y    , z + 1, voxel_id, 5, ao3, flip_id)
+                    v0 = pack_data(x    , y    , z + 1, v_id, 5, ao0, flip_id)
+                    v1 = pack_data(x    , y + h, z + 1, v_id, 5, ao1, flip_id)
+                    v2 = pack_data(x + w, y + h, z + 1, v_id, 5, ao2, flip_id)
+                    v3 = pack_data(x + w, y    , z + 1, v_id, 5, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
-                    else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
+                        else:       water_index = add_data(water_data, water_index, v0, v2, v1, v0, v3, v2)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
+                        else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
 
                     for ix in range(w):
                         for iy in range(h): mask1[x + ix, y + iy] = 0
 
-    return vertex_data[:index].copy()
+    opaque_mesh = vertex_data[:index]
+    water_mesh = water_data[:water_index]
+    combined_mesh = np.hstack((opaque_mesh, water_mesh))
+    return combined_mesh, index // format_size, water_index // format_size
 
 ===== D:\Minecraft\meshes\cloud_mesh.py =====
 
@@ -683,9 +732,12 @@ const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
 
 uniform sampler2DArray u_texture_array_0;
+uniform sampler2D u_texture_water;
 uniform vec3 bg_color;
 uniform float water_line;
 uniform float u_fog_density;
+uniform float u_fog_max_opacity;
+uniform float u_time;
 
 in vec2 uv;
 in float shading;
@@ -699,24 +751,35 @@ void main() {
     vec2 dx = dFdx(uv);
     vec2 dy = dFdy(uv);
 
-    vec2 face_uv = fract(uv);
-    face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
-
-    vec3 tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
+    vec3 tex_col;
+    if (voxel_id == 9) { // 9 is WATER
+        vec2 water_uv = fract(uv) + vec2(u_time * 0.2, u_time * 0.2);
+        tex_col = texture(u_texture_water, water_uv).rgb;
+    } else {
+        vec2 face_uv = fract(uv);
+        face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
+        tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
+    }
+    
     tex_col = pow(tex_col, gamma);
-
     tex_col *= shading;
 
     // underwater effect
-    if (frag_world_pos.y < water_line) tex_col *= vec3(0.0, 0.3, 1.0);
+    if (frag_world_pos.y < water_line && voxel_id != 9) tex_col *= vec3(0.0, 0.3, 1.0);
 
     tex_col = pow(tex_col, inv_gamma);
 
     //fog
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-u_fog_density * fog_dist * fog_dist)));
+    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    tex_col = mix(tex_col, bg_color, fog_factor);
 
-    fragColor = vec4(tex_col, 1.0);
+    float alpha = 1.0;
+    if (voxel_id == 9) {
+        alpha = mix(0.5, 0.0, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
+    }
+
+    fragColor = vec4(tex_col, alpha);
 }
 
 ===== D:\Minecraft\shaders\chunk.vert =====
@@ -814,6 +877,7 @@ layout (location = 0) out vec4 fragColor;
 uniform vec3 bg_color;
 uniform vec3 u_sun_direction;
 uniform float u_fog_density;
+uniform float u_fog_max_opacity;
 
 void main() {
     vec3 cloud_color = vec3(1.0); // Base daytime color
@@ -828,7 +892,8 @@ void main() {
     }
 
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    vec3 col = mix(cloud_color, bg_color, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
+    float fog_factor = min(1.0 - exp(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    vec3 col = mix(cloud_color, bg_color, fog_factor);
 
     fragColor = vec4(col, 0.8);
 }
@@ -871,6 +936,7 @@ uniform sampler2DArray u_texture_array_0;
 uniform int voxel_id;
 uniform vec3 bg_color;
 uniform float u_fog_density;
+uniform float u_fog_max_opacity;
 
 const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
@@ -883,7 +949,8 @@ void main() {
     tex_col = pow(tex_col, inv_gamma);
 
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-u_fog_density * fog_dist * fog_dist)));
+    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    tex_col = mix(tex_col, bg_color, fog_factor);
 
     fragColor = vec4(tex_col, 1.0);
 }
@@ -1131,9 +1198,6 @@ void main() {
     if (is_bbox == 1) {
         fragColor = vec4(0.0);
         return;
-    } else if (is_bbox == 2) {
-        fragColor = vec4(1.0, 1.0, 0.0, 1.0); // Yellow chunk boundaries
-        return;
     }
     
     // Base frame color (the black outline)
@@ -1182,7 +1246,7 @@ out vec2 uv;
 void main() {
     uv = in_tex_coord_0;
     marker_color = marker_colors[mode_id];
-    if (is_bbox != 0) {
+    if (is_bbox == 1) {
         gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
     } else {
         gl_Position = m_proj * m_view * m_model * vec4((in_position - 0.5) * 1.01 + 0.5, 1.0);
@@ -1289,6 +1353,11 @@ class Chunk:
             self.set_uniform()
             self.mesh.render()
 
+    def render_water(self):
+        if not self.is_empty and self.mesh and self.mesh.vao:
+            self.set_uniform()
+            self.mesh.render_water()
+
     def build_voxels(self):
         voxels = np.zeros(CHUNK_VOL, dtype='uint8')
 
@@ -1307,9 +1376,12 @@ class Chunk:
             for z in range(CHUNK_SIZE):
                 wz = z + cz
                 world_height = get_height(wx, wz)
-                local_height = min(world_height - cy, CHUNK_SIZE)
+                
+                # Ensure we also generate blocks up to the water line so lakes/oceans fill with water!
+                max_h = max(world_height, int(WATER_LINE) + 1)
+                local_height = min(max_h - cy, CHUNK_SIZE)
 
-                for y in range(local_height):
+                for y in range(max(0, local_height)):
                     wy = y + cy
                     set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height)
 
@@ -1702,7 +1774,6 @@ class VoxelEngine:
         self.wireframe = False
         self.freeze_culling = False
         self.show_debug = False
-        self.show_chunk_borders = False
 
         self.on_init()
 
@@ -1865,8 +1936,6 @@ class VoxelEngine:
                     self.quit_game()
             elif event.type == pg.KEYDOWN and event.key == pg.K_F3:
                 self.show_debug = not self.show_debug
-            elif event.type == pg.KEYDOWN and event.key == pg.K_g:
-                self.show_chunk_borders = not self.show_chunk_borders
             
             if self.game_state == 'MAIN_MENU':
                 self.menu.handle_event(event)
@@ -1930,8 +1999,9 @@ class Player(Camera):
         # physics state
         self.velocity = glm.vec3(0)
         self.on_ground = False
+        self.in_water = False
         self.feet_pos = glm.vec3(position)
-        self.free_fly = False
+        self.game_mode = SURVIVAL
         self.step_counter = 0
         self.interaction_timer = 0
         self.interaction_delay = INTERACTION_DELAY
@@ -1950,7 +2020,7 @@ class Player(Camera):
 
     def update(self):
         self.mouse_control()
-        if self.free_fly:
+        if self.game_mode == CREATIVE:
             # free camera mode — NO PHYSICS
             self.keyboard_control()
         else:
@@ -1968,6 +2038,11 @@ class Player(Camera):
             voxel_under, *_ = self.app.scene.world.voxel_handler.get_voxel_id(block_under_pos)
             if not voxel_under: 
                 voxel_under = GRASS
+
+            # Check if player body is in water
+            body_pos = glm.ivec3(glm.floor(self.position.x), glm.floor(self.position.y - PLAYER_EYE_HEIGHT * 0.5), glm.floor(self.position.z))
+            voxel_body, *_ = self.app.scene.world.voxel_handler.get_voxel_id(body_pos)
+            self.in_water = (voxel_body == WATER)
 
             if self.on_ground and not was_on_ground:
                 self.app.sounds.play_jump(voxel_under)
@@ -2008,13 +2083,13 @@ class Player(Camera):
     def handle_event(self, event):
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_f:
-                self.free_fly = not self.free_fly
-                if self.free_fly:
-                    # sync feet to camera when entering free fly
+                self.game_mode = SURVIVAL if self.game_mode == CREATIVE else CREATIVE
+                if self.game_mode == CREATIVE:
+                    # sync feet to camera when entering creative
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
                 else:
-                    # sync camera to feet when exiting free fly
+                    # sync camera to feet when exiting creative
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
             
@@ -2052,14 +2127,20 @@ class Player(Camera):
             if self.target_voxel_pos == voxel_handler.voxel_world_pos:
                 self.mining_time += self.app.delta_time
                 self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
-                if self.mining_time >= self.mining_duration:
+                if self.mining_time >= self.mining_duration and current_time - self.interaction_timer > self.interaction_delay:
                     voxel_handler.set_voxel(mode='remove')
                     self.mining_time = 0.0
+                    self.interaction_timer = current_time
             else:
                 self.target_voxel_pos = voxel_handler.voxel_world_pos
                 self.mining_time = 0.0
-                self.mining_duration = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
+                self.mining_duration = 0.0 if self.game_mode == CREATIVE else BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
                 self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
+                
+                if self.mining_time >= self.mining_duration and current_time - self.interaction_timer > self.interaction_delay:
+                    voxel_handler.set_voxel(mode='remove')
+                    self.mining_time = 0.0
+                    self.interaction_timer = current_time
         else:
             self.mining_time = 0.0
             
@@ -2070,7 +2151,7 @@ class Player(Camera):
                 self.interaction_timer = current_time
 
     def keyboard_control(self):
-        if self.free_fly:
+        if self.game_mode == CREATIVE:
             key_state = pg.key.get_pressed()
             vel = PLAYER_SPEED * 5 * self.app.delta_time
             if key_state[pg.K_w]:
@@ -2108,12 +2189,23 @@ class Player(Camera):
                 self.is_sprinting = True
             self.velocity.x = move_dir.x * speed
             self.velocity.z = move_dir.z * speed
-            if self.on_ground and keys[pg.K_SPACE]:
-                self.velocity.y = JUMP_VELOCITY
-                self.on_ground = False
+            
+            if self.in_water:
+                self.velocity.x *= 0.5 # Water drag
+                self.velocity.z *= 0.5
+                if keys[pg.K_SPACE]:
+                    self.velocity.y = JUMP_VELOCITY * 0.6 # Swim up
+            else:
+                if self.on_ground and keys[pg.K_SPACE]:
+                    self.velocity.y = JUMP_VELOCITY
+                    self.on_ground = False
 
     def apply_gravity(self):
-        self.velocity.y += GRAVITY * self.app.delta_time
+        if self.in_water:
+            self.velocity.y += GRAVITY * 0.2 * self.app.delta_time
+            self.velocity.y *= max(0.0, 1.0 - 0.005 * self.app.delta_time) # vertical water drag
+        else:
+            self.velocity.y += GRAVITY * self.app.delta_time
 
     def move_and_collide(self):
         # X axis
@@ -2142,7 +2234,7 @@ class Player(Camera):
             for y in range(min_y, max_y + 1):
                 for z in range(min_z, max_z + 1):
                     voxel_id, *_ = world.voxel_handler.get_voxel_id(glm.ivec3(x, y, z))
-                    if not voxel_id:
+                    if not voxel_id or voxel_id == WATER:
                         continue
                     voxel_min = glm.vec3(x, y, z)
                     voxel_max = voxel_min + 1
@@ -2221,7 +2313,6 @@ from settings import *
 import moderngl as mgl
 from world import World
 from world_objects.voxel_marker import VoxelMarker
-from world_objects.water import Water
 from world_objects.clouds import Clouds
 from world_objects.sky import Sky
 from ui import Crosshair
@@ -2232,38 +2323,6 @@ from world_objects.item import ItemManager
 from meshes.cube_mesh import CubeMesh
 
 
-class ChunkBorder:
-    def __init__(self, app):
-        self.app = app
-        self.mesh = CubeMesh(self.app)
-
-    def render(self):
-        if not getattr(self.app, 'show_chunk_borders', False): return
-        
-        player = self.app.player
-        px, py, pz = player.position
-        cx, cz = int(px // CHUNK_SIZE), int(pz // CHUNK_SIZE)
-        
-        m_model = glm.translate(glm.mat4(), glm.vec3(cx * CHUNK_SIZE, 0, cz * CHUNK_SIZE))
-        m_model = glm.scale(m_model, glm.vec3(CHUNK_SIZE, WORLD_H * CHUNK_SIZE, CHUNK_SIZE))
-        
-        self.mesh.program['m_model'].write(m_model)
-        self.mesh.program['mode_id'] = 0
-        self.mesh.program['is_bbox'] = 2
-        
-        prev_wireframe = self.app.ctx.wireframe
-        self.app.ctx.wireframe = True
-        self.app.ctx.disable(mgl.DEPTH_TEST)
-        self.app.ctx.disable(mgl.CULL_FACE)
-        
-        self.mesh.render()
-        
-        self.app.ctx.enable(mgl.CULL_FACE)
-        self.app.ctx.enable(mgl.DEPTH_TEST)
-        self.app.ctx.wireframe = prev_wireframe
-        self.mesh.program['is_bbox'] = 0
-
-
 class Scene:
     def __init__(self, app):
         self.app = app
@@ -2271,7 +2330,6 @@ class Scene:
         self.app.render_loading_screen("INITIALIZING MARKERS...")
         self.voxel_marker = VoxelMarker(self.world.voxel_handler)
         self.app.render_loading_screen("INITIALIZING ENVIRONMENT...")
-        self.water = Water(app)
         self.clouds = Clouds(app)
         self.sky = Sky(app)
         self.app.render_loading_screen("INITIALIZING UI...")
@@ -2280,7 +2338,6 @@ class Scene:
         self.held_block = HeldBlock(app)
         self.item_manager = ItemManager(app)
         self.debug_overlay = DebugOverlay(app)
-        self.chunk_border = ChunkBorder(app)
 
     def update(self):
         self.world.update()
@@ -2297,14 +2354,15 @@ class Scene:
 
         # chunks rendering
         self.world.render()
-        self.chunk_border.render()
         self.item_manager.render()
 
         # rendering without cull face
         self.app.ctx.disable(mgl.CULL_FACE)
         self.clouds.render()
-        self.water.render()
+        
+        # Enable face-culling and blend mode to draw semi-transparent water chunks cleanly!
         self.app.ctx.enable(mgl.CULL_FACE)
+        self.world.render_water()
         
         if self.app.wireframe:
             self.app.ctx.wireframe = False
@@ -2393,6 +2451,7 @@ SNOW = 5
 LEAVES = 6
 WOOD = 7
 GRAVEL = 8
+WATER = 9
 
 # terrain levels
 SNOW_LVL = 54
@@ -2414,8 +2473,13 @@ BLOCK_HARDNESS = {
     STONE: 1500,
     SNOW: 200,
     LEAVES: 150,
-    WOOD: 1000
+    WOOD: 1000,
+    WATER: 0 # Water can't be normally mined
 }
+
+# game modes
+CREATIVE = 0
+SURVIVAL = 1
 
 # player interaction
 INTERACTION_DELAY = 150 # ms delay for continuous mining/placing
@@ -2455,7 +2519,6 @@ class ShaderProgram:
         # -------- shaders -------- #
         self.chunk = self.get_program(shader_name='chunk')
         self.voxel_marker = self.get_program(shader_name='voxel_marker')
-        self.water = self.get_program('water')
         self.clouds = self.get_program('clouds')
         self.sky = self.get_program('sky')
         self.quad = self.get_program('quad')
@@ -2471,8 +2534,10 @@ class ShaderProgram:
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['u_texture_array_0'] = 1
+        # Send the standalone water.png directly to the terrain shader
+        self.chunk['u_texture_water'] = 2
         self.chunk['bg_color'].write(BG_COLOR)
-        self.chunk['water_line'] = WATER_LINE
+        self.chunk['water_line'] = float(int(WATER_LINE) + 1)
 
         # marker
         self.voxel_marker['m_proj'].write(self.player.m_proj)
@@ -2481,12 +2546,6 @@ class ShaderProgram:
         self.voxel_marker['u_texture_breaking'] = 3
         self.voxel_marker['mining_progress'] = 0.0
         self.voxel_marker['is_bbox'] = 0
-
-        # water
-        self.water['m_proj'].write(self.player.m_proj)
-        self.water['u_texture_0'] = 2
-        self.water['water_area'] = WATER_AREA
-        self.water['water_line'] = WATER_LINE
 
         # clouds
         self.clouds['m_proj'].write(self.player.m_proj)
@@ -2518,10 +2577,9 @@ class ShaderProgram:
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
+        if 'u_time' in self.chunk:
+            self.chunk['u_time'] = self.app.time
         self.voxel_marker['m_view'].write(self.player.m_view)
-        self.water['m_view'].write(self.player.m_view)
-        self.water['u_time'] = self.app.time
-        self.water['player_pos'].write(self.player.position)
         self.clouds['m_view'].write(self.player.m_view)
         self.clouds['player_pos'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
@@ -2529,36 +2587,43 @@ class ShaderProgram:
         # Update projection matrix dynamically for FOV zooming
         self.chunk['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_proj'].write(self.player.m_proj)
-        self.water['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
         self.item['m_proj'].write(self.player.m_proj)
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
 
-        # Dynamic fog density based on render distance
-        # Base distance for previous hardcoded values was 6 chunks
-        render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
+        time_speed = 0.1 # Adjust this to make the day longer or shorter
+        sun_y = glm.cos(self.app.time * time_speed)
+
+        is_underwater = self.player.position.y < (int(WATER_LINE) + 1.0)
         
-        # Increased base densities to reach ~99% opacity exactly at the edge of the render distance
-        fog_density = 0.002 / (render_dist ** 2)
-        cloud_fog_density = 0.000036 / (render_dist ** 2)
-        water_fog_density = 0.0015 / (render_dist ** 2)
-        
+        if is_underwater:
+            # Underwater fog!
+            bg_color = glm.vec3(0.0, 0.1, 0.4)
+            fog_density = 0.0015
+            cloud_fog_density = 0.0002
+            fog_max_opacity = 0.85 # Cap underwater fog so distant terrain remains visible
+        else:
+            bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
+            render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
+            fog_density = 0.002 / (render_dist ** 2)
+            cloud_fog_density = 0.000036 / (render_dist ** 2)
+            fog_max_opacity = 1.0  # Fully hide chunk boundaries above water
+            
         if 'u_fog_density' in self.chunk:
             self.chunk['u_fog_density'] = fog_density
+            if 'u_fog_max_opacity' in self.chunk: self.chunk['u_fog_max_opacity'] = fog_max_opacity
         if 'u_fog_density' in self.item:
             self.item['u_fog_density'] = fog_density
+            if 'u_fog_max_opacity' in self.item: self.item['u_fog_max_opacity'] = fog_max_opacity
         if 'u_fog_density' in self.clouds:
             self.clouds['u_fog_density'] = cloud_fog_density
-        if 'u_fog_density' in self.water:
-            self.water['u_fog_density'] = water_fog_density
+            if 'u_fog_max_opacity' in self.clouds: self.clouds['u_fog_max_opacity'] = fog_max_opacity
 
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
-        time_speed = 0.1 # Adjust this to make the day longer or shorter
-        sun_y = glm.cos(self.app.time * time_speed)
         sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
         
         # Safely write sun direction only if the shader currently supports it
@@ -2571,7 +2636,6 @@ class ShaderProgram:
         if 'u_sun_direction' in self.clouds:
             self.clouds['u_sun_direction'].write(sun_dir)
         
-        bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
         self.app.bg_color = bg_color
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)
@@ -2760,7 +2824,7 @@ def get_height(x, z):
     if cont < -0.2:
         # Deep Plains & Oceans (Flatter and lower)
         w = min((-0.2 - cont) * 5.0, 1.0)
-        target_h = WATER_LINE + 3 + detail_2 * 0.3 + detail_3 * 0.3
+        target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
         height = height * (1.0 - w) + target_h * w
     elif cont > 0.4:
         # Extreme Mountains
@@ -2827,7 +2891,10 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
     dirt_depth = int((noise2(wx * 0.1, wz * 0.1) * 0.5 + 0.5) * 5) + 3
 
     if wy > world_height - 1:
-        pass # Air
+        if wy <= WATER_LINE:
+            voxel_id = WATER
+        else:
+            pass # Air
     else:
         # Determine default solid block type
         if wy == world_height - 1:
@@ -2860,7 +2927,10 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
         if cave_noise > cave_threshold and wy > noise2(wx * 0.1, wz * 0.1) * 3 + 3:
             # Keep water/beaches intact by blocking cave generation in the top sand/dirt layers
             if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
-                voxel_id = 0
+                if wy <= WATER_LINE:
+                    voxel_id = WATER
+                else:
+                    voxel_id = 0
 
     # setting ID
     if voxel_id:
@@ -3763,7 +3833,8 @@ class DebugOverlay:
             f"Chunk: {cx} {cy} {cz}",
             f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
             f"Time: {self.app.time:.2f}",
-            f"Target Block: {target}"
+            f"Target Block: {target}",
+            f"Game Mode: {'Survival' if player.game_mode == SURVIVAL else 'Creative'}"
         ]
 
         surfaces = []
@@ -3851,10 +3922,11 @@ class VoxelHandler:
                     self.app.scene.world.build_queue.append(chunk)
                 self.app.sounds.play_dig(current_id)
 
-                # Consume item from hotbar
-                self.app.player.hotbar_counts[self.app.player.hotbar_index] -= 1
-                if self.app.player.hotbar_counts[self.app.player.hotbar_index] <= 0:
-                    self.app.player.hotbar[self.app.player.hotbar_index] = 0
+                # Consume item from hotbar if in Survival mode
+                if self.app.player.game_mode == SURVIVAL:
+                    self.app.player.hotbar_counts[self.app.player.hotbar_index] -= 1
+                    if self.app.player.hotbar_counts[self.app.player.hotbar_index] <= 0:
+                        self.app.player.hotbar[self.app.player.hotbar_index] = 0
 
                 # was it an empty chunk
                 if chunk.is_empty:
@@ -3896,8 +3968,9 @@ class VoxelHandler:
             self.rebuild_adjacent_chunks()
             self.app.sounds.play_dig(self.voxel_id)
             
-            # Spawn dropped item
-            self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
+            # Spawn dropped item only in Survival mode
+            if self.app.player.game_mode == SURVIVAL:
+                self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
 
     def set_voxel(self, mode='remove'):
         if mode == 'add':
@@ -3934,7 +4007,8 @@ class VoxelHandler:
         while not (max_x > 1.0 and max_y > 1.0 and max_z > 1.0):
 
             result = self.get_voxel_id(voxel_world_pos=current_voxel_pos)
-            if result[0]:
+            # Ignore water blocks for raycasting so the player can break blocks underwater!
+            if result[0] and result[0] != WATER:
                 self.voxel_id, self.voxel_index, self.voxel_local_pos, self.chunk = result
                 self.voxel_world_pos = current_voxel_pos
 
@@ -4045,7 +4119,10 @@ class World:
         _dummy = Chunk(self, position=(0,0,0))
         _dummy.voxels = _dummy.build_voxels()
         _dummy.build_mesh()
-        _dummy.mesh.vertex_data = _dummy.mesh.get_vertex_data()
+        result = _dummy.mesh.get_vertex_data()
+        _dummy.mesh.vertex_data = result[0]
+        _dummy.mesh.opaque_count = result[1]
+        _dummy.mesh.water_count = result[2]
         _dummy.mesh.vao = _dummy.mesh.get_vao()
         print(f"[SYSTEM] Numba compilation finished in {time.perf_counter() - t0:.3f} seconds!")
         self.app.render_loading_screen("NUMBA COMPILATION SUCCESSFUL!")
@@ -4087,7 +4164,10 @@ class World:
         for item in list(self.mesh_queue):
             chunk, future = item
             if future.done():
-                chunk.mesh.vertex_data = future.result()
+                result = future.result()
+                chunk.mesh.vertex_data = result[0]
+                chunk.mesh.opaque_count = result[1]
+                chunk.mesh.water_count = result[2]
                 
                 # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
                 if chunk.mesh.vao and chunk.mesh.vbo:
@@ -4310,6 +4390,13 @@ class World:
                 fbo.depth_mask = True
             ctx.depth_func = '<'
             ctx.enable(mgl.CULL_FACE)
+            
+    def render_water(self):
+        # We assume visibility is already calculated by the primary render() pass!
+        freeze = getattr(self.app, 'freeze_culling', False)
+        for chunk in self.sorted_chunks:
+            if chunk.is_visible:
+                chunk.render_water()
             
     def save(self):
         # Save all currently active chunks synchronously

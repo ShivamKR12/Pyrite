@@ -2,7 +2,6 @@ from settings import *
 import moderngl as mgl
 from world import World
 from world_objects.voxel_marker import VoxelMarker
-from world_objects.water import Water
 from world_objects.clouds import Clouds
 from world_objects.sky import Sky
 from ui import Crosshair
@@ -20,7 +19,6 @@ class Scene:
         self.app.render_loading_screen("INITIALIZING MARKERS...")
         self.voxel_marker = VoxelMarker(self.world.voxel_handler)
         self.app.render_loading_screen("INITIALIZING ENVIRONMENT...")
-        self.water = Water(app)
         self.clouds = Clouds(app)
         self.sky = Sky(app)
         self.app.render_loading_screen("INITIALIZING UI...")
@@ -50,8 +48,10 @@ class Scene:
         # rendering without cull face
         self.app.ctx.disable(mgl.CULL_FACE)
         self.clouds.render()
-        self.water.render()
+        
+        # Enable face-culling and blend mode to draw semi-transparent water chunks cleanly!
         self.app.ctx.enable(mgl.CULL_FACE)
+        self.world.render_water()
         
         if self.app.wireframe:
             self.app.ctx.wireframe = False

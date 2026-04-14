@@ -80,18 +80,23 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
 
 
 @njit(cache=True)
-def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
-        return False
+        return 0
     chunk_voxels = world_voxels[chunk_index]
 
     x, y, z = local_voxel_pos
     voxel_index = x % CHUNK_SIZE + z % CHUNK_SIZE * CHUNK_SIZE + y % CHUNK_SIZE * CHUNK_AREA
 
-    if chunk_voxels[voxel_index]:
-        return False
-    return True
+    return chunk_voxels[voxel_index]
+
+
+@njit(cache=True)
+def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+    val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions)
+    # 9 is WATER. Water does not cast AO shadows!
+    return val == 0 or val == WATER
 
 
 @njit(cache=True)
@@ -105,7 +110,9 @@ def add_data(vertex_data, index, *vertices):
 @njit(cache=True)
 def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
+    water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0
+    water_index = 0
 
     cx, cy, cz = chunk_pos
     mask0 = np.empty((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
@@ -123,12 +130,16 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
                 if not voxel_id: continue
 
-                if is_void((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions):
+                # top face
+                neighbor_id = get_neighbor_voxel_id((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask0[x, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                if is_void((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions):
+                # bottom face
+                neighbor_id = get_neighbor_voxel_id((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask1[x, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
@@ -146,17 +157,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y + 1, z    , voxel_id, 0, ao0, flip_id)
-                    v1 = pack_data(x + w, y + 1, z    , voxel_id, 0, ao1, flip_id)
-                    v2 = pack_data(x + w, y + 1, z + h, voxel_id, 0, ao2, flip_id)
-                    v3 = pack_data(x    , y + 1, z + h, voxel_id, 0, ao3, flip_id)
+                    v0 = pack_data(x    , y + 1, z    , v_id, 0, ao0, flip_id)
+                    v1 = pack_data(x + w, y + 1, z    , v_id, 0, ao1, flip_id)
+                    v2 = pack_data(x + w, y + 1, z + h, v_id, 0, ao2, flip_id)
+                    v3 = pack_data(x    , y + 1, z + h, v_id, 0, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v1, v0, v3, v1, v3, v2)
-                    else:       index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v1, v0, v3, v1, v3, v2)
+                        else:       water_index = add_data(water_data, water_index, v0, v3, v2, v0, v2, v1)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v1, v0, v3, v1, v3, v2)
+                        else:       index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
 
                     for ix in range(w):
                         for iz in range(h): mask0[x + ix, z + iz] = 0
@@ -174,17 +189,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y, z    , voxel_id, 1, ao0, flip_id)
-                    v1 = pack_data(x + w, y, z    , voxel_id, 1, ao1, flip_id)
-                    v2 = pack_data(x + w, y, z + h, voxel_id, 1, ao2, flip_id)
-                    v3 = pack_data(x    , y, z + h, voxel_id, 1, ao3, flip_id)
+                    v0 = pack_data(x    , y, z    , v_id, 1, ao0, flip_id)
+                    v1 = pack_data(x + w, y, z    , v_id, 1, ao1, flip_id)
+                    v2 = pack_data(x + w, y, z + h, v_id, 1, ao2, flip_id)
+                    v3 = pack_data(x    , y, z + h, v_id, 1, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v1, v3, v0, v1, v2, v3)
-                    else:       index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v1, v3, v0, v1, v2, v3)
+                        else:       water_index = add_data(water_data, water_index, v0, v2, v3, v0, v1, v2)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v1, v3, v0, v1, v2, v3)
+                        else:       index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
 
                     for ix in range(w):
                         for iz in range(h): mask1[x + ix, z + iz] = 0
@@ -201,12 +220,14 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
                 if not voxel_id: continue
 
-                if is_void((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions):
+                neighbor_id = get_neighbor_voxel_id((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask0[y, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                if is_void((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions):
+                neighbor_id = get_neighbor_voxel_id((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask1[y, z] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
@@ -224,17 +245,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x + 1, y    , z    , voxel_id, 2, ao0, flip_id)
-                    v1 = pack_data(x + 1, y + w, z    , voxel_id, 2, ao1, flip_id)
-                    v2 = pack_data(x + 1, y + w, z + h, voxel_id, 2, ao2, flip_id)
-                    v3 = pack_data(x + 1, y    , z + h, voxel_id, 2, ao3, flip_id)
+                    v0 = pack_data(x + 1, y    , z    , v_id, 2, ao0, flip_id)
+                    v1 = pack_data(x + 1, y + w, z    , v_id, 2, ao1, flip_id)
+                    v2 = pack_data(x + 1, y + w, z + h, v_id, 2, ao2, flip_id)
+                    v3 = pack_data(x + 1, y    , z + h, v_id, 2, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
-                    else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
+                        else:       water_index = add_data(water_data, water_index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
+                        else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
 
                     for iy in range(w):
                         for iz in range(h): mask0[y + iy, z + iz] = 0
@@ -252,17 +277,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x, y    , z    , voxel_id, 3, ao0, flip_id)
-                    v1 = pack_data(x, y + w, z    , voxel_id, 3, ao1, flip_id)
-                    v2 = pack_data(x, y + w, z + h, voxel_id, 3, ao2, flip_id)
-                    v3 = pack_data(x, y    , z + h, voxel_id, 3, ao3, flip_id)
+                    v0 = pack_data(x, y    , z    , v_id, 3, ao0, flip_id)
+                    v1 = pack_data(x, y + w, z    , v_id, 3, ao1, flip_id)
+                    v2 = pack_data(x, y + w, z + h, v_id, 3, ao2, flip_id)
+                    v3 = pack_data(x, y    , z + h, v_id, 3, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
-                    else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
+                        else:       water_index = add_data(water_data, water_index, v0, v2, v1, v0, v3, v2)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
+                        else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
 
                     for iy in range(w):
                         for iz in range(h): mask1[y + iy, z + iz] = 0
@@ -279,12 +308,14 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
                 if not voxel_id: continue
 
-                if is_void((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions):
+                neighbor_id = get_neighbor_voxel_id((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask0[x, y] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
 
-                if is_void((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions):
+                neighbor_id = get_neighbor_voxel_id((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions)
+                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
                     ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     mask1[x, y] = (voxel_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
@@ -302,17 +333,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y    , z, voxel_id, 4, ao0, flip_id)
-                    v1 = pack_data(x    , y + h, z, voxel_id, 4, ao1, flip_id)
-                    v2 = pack_data(x + w, y + h, z, voxel_id, 4, ao2, flip_id)
-                    v3 = pack_data(x + w, y    , z, voxel_id, 4, ao3, flip_id)
+                    v0 = pack_data(x    , y    , z, v_id, 4, ao0, flip_id)
+                    v1 = pack_data(x    , y + h, z, v_id, 4, ao1, flip_id)
+                    v2 = pack_data(x + w, y + h, z, v_id, 4, ao2, flip_id)
+                    v3 = pack_data(x + w, y    , z, v_id, 4, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
-                    else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
+                        else:       water_index = add_data(water_data, water_index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v3, v0, v1, v3, v1, v2)
+                        else:       index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
 
                     for ix in range(w):
                         for iy in range(h): mask0[x + ix, y + iy] = 0
@@ -330,19 +365,26 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    voxel_id = (val >> 10) & 0xFF
+                    v_id = (val >> 10) & 0xFF
                     ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y    , z + 1, voxel_id, 5, ao0, flip_id)
-                    v1 = pack_data(x    , y + h, z + 1, voxel_id, 5, ao1, flip_id)
-                    v2 = pack_data(x + w, y + h, z + 1, voxel_id, 5, ao2, flip_id)
-                    v3 = pack_data(x + w, y    , z + 1, voxel_id, 5, ao3, flip_id)
+                    v0 = pack_data(x    , y    , z + 1, v_id, 5, ao0, flip_id)
+                    v1 = pack_data(x    , y + h, z + 1, v_id, 5, ao1, flip_id)
+                    v2 = pack_data(x + w, y + h, z + 1, v_id, 5, ao2, flip_id)
+                    v3 = pack_data(x + w, y    , z + 1, v_id, 5, ao3, flip_id)
 
-                    if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
-                    else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
+                    if v_id == WATER:
+                        if flip_id: water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
+                        else:       water_index = add_data(water_data, water_index, v0, v2, v1, v0, v3, v2)
+                    else:
+                        if flip_id: index = add_data(vertex_data, index, v3, v1, v0, v3, v2, v1)
+                        else:       index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
 
                     for ix in range(w):
                         for iy in range(h): mask1[x + ix, y + iy] = 0
 
-    return vertex_data[:index].copy()
+    opaque_mesh = vertex_data[:index]
+    water_mesh = water_data[:water_index]
+    combined_mesh = np.hstack((opaque_mesh, water_mesh))
+    return combined_mesh, index // format_size, water_index // format_size

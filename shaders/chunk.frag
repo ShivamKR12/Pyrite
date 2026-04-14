@@ -6,9 +6,12 @@ const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
 
 uniform sampler2DArray u_texture_array_0;
+uniform sampler2D u_texture_water;
 uniform vec3 bg_color;
 uniform float water_line;
 uniform float u_fog_density;
+uniform float u_fog_max_opacity;
+uniform float u_time;
 
 in vec2 uv;
 in float shading;
@@ -22,22 +25,33 @@ void main() {
     vec2 dx = dFdx(uv);
     vec2 dy = dFdy(uv);
 
-    vec2 face_uv = fract(uv);
-    face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
-
-    vec3 tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
+    vec3 tex_col;
+    if (voxel_id == 9) { // 9 is WATER
+        vec2 water_uv = fract(uv) + vec2(u_time * 0.2, u_time * 0.2);
+        tex_col = texture(u_texture_water, water_uv).rgb;
+    } else {
+        vec2 face_uv = fract(uv);
+        face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
+        tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
+    }
+    
     tex_col = pow(tex_col, gamma);
-
     tex_col *= shading;
 
     // underwater effect
-    if (frag_world_pos.y < water_line) tex_col *= vec3(0.0, 0.3, 1.0);
+    if (frag_world_pos.y < water_line && voxel_id != 9) tex_col *= vec3(0.0, 0.3, 1.0);
 
     tex_col = pow(tex_col, inv_gamma);
 
     //fog
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-u_fog_density * fog_dist * fog_dist)));
+    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    tex_col = mix(tex_col, bg_color, fog_factor);
 
-    fragColor = vec4(tex_col, 1.0);
+    float alpha = 1.0;
+    if (voxel_id == 9) {
+        alpha = mix(0.5, 0.0, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
+    }
+
+    fragColor = vec4(tex_col, alpha);
 }

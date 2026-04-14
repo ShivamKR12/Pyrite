@@ -568,7 +568,8 @@ class DebugOverlay:
             f"Chunk: {cx} {cy} {cz}",
             f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
             f"Time: {self.app.time:.2f}",
-            f"Target Block: {target}"
+            f"Target Block: {target}",
+            f"Game Mode: {'Survival' if player.game_mode == SURVIVAL else 'Creative'}"
         ]
 
         surfaces = []

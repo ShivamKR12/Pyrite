@@ -55,7 +55,10 @@ class World:
         _dummy = Chunk(self, position=(0,0,0))
         _dummy.voxels = _dummy.build_voxels()
         _dummy.build_mesh()
-        _dummy.mesh.vertex_data = _dummy.mesh.get_vertex_data()
+        result = _dummy.mesh.get_vertex_data()
+        _dummy.mesh.vertex_data = result[0]
+        _dummy.mesh.opaque_count = result[1]
+        _dummy.mesh.water_count = result[2]
         _dummy.mesh.vao = _dummy.mesh.get_vao()
         print(f"[SYSTEM] Numba compilation finished in {time.perf_counter() - t0:.3f} seconds!")
         self.app.render_loading_screen("NUMBA COMPILATION SUCCESSFUL!")
@@ -97,7 +100,10 @@ class World:
         for item in list(self.mesh_queue):
             chunk, future = item
             if future.done():
-                chunk.mesh.vertex_data = future.result()
+                result = future.result()
+                chunk.mesh.vertex_data = result[0]
+                chunk.mesh.opaque_count = result[1]
+                chunk.mesh.water_count = result[2]
                 
                 # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
                 if chunk.mesh.vao and chunk.mesh.vbo:
@@ -320,6 +326,13 @@ class World:
                 fbo.depth_mask = True
             ctx.depth_func = '<'
             ctx.enable(mgl.CULL_FACE)
+            
+    def render_water(self):
+        # We assume visibility is already calculated by the primary render() pass!
+        freeze = getattr(self.app, 'freeze_culling', False)
+        for chunk in self.sorted_chunks:
+            if chunk.is_visible:
+                chunk.render_water()
             
     def save(self):
         # Save all currently active chunks synchronously

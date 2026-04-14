@@ -17,22 +17,29 @@ class ChunkMesh(BaseMesh):
         self.vao = None
         self.vbo = None
         self.vertex_data = None
-        self.vertex_count = 0
+        self.opaque_count = 0
+        self.water_count = 0
 
     def render(self):
-        if self.vao:
-            self.vao.render(vertices=self.vertex_count)
+        if self.vao and self.opaque_count > 0:
+            self.vao.render(vertices=self.opaque_count)
+
+    def render_water(self):
+        if self.vao and self.water_count > 0:
+            self.vao.render(vertices=self.water_count, first=self.opaque_count)
 
     def get_vao(self):
         if self.vertex_data is None:
-            self.vertex_data = self.get_vertex_data()
+            result = self.get_vertex_data()
+            self.vertex_data = result[0]
+            self.opaque_count = result[1]
+            self.water_count = result[2]
 
         if self.vertex_data.size == 0:
             return None
 
-        self.vertex_count = self.vertex_data.size // self.format_size
         byte_size = self.vertex_data.nbytes
-        pool = self.app.scene.world.vbo_pool
+        pool = self.chunk.world.vbo_pool
 
         # Find the smallest VBO in the pool that can safely fit our new mesh data
         best_i = -1

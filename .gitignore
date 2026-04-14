@@ -9,3 +9,7 @@ sounds/other/
 save.db
 command.txt
 convert_audio.ps1
+meshes/quad_mesh.py
+world_objects/water.py
+shaders/water.vert
+shaders/water.frag

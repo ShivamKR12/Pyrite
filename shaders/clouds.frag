@@ -5,6 +5,7 @@ layout (location = 0) out vec4 fragColor;
 uniform vec3 bg_color;
 uniform vec3 u_sun_direction;
 uniform float u_fog_density;
+uniform float u_fog_max_opacity;
 
 void main() {
     vec3 cloud_color = vec3(1.0); // Base daytime color
@@ -19,7 +20,8 @@ void main() {
     }
 
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    vec3 col = mix(cloud_color, bg_color, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
+    float fog_factor = min(1.0 - exp(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    vec3 col = mix(cloud_color, bg_color, fog_factor);
 
     fragColor = vec4(col, 0.8);
 }

@@ -9,7 +9,6 @@ class ShaderProgram:
         # -------- shaders -------- #
         self.chunk = self.get_program(shader_name='chunk')
         self.voxel_marker = self.get_program(shader_name='voxel_marker')
-        self.water = self.get_program('water')
         self.clouds = self.get_program('clouds')
         self.sky = self.get_program('sky')
         self.quad = self.get_program('quad')
@@ -25,8 +24,10 @@ class ShaderProgram:
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['u_texture_array_0'] = 1
+        # Send the standalone water.png directly to the terrain shader
+        self.chunk['u_texture_water'] = 2
         self.chunk['bg_color'].write(BG_COLOR)
-        self.chunk['water_line'] = WATER_LINE
+        self.chunk['water_line'] = float(int(WATER_LINE) + 1)
 
         # marker
         self.voxel_marker['m_proj'].write(self.player.m_proj)
@@ -35,12 +36,6 @@ class ShaderProgram:
         self.voxel_marker['u_texture_breaking'] = 3
         self.voxel_marker['mining_progress'] = 0.0
         self.voxel_marker['is_bbox'] = 0
-
-        # water
-        self.water['m_proj'].write(self.player.m_proj)
-        self.water['u_texture_0'] = 2
-        self.water['water_area'] = WATER_AREA
-        self.water['water_line'] = WATER_LINE
 
         # clouds
         self.clouds['m_proj'].write(self.player.m_proj)
@@ -72,10 +67,9 @@ class ShaderProgram:
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
+        if 'u_time' in self.chunk:
+            self.chunk['u_time'] = self.app.time
         self.voxel_marker['m_view'].write(self.player.m_view)
-        self.water['m_view'].write(self.player.m_view)
-        self.water['u_time'] = self.app.time
-        self.water['player_pos'].write(self.player.position)
         self.clouds['m_view'].write(self.player.m_view)
         self.clouds['player_pos'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
@@ -83,36 +77,43 @@ class ShaderProgram:
         # Update projection matrix dynamically for FOV zooming
         self.chunk['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_proj'].write(self.player.m_proj)
-        self.water['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
         self.item['m_proj'].write(self.player.m_proj)
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
 
-        # Dynamic fog density based on render distance
-        # Base distance for previous hardcoded values was 6 chunks
-        render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
+        time_speed = 0.1 # Adjust this to make the day longer or shorter
+        sun_y = glm.cos(self.app.time * time_speed)
+
+        is_underwater = self.player.position.y < (int(WATER_LINE) + 1.0)
         
-        # Increased base densities to reach ~99% opacity exactly at the edge of the render distance
-        fog_density = 0.002 / (render_dist ** 2)
-        cloud_fog_density = 0.000036 / (render_dist ** 2)
-        water_fog_density = 0.0015 / (render_dist ** 2)
-        
+        if is_underwater:
+            # Underwater fog!
+            bg_color = glm.vec3(0.0, 0.1, 0.4)
+            fog_density = 0.0015
+            cloud_fog_density = 0.0002
+            fog_max_opacity = 0.85 # Cap underwater fog so distant terrain remains visible
+        else:
+            bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
+            render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
+            fog_density = 0.002 / (render_dist ** 2)
+            cloud_fog_density = 0.000036 / (render_dist ** 2)
+            fog_max_opacity = 1.0  # Fully hide chunk boundaries above water
+            
         if 'u_fog_density' in self.chunk:
             self.chunk['u_fog_density'] = fog_density
+            if 'u_fog_max_opacity' in self.chunk: self.chunk['u_fog_max_opacity'] = fog_max_opacity
         if 'u_fog_density' in self.item:
             self.item['u_fog_density'] = fog_density
+            if 'u_fog_max_opacity' in self.item: self.item['u_fog_max_opacity'] = fog_max_opacity
         if 'u_fog_density' in self.clouds:
             self.clouds['u_fog_density'] = cloud_fog_density
-        if 'u_fog_density' in self.water:
-            self.water['u_fog_density'] = water_fog_density
+            if 'u_fog_max_opacity' in self.clouds: self.clouds['u_fog_max_opacity'] = fog_max_opacity
 
         mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
-        time_speed = 0.1 # Adjust this to make the day longer or shorter
-        sun_y = glm.cos(self.app.time * time_speed)
         sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
         
         # Safely write sun direction only if the shader currently supports it
@@ -125,7 +126,6 @@ class ShaderProgram:
         if 'u_sun_direction' in self.clouds:
             self.clouds['u_sun_direction'].write(sun_dir)
         
-        bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
         self.app.bg_color = bg_color
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)

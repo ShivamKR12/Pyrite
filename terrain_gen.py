@@ -39,7 +39,7 @@ def get_height(x, z):
     if cont < -0.2:
         # Deep Plains & Oceans (Flatter and lower)
         w = min((-0.2 - cont) * 5.0, 1.0)
-        target_h = WATER_LINE + 3 + detail_2 * 0.3 + detail_3 * 0.3
+        target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
         height = height * (1.0 - w) + target_h * w
     elif cont > 0.4:
         # Extreme Mountains
@@ -106,7 +106,10 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
     dirt_depth = int((noise2(wx * 0.1, wz * 0.1) * 0.5 + 0.5) * 5) + 3
 
     if wy > world_height - 1:
-        pass # Air
+        if wy <= WATER_LINE:
+            voxel_id = WATER
+        else:
+            pass # Air
     else:
         # Determine default solid block type
         if wy == world_height - 1:
@@ -139,7 +142,10 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
         if cave_noise > cave_threshold and wy > noise2(wx * 0.1, wz * 0.1) * 3 + 3:
             # Keep water/beaches intact by blocking cave generation in the top sand/dirt layers
             if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
-                voxel_id = 0
+                if wy <= WATER_LINE:
+                    voxel_id = WATER
+                else:
+                    voxel_id = 0
 
     # setting ID
     if voxel_id:

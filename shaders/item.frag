@@ -10,6 +10,7 @@ uniform sampler2DArray u_texture_array_0;
 uniform int voxel_id;
 uniform vec3 bg_color;
 uniform float u_fog_density;
+uniform float u_fog_max_opacity;
 
 const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
@@ -22,7 +23,8 @@ void main() {
     tex_col = pow(tex_col, inv_gamma);
 
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    tex_col = mix(tex_col, bg_color, (1.0 - exp2(-u_fog_density * fog_dist * fog_dist)));
+    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    tex_col = mix(tex_col, bg_color, fog_factor);
 
     fragColor = vec4(tex_col, 1.0);
 }

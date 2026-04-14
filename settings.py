@@ -66,6 +66,7 @@ SNOW = 5
 LEAVES = 6
 WOOD = 7
 GRAVEL = 8
+WATER = 9
 
 # terrain levels
 SNOW_LVL = 54
@@ -87,8 +88,13 @@ BLOCK_HARDNESS = {
     STONE: 1500,
     SNOW: 200,
     LEAVES: 150,
-    WOOD: 1000
+    WOOD: 1000,
+    WATER: 0 # Water can't be normally mined
 }
+
+# game modes
+CREATIVE = 0
+SURVIVAL = 1
 
 # player interaction
 INTERACTION_DELAY = 150 # ms delay for continuous mining/placing

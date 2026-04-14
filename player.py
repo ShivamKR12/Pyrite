@@ -12,8 +12,9 @@ class Player(Camera):
         # physics state
         self.velocity = glm.vec3(0)
         self.on_ground = False
+        self.in_water = False
         self.feet_pos = glm.vec3(position)
-        self.free_fly = False
+        self.game_mode = SURVIVAL
         self.step_counter = 0
         self.interaction_timer = 0
         self.interaction_delay = INTERACTION_DELAY
@@ -32,7 +33,7 @@ class Player(Camera):
 
     def update(self):
         self.mouse_control()
-        if self.free_fly:
+        if self.game_mode == CREATIVE:
             # free camera mode — NO PHYSICS
             self.keyboard_control()
         else:
@@ -50,6 +51,11 @@ class Player(Camera):
             voxel_under, *_ = self.app.scene.world.voxel_handler.get_voxel_id(block_under_pos)
             if not voxel_under: 
                 voxel_under = GRASS
+
+            # Check if player body is in water
+            body_pos = glm.ivec3(glm.floor(self.position.x), glm.floor(self.position.y - PLAYER_EYE_HEIGHT * 0.5), glm.floor(self.position.z))
+            voxel_body, *_ = self.app.scene.world.voxel_handler.get_voxel_id(body_pos)
+            self.in_water = (voxel_body == WATER)
 
             if self.on_ground and not was_on_ground:
                 self.app.sounds.play_jump(voxel_under)
@@ -90,13 +96,13 @@ class Player(Camera):
     def handle_event(self, event):
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_f:
-                self.free_fly = not self.free_fly
-                if self.free_fly:
-                    # sync feet to camera when entering free fly
+                self.game_mode = SURVIVAL if self.game_mode == CREATIVE else CREATIVE
+                if self.game_mode == CREATIVE:
+                    # sync feet to camera when entering creative
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
                 else:
-                    # sync camera to feet when exiting free fly
+                    # sync camera to feet when exiting creative
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
             
@@ -134,14 +140,20 @@ class Player(Camera):
             if self.target_voxel_pos == voxel_handler.voxel_world_pos:
                 self.mining_time += self.app.delta_time
                 self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
-                if self.mining_time >= self.mining_duration:
+                if self.mining_time >= self.mining_duration and current_time - self.interaction_timer > self.interaction_delay:
                     voxel_handler.set_voxel(mode='remove')
                     self.mining_time = 0.0
+                    self.interaction_timer = current_time
             else:
                 self.target_voxel_pos = voxel_handler.voxel_world_pos
                 self.mining_time = 0.0
-                self.mining_duration = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
+                self.mining_duration = 0.0 if self.game_mode == CREATIVE else BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
                 self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
+                
+                if self.mining_time >= self.mining_duration and current_time - self.interaction_timer > self.interaction_delay:
+                    voxel_handler.set_voxel(mode='remove')
+                    self.mining_time = 0.0
+                    self.interaction_timer = current_time
         else:
             self.mining_time = 0.0
             
@@ -152,7 +164,7 @@ class Player(Camera):
                 self.interaction_timer = current_time
 
     def keyboard_control(self):
-        if self.free_fly:
+        if self.game_mode == CREATIVE:
             key_state = pg.key.get_pressed()
             vel = PLAYER_SPEED * 5 * self.app.delta_time
             if key_state[pg.K_w]:
@@ -190,12 +202,23 @@ class Player(Camera):
                 self.is_sprinting = True
             self.velocity.x = move_dir.x * speed
             self.velocity.z = move_dir.z * speed
-            if self.on_ground and keys[pg.K_SPACE]:
-                self.velocity.y = JUMP_VELOCITY
-                self.on_ground = False
+            
+            if self.in_water:
+                self.velocity.x *= 0.5 # Water drag
+                self.velocity.z *= 0.5
+                if keys[pg.K_SPACE]:
+                    self.velocity.y = JUMP_VELOCITY * 0.6 # Swim up
+            else:
+                if self.on_ground and keys[pg.K_SPACE]:
+                    self.velocity.y = JUMP_VELOCITY
+                    self.on_ground = False
 
     def apply_gravity(self):
-        self.velocity.y += GRAVITY * self.app.delta_time
+        if self.in_water:
+            self.velocity.y += GRAVITY * 0.2 * self.app.delta_time
+            self.velocity.y *= max(0.0, 1.0 - 0.005 * self.app.delta_time) # vertical water drag
+        else:
+            self.velocity.y += GRAVITY * self.app.delta_time
 
     def move_and_collide(self):
         # X axis
@@ -224,7 +247,7 @@ class Player(Camera):
             for y in range(min_y, max_y + 1):
                 for z in range(min_z, max_z + 1):
                     voxel_id, *_ = world.voxel_handler.get_voxel_id(glm.ivec3(x, y, z))
-                    if not voxel_id:
+                    if not voxel_id or voxel_id == WATER:
                         continue
                     voxel_min = glm.vec3(x, y, z)
                     voxel_max = voxel_min + 1

@@ -43,10 +43,11 @@ class VoxelHandler:
                     self.app.scene.world.build_queue.append(chunk)
                 self.app.sounds.play_dig(current_id)
 
-                # Consume item from hotbar
-                self.app.player.hotbar_counts[self.app.player.hotbar_index] -= 1
-                if self.app.player.hotbar_counts[self.app.player.hotbar_index] <= 0:
-                    self.app.player.hotbar[self.app.player.hotbar_index] = 0
+                # Consume item from hotbar if in Survival mode
+                if self.app.player.game_mode == SURVIVAL:
+                    self.app.player.hotbar_counts[self.app.player.hotbar_index] -= 1
+                    if self.app.player.hotbar_counts[self.app.player.hotbar_index] <= 0:
+                        self.app.player.hotbar[self.app.player.hotbar_index] = 0
 
                 # was it an empty chunk
                 if chunk.is_empty:
@@ -88,8 +89,9 @@ class VoxelHandler:
             self.rebuild_adjacent_chunks()
             self.app.sounds.play_dig(self.voxel_id)
             
-            # Spawn dropped item
-            self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
+            # Spawn dropped item only in Survival mode
+            if self.app.player.game_mode == SURVIVAL:
+                self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
 
     def set_voxel(self, mode='remove'):
         if mode == 'add':
@@ -126,7 +128,8 @@ class VoxelHandler:
         while not (max_x > 1.0 and max_y > 1.0 and max_z > 1.0):
 
             result = self.get_voxel_id(voxel_world_pos=current_voxel_pos)
-            if result[0]:
+            # Ignore water blocks for raycasting so the player can break blocks underwater!
+            if result[0] and result[0] != WATER:
                 self.voxel_id, self.voxel_index, self.voxel_local_pos, self.chunk = result
                 self.voxel_world_pos = current_voxel_pos
 
