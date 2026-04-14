@@ -90,6 +90,15 @@ BLOCK_HARDNESS = {
     WOOD: 1000
 }
 
+# player interaction
+INTERACTION_DELAY = 150 # ms delay for continuous mining/placing
+
+# ui
+HOTBAR_SCALE = 0.045
+SLOT_SCALE = 0.06
+HOTBAR_SPACING = 0.13
+HOTBAR_Y = -0.85
+
 # water
 WATER_LINE = 5.6
 WATER_AREA = 5 * CHUNK_SIZE * WORLD_W

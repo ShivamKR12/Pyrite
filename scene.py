@@ -8,7 +8,9 @@ from world_objects.sky import Sky
 from ui import Crosshair
 from ui import Hotbar
 from ui import HeldBlock
+from ui import DebugOverlay
 from world_objects.item import ItemManager
+from meshes.cube_mesh import CubeMesh
 
 
 class Scene:
@@ -26,6 +28,7 @@ class Scene:
         self.hotbar = Hotbar(app)
         self.held_block = HeldBlock(app)
         self.item_manager = ItemManager(app)
+        self.debug_overlay = DebugOverlay(app)
 
     def update(self):
         self.world.update()
@@ -63,4 +66,6 @@ class Scene:
         self.app.ctx.disable(mgl.DEPTH_TEST)
         self.crosshair.render()
         self.hotbar.render()
+        if getattr(self.app, 'show_debug', False):
+            self.debug_overlay.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)

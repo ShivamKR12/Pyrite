@@ -126,15 +126,14 @@ class Hotbar:
         
     def render(self):
         player = self.app.player
-        s = 0.045  # Base scale for blocks
-        slot_s = 0.06 # Scale of slot background
-        spacing = 0.13
-        start_x = -4 * spacing
-        y = -0.85
+        s = HOTBAR_SCALE
+        slot_s = SLOT_SCALE
+        start_x = -4 * HOTBAR_SPACING
+        y = HOTBAR_Y
         
         # 1. Draw the transparent slot backgrounds and selection frame
         for i in range(9):
-            x = start_x + i * spacing
+            x = start_x + i * HOTBAR_SPACING
             is_selected = (i == player.hotbar_index)
             
             if is_selected:
@@ -161,7 +160,7 @@ class Hotbar:
             voxel_id = player.hotbar[i]
             if voxel_id != 0:
                 self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-                self.block_mesh.program['u_offset'] = (start_x + i * spacing, y)
+                self.block_mesh.program['u_offset'] = (start_x + i * HOTBAR_SPACING, y)
                 self.block_mesh.program['voxel_id'] = voxel_id
                 self.block_mesh.render()
 
@@ -176,7 +175,7 @@ class Hotbar:
                 scale_y = 0.015
                 scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
                 
-                offset_x = start_x + i * spacing + 0.015
+                offset_x = start_x + i * HOTBAR_SPACING + 0.015
                 offset_y = y - 0.025
                 
                 self.text_mesh.program['u_scale'] = (scale_x, scale_y)
@@ -542,3 +541,70 @@ class OptionsMenu:
         for slider in self.sliders:
             slider.render()
         self.back_button.render()
+
+class DebugOverlay:
+    def __init__(self, app):
+        self.app = app
+        self.font = pg.font.SysFont('arial', 18, bold=True)
+        self.text_mesh = UITextMesh(app)
+        self.dynamic_texture = None
+
+    def render(self):
+        player = self.app.player
+        handler = self.app.scene.world.voxel_handler
+        
+        fps = self.app.clock.get_fps()
+        x, y, z = player.position
+        cx, cy, cz = int(x // CHUNK_SIZE), int(y // CHUNK_SIZE), int(z // CHUNK_SIZE)
+        yaw, pitch = glm.degrees(player.yaw), glm.degrees(player.pitch)
+        
+        target = "Air"
+        if handler.voxel_id:
+            target = f"ID: {handler.voxel_id} at {int(handler.voxel_world_pos.x)} {int(handler.voxel_world_pos.y)} {int(handler.voxel_world_pos.z)}"
+
+        lines = [
+            f"Voxel Engine (FPS: {fps:.0f})",
+            f"XYZ: {x:.3f} / {y:.5f} / {z:.3f}",
+            f"Chunk: {cx} {cy} {cz}",
+            f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
+            f"Time: {self.app.time:.2f}",
+            f"Target Block: {target}"
+        ]
+
+        surfaces = []
+        for line in lines:
+            shadow = self.font.render(line, True, (60, 60, 60))
+            text = self.font.render(line, True, (220, 220, 220))
+            merged = pg.Surface((text.get_width() + 2, text.get_height() + 2), pg.SRCALPHA)
+            merged.blit(shadow, (2, 2))
+            merged.blit(text, (0, 0))
+            surfaces.append(merged)
+            
+        max_w = max(s.get_width() for s in surfaces)
+        total_h = sum(s.get_height() for s in surfaces)
+        
+        bg_surf = pg.Surface((max_w + 10, total_h + 10), pg.SRCALPHA)
+        bg_surf.fill((0, 0, 0, 120))
+        
+        curr_y = 5
+        for s in surfaces:
+            bg_surf.blit(s, (5, curr_y))
+            curr_y += s.get_height()
+        
+        if self.dynamic_texture:
+            self.dynamic_texture.release() # Prevent VRAM leaks
+            
+        self.dynamic_texture = self.app.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
+        self.dynamic_texture.filter = (mgl.NEAREST, mgl.NEAREST)
+        self.dynamic_texture.use(location=4)
+        
+        tex_w, tex_h = self.dynamic_texture.size
+        scale_y = (tex_h / WIN_RES.y)
+        scale_x = (tex_w / WIN_RES.x)
+        
+        x_offset = -1.0 + scale_x
+        y_offset = 1.0 - scale_y
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = (x_offset, y_offset)
+        self.text_mesh.render()

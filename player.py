@@ -16,7 +16,7 @@ class Player(Camera):
         self.free_fly = False
         self.step_counter = 0
         self.interaction_timer = 0
-        self.interaction_delay = 150 # ms delay for continuous mining/placing
+        self.interaction_delay = INTERACTION_DELAY
         self.last_step_time = 0
         
         self.target_voxel_pos = None

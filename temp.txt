@@ -1131,6 +1131,9 @@ void main() {
     if (is_bbox == 1) {
         fragColor = vec4(0.0);
         return;
+    } else if (is_bbox == 2) {
+        fragColor = vec4(1.0, 1.0, 0.0, 1.0); // Yellow chunk boundaries
+        return;
     }
     
     // Base frame color (the black outline)
@@ -1179,7 +1182,7 @@ out vec2 uv;
 void main() {
     uv = in_tex_coord_0;
     marker_color = marker_colors[mode_id];
-    if (is_bbox == 1) {
+    if (is_bbox != 0) {
         gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
     } else {
         gl_Position = m_proj * m_view * m_model * vec4((in_position - 0.5) * 1.01 + 0.5, 1.0);
@@ -1698,6 +1701,8 @@ class VoxelEngine:
         self.menu = None
         self.wireframe = False
         self.freeze_culling = False
+        self.show_debug = False
+        self.show_chunk_borders = False
 
         self.on_init()
 
@@ -1858,6 +1863,10 @@ class VoxelEngine:
                     self.options_menu.go_back()
                 else: # Esc inside Main Menu quits the game
                     self.quit_game()
+            elif event.type == pg.KEYDOWN and event.key == pg.K_F3:
+                self.show_debug = not self.show_debug
+            elif event.type == pg.KEYDOWN and event.key == pg.K_g:
+                self.show_chunk_borders = not self.show_chunk_borders
             
             if self.game_state == 'MAIN_MENU':
                 self.menu.handle_event(event)
@@ -1925,7 +1934,7 @@ class Player(Camera):
         self.free_fly = False
         self.step_counter = 0
         self.interaction_timer = 0
-        self.interaction_delay = 150 # ms delay for continuous mining/placing
+        self.interaction_delay = INTERACTION_DELAY
         self.last_step_time = 0
         
         self.target_voxel_pos = None
@@ -2218,7 +2227,41 @@ from world_objects.sky import Sky
 from ui import Crosshair
 from ui import Hotbar
 from ui import HeldBlock
+from ui import DebugOverlay
 from world_objects.item import ItemManager
+from meshes.cube_mesh import CubeMesh
+
+
+class ChunkBorder:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = CubeMesh(self.app)
+
+    def render(self):
+        if not getattr(self.app, 'show_chunk_borders', False): return
+        
+        player = self.app.player
+        px, py, pz = player.position
+        cx, cz = int(px // CHUNK_SIZE), int(pz // CHUNK_SIZE)
+        
+        m_model = glm.translate(glm.mat4(), glm.vec3(cx * CHUNK_SIZE, 0, cz * CHUNK_SIZE))
+        m_model = glm.scale(m_model, glm.vec3(CHUNK_SIZE, WORLD_H * CHUNK_SIZE, CHUNK_SIZE))
+        
+        self.mesh.program['m_model'].write(m_model)
+        self.mesh.program['mode_id'] = 0
+        self.mesh.program['is_bbox'] = 2
+        
+        prev_wireframe = self.app.ctx.wireframe
+        self.app.ctx.wireframe = True
+        self.app.ctx.disable(mgl.DEPTH_TEST)
+        self.app.ctx.disable(mgl.CULL_FACE)
+        
+        self.mesh.render()
+        
+        self.app.ctx.enable(mgl.CULL_FACE)
+        self.app.ctx.enable(mgl.DEPTH_TEST)
+        self.app.ctx.wireframe = prev_wireframe
+        self.mesh.program['is_bbox'] = 0
 
 
 class Scene:
@@ -2236,6 +2279,8 @@ class Scene:
         self.hotbar = Hotbar(app)
         self.held_block = HeldBlock(app)
         self.item_manager = ItemManager(app)
+        self.debug_overlay = DebugOverlay(app)
+        self.chunk_border = ChunkBorder(app)
 
     def update(self):
         self.world.update()
@@ -2252,6 +2297,7 @@ class Scene:
 
         # chunks rendering
         self.world.render()
+        self.chunk_border.render()
         self.item_manager.render()
 
         # rendering without cull face
@@ -2273,6 +2319,8 @@ class Scene:
         self.app.ctx.disable(mgl.DEPTH_TEST)
         self.crosshair.render()
         self.hotbar.render()
+        if getattr(self.app, 'show_debug', False):
+            self.debug_overlay.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
 
 ===== D:\Minecraft\settings.py =====
@@ -2368,6 +2416,15 @@ BLOCK_HARDNESS = {
     LEAVES: 150,
     WOOD: 1000
 }
+
+# player interaction
+INTERACTION_DELAY = 150 # ms delay for continuous mining/placing
+
+# ui
+HOTBAR_SCALE = 0.045
+SLOT_SCALE = 0.06
+HOTBAR_SPACING = 0.13
+HOTBAR_Y = -0.85
 
 # water
 WATER_LINE = 5.6
@@ -3264,15 +3321,14 @@ class Hotbar:
         
     def render(self):
         player = self.app.player
-        s = 0.045  # Base scale for blocks
-        slot_s = 0.06 # Scale of slot background
-        spacing = 0.13
-        start_x = -4 * spacing
-        y = -0.85
+        s = HOTBAR_SCALE
+        slot_s = SLOT_SCALE
+        start_x = -4 * HOTBAR_SPACING
+        y = HOTBAR_Y
         
         # 1. Draw the transparent slot backgrounds and selection frame
         for i in range(9):
-            x = start_x + i * spacing
+            x = start_x + i * HOTBAR_SPACING
             is_selected = (i == player.hotbar_index)
             
             if is_selected:
@@ -3299,7 +3355,7 @@ class Hotbar:
             voxel_id = player.hotbar[i]
             if voxel_id != 0:
                 self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-                self.block_mesh.program['u_offset'] = (start_x + i * spacing, y)
+                self.block_mesh.program['u_offset'] = (start_x + i * HOTBAR_SPACING, y)
                 self.block_mesh.program['voxel_id'] = voxel_id
                 self.block_mesh.render()
 
@@ -3314,7 +3370,7 @@ class Hotbar:
                 scale_y = 0.015
                 scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
                 
-                offset_x = start_x + i * spacing + 0.015
+                offset_x = start_x + i * HOTBAR_SPACING + 0.015
                 offset_y = y - 0.025
                 
                 self.text_mesh.program['u_scale'] = (scale_x, scale_y)
@@ -3680,6 +3736,73 @@ class OptionsMenu:
         for slider in self.sliders:
             slider.render()
         self.back_button.render()
+
+class DebugOverlay:
+    def __init__(self, app):
+        self.app = app
+        self.font = pg.font.SysFont('arial', 18, bold=True)
+        self.text_mesh = UITextMesh(app)
+        self.dynamic_texture = None
+
+    def render(self):
+        player = self.app.player
+        handler = self.app.scene.world.voxel_handler
+        
+        fps = self.app.clock.get_fps()
+        x, y, z = player.position
+        cx, cy, cz = int(x // CHUNK_SIZE), int(y // CHUNK_SIZE), int(z // CHUNK_SIZE)
+        yaw, pitch = glm.degrees(player.yaw), glm.degrees(player.pitch)
+        
+        target = "Air"
+        if handler.voxel_id:
+            target = f"ID: {handler.voxel_id} at {int(handler.voxel_world_pos.x)} {int(handler.voxel_world_pos.y)} {int(handler.voxel_world_pos.z)}"
+
+        lines = [
+            f"Voxel Engine (FPS: {fps:.0f})",
+            f"XYZ: {x:.3f} / {y:.5f} / {z:.3f}",
+            f"Chunk: {cx} {cy} {cz}",
+            f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
+            f"Time: {self.app.time:.2f}",
+            f"Target Block: {target}"
+        ]
+
+        surfaces = []
+        for line in lines:
+            shadow = self.font.render(line, True, (60, 60, 60))
+            text = self.font.render(line, True, (220, 220, 220))
+            merged = pg.Surface((text.get_width() + 2, text.get_height() + 2), pg.SRCALPHA)
+            merged.blit(shadow, (2, 2))
+            merged.blit(text, (0, 0))
+            surfaces.append(merged)
+            
+        max_w = max(s.get_width() for s in surfaces)
+        total_h = sum(s.get_height() for s in surfaces)
+        
+        bg_surf = pg.Surface((max_w + 10, total_h + 10), pg.SRCALPHA)
+        bg_surf.fill((0, 0, 0, 120))
+        
+        curr_y = 5
+        for s in surfaces:
+            bg_surf.blit(s, (5, curr_y))
+            curr_y += s.get_height()
+        
+        if self.dynamic_texture:
+            self.dynamic_texture.release() # Prevent VRAM leaks
+            
+        self.dynamic_texture = self.app.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
+        self.dynamic_texture.filter = (mgl.NEAREST, mgl.NEAREST)
+        self.dynamic_texture.use(location=4)
+        
+        tex_w, tex_h = self.dynamic_texture.size
+        scale_y = (tex_h / WIN_RES.y)
+        scale_x = (tex_w / WIN_RES.x)
+        
+        x_offset = -1.0 + scale_x
+        y_offset = 1.0 - scale_y
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = (x_offset, y_offset)
+        self.text_mesh.render()
 
 ===== D:\Minecraft\voxel_handler.py =====
 

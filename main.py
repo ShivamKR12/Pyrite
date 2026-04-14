@@ -48,6 +48,7 @@ class VoxelEngine:
         self.menu = None
         self.wireframe = False
         self.freeze_culling = False
+        self.show_debug = False
 
         self.on_init()
 
@@ -208,6 +209,8 @@ class VoxelEngine:
                     self.options_menu.go_back()
                 else: # Esc inside Main Menu quits the game
                     self.quit_game()
+            elif event.type == pg.KEYDOWN and event.key == pg.K_F3:
+                self.show_debug = not self.show_debug
             
             if self.game_state == 'MAIN_MENU':
                 self.menu.handle_event(event)
