@@ -182,6 +182,45 @@ class Hotbar:
                 self.text_mesh.program['u_offset'] = (offset_x, offset_y)
                 self.text_mesh.render()
 
+        # 4. Draw Survival Stats (Health, Hunger, Oxygen)
+        if player.game_mode == SURVIVAL:
+            # Helper to draw a stat bar
+            def draw_bar(ratio, offset_x, offset_y, bg_color, fg_color, text):
+                # Background
+                self.color_mesh.program['u_scale'] = (0.2, 0.01)
+                self.color_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.color_mesh.program['u_color'] = bg_color
+                self.color_mesh.render()
+                
+                # Foreground
+                if ratio > 0:
+                    self.color_mesh.program['u_scale'] = (0.2 * ratio, 0.01)
+                    self.color_mesh.program['u_offset'] = (offset_x - 0.2*(1.0 - ratio), offset_y)
+                    self.color_mesh.program['u_color'] = fg_color
+                    self.color_mesh.render()
+                    
+                # Text
+                tex = self.text_renderer.get_texture(text)
+                tex.use(location=4)
+                scale_y = 0.015
+                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.text_mesh.render()
+
+            health_ratio = max(0.0, player.health / player.max_health)
+            draw_bar(health_ratio, -0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.1, 0.1, 0.9), 
+                     f"HP: {int(player.health)}/{player.max_health}")
+
+            hunger_ratio = max(0.0, player.hunger / player.max_hunger)
+            draw_bar(hunger_ratio, 0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.5, 0.1, 0.9), 
+                     f"Food: {int(player.hunger)}/{player.max_hunger}")
+
+            if player.oxygen < player.max_oxygen:
+                oxy_ratio = max(0.0, player.oxygen / player.max_oxygen)
+                draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), 
+                         f"O2: {int(player.oxygen)}/{player.max_oxygen}")
+
 class HeldBlock:
     def __init__(self, app):
         self.app = app

@@ -691,37 +691,6 @@ class ItemMesh(BaseMesh):
         ]
         return np.array(vertices, dtype='float32')
 
-===== D:\Minecraft\meshes\quad_mesh.py =====
-
-from settings import *
-from meshes.base_mesh import BaseMesh
-
-
-class QuadMesh(BaseMesh):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
-
-        self.ctx = self.app.ctx
-        self.program = self.app.shader_program.water
-        self.vbo_format = '2u1 3u1'
-        self.attrs = ('in_tex_coord', 'in_position')
-        self.vao = self.get_vao()
-
-    def get_vertex_data(self):
-        vertices = np.array([
-            (0, 0, 0), (1, 0, 1), (1, 0, 0),
-            (0, 0, 0), (0, 0, 1), (1, 0, 1)
-        ], dtype='uint8')
-
-        tex_coords = np.array([
-            (0, 0), (1, 1), (1, 0),
-            (0, 0), (0, 1), (1, 1)
-        ], dtype='uint8')
-
-        vertex_data = np.hstack([tex_coords, vertices])
-        return vertex_data
-
 ===== D:\Minecraft\shaders\chunk.frag =====
 
 #version 330 core
@@ -1253,67 +1222,6 @@ void main() {
     }
 }
 
-===== D:\Minecraft\shaders\water.frag =====
-
-#version 330 core
-
-layout (location = 0) out vec4 fragColor;
-
-const vec3 gamma = vec3(2.2);
-const vec3 inv_gamma = 1 / gamma;
-
-in vec2 uv;
-
-uniform sampler2D u_texture_0;
-uniform float water_line;
-uniform float u_time;
-uniform float u_fog_density;
-
-
-void main() {
-    vec2 animated_uv = uv + vec2(u_time * 0.2, u_time * 0.2);
-    vec3 tex_col = texture(u_texture_0, animated_uv).rgb;
-    tex_col = pow(tex_col, gamma);
-
-    // fog
-    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    float alpha = mix(0.5, 0.0, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
-
-    // gamma corretion
-    tex_col = pow(tex_col, inv_gamma);
-    fragColor = vec4(tex_col, alpha);
-}
-
-===== D:\Minecraft\shaders\water.vert =====
-
-#version 330 core
-
-layout (location = 0) in vec2 in_tex_coord;
-layout (location = 1) in vec3 in_position;
-
-uniform mat4 m_proj;
-uniform mat4 m_view;
-uniform int water_area;
-uniform float water_line;
-uniform vec3 player_pos;
-
-out vec2 uv;
-
-
-void main() {
-    vec3 pos = in_position;
-    pos.xz *= water_area;
-    pos.xz -= 0.33 * water_area;
-
-    // Center the water quad around the player horizontally
-    pos.xz += player_pos.xz;
-
-    pos.y += water_line;
-    // Shift the UV coordinates so the texture doesn't slide with the player
-    uv = (in_tex_coord * water_area) + (player_pos.xz * 0.5);
-    gl_Position = m_proj * m_view * vec4(pos, 1.0);
-}
-
 ===== D:\Minecraft\world_objects\chunk.py =====
 
 from settings import *
@@ -1535,20 +1443,6 @@ class VoxelMarker:
         if self.handler.voxel_id:
             self.set_uniform()
             self.mesh.render()
-
-===== D:\Minecraft\world_objects\water.py =====
-
-from meshes.quad_mesh import QuadMesh
-from settings import *
-
-
-class Water:
-    def __init__(self, app):
-        self.app = app
-        self.mesh = QuadMesh(app)
-
-    def render(self):
-        self.mesh.render()
 
 ===== D:\Minecraft\audio_length.py =====
 
@@ -1993,8 +1887,10 @@ from settings import *
 
 
 class Player(Camera):
-    def __init__(self, app, position=PLAYER_POS, yaw=-90, pitch=0):
+    def __init__(self, app, position=None, yaw=-90, pitch=0):
         self.app = app
+        if position is None:
+            position = self.find_spawn_position()
         super().__init__(position, yaw, pitch)
         # physics state
         self.velocity = glm.vec3(0)
@@ -2017,6 +1913,41 @@ class Player(Camera):
         
         self.fov = glm.radians(self.app.config['fov'])
         self.is_sprinting = False
+
+        # --- Survival Stats ---
+        self.max_health = 20
+        self.health = self.max_health
+        self.max_hunger = 20
+        self.hunger = self.max_hunger
+        self.max_oxygen = 20
+        self.oxygen = self.max_oxygen
+        
+        self.highest_y = position.y
+        self.oxygen_timer = 0
+        self.last_damage_time = 0
+        self.spawn_immunity = True
+
+    def find_spawn_position(self):
+        from terrain_gen import get_height
+        
+        center_x = int(CENTER_XZ)
+        center_z = int(CENTER_XZ)
+        
+        # Expanding grid search for the closest solid block
+        for radius in range(0, 500):
+            for dx in range(-radius, radius + 1):
+                for dz in range(-radius, radius + 1):
+                    # Check only the perimeter of the current radius to expand outward layer by layer
+                    if abs(dx) == radius or abs(dz) == radius: 
+                        x = center_x + dx
+                        z = center_z + dz
+                        y = get_height(x, z)
+                        
+                        # Ensure the player doesn't spawn underwater
+                        if y > WATER_LINE:
+                            return glm.vec3(x + 0.5, y, z + 0.5)
+                            
+        return glm.vec3(PLAYER_POS)
 
     def update(self):
         self.mouse_control()
@@ -2044,8 +1975,30 @@ class Player(Camera):
             voxel_body, *_ = self.app.scene.world.voxel_handler.get_voxel_id(body_pos)
             self.in_water = (voxel_body == WATER)
 
+            # Check if player HEAD is in water
+            head_pos = glm.ivec3(glm.floor(self.position.x), glm.floor(self.position.y), glm.floor(self.position.z))
+            voxel_head, *_ = self.app.scene.world.voxel_handler.get_voxel_id(head_pos)
+            self.head_in_water = (voxel_head == WATER)
+
             if self.on_ground and not was_on_ground:
                 self.app.sounds.play_jump(voxel_under)
+                
+                # Apply fall damage
+                fall_dist = self.highest_y - self.position.y
+                if self.spawn_immunity:
+                    self.spawn_immunity = False
+                else:
+                    if fall_dist > 3.0 and not self.in_water:
+                        damage = int(math.floor(fall_dist - 3.0))
+                        if damage > 0:
+                            self.take_damage(damage)
+                self.highest_y = self.position.y
+
+            # Update highest Y for fall damage
+            if self.velocity.y > 0 or self.in_water or self.game_mode == CREATIVE:
+                self.highest_y = self.position.y
+            elif self.position.y > self.highest_y:
+                self.highest_y = self.position.y
 
             # View Bobbing
             bob_offset = 0.0
@@ -2055,6 +2008,10 @@ class Player(Camera):
             if is_walking:
                 self.step_counter += actual_move_dist * 2.5
                 bob_offset = glm.sin(self.step_counter) * 0.05
+                
+                # Drain hunger
+                hunger_drain = (0.002 if self.is_sprinting else 0.0005) * self.app.delta_time
+                self.hunger = max(0.0, self.hunger - hunger_drain)
 
                 current_time = pg.time.get_ticks()
                 if current_time - self.last_step_time > 400: # ms between steps
@@ -2073,11 +2030,25 @@ class Player(Camera):
             
             self.handle_interaction()
 
-            # Void fall prevention
+            # Oxygen & Drowning Logic
+            current_time = pg.time.get_ticks()
+            if self.head_in_water:
+                if current_time - self.oxygen_timer > 1000: # Lose 1 oxygen per second
+                    self.oxygen -= 1
+                    self.oxygen_timer = current_time
+                    if self.oxygen < 0:
+                        self.oxygen = 0
+                        self.take_damage(1)
+            else:
+                if self.oxygen < self.max_oxygen and current_time - self.oxygen_timer > 200:
+                    self.oxygen += 1
+                    self.oxygen_timer = current_time
+
+            # Void Fall Damage
             if self.position.y < -20:
-                self.feet_pos = glm.vec3(PLAYER_POS)
-                self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
-                self.velocity = glm.vec3(0)
+                if current_time - self.last_damage_time > 500: # Take damage every half second
+                    self.take_damage(4)
+                    self.last_damage_time = current_time
         super().update()
 
     def handle_event(self, event):
@@ -2306,6 +2277,25 @@ class Player(Camera):
                 self.hotbar_counts[i] = 1
                 return True
         return False # Inventory is full!
+
+    def take_damage(self, amount):
+        if self.game_mode == CREATIVE:
+            return
+        self.health -= amount
+        self.app.sounds.play_hit(GRASS) # Generic damage sound
+        if self.health <= 0:
+            self.respawn()
+
+    def respawn(self):
+        self.health = self.max_health
+        self.hunger = self.max_hunger
+        self.oxygen = self.max_oxygen
+        
+        self.feet_pos = self.find_spawn_position()
+        self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
+        self.velocity = glm.vec3(0)
+        self.highest_y = self.position.y
+        self.spawn_immunity = True
 
 ===== D:\Minecraft\scene.py =====
 
@@ -3446,6 +3436,45 @@ class Hotbar:
                 self.text_mesh.program['u_scale'] = (scale_x, scale_y)
                 self.text_mesh.program['u_offset'] = (offset_x, offset_y)
                 self.text_mesh.render()
+
+        # 4. Draw Survival Stats (Health, Hunger, Oxygen)
+        if player.game_mode == SURVIVAL:
+            # Helper to draw a stat bar
+            def draw_bar(ratio, offset_x, offset_y, bg_color, fg_color, text):
+                # Background
+                self.color_mesh.program['u_scale'] = (0.2, 0.01)
+                self.color_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.color_mesh.program['u_color'] = bg_color
+                self.color_mesh.render()
+                
+                # Foreground
+                if ratio > 0:
+                    self.color_mesh.program['u_scale'] = (0.2 * ratio, 0.01)
+                    self.color_mesh.program['u_offset'] = (offset_x - 0.2*(1.0 - ratio), offset_y)
+                    self.color_mesh.program['u_color'] = fg_color
+                    self.color_mesh.render()
+                    
+                # Text
+                tex = self.text_renderer.get_texture(text)
+                tex.use(location=4)
+                scale_y = 0.015
+                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.text_mesh.render()
+
+            health_ratio = max(0.0, player.health / player.max_health)
+            draw_bar(health_ratio, -0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.1, 0.1, 0.9), 
+                     f"🩷 HP: {int(player.health)}/{player.max_health}")
+
+            hunger_ratio = max(0.0, player.hunger / player.max_hunger)
+            draw_bar(hunger_ratio, 0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.5, 0.1, 0.9), 
+                     f"🍖 Food: {int(player.hunger)}/{player.max_hunger}")
+
+            if player.oxygen < player.max_oxygen:
+                oxy_ratio = max(0.0, player.oxygen / player.max_oxygen)
+                draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), 
+                         f"🫧 O2: {int(player.oxygen)}/{player.max_oxygen}")
 
 class HeldBlock:
     def __init__(self, app):

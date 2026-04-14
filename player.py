@@ -6,8 +6,10 @@ from settings import *
 
 
 class Player(Camera):
-    def __init__(self, app, position=PLAYER_POS, yaw=-90, pitch=0):
+    def __init__(self, app, position=None, yaw=-90, pitch=0):
         self.app = app
+        if position is None:
+            position = self.find_spawn_position()
         super().__init__(position, yaw, pitch)
         # physics state
         self.velocity = glm.vec3(0)
@@ -30,6 +32,41 @@ class Player(Camera):
         
         self.fov = glm.radians(self.app.config['fov'])
         self.is_sprinting = False
+
+        # --- Survival Stats ---
+        self.max_health = 20
+        self.health = self.max_health
+        self.max_hunger = 20
+        self.hunger = self.max_hunger
+        self.max_oxygen = 20
+        self.oxygen = self.max_oxygen
+        
+        self.highest_y = position.y
+        self.oxygen_timer = 0
+        self.last_damage_time = 0
+        self.spawn_immunity = True
+
+    def find_spawn_position(self):
+        from terrain_gen import get_height
+        
+        center_x = int(CENTER_XZ)
+        center_z = int(CENTER_XZ)
+        
+        # Expanding grid search for the closest solid block
+        for radius in range(0, 500):
+            for dx in range(-radius, radius + 1):
+                for dz in range(-radius, radius + 1):
+                    # Check only the perimeter of the current radius to expand outward layer by layer
+                    if abs(dx) == radius or abs(dz) == radius: 
+                        x = center_x + dx
+                        z = center_z + dz
+                        y = get_height(x, z)
+                        
+                        # Ensure the player doesn't spawn underwater
+                        if y > WATER_LINE:
+                            return glm.vec3(x + 0.5, y, z + 0.5)
+                            
+        return glm.vec3(PLAYER_POS)
 
     def update(self):
         self.mouse_control()
@@ -57,8 +94,30 @@ class Player(Camera):
             voxel_body, *_ = self.app.scene.world.voxel_handler.get_voxel_id(body_pos)
             self.in_water = (voxel_body == WATER)
 
+            # Check if player HEAD is in water
+            head_pos = glm.ivec3(glm.floor(self.position.x), glm.floor(self.position.y), glm.floor(self.position.z))
+            voxel_head, *_ = self.app.scene.world.voxel_handler.get_voxel_id(head_pos)
+            self.head_in_water = (voxel_head == WATER)
+
             if self.on_ground and not was_on_ground:
                 self.app.sounds.play_jump(voxel_under)
+                
+                # Apply fall damage
+                fall_dist = self.highest_y - self.position.y
+                if self.spawn_immunity:
+                    self.spawn_immunity = False
+                else:
+                    if fall_dist > 3.0 and not self.in_water:
+                        damage = int(math.floor(fall_dist - 3.0))
+                        if damage > 0:
+                            self.take_damage(damage)
+                self.highest_y = self.position.y
+
+            # Update highest Y for fall damage
+            if self.velocity.y > 0 or self.in_water or self.game_mode == CREATIVE:
+                self.highest_y = self.position.y
+            elif self.position.y > self.highest_y:
+                self.highest_y = self.position.y
 
             # View Bobbing
             bob_offset = 0.0
@@ -68,6 +127,10 @@ class Player(Camera):
             if is_walking:
                 self.step_counter += actual_move_dist * 2.5
                 bob_offset = glm.sin(self.step_counter) * 0.05
+                
+                # Drain hunger
+                hunger_drain = (0.002 if self.is_sprinting else 0.0005) * self.app.delta_time
+                self.hunger = max(0.0, self.hunger - hunger_drain)
 
                 current_time = pg.time.get_ticks()
                 if current_time - self.last_step_time > 400: # ms between steps
@@ -86,11 +149,25 @@ class Player(Camera):
             
             self.handle_interaction()
 
-            # Void fall prevention
+            # Oxygen & Drowning Logic
+            current_time = pg.time.get_ticks()
+            if self.head_in_water:
+                if current_time - self.oxygen_timer > 1000: # Lose 1 oxygen per second
+                    self.oxygen -= 1
+                    self.oxygen_timer = current_time
+                    if self.oxygen < 0:
+                        self.oxygen = 0
+                        self.take_damage(1)
+            else:
+                if self.oxygen < self.max_oxygen and current_time - self.oxygen_timer > 200:
+                    self.oxygen += 1
+                    self.oxygen_timer = current_time
+
+            # Void Fall Damage
             if self.position.y < -20:
-                self.feet_pos = glm.vec3(PLAYER_POS)
-                self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
-                self.velocity = glm.vec3(0)
+                if current_time - self.last_damage_time > 500: # Take damage every half second
+                    self.take_damage(4)
+                    self.last_damage_time = current_time
         super().update()
 
     def handle_event(self, event):
@@ -319,3 +396,22 @@ class Player(Camera):
                 self.hotbar_counts[i] = 1
                 return True
         return False # Inventory is full!
+
+    def take_damage(self, amount):
+        if self.game_mode == CREATIVE:
+            return
+        self.health -= amount
+        self.app.sounds.play_hit(GRASS) # Generic damage sound
+        if self.health <= 0:
+            self.respawn()
+
+    def respawn(self):
+        self.health = self.max_health
+        self.hunger = self.max_hunger
+        self.oxygen = self.max_oxygen
+        
+        self.feet_pos = self.find_spawn_position()
+        self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
+        self.velocity = glm.vec3(0)
+        self.highest_y = self.position.y
+        self.spawn_immunity = True
