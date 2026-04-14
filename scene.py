@@ -7,6 +7,7 @@ from world_objects.sky import Sky
 from ui import Crosshair
 from ui import Hotbar
 from ui import HeldBlock
+from ui import InventoryUI
 from ui import DebugOverlay
 from world_objects.item import ItemManager
 from meshes.cube_mesh import CubeMesh
@@ -24,6 +25,7 @@ class Scene:
         self.app.render_loading_screen("INITIALIZING UI...")
         self.crosshair = Crosshair(app)
         self.hotbar = Hotbar(app)
+        self.inventory_ui = InventoryUI(app)
         self.held_block = HeldBlock(app)
         self.item_manager = ItemManager(app)
         self.debug_overlay = DebugOverlay(app)
@@ -64,8 +66,11 @@ class Scene:
 
         # UI rendering (disable depth testing so it draws over everything)
         self.app.ctx.disable(mgl.DEPTH_TEST)
-        self.crosshair.render()
-        self.hotbar.render()
+        if self.app.game_state == 'IN_GAME':
+            self.crosshair.render()
+            self.hotbar.render()
+        elif self.app.game_state == 'INVENTORY':
+            self.inventory_ui.render()
         if getattr(self.app, 'show_debug', False):
             self.debug_overlay.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)

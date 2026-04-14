@@ -26,8 +26,8 @@ class Player(Camera):
         self.mining_time = 0.0
         self.mining_duration = 0.0 # updated dynamically
         
-        self.hotbar = [0] * 9 # 0 means empty slot
-        self.hotbar_counts = [0] * 9
+        self.inventory = [0] * 36 # 0 means empty slot
+        self.inventory_counts = [0] * 36
         self.hotbar_index = 0
         
         self.fov = glm.radians(self.app.config['fov'])
@@ -69,14 +69,23 @@ class Player(Camera):
         return glm.vec3(PLAYER_POS)
 
     def update(self):
-        self.mouse_control()
+        if self.app.game_state == 'IN_GAME':
+            self.mouse_control()
+            
         if self.game_mode == CREATIVE:
             # free camera mode — NO PHYSICS
-            self.keyboard_control()
+            if self.app.game_state == 'IN_GAME':
+                self.keyboard_control()
+            else:
+                self.velocity = glm.vec3(0)
         else:
             # player mode — physics + collisions
             was_on_ground = self.on_ground
-            self.keyboard_control()
+            if self.app.game_state == 'IN_GAME':
+                self.keyboard_control()
+            else:
+                self.velocity.x = self.velocity.z = 0.0
+                self.is_sprinting = False
             self.apply_gravity()
             self.on_ground = False
             
@@ -147,7 +156,8 @@ class Player(Camera):
 
             self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT + bob_offset, 0)
             
-            self.handle_interaction()
+            if self.app.game_state == 'IN_GAME':
+                self.handle_interaction()
 
             # Oxygen & Drowning Logic
             current_time = pg.time.get_ticks()
@@ -252,9 +262,9 @@ class Player(Camera):
                 self.move_right(vel)
             if key_state[pg.K_a]:
                 self.move_left(vel)
-            if key_state[pg.K_q]:
+            if key_state[pg.K_SPACE]:
                 self.move_up(vel)
-            if key_state[pg.K_e]:
+            if key_state[pg.K_LSHIFT]:
                 self.move_down(vel)
         else:
             keys = pg.key.get_pressed()
@@ -385,15 +395,15 @@ class Player(Camera):
 
     def add_item(self, voxel_id):
         # Check if we already have a stack of this item
-        for i in range(9):
-            if self.hotbar[i] == voxel_id and self.hotbar_counts[i] < 64:
-                self.hotbar_counts[i] += 1
+        for i in range(36):
+            if self.inventory[i] == voxel_id and self.inventory_counts[i] < 64:
+                self.inventory_counts[i] += 1
                 return True
         # Find an empty slot
-        for i in range(9):
-            if self.hotbar[i] == 0:
-                self.hotbar[i] = voxel_id
-                self.hotbar_counts[i] = 1
+        for i in range(36):
+            if self.inventory[i] == 0:
+                self.inventory[i] = voxel_id
+                self.inventory_counts[i] = 1
                 return True
         return False # Inventory is full!
 

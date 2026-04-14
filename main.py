@@ -149,7 +149,7 @@ class VoxelEngine:
     def update(self):
         if self.game_state == 'MAIN_MENU':
             self.menu.update()
-        elif self.game_state == 'IN_GAME':
+        elif self.game_state in ('IN_GAME', 'INVENTORY'):
             self.player.update()
             self.shader_program.update()
             self.scene.update()
@@ -173,7 +173,7 @@ class VoxelEngine:
             self.ctx.disable(mgl.DEPTH_TEST)
             self.menu.render()
             self.ctx.enable(mgl.DEPTH_TEST)
-        elif self.game_state == 'IN_GAME':
+        elif self.game_state in ('IN_GAME', 'INVENTORY'):
             self.scene.render()
         elif self.game_state == 'PAUSED':
             if self.scene:
@@ -203,6 +203,11 @@ class VoxelEngine:
                     self.game_state = 'PAUSED'
                     pg.event.set_grab(False)
                     pg.mouse.set_visible(True)
+                elif self.game_state == 'INVENTORY':
+                    self.scene.inventory_ui.close()
+                    self.game_state = 'IN_GAME'
+                    pg.event.set_grab(True)
+                    pg.mouse.set_visible(False)
                 elif self.game_state == 'PAUSED':
                     self.pause_menu.resume_game()
                 elif self.game_state == 'OPTIONS':
@@ -211,11 +216,23 @@ class VoxelEngine:
                     self.quit_game()
             elif event.type == pg.KEYDOWN and event.key == pg.K_F3:
                 self.show_debug = not self.show_debug
+            elif event.type == pg.KEYDOWN and event.key == pg.K_e:
+                if self.game_state == 'IN_GAME':
+                    self.game_state = 'INVENTORY'
+                    pg.event.set_grab(False)
+                    pg.mouse.set_visible(True)
+                elif self.game_state == 'INVENTORY':
+                    self.scene.inventory_ui.close()
+                    self.game_state = 'IN_GAME'
+                    pg.event.set_grab(True)
+                    pg.mouse.set_visible(False)
             
             if self.game_state == 'MAIN_MENU':
                 self.menu.handle_event(event)
             elif self.game_state == 'IN_GAME':
                 self.player.handle_event(event=event)
+            elif self.game_state == 'INVENTORY':
+                self.scene.inventory_ui.handle_event(event)
             elif self.game_state == 'PAUSED':
                 self.pause_menu.handle_event(event)
             elif self.game_state == 'OPTIONS':

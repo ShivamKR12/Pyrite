@@ -20,7 +20,7 @@ class VoxelHandler:
 
     def add_voxel(self):
         if self.voxel_id:
-            current_id = self.app.player.hotbar[self.app.player.hotbar_index]
+            current_id = self.app.player.inventory[self.app.player.hotbar_index]
             if current_id == 0:
                 return # Can't place empty air
 
@@ -45,9 +45,9 @@ class VoxelHandler:
 
                 # Consume item from hotbar if in Survival mode
                 if self.app.player.game_mode == SURVIVAL:
-                    self.app.player.hotbar_counts[self.app.player.hotbar_index] -= 1
-                    if self.app.player.hotbar_counts[self.app.player.hotbar_index] <= 0:
-                        self.app.player.hotbar[self.app.player.hotbar_index] = 0
+                    self.app.player.inventory_counts[self.app.player.hotbar_index] -= 1
+                    if self.app.player.inventory_counts[self.app.player.hotbar_index] <= 0:
+                        self.app.player.inventory[self.app.player.hotbar_index] = 0
 
                 # was it an empty chunk
                 if chunk.is_empty:

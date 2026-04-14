@@ -128,12 +128,14 @@ class Hotbar:
         player = self.app.player
         s = HOTBAR_SCALE
         slot_s = SLOT_SCALE
-        start_x = -4 * HOTBAR_SPACING
+        gap = 0.01
+        x_spacing = (slot_s * 2 + gap) / ASPECT_RATIO
+        start_x = -4 * x_spacing
         y = HOTBAR_Y
         
         # 1. Draw the transparent slot backgrounds and selection frame
         for i in range(9):
-            x = start_x + i * HOTBAR_SPACING
+            x = start_x + i * x_spacing
             is_selected = (i == player.hotbar_index)
             
             if is_selected:
@@ -157,16 +159,16 @@ class Hotbar:
 
         # 2. Draw the 3D block icons inside the slots
         for i in range(9):
-            voxel_id = player.hotbar[i]
+            voxel_id = player.inventory[i]
             if voxel_id != 0:
                 self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-                self.block_mesh.program['u_offset'] = (start_x + i * HOTBAR_SPACING, y)
+                self.block_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
                 self.block_mesh.program['voxel_id'] = voxel_id
                 self.block_mesh.render()
 
         # 3. Draw the stack counts
         for i in range(9):
-            count = player.hotbar_counts[i]
+            count = player.inventory_counts[i]
             if count > 0:
                 tex = self.text_renderer.get_texture(str(count))
                 tex.use(location=4)
@@ -175,7 +177,7 @@ class Hotbar:
                 scale_y = 0.025
                 scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
                 
-                offset_x = start_x + i * HOTBAR_SPACING + 0.015
+                offset_x = start_x + i * x_spacing + 0.015
                 offset_y = y - 0.025
                 
                 self.text_mesh.program['u_scale'] = (scale_x, scale_y)
@@ -228,7 +230,7 @@ class HeldBlock:
 
     def render(self):
         player = self.app.player
-        voxel_id = player.hotbar[player.hotbar_index]
+        voxel_id = player.inventory[player.hotbar_index]
         if voxel_id == 0:
             return
 
@@ -272,6 +274,236 @@ class HeldBlock:
         self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
         self.mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
+
+class InventoryUI:
+    def __init__(self, app):
+        self.app = app
+        self.block_mesh = BlockIconMesh(app)
+        self.color_mesh = UIColorMesh(app)
+        self.text_mesh = UITextMesh(app)
+        self.text_renderer = TextRenderer(app)
+        
+        self.drag_id = 0
+        self.drag_count = 0
+        self.drag_start_pos = (0, 0)
+
+    def get_slot_pos(self, i):
+        gap = 0.01
+        x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
+        y_spacing = SLOT_SCALE * 2 + gap
+        
+        col = i % 9
+        x = -4 * x_spacing + col * x_spacing
+        if i < 9:
+            y = HOTBAR_Y # Hotbar
+        else:
+            row = 2 - ((i - 9) // 9) # Map 9-17 to bottom row, 18-26 middle, 27-35 top
+            y = HOTBAR_Y + (row + 1.5) * y_spacing
+        return x, y
+
+    def get_slot_at_mouse(self, mouse_pos):
+        mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
+        my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+        
+        slot_w = SLOT_SCALE / ASPECT_RATIO
+        slot_h = SLOT_SCALE
+        
+        for i in range(36):
+            sx, sy = self.get_slot_pos(i)
+            if sx - slot_w < mx < sx + slot_w and sy - slot_h < my < sy + slot_h:
+                return i
+        return -1
+
+    def get_closest_valid_slot(self, mouse_pos, drag_id, drag_count):
+        mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
+        my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+        
+        best_i = -1
+        best_dist_sq = float('inf')
+        gap = 0.01
+        y_spacing = SLOT_SCALE * 2 + gap
+        # Max snap distance based on UI scale
+        max_dist_sq = (y_spacing * 1.5) ** 2 
+        
+        player = self.app.player
+        
+        for i in range(36):
+            sx, sy = self.get_slot_pos(i)
+            dx = (mx - sx) * ASPECT_RATIO
+            dy = my - sy
+            dist_sq = dx*dx + dy*dy
+            
+            if dist_sq < best_dist_sq and dist_sq < max_dist_sq:
+                slot_id = player.inventory[i]
+                if slot_id == 0 or (slot_id == drag_id and player.inventory_counts[i] < 64):
+                    best_i = i
+                    best_dist_sq = dist_sq
+        return best_i
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN:
+            i = self.get_slot_at_mouse(pg.mouse.get_pos())
+            if i != -1:
+                player = self.app.player
+                slot_id = player.inventory[i]
+                slot_count = player.inventory_counts[i]
+                
+                if event.button == 1: # Left click (Pick up stack / Swap / Place stack)
+                    if self.drag_id == 0:
+                        if slot_id != 0:
+                            self.drag_id = slot_id
+                            self.drag_count = slot_count
+                            player.inventory[i] = 0
+                            player.inventory_counts[i] = 0
+                            self.drag_start_pos = pg.mouse.get_pos()
+                    else:
+                        if slot_id == 0:
+                            player.inventory[i] = self.drag_id
+                            player.inventory_counts[i] = self.drag_count
+                            self.drag_id = 0
+                            self.drag_count = 0
+                        elif slot_id == self.drag_id:
+                            space = 64 - slot_count
+                            if space >= self.drag_count:
+                                player.inventory_counts[i] += self.drag_count
+                                self.drag_id = 0
+                                self.drag_count = 0
+                            else:
+                                player.inventory_counts[i] = 64
+                                self.drag_count -= space
+                        else:
+                            player.inventory[i], self.drag_id = self.drag_id, slot_id
+                            player.inventory_counts[i], self.drag_count = self.drag_count, slot_count
+                            self.drag_start_pos = pg.mouse.get_pos()
+                elif event.button == 3: # Right click (Split half / Place one)
+                    if self.drag_id == 0:
+                        if slot_id != 0:
+                            half = slot_count - (slot_count // 2)
+                            self.drag_id = slot_id
+                            self.drag_count = half
+                            player.inventory_counts[i] -= half
+                            if player.inventory_counts[i] <= 0:
+                                player.inventory[i] = 0
+                            self.drag_start_pos = pg.mouse.get_pos()
+                    else:
+                        if slot_id == 0:
+                            player.inventory[i] = self.drag_id
+                            player.inventory_counts[i] = 1
+                            self.drag_count -= 1
+                            if self.drag_count <= 0: self.drag_id = 0
+                        elif slot_id == self.drag_id and slot_count < 64:
+                            player.inventory_counts[i] += 1
+                            self.drag_count -= 1
+                            if self.drag_count <= 0: self.drag_id = 0
+        elif event.type == pg.MOUSEBUTTONUP:
+            if event.button == 1 and self.drag_id != 0:
+                mouse_pos = pg.mouse.get_pos()
+                dx = mouse_pos[0] - self.drag_start_pos[0]
+                dy = mouse_pos[1] - self.drag_start_pos[1]
+                
+                # Check if mouse moved more than 10 pixels (to separate drag from standard click)
+                if dx*dx + dy*dy > 100: 
+                    i = self.get_closest_valid_slot(mouse_pos, self.drag_id, self.drag_count)
+                    if i != -1:
+                        player = self.app.player
+                        slot_id = player.inventory[i]
+                        slot_count = player.inventory_counts[i]
+                        
+                        if slot_id == 0:
+                            player.inventory[i] = self.drag_id
+                            player.inventory_counts[i] = self.drag_count
+                            self.drag_id = 0
+                            self.drag_count = 0
+                        elif slot_id == self.drag_id:
+                            space = 64 - slot_count
+                            if space >= self.drag_count:
+                                player.inventory_counts[i] += self.drag_count
+                                self.drag_id = 0
+                                self.drag_count = 0
+                            else:
+                                player.inventory_counts[i] = 64
+                                self.drag_count -= space
+
+    def close(self):
+        if self.drag_id != 0:
+            player = self.app.player
+            # Re-inject leftover dragged item or drop it!
+            while self.drag_count > 0:
+                if not player.add_item(self.drag_id):
+                    # Inventory completely full, drop in the world
+                    for _ in range(self.drag_count):
+                        self.app.scene.item_manager.add_item(player.position, self.drag_id)
+                    break
+                self.drag_count -= 1
+            self.drag_id = 0
+            self.drag_count = 0
+
+    def render(self):
+        gap = 0.01
+        x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
+        y_spacing = SLOT_SCALE * 2 + gap
+        bg_w = 4.5 * x_spacing + 0.02
+        bg_h = 1.5 * y_spacing + 0.02
+        
+        self.color_mesh.program['u_scale'] = (bg_w, bg_h)
+        self.color_mesh.program['u_offset'] = (0.0, HOTBAR_Y + 2.5 * y_spacing)
+        self.color_mesh.program['u_color'] = (0.2, 0.2, 0.2, 0.95)
+        self.color_mesh.render()
+
+        player = self.app.player
+        hover_idx = self.get_slot_at_mouse(pg.mouse.get_pos())
+        
+        for i in range(36):
+            x, y = self.get_slot_pos(i)
+            s = SLOT_SCALE
+            
+            if i == hover_idx:
+                self.color_mesh.program['u_scale'] = ((s+0.005) / ASPECT_RATIO, s+0.005)
+                self.color_mesh.program['u_offset'] = (x, y)
+                self.color_mesh.program['u_color'] = (0.9, 0.9, 0.9, 0.5)
+                self.color_mesh.render()
+
+            self.color_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+            self.color_mesh.program['u_offset'] = (x, y)
+            self.color_mesh.program['u_color'] = (0.3, 0.3, 0.3, 0.8)
+            self.color_mesh.render()
+
+            voxel_id = player.inventory[i]
+            if voxel_id != 0:
+                self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                self.block_mesh.program['u_offset'] = (x, y)
+                self.block_mesh.program['voxel_id'] = voxel_id
+                self.block_mesh.render()
+
+            count = player.inventory_counts[i]
+            if count > 0:
+                tex = self.text_renderer.get_texture(str(count))
+                tex.use(location=4)
+                scale_y = 0.025
+                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (x + 0.015, y - 0.025)
+                self.text_mesh.render()
+
+        # Dragged Item Render (Follows Mouse Cursor)
+        if self.drag_id != 0:
+            mouse_pos = pg.mouse.get_pos()
+            mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
+            my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+            
+            self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+            self.block_mesh.program['u_offset'] = (mx, my)
+            self.block_mesh.program['voxel_id'] = self.drag_id
+            self.block_mesh.render()
+            
+            if self.drag_count > 0:
+                tex = self.text_renderer.get_texture(str(self.drag_count))
+                tex.use(location=4)
+                scale_y = 0.025
+                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
+                self.text_mesh.render()
 
 class Button:
     def __init__(self, app, text, pos, size, action):
