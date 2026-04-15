@@ -48,18 +48,29 @@ class World:
         self.conn.commit()
         
         # WARM UP NUMBA COMPILER:
-        # Generate a dummy mesh on the main thread to compile Numba JIT safely
+        # Run Numba compilation on a background thread so the main thread can keep pumping Pygame events!
         self.app.render_loading_screen("COMPILING NUMBA JIT (MAY TAKE A MOMENT)...")
         print("[SYSTEM] Warming up Numba JIT Compiler... this may take a few seconds.")
         t0 = time.perf_counter()
-        _dummy = Chunk(self, position=(0,0,0))
-        _dummy.voxels = _dummy.build_voxels()
-        _dummy.build_mesh()
-        result = _dummy.mesh.get_vertex_data()
-        _dummy.mesh.vertex_data = result[0]
-        _dummy.mesh.opaque_count = result[1]
-        _dummy.mesh.water_count = result[2]
-        _dummy.mesh.vao = _dummy.mesh.get_vao()
+        
+        def compile_numba():
+            from meshes.chunk_mesh_builder import build_chunk_mesh
+            dummy_voxels = np.zeros(CHUNK_VOL, dtype='uint8')
+            Chunk.generate_terrain(dummy_voxels, 0, 0, 0)
+            build_chunk_mesh(
+                chunk_voxels=dummy_voxels,
+                format_size=1,
+                chunk_pos=(0, 0, 0),
+                world_voxels=self.voxels,
+                chunk_positions=self.chunk_positions
+            )
+            
+        future = self.executor.submit(compile_numba)
+        
+        while not future.done():
+            self.app.render_loading_screen("COMPILING NUMBA JIT (MAY TAKE A MOMENT)...")
+            self.app.clock.tick(60)
+            
         print(f"[SYSTEM] Numba compilation finished in {time.perf_counter() - t0:.3f} seconds!")
         self.app.render_loading_screen("NUMBA COMPILATION SUCCESSFUL!")
 
