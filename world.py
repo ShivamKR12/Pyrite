@@ -66,6 +66,20 @@ class World:
                     self.app.player.inventory_counts[i] = loaded_counts[i]
                     
                 self.app.player.hotbar_index = p_data.get('hotbar_index', self.app.player.hotbar_index)
+                
+                pos = p_data.get('position')
+                if pos:
+                    self.app.player.position = glm.vec3(pos[0], pos[1], pos[2])
+                    self.app.player.feet_pos = glm.vec3(pos[0], pos[1] - PLAYER_EYE_HEIGHT, pos[2])
+                    self.app.player.highest_y = pos[1]
+                    
+                yaw = p_data.get('yaw')
+                if yaw is not None:
+                    self.app.player.yaw = yaw
+                    
+                pitch = p_data.get('pitch')
+                if pitch is not None:
+                    self.app.player.pitch = pitch
             except Exception as e:
                 print(f"[SYSTEM] Failed to load player data: {e}")
 
@@ -373,11 +387,14 @@ class World:
             if not chunk.is_empty and chunk.voxels is not None:
                 self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels)
                 
-        # Save player inventory & hotbar state
+        # Save player inventory, hotbar state & position
         p_data = {
             'inventory': [int(item) for item in self.app.player.inventory],
             'counts': [int(count) for count in self.app.player.inventory_counts],
-            'hotbar_index': int(self.app.player.hotbar_index)
+            'hotbar_index': int(self.app.player.hotbar_index),
+            'position': [float(self.app.player.position.x), float(self.app.player.position.y), float(self.app.player.position.z)],
+            'yaw': float(self.app.player.yaw),
+            'pitch': float(self.app.player.pitch)
         }
         with self.db_lock:
             self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', 
