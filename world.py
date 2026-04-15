@@ -9,6 +9,7 @@ import os
 import sqlite3
 import zlib
 import threading
+import json
 import time
 import moderngl as mgl
 from frustum import frustum_cull_fast
@@ -45,8 +46,29 @@ class World:
                                 x INTEGER, y INTEGER, z INTEGER, 
                                 data BLOB,
                                 PRIMARY KEY (x, y, z))''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS player_data (
+                                id INTEGER PRIMARY KEY,
+                                data TEXT)''')
         self.conn.commit()
         
+        # Load player inventory and hotbar state
+        self.cursor.execute('SELECT data FROM player_data WHERE id=1')
+        row = self.cursor.fetchone()
+        if row:
+            try:
+                p_data = json.loads(row[0])
+                loaded_inv = p_data.get('inventory', [])
+                loaded_counts = p_data.get('counts', [])
+                
+                # Safely copy items over up to the current INVENTORY_SIZE to prevent crashes from old saves
+                for i in range(min(len(loaded_inv), len(self.app.player.inventory))):
+                    self.app.player.inventory[i] = loaded_inv[i]
+                    self.app.player.inventory_counts[i] = loaded_counts[i]
+                    
+                self.app.player.hotbar_index = p_data.get('hotbar_index', self.app.player.hotbar_index)
+            except Exception as e:
+                print(f"[SYSTEM] Failed to load player data: {e}")
+
         # WARM UP NUMBA COMPILER:
         # Run Numba compilation on a background thread so the main thread can keep pumping Pygame events!
         self.app.render_loading_screen("COMPILING NUMBA JIT (MAY TAKE A MOMENT)...")
@@ -350,6 +372,17 @@ class World:
         for chunk in self.active_chunks.values():
             if not chunk.is_empty and chunk.voxels is not None:
                 self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels)
+                
+        # Save player inventory & hotbar state
+        p_data = {
+            'inventory': [int(item) for item in self.app.player.inventory],
+            'counts': [int(count) for count in self.app.player.inventory_counts],
+            'hotbar_index': int(self.app.player.hotbar_index)
+        }
+        with self.db_lock:
+            self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', 
+                                (1, json.dumps(p_data)))
+            self.conn.commit()
 
         # Wait for any pending asynchronous saves from unload_chunk to complete
         self.executor.shutdown(wait=True)
