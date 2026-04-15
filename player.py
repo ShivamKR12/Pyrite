@@ -234,7 +234,11 @@ class Player(Camera):
             else:
                 self.target_voxel_pos = voxel_handler.voxel_world_pos
                 self.mining_time = 0.0
-                self.mining_duration = 0.0 if self.game_mode == CREATIVE else BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
+                hardness = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
+                held_id = self.inventory[self.hotbar_index]
+                if voxel_handler.voxel_id == STONE and held_id != WOODEN_PICKAXE:
+                    hardness *= 5.0 # 5x slower without a pickaxe!
+                self.mining_duration = 0.0 if self.game_mode == CREATIVE else hardness
                 self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
                 
                 if self.mining_time >= self.mining_duration and current_time - self.interaction_timer > self.interaction_delay:
@@ -395,12 +399,12 @@ class Player(Camera):
 
     def add_item(self, voxel_id):
         # Check if we already have a stack of this item
-        for i in range(INVENTORY_SIZE):
+        for i in range(36): # Only check the main 36 storage slots
             if self.inventory[i] == voxel_id and self.inventory_counts[i] < 64:
                 self.inventory_counts[i] += 1
                 return True
         # Find an empty slot
-        for i in range(INVENTORY_SIZE):
+        for i in range(36):
             if self.inventory[i] == 0:
                 self.inventory[i] = voxel_id
                 self.inventory_counts[i] = 1

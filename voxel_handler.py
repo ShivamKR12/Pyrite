@@ -21,7 +21,7 @@ class VoxelHandler:
     def add_voxel(self):
         if self.voxel_id:
             current_id = self.app.player.inventory[self.app.player.hotbar_index]
-            if current_id == 0:
+            if current_id == 0 or current_id in NON_PLACEABLE:
                 return # Can't place empty air
 
             # check voxel id along normal
@@ -91,7 +91,11 @@ class VoxelHandler:
             
             # Spawn dropped item only in Survival mode
             if self.app.player.game_mode == SURVIVAL:
-                self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
+                held_id = self.app.player.inventory[self.app.player.hotbar_index]
+                if self.voxel_id == STONE and held_id != WOODEN_PICKAXE:
+                    pass # Break but drop nothing!
+                else:
+                    self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
 
     def set_voxel(self, mode='remove'):
         if mode == 'add':

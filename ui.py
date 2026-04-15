@@ -287,18 +287,47 @@ class InventoryUI:
         self.drag_count = 0
         self.drag_start_pos = (0, 0)
 
+    def update_crafting(self):
+        player = self.app.player
+        grid = tuple(player.inventory[36:40]) # Tuple is hashable for dictionary lookup
+        
+        recipes = {
+            # Wood -> 4 Planks
+            (WOOD, 0, 0, 0): (WOOD_PLANKS, 4), (0, WOOD, 0, 0): (WOOD_PLANKS, 4),
+            (0, 0, WOOD, 0): (WOOD_PLANKS, 4), (0, 0, 0, WOOD): (WOOD_PLANKS, 4),
+            # 2 Planks -> 4 Sticks (Vertical)
+            (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4),
+            (0, WOOD_PLANKS, 0, WOOD_PLANKS): (STICK, 4),
+            # Wooden Pickaxe -> Top row planks, Bottom left stick
+            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1)
+        }
+        
+        if grid in recipes:
+            player.inventory[40], player.inventory_counts[40] = recipes[grid]
+        else:
+            player.inventory[40], player.inventory_counts[40] = 0, 0
+
     def get_slot_pos(self, i):
         gap = 0.01
         x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
         y_spacing = SLOT_SCALE * 2 + gap
         
-        col = i % HOTBAR_SIZE
-        x = -4 * x_spacing + col * x_spacing
         if i < HOTBAR_SIZE:
+            col = i % HOTBAR_SIZE
+            x = -4 * x_spacing + col * x_spacing
             y = HOTBAR_Y # Hotbar
-        else:
+        elif i < 36:
+            col = i % HOTBAR_SIZE
             row = 2 - ((i - HOTBAR_SIZE) // HOTBAR_SIZE) 
             y = HOTBAR_Y + (row + 1.5) * y_spacing
+            x = -4 * x_spacing + col * x_spacing
+        elif i < 40: # 2x2 Crafting Grid
+            grid_idx = i - 36
+            x = 0.5 * x_spacing + (grid_idx % 2) * x_spacing
+            y = HOTBAR_Y + (6.0 - (grid_idx // 2)) * y_spacing
+        else: # Output Slot
+            x = 3.0 * x_spacing
+            y = HOTBAR_Y + 5.5 * y_spacing
         return x, y
 
     def get_slot_at_mouse(self, mouse_pos):
@@ -328,6 +357,7 @@ class InventoryUI:
         player = self.app.player
         
         for i in range(INVENTORY_SIZE):
+            if i == 40: continue # Prevent dropping items into the output slot
             sx, sy = self.get_slot_pos(i)
             dx = (mx - sx) * ASPECT_RATIO
             dy = my - sy
@@ -349,52 +379,74 @@ class InventoryUI:
                 slot_count = player.inventory_counts[i]
                 
                 if event.button == 1: # Left click (Pick up stack / Swap / Place stack)
-                    if self.drag_id == 0:
+                    if i == 40: # Output slot logic
                         if slot_id != 0:
-                            self.drag_id = slot_id
-                            self.drag_count = slot_count
-                            player.inventory[i] = 0
-                            player.inventory_counts[i] = 0
-                            self.drag_start_pos = pg.mouse.get_pos()
+                            can_take = False
+                            if self.drag_id == 0:
+                                self.drag_id = slot_id
+                                self.drag_count = slot_count
+                                can_take = True
+                            elif self.drag_id == slot_id and self.drag_count + slot_count <= 64:
+                                self.drag_count += slot_count
+                                can_take = True
+                                
+                            if can_take: # Consume 1 from each crafting input!
+                                for c in range(36, 40):
+                                    if player.inventory_counts[c] > 0:
+                                        player.inventory_counts[c] -= 1
+                                        if player.inventory_counts[c] <= 0:
+                                            player.inventory[c] = 0
+                                self.drag_start_pos = pg.mouse.get_pos()
                     else:
-                        if slot_id == 0:
-                            player.inventory[i] = self.drag_id
-                            player.inventory_counts[i] = self.drag_count
-                            self.drag_id = 0
-                            self.drag_count = 0
-                        elif slot_id == self.drag_id:
-                            space = 64 - slot_count
-                            if space >= self.drag_count:
-                                player.inventory_counts[i] += self.drag_count
+                        if self.drag_id == 0:
+                            if slot_id != 0:
+                                self.drag_id = slot_id
+                                self.drag_count = slot_count
+                                player.inventory[i] = 0
+                                player.inventory_counts[i] = 0
+                                self.drag_start_pos = pg.mouse.get_pos()
+                        else:
+                            if slot_id == 0:
+                                player.inventory[i] = self.drag_id
+                                player.inventory_counts[i] = self.drag_count
                                 self.drag_id = 0
                                 self.drag_count = 0
+                            elif slot_id == self.drag_id:
+                                space = 64 - slot_count
+                                if space >= self.drag_count:
+                                    player.inventory_counts[i] += self.drag_count
+                                    self.drag_id = 0
+                                    self.drag_count = 0
+                                else:
+                                    player.inventory_counts[i] = 64
+                                    self.drag_count -= space
                             else:
-                                player.inventory_counts[i] = 64
-                                self.drag_count -= space
-                        else:
-                            player.inventory[i], self.drag_id = self.drag_id, slot_id
-                            player.inventory_counts[i], self.drag_count = self.drag_count, slot_count
-                            self.drag_start_pos = pg.mouse.get_pos()
+                                player.inventory[i], self.drag_id = self.drag_id, slot_id
+                                player.inventory_counts[i], self.drag_count = self.drag_count, slot_count
+                                self.drag_start_pos = pg.mouse.get_pos()
+                    self.update_crafting()
                 elif event.button == 3: # Right click (Split half / Place one)
-                    if self.drag_id == 0:
-                        if slot_id != 0:
-                            half = slot_count - (slot_count // 2)
-                            self.drag_id = slot_id
-                            self.drag_count = half
-                            player.inventory_counts[i] -= half
-                            if player.inventory_counts[i] <= 0:
-                                player.inventory[i] = 0
-                            self.drag_start_pos = pg.mouse.get_pos()
-                    else:
-                        if slot_id == 0:
-                            player.inventory[i] = self.drag_id
-                            player.inventory_counts[i] = 1
-                            self.drag_count -= 1
-                            if self.drag_count <= 0: self.drag_id = 0
-                        elif slot_id == self.drag_id and slot_count < 64:
-                            player.inventory_counts[i] += 1
-                            self.drag_count -= 1
-                            if self.drag_count <= 0: self.drag_id = 0
+                    if i != 40:
+                        if self.drag_id == 0:
+                            if slot_id != 0:
+                                half = slot_count - (slot_count // 2)
+                                self.drag_id = slot_id
+                                self.drag_count = half
+                                player.inventory_counts[i] -= half
+                                if player.inventory_counts[i] <= 0:
+                                    player.inventory[i] = 0
+                                self.drag_start_pos = pg.mouse.get_pos()
+                        else:
+                            if slot_id == 0:
+                                player.inventory[i] = self.drag_id
+                                player.inventory_counts[i] = 1
+                                self.drag_count -= 1
+                                if self.drag_count <= 0: self.drag_id = 0
+                            elif slot_id == self.drag_id and slot_count < 64:
+                                player.inventory_counts[i] += 1
+                                self.drag_count -= 1
+                                if self.drag_count <= 0: self.drag_id = 0
+                    self.update_crafting()
         elif event.type == pg.MOUSEBUTTONUP:
             if event.button == 1 and self.drag_id != 0:
                 mouse_pos = pg.mouse.get_pos()
@@ -423,10 +475,21 @@ class InventoryUI:
                             else:
                                 player.inventory_counts[i] = 64
                                 self.drag_count -= space
+                    self.update_crafting()
 
     def close(self):
         if self.drag_id != 0:
             player = self.app.player
+            
+            # Eject crafting items back into inventory (or drop them!)
+            for i in range(36, 40):
+                if player.inventory[i] != 0:
+                    for _ in range(player.inventory_counts[i]):
+                        if not player.add_item(player.inventory[i]):
+                            self.app.scene.item_manager.add_item(player.position, player.inventory[i])
+                    player.inventory[i], player.inventory_counts[i] = 0, 0
+            self.update_crafting()
+            
             # Re-inject leftover dragged item or drop it!
             while self.drag_count > 0:
                 if not player.add_item(self.drag_id):
@@ -442,11 +505,13 @@ class InventoryUI:
         gap = 0.01
         x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
         y_spacing = SLOT_SCALE * 2 + gap
-        bg_w = 4.5 * x_spacing + 0.02
-        bg_h = 1.5 * y_spacing + 0.02
         
+        # Unified background for the entire inventory and crafting menu
+        bg_w = 4.5 * x_spacing + 0.02
+        bg_h = 3.0 * y_spacing + 0.02
+
         self.color_mesh.program['u_scale'] = (bg_w, bg_h)
-        self.color_mesh.program['u_offset'] = (0.0, HOTBAR_Y + 2.5 * y_spacing)
+        self.color_mesh.program['u_offset'] = (0.0, HOTBAR_Y + 4.0 * y_spacing)
         self.color_mesh.program['u_color'] = UI_BG_COLOR
         self.color_mesh.render()
 
