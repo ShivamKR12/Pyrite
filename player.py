@@ -101,7 +101,12 @@ class Player(Camera):
             # Check if player body is in water
             body_pos = glm.ivec3(glm.floor(self.position.x), glm.floor(self.position.y - PLAYER_EYE_HEIGHT * 0.5), glm.floor(self.position.z))
             voxel_body, *_ = self.app.scene.world.voxel_handler.get_voxel_id(body_pos)
-            self.in_water = (voxel_body == WATER)
+            
+            # Check if player feet are in water
+            feet_block_pos = glm.ivec3(glm.floor(self.feet_pos.x), glm.floor(self.feet_pos.y), glm.floor(self.feet_pos.z))
+            voxel_feet, *_ = self.app.scene.world.voxel_handler.get_voxel_id(feet_block_pos)
+            
+            self.in_water = (voxel_body == WATER) or (voxel_feet == WATER)
 
             # Check if player HEAD is in water
             head_pos = glm.ivec3(glm.floor(self.position.x), glm.floor(self.position.y), glm.floor(self.position.z))
@@ -302,8 +307,15 @@ class Player(Camera):
             if self.in_water:
                 self.velocity.x *= 0.5 # Water drag
                 self.velocity.z *= 0.5
-                if keys[pg.K_SPACE]:
-                    self.velocity.y = JUMP_VELOCITY * 0.6 # Swim up
+                if self.on_ground and keys[pg.K_SPACE]:
+                    self.velocity.y = JUMP_VELOCITY
+                    self.on_ground = False
+                elif keys[pg.K_SPACE]:
+                    # Dolphin leap out of water if near the surface, otherwise normal swim!
+                    if not getattr(self, 'head_in_water', False):
+                        self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * 1.05)
+                    else:
+                        self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * 0.8) # Swim up
             else:
                 if self.on_ground and keys[pg.K_SPACE]:
                     self.velocity.y = JUMP_VELOCITY
