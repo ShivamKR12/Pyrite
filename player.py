@@ -236,8 +236,13 @@ class Player(Camera):
                 self.mining_time = 0.0
                 hardness = BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0)
                 held_id = self.inventory[self.hotbar_index]
-                if voxel_handler.voxel_id == STONE and held_id != WOODEN_PICKAXE:
-                    hardness *= 5.0 # 5x slower without a pickaxe!
+                
+                if voxel_handler.voxel_id in (STONE, COBBELSTONE):
+                    if held_id == WOODEN_PICKAXE:
+                        hardness /= 5.0 # 5x faster WITH a pickaxe!
+                    else:
+                        hardness *= 5.0 # 5x slower without a pickaxe!
+                        
                 self.mining_duration = 0.0 if self.game_mode == CREATIVE else hardness
                 self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
                 

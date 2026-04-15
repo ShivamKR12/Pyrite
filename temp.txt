@@ -1,5 +1,4 @@
 
-
 ===== D:\Minecraft\meshes\base_mesh.py =====
 
 import numpy as np
@@ -697,6 +696,111 @@ class ItemMesh(BaseMesh):
         ]
         return np.array(vertices, dtype='float32')
 
+===== D:\Minecraft\meshes\obj_mesh.py =====
+
+import numpy as np
+from meshes.base_mesh import BaseMesh
+import os
+
+class ObjMesh(BaseMesh):
+    def __init__(self, app, obj_path, tex_id=None):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.obj
+        self.vbo_format = '3f 2f 3f 3f'
+        self.attrs = ('in_position', 'in_tex_coord', 'in_normal', 'in_color')
+        self.obj_path = obj_path
+        self.tex_id = tex_id
+        self.vao = self.get_vao()
+        
+    def render(self):
+        self.program['u_use_texture'] = self.tex_id is not None
+        if self.tex_id is not None:
+            self.program['u_texture_0'] = self.tex_id
+        self.vao.render()
+
+    def parse_mtl(self, mtl_path):
+        materials = {}
+        current_material = None
+        try:
+            with open(mtl_path, 'r') as f:
+                for line in f:
+                    if line.startswith('newmtl'):
+                        current_material = line.split()[1]
+                        materials[current_material] = {}
+                    elif current_material and line.startswith('Kd'):
+                        materials[current_material]['Kd'] = [float(x) for x in line.split()[1:]]
+        except FileNotFoundError:
+            print(f"MTL file not found: {mtl_path}")
+        return materials
+
+    def get_vertex_data(self):
+        vertices = []
+        tex_coords = []
+        normals = []
+        vertex_data = []
+        materials = {}
+        current_material_color = [1.0, 1.0, 1.0]
+        
+        try:
+            obj_dir = os.path.dirname(self.obj_path)
+            with open(self.obj_path, 'r') as f:
+                for line in f:
+                    if line.startswith('mtllib'):
+                        mtl_filename = line.split()[1]
+                        mtl_path = os.path.join(obj_dir, mtl_filename)
+                        materials = self.parse_mtl(mtl_path)
+                    elif line.startswith('usemtl'):
+                        material_name = line.split()[1]
+                        if material_name in materials and 'Kd' in materials[material_name]:
+                            current_material_color = materials[material_name]['Kd']
+                    elif line.startswith('v '):
+                        vertices.append([float(x) for x in line.split()[1:]])
+                    elif line.startswith('vt '):
+                        tex_coords.append([float(x) for x in line.split()[1:]])
+                    elif line.startswith('vn '):
+                        normals.append([float(x) for x in line.split()[1:]])
+                    elif line.startswith('f '):
+                        face_vertices = line.split()[1:]
+                        # Triangulate polygons (quads/n-gons) into triangles using a triangle fan
+                        for i in range(1, len(face_vertices) - 1):
+                            for face in (face_vertices[0], face_vertices[i], face_vertices[i+1]):
+                                parts = face.split('/')
+                                v_idx = int(parts[0]) - 1
+                                vt_idx = int(parts[1]) - 1 if len(parts) > 1 and parts[1] else -1
+                                vn_idx = int(parts[2]) - 1 if len(parts) > 2 and parts[2] else -1
+                                vertex_data.extend(vertices[v_idx])
+                                vertex_data.extend(tex_coords[vt_idx] if vt_idx != -1 and tex_coords else [0.0, 0.0])
+                                vertex_data.extend(normals[vn_idx] if vn_idx != -1 and normals else [0.0, 1.0, 0.0])
+                                vertex_data.extend(current_material_color)
+        except FileNotFoundError:
+            print(f"ObjMesh warning: '{self.obj_path}' not found. Rendering fallback triangle.")
+            return np.array([
+                0,0,0, 0,0, 0,1,0, 1,1,1,
+                0,1,0, 0,1, 0,1,0, 1,1,1,
+                1,0,0, 1,0, 0,1,0, 1,1,1
+            ], dtype='float32')
+            
+        vertex_data = np.array(vertex_data, dtype='float32')
+        
+        # Automatically center the geometry around the origin (0, 0, 0)
+        # This prevents models from orbiting wildly when rotated if their Blender origin was off-center!
+        if len(vertex_data) > 0:
+            x_coords = vertex_data[0::11] # Grab every 11th float starting at index 0 (X)
+            y_coords = vertex_data[1::11] # Grab every 11th float starting at index 1 (Y)
+            z_coords = vertex_data[2::11] # Grab every 11th float starting at index 2 (Z)
+            
+            center_x = (np.max(x_coords) + np.min(x_coords)) / 2.0
+            center_y = (np.max(y_coords) + np.min(y_coords)) / 2.0
+            center_z = (np.max(z_coords) + np.min(z_coords)) / 2.0
+            
+            vertex_data[0::11] -= center_x
+            vertex_data[1::11] -= center_y
+            vertex_data[2::11] -= center_z
+            
+        return vertex_data
+
 ===== D:\Minecraft\shaders\chunk.frag =====
 
 #version 330 core
@@ -707,7 +811,6 @@ const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
 
 uniform sampler2DArray u_texture_array_0;
-uniform sampler2D u_texture_water;
 uniform vec3 bg_color;
 uniform bool u_underwater_tint;
 uniform float u_fog_density;
@@ -727,21 +830,20 @@ void main() {
     vec2 dx = dFdx(uv);
     vec2 dy = dFdy(uv);
 
-    vec3 tex_col;
-    if (voxel_id == 9) { // 9 is WATER
-        vec2 water_uv = fract(uv) + vec2(u_time * 0.2, u_time * 0.2);
-        tex_col = texture(u_texture_water, water_uv).rgb;
-    } else {
-        vec2 face_uv = fract(uv);
-        face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
-        tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
+    vec2 face_uv = fract(uv);
+    
+    if (voxel_id == 11) { // 11 is WATER
+        face_uv = fract(face_uv + vec2(u_time * 0.2, u_time * 0.2));
     }
+    
+    face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
+    vec3 tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
     
     tex_col = pow(tex_col, gamma);
     tex_col *= shading;
 
     // underwater effect
-    if (u_underwater_tint && is_water_neighbor == 1 && voxel_id != 9) {
+    if (u_underwater_tint && is_water_neighbor == 1 && voxel_id != 11) {
         tex_col *= vec3(0.0, 0.3, 1.0);
     }
 
@@ -753,7 +855,7 @@ void main() {
     tex_col = mix(tex_col, bg_color, fog_factor);
 
     float alpha = 1.0;
-    if (voxel_id == 9) {
+    if (voxel_id == 11) {
         alpha = mix(0.5, 0.0, 1.0 - exp(-u_fog_density * fog_dist * fog_dist));
     }
 
@@ -968,6 +1070,80 @@ void main() {
     shading = max(0.05, 0.3 * (u_sun_direction.y + 0.5)) + diffuse * 0.7;
 
     gl_Position = m_proj * m_view * m_model * vec4(in_position - 0.5, 1.0); // Center at origin
+}
+
+===== D:\Minecraft\shaders\obj.frag =====
+
+#version 330 core
+
+layout (location = 0) out vec4 fragColor;
+
+in vec2 uv;
+in float shading;
+in vec3 frag_color;
+
+uniform sampler2D u_texture_0;
+uniform bool u_use_texture;
+uniform vec3 bg_color;
+uniform float u_fog_density;
+uniform float u_fog_max_opacity;
+
+const vec3 gamma = vec3(2.2);
+const vec3 inv_gamma = 1 / gamma;
+
+void main() {
+    vec3 base_color;
+    float alpha = 1.0;
+    
+    if (u_use_texture) {
+        vec4 tex_col = texture(u_texture_0, uv);
+        if (tex_col.a < 0.1) {
+            discard;
+        }
+        base_color = tex_col.rgb;
+        alpha = tex_col.a;
+    } else {
+        base_color = frag_color;
+    }
+    
+    vec3 rgb = pow(base_color, gamma) * shading;
+    rgb = pow(rgb, inv_gamma);
+
+    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
+    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    rgb = mix(rgb, bg_color, fog_factor);
+
+    fragColor = vec4(rgb, alpha);
+}
+
+===== D:\Minecraft\shaders\obj.vert =====
+
+#version 330 core
+
+layout (location = 0) in vec3 in_position;
+layout (location = 1) in vec2 in_tex_coord;
+layout (location = 2) in vec3 in_normal;
+layout (location = 3) in vec3 in_color;
+
+uniform mat4 m_proj;
+uniform mat4 m_view;
+uniform mat4 m_model;
+uniform vec3 u_sun_direction;
+
+out vec2 uv;
+out float shading;
+out vec3 frag_color;
+
+void main() {
+    uv = in_tex_coord;
+    frag_color = in_color;
+    
+    mat3 normal_matrix = transpose(inverse(mat3(m_model)));
+    vec3 world_normal = normalize(normal_matrix * in_normal);
+    float diffuse = max(0.0, dot(world_normal, u_sun_direction));
+    shading = max(0.05, 0.3 * (u_sun_direction.y + 0.5)) + diffuse * 0.7;
+
+    gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
 }
 
 ===== D:\Minecraft\shaders\quad.frag =====
@@ -1329,6 +1505,8 @@ import pygame as pg
 from settings import *
 import glm
 from meshes.item_mesh import ItemMesh
+from meshes.obj_mesh import ObjMesh
+
 
 class Item:
     def __init__(self, app, position, voxel_id):
@@ -1369,11 +1547,14 @@ class Item:
         m_model = glm.rotate(m_model, self.rotation, glm.vec3(0, 1, 0))
         return glm.scale(m_model, glm.vec3(self.scale))
 
+
 class ItemManager:
     def __init__(self, app):
         self.app = app
         self.items = []
         self.mesh = ItemMesh(app)
+        self.stick_mesh = ObjMesh(app, 'assets/stick.obj', tex_id=5)
+        self.pickaxe_mesh = ObjMesh(app, 'assets/wooden_pickaxe.obj')
 
     def add_item(self, position, voxel_id):
         self.items.append(Item(self.app, position, voxel_id))
@@ -1385,9 +1566,17 @@ class ItemManager:
     def render(self):
         self.app.ctx.disable(self.app.ctx.CULL_FACE) # Don't cull rotating cubes
         for item in self.items:
-            self.mesh.program['m_model'].write(item.get_model_matrix())
-            self.mesh.program['voxel_id'] = item.voxel_id
-            self.mesh.render()
+            if item.voxel_id == STICK:
+                mesh = self.stick_mesh
+            elif item.voxel_id == WOODEN_PICKAXE:
+                mesh = self.pickaxe_mesh
+            else:
+                mesh = self.mesh
+                
+            mesh.program['m_model'].write(item.get_model_matrix())
+            if 'voxel_id' in mesh.program:
+                mesh.program['voxel_id'] = item.voxel_id
+            mesh.render()
 
 ===== D:\Minecraft\world_objects\sky.py =====
 
@@ -1455,6 +1644,57 @@ class VoxelMarker:
         if self.handler.voxel_id:
             self.set_uniform()
             self.mesh.render()
+
+===== D:\Minecraft\append_texture.py =====
+
+import pygame as pg
+import sys
+
+def append_texture_row(base_texture_path, append_texture_path, output_path):
+    # Initialize pygame modules
+    pg.init()
+    
+    try:
+        # Load the existing texture array and the new texture to append
+        base_tex = pg.image.load(base_texture_path)
+        append_tex = pg.image.load(append_texture_path)
+    except pg.error as e:
+        print(f"Error loading images: {e}")
+        pg.quit()
+        sys.exit(1)
+        
+    # Scale the second texture to exactly 128x128 pixels
+    append_tex_scaled = pg.transform.scale(append_tex, (128, 128))
+    
+    # Calculate the size of the new combined texture
+    # 3 copies of 128x128 make the appended row 384 pixels wide
+    new_width = max(base_tex.get_width(), 384)
+    new_height = base_tex.get_height() + 128
+    
+    # Create a new surface (with SRCALPHA for transparency support)
+    new_surf = pg.Surface((new_width, new_height), pg.SRCALPHA)
+    
+    # Blit the original texture array at the top (0, 0)
+    new_surf.blit(base_tex, (0, 0))
+    
+    # Blit 3 copies of the scaled texture directly below the base texture
+    start_y = base_tex.get_height()
+    for i in range(3):
+        new_surf.blit(append_tex_scaled, (i * 128, start_y))
+        
+    # Save the resulting image
+    pg.image.save(new_surf, output_path)
+    print(f"Successfully saved combined texture to {output_path}")
+    pg.quit()
+
+if __name__ == '__main__':
+    # Provide your image paths here
+    # For example, using paths from the Minecraft project assets folder
+    base_texture = 'assets/tex_array_2.png'  # Your current texture array
+    texture_to_append = 'assets/water.png'  # The texture you want to add
+    output_texture = 'assets/tex_array_2.png'   # The resulting combined texture
+    
+    append_texture_row(base_texture, texture_to_append, output_texture)
 
 ===== D:\Minecraft\audio_length.py =====
 
@@ -2490,10 +2730,11 @@ SNOW = 5
 LEAVES = 6
 WOOD = 7
 GRAVEL = 8
-WATER = 9
-WOOD_PLANKS = 10
-STICK = 11
-WOODEN_PICKAXE = 12
+WOOD_PLANKS = 9
+COBBELSTONE = 10
+WATER = 11
+STICK = 12
+WOODEN_PICKAXE = 13
 
 NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
 
@@ -2610,6 +2851,7 @@ class ShaderProgram:
         self.ui_color = self.get_program('ui_color')
         self.ui_text = self.get_program('ui_text')
         self.item = self.get_program('item')
+        self.obj = self.get_program('obj')
         # ------------------------- #
         self.set_uniforms_on_init()
 
@@ -2618,8 +2860,6 @@ class ShaderProgram:
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['u_texture_array_0'] = 1
-        # Send the standalone water.png directly to the terrain shader
-        self.chunk['u_texture_water'] = 2
         self.chunk['bg_color'].write(BG_COLOR)
 
         # marker
@@ -2657,6 +2897,12 @@ class ShaderProgram:
         self.item['m_model'].write(glm.mat4())
         self.item['u_texture_array_0'] = 1
         self.item['bg_color'].write(BG_COLOR)
+        
+        # obj
+        self.obj['m_proj'].write(self.player.m_proj)
+        self.obj['m_model'].write(glm.mat4())
+        self.obj['u_use_texture'] = False
+        self.obj['bg_color'].write(BG_COLOR)
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
@@ -2666,12 +2912,14 @@ class ShaderProgram:
         self.clouds['m_view'].write(self.player.m_view)
         self.clouds['player_pos'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
+        self.obj['m_view'].write(self.player.m_view)
         
         # Update projection matrix dynamically for FOV zooming
         self.chunk['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
         self.item['m_proj'].write(self.player.m_proj)
+        self.obj['m_proj'].write(self.player.m_proj)
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
 
@@ -2699,6 +2947,9 @@ class ShaderProgram:
         if 'u_fog_density' in self.item:
             self.item['u_fog_density'] = fog_density
             if 'u_fog_max_opacity' in self.item: self.item['u_fog_max_opacity'] = fog_max_opacity
+        if 'u_fog_density' in self.obj:
+            self.obj['u_fog_density'] = fog_density
+            if 'u_fog_max_opacity' in self.obj: self.obj['u_fog_max_opacity'] = fog_max_opacity
         if 'u_fog_density' in self.clouds:
             self.clouds['u_fog_density'] = cloud_fog_density
             if 'u_fog_max_opacity' in self.clouds: self.clouds['u_fog_max_opacity'] = fog_max_opacity
@@ -2716,6 +2967,8 @@ class ShaderProgram:
             self.chunk['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.item:
             self.item['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.obj:
+            self.obj['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.sky:
             self.sky['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.clouds:
@@ -2725,6 +2978,7 @@ class ShaderProgram:
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)
         self.item['bg_color'].write(bg_color)
+        self.obj['bg_color'].write(bg_color)
         self.sky['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
@@ -3298,6 +3552,35 @@ def place_tree(voxels, x, y, z, voxel_id):
 
 """
 
+===== D:\Minecraft\test_obj.py =====
+
+import os
+
+def analyze_obj(filepath):
+    print(f"--- Analyzing {filepath} ---")
+    if not os.path.exists(filepath):
+        print("File not found!")
+        return
+        
+    triangles = 0
+    quads = 0
+    n_gons = 0
+    
+    with open(filepath, 'r') as f:
+        for line in f:
+            if line.startswith('f '):
+                vertices = len(line.split()[1:])
+                if vertices == 3: triangles += 1
+                elif vertices == 4: quads += 1
+                else: n_gons += 1
+                
+    print(f"Triangles (Supported natively by GL_TRIANGLES): {triangles}")
+    print(f"Quads (Will break GL_TRIANGLES without conversion): {quads}")
+    print(f"N-Gons: {n_gons}")
+
+if __name__ == '__main__':
+    analyze_obj('assets/stick.obj')
+
 ===== D:\Minecraft\textures.py =====
 
 import pygame as pg
@@ -3311,18 +3594,22 @@ class Textures:
 
         # load textures
         self.texture_0 = self.load('frame.png')
-        self.texture_1 = self.load('water.png')
         self.texture_array_0 = self.load('tex_array_2.png', is_tex_array=True)
         self.texture_breaking = self.load('block_breaking_texture.png')
+        self.texture_stick = self.load('stick.png')
+        self.texture_pickaxe = self.load('wooden_pickaxe.png', rotation=-90)
 
         # assign texture unit
         self.texture_0.use(location=0)
         self.texture_array_0.use(location=1)
-        self.texture_1.use(location=2)
         self.texture_breaking.use(location=3)
+        self.texture_stick.use(location=5)
+        self.texture_pickaxe.use(location=6)
 
-    def load(self, file_name, is_tex_array=False):
+    def load(self, file_name, is_tex_array=False, rotation=0):
         texture = pg.image.load(f'assets/{file_name}')
+        if rotation != 0:
+            texture = pg.transform.rotate(texture, rotation)
         texture = pg.transform.flip(texture, flip_x=True, flip_y=False)
 
         if is_tex_array:
@@ -3352,6 +3639,7 @@ import moderngl as mgl
 import pygame as pg
 import glm
 from meshes.item_mesh import ItemMesh
+from meshes.obj_mesh import ObjMesh
 
 class CrosshairMesh(BaseMesh):
     def __init__(self, app):
@@ -3508,10 +3796,17 @@ class Hotbar:
         for i in range(HOTBAR_SIZE):
             voxel_id = player.inventory[i]
             if voxel_id != 0:
-                self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-                self.block_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
-                self.block_mesh.program['voxel_id'] = voxel_id
-                self.block_mesh.render()
+                if voxel_id in (STICK, WOODEN_PICKAXE):
+                    self.text_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+                    self.text_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
+                    self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
+                    self.text_mesh.render()
+                    self.text_mesh.program['u_texture_0'] = 4 # Restore font texture
+                else:
+                    self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+                    self.block_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
+                    self.block_mesh.program['voxel_id'] = voxel_id
+                    self.block_mesh.render()
 
         # 3. Draw the stack counts
         for i in range(HOTBAR_SIZE):
@@ -3574,6 +3869,8 @@ class HeldBlock:
     def __init__(self, app):
         self.app = app
         self.mesh = ItemMesh(app)
+        self.stick_mesh = ObjMesh(app, 'assets/stick.obj', tex_id=5)
+        self.pickaxe_mesh = ObjMesh(app, 'assets/wooden_pickaxe.obj')
 
     def render(self):
         player = self.app.player
@@ -3609,17 +3906,33 @@ class HeldBlock:
         # Compute Model Matrix in World Space for perfectly accurate lighting
         m_model = glm.inverse(player.m_view)
         m_model = glm.translate(m_model, pos)
-        m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
-        m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
-        m_model = glm.scale(m_model, glm.vec3(0.35))
 
-        self.mesh.program['m_proj'].write(player.m_proj)
-        self.mesh.program['m_view'].write(player.m_view) 
-        self.mesh.program['m_model'].write(m_model)
-        self.mesh.program['voxel_id'] = voxel_id
+        if voxel_id == STICK:
+            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
+            m_model = glm.scale(m_model, glm.vec3(0.5))
+            mesh = self.stick_mesh
+        elif voxel_id == WOODEN_PICKAXE:
+            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
+            m_model = glm.scale(m_model, glm.vec3(0.35))
+            mesh = self.pickaxe_mesh
+        else:
+            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
+            m_model = glm.scale(m_model, glm.vec3(0.35))
+            mesh = self.mesh
+
+        mesh.program['m_proj'].write(player.m_proj)
+        mesh.program['m_view'].write(player.m_view) 
+        mesh.program['m_model'].write(m_model)
+        if 'voxel_id' in mesh.program:
+            mesh.program['voxel_id'] = voxel_id
 
         self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
-        self.mesh.render()
+        mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
 
 class InventoryUI:
@@ -3882,10 +4195,17 @@ class InventoryUI:
 
             voxel_id = player.inventory[i]
             if voxel_id != 0:
-                self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-                self.block_mesh.program['u_offset'] = (x, y)
-                self.block_mesh.program['voxel_id'] = voxel_id
-                self.block_mesh.render()
+                if voxel_id in (STICK, WOODEN_PICKAXE):
+                    self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                    self.text_mesh.program['u_offset'] = (x, y)
+                    self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
+                    self.text_mesh.render()
+                    self.text_mesh.program['u_texture_0'] = 4
+                else:
+                    self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                    self.block_mesh.program['u_offset'] = (x, y)
+                    self.block_mesh.program['voxel_id'] = voxel_id
+                    self.block_mesh.render()
 
             count = player.inventory_counts[i]
             if count > 0:
@@ -3903,10 +4223,17 @@ class InventoryUI:
             mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
             my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
             
-            self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-            self.block_mesh.program['u_offset'] = (mx, my)
-            self.block_mesh.program['voxel_id'] = self.drag_id
-            self.block_mesh.render()
+            if self.drag_id in (STICK, WOODEN_PICKAXE):
+                self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                self.text_mesh.program['u_offset'] = (mx, my)
+                self.text_mesh.program['u_texture_0'] = 5 if self.drag_id == STICK else 6
+                self.text_mesh.render()
+                self.text_mesh.program['u_texture_0'] = 4
+            else:
+                self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                self.block_mesh.program['u_offset'] = (mx, my)
+                self.block_mesh.program['voxel_id'] = self.drag_id
+                self.block_mesh.render()
             
             if self.drag_count > 0:
                 tex = self.text_renderer.get_texture(str(self.drag_count))

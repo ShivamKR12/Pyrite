@@ -3,6 +3,8 @@ import pygame as pg
 from settings import *
 import glm
 from meshes.item_mesh import ItemMesh
+from meshes.obj_mesh import ObjMesh
+
 
 class Item:
     def __init__(self, app, position, voxel_id):
@@ -43,11 +45,14 @@ class Item:
         m_model = glm.rotate(m_model, self.rotation, glm.vec3(0, 1, 0))
         return glm.scale(m_model, glm.vec3(self.scale))
 
+
 class ItemManager:
     def __init__(self, app):
         self.app = app
         self.items = []
         self.mesh = ItemMesh(app)
+        self.stick_mesh = ObjMesh(app, 'assets/stick.obj', tex_id=5)
+        self.pickaxe_mesh = ObjMesh(app, 'assets/wooden_pickaxe.obj')
 
     def add_item(self, position, voxel_id):
         self.items.append(Item(self.app, position, voxel_id))
@@ -59,6 +64,14 @@ class ItemManager:
     def render(self):
         self.app.ctx.disable(self.app.ctx.CULL_FACE) # Don't cull rotating cubes
         for item in self.items:
-            self.mesh.program['m_model'].write(item.get_model_matrix())
-            self.mesh.program['voxel_id'] = item.voxel_id
-            self.mesh.render()
+            if item.voxel_id == STICK:
+                mesh = self.stick_mesh
+            elif item.voxel_id == WOODEN_PICKAXE:
+                mesh = self.pickaxe_mesh
+            else:
+                mesh = self.mesh
+                
+            mesh.program['m_model'].write(item.get_model_matrix())
+            if 'voxel_id' in mesh.program:
+                mesh.program['voxel_id'] = item.voxel_id
+            mesh.render()

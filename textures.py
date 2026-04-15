@@ -9,18 +9,22 @@ class Textures:
 
         # load textures
         self.texture_0 = self.load('frame.png')
-        self.texture_1 = self.load('water.png')
         self.texture_array_0 = self.load('tex_array_2.png', is_tex_array=True)
         self.texture_breaking = self.load('block_breaking_texture.png')
+        self.texture_stick = self.load('stick.png')
+        self.texture_pickaxe = self.load('wooden_pickaxe.png', rotation=-90)
 
         # assign texture unit
         self.texture_0.use(location=0)
         self.texture_array_0.use(location=1)
-        self.texture_1.use(location=2)
         self.texture_breaking.use(location=3)
+        self.texture_stick.use(location=5)
+        self.texture_pickaxe.use(location=6)
 
-    def load(self, file_name, is_tex_array=False):
+    def load(self, file_name, is_tex_array=False, rotation=0):
         texture = pg.image.load(f'assets/{file_name}')
+        if rotation != 0:
+            texture = pg.transform.rotate(texture, rotation)
         texture = pg.transform.flip(texture, flip_x=True, flip_y=False)
 
         if is_tex_array:

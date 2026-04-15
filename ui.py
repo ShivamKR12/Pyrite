@@ -5,6 +5,7 @@ import moderngl as mgl
 import pygame as pg
 import glm
 from meshes.item_mesh import ItemMesh
+from meshes.obj_mesh import ObjMesh
 
 class CrosshairMesh(BaseMesh):
     def __init__(self, app):
@@ -161,10 +162,17 @@ class Hotbar:
         for i in range(HOTBAR_SIZE):
             voxel_id = player.inventory[i]
             if voxel_id != 0:
-                self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-                self.block_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
-                self.block_mesh.program['voxel_id'] = voxel_id
-                self.block_mesh.render()
+                if voxel_id in (STICK, WOODEN_PICKAXE):
+                    self.text_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+                    self.text_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
+                    self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
+                    self.text_mesh.render()
+                    self.text_mesh.program['u_texture_0'] = 4 # Restore font texture
+                else:
+                    self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+                    self.block_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
+                    self.block_mesh.program['voxel_id'] = voxel_id
+                    self.block_mesh.render()
 
         # 3. Draw the stack counts
         for i in range(HOTBAR_SIZE):
@@ -227,6 +235,8 @@ class HeldBlock:
     def __init__(self, app):
         self.app = app
         self.mesh = ItemMesh(app)
+        self.stick_mesh = ObjMesh(app, 'assets/stick.obj', tex_id=5)
+        self.pickaxe_mesh = ObjMesh(app, 'assets/wooden_pickaxe.obj')
 
     def render(self):
         player = self.app.player
@@ -262,17 +272,33 @@ class HeldBlock:
         # Compute Model Matrix in World Space for perfectly accurate lighting
         m_model = glm.inverse(player.m_view)
         m_model = glm.translate(m_model, pos)
-        m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
-        m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
-        m_model = glm.scale(m_model, glm.vec3(0.35))
 
-        self.mesh.program['m_proj'].write(player.m_proj)
-        self.mesh.program['m_view'].write(player.m_view) 
-        self.mesh.program['m_model'].write(m_model)
-        self.mesh.program['voxel_id'] = voxel_id
+        if voxel_id == STICK:
+            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
+            m_model = glm.scale(m_model, glm.vec3(0.5))
+            mesh = self.stick_mesh
+        elif voxel_id == WOODEN_PICKAXE:
+            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
+            m_model = glm.scale(m_model, glm.vec3(0.35))
+            mesh = self.pickaxe_mesh
+        else:
+            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
+            m_model = glm.scale(m_model, glm.vec3(0.35))
+            mesh = self.mesh
+
+        mesh.program['m_proj'].write(player.m_proj)
+        mesh.program['m_view'].write(player.m_view) 
+        mesh.program['m_model'].write(m_model)
+        if 'voxel_id' in mesh.program:
+            mesh.program['voxel_id'] = voxel_id
 
         self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
-        self.mesh.render()
+        mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
 
 class InventoryUI:
@@ -535,10 +561,17 @@ class InventoryUI:
 
             voxel_id = player.inventory[i]
             if voxel_id != 0:
-                self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-                self.block_mesh.program['u_offset'] = (x, y)
-                self.block_mesh.program['voxel_id'] = voxel_id
-                self.block_mesh.render()
+                if voxel_id in (STICK, WOODEN_PICKAXE):
+                    self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                    self.text_mesh.program['u_offset'] = (x, y)
+                    self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
+                    self.text_mesh.render()
+                    self.text_mesh.program['u_texture_0'] = 4
+                else:
+                    self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                    self.block_mesh.program['u_offset'] = (x, y)
+                    self.block_mesh.program['voxel_id'] = voxel_id
+                    self.block_mesh.render()
 
             count = player.inventory_counts[i]
             if count > 0:
@@ -556,10 +589,17 @@ class InventoryUI:
             mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
             my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
             
-            self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-            self.block_mesh.program['u_offset'] = (mx, my)
-            self.block_mesh.program['voxel_id'] = self.drag_id
-            self.block_mesh.render()
+            if self.drag_id in (STICK, WOODEN_PICKAXE):
+                self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                self.text_mesh.program['u_offset'] = (mx, my)
+                self.text_mesh.program['u_texture_0'] = 5 if self.drag_id == STICK else 6
+                self.text_mesh.render()
+                self.text_mesh.program['u_texture_0'] = 4
+            else:
+                self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                self.block_mesh.program['u_offset'] = (mx, my)
+                self.block_mesh.program['voxel_id'] = self.drag_id
+                self.block_mesh.render()
             
             if self.drag_count > 0:
                 tex = self.text_renderer.get_texture(str(self.drag_count))

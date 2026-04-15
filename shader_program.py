@@ -16,6 +16,7 @@ class ShaderProgram:
         self.ui_color = self.get_program('ui_color')
         self.ui_text = self.get_program('ui_text')
         self.item = self.get_program('item')
+        self.obj = self.get_program('obj')
         # ------------------------- #
         self.set_uniforms_on_init()
 
@@ -24,8 +25,6 @@ class ShaderProgram:
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['u_texture_array_0'] = 1
-        # Send the standalone water.png directly to the terrain shader
-        self.chunk['u_texture_water'] = 2
         self.chunk['bg_color'].write(BG_COLOR)
 
         # marker
@@ -63,6 +62,12 @@ class ShaderProgram:
         self.item['m_model'].write(glm.mat4())
         self.item['u_texture_array_0'] = 1
         self.item['bg_color'].write(BG_COLOR)
+        
+        # obj
+        self.obj['m_proj'].write(self.player.m_proj)
+        self.obj['m_model'].write(glm.mat4())
+        self.obj['u_use_texture'] = False
+        self.obj['bg_color'].write(BG_COLOR)
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
@@ -72,12 +77,14 @@ class ShaderProgram:
         self.clouds['m_view'].write(self.player.m_view)
         self.clouds['player_pos'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
+        self.obj['m_view'].write(self.player.m_view)
         
         # Update projection matrix dynamically for FOV zooming
         self.chunk['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
         self.item['m_proj'].write(self.player.m_proj)
+        self.obj['m_proj'].write(self.player.m_proj)
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
 
@@ -105,6 +112,9 @@ class ShaderProgram:
         if 'u_fog_density' in self.item:
             self.item['u_fog_density'] = fog_density
             if 'u_fog_max_opacity' in self.item: self.item['u_fog_max_opacity'] = fog_max_opacity
+        if 'u_fog_density' in self.obj:
+            self.obj['u_fog_density'] = fog_density
+            if 'u_fog_max_opacity' in self.obj: self.obj['u_fog_max_opacity'] = fog_max_opacity
         if 'u_fog_density' in self.clouds:
             self.clouds['u_fog_density'] = cloud_fog_density
             if 'u_fog_max_opacity' in self.clouds: self.clouds['u_fog_max_opacity'] = fog_max_opacity
@@ -122,6 +132,8 @@ class ShaderProgram:
             self.chunk['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.item:
             self.item['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.obj:
+            self.obj['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.sky:
             self.sky['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.clouds:
@@ -131,6 +143,7 @@ class ShaderProgram:
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)
         self.item['bg_color'].write(bg_color)
+        self.obj['bg_color'].write(bg_color)
         self.sky['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):

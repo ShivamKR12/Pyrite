@@ -2,6 +2,7 @@ __pycache__/
 meshes/__pycache__/
 world_objects/__pycache__/
 sounds/other/
+extra/
 *.mp3
 *.pyc
 *.nbc
@@ -9,3 +10,5 @@ sounds/other/
 save.db
 command.txt
 convert_audio.ps1
+test_obj.py
+append_texture.py
