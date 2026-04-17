@@ -429,3 +429,19 @@ class World:
         # Wait for any pending asynchronous saves from unload_chunk to complete
         self.executor.shutdown(wait=True)
         self.conn.close()
+        
+        # Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu
+        for vbo, vao in self.vbo_pool:
+            vbo.release()
+            vao.release()
+        self.vbo_pool.clear()
+        
+        for chunk in self.chunks:
+            if chunk:
+                if chunk.mesh:
+                    if chunk.mesh.vao: chunk.mesh.vao.release()
+                    if chunk.mesh.vbo: chunk.mesh.vbo.release()
+                if hasattr(chunk, 'query') and chunk.query:
+                    chunk.query.release()
+        
+        self.bbox_mesh.vao.release()

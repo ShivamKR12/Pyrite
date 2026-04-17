@@ -66,7 +66,13 @@ class ItemManager:
 
     def render(self):
         self.app.ctx.disable(self.app.ctx.CULL_FACE) # Don't cull rotating cubes
+        
+        player_pos = self.app.player.position
         for item in self.items:
+            # Simple distance culling (don't render items further than 32 blocks away)
+            if glm.distance2(item.position, player_pos) > 1024.0:
+                continue
+                
             if item.voxel_id == STICK:
                 mesh = self.stick_mesh
             elif item.voxel_id == WOODEN_PICKAXE:

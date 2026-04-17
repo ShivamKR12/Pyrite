@@ -132,27 +132,24 @@ def set_voxel_column(voxels, x, z, cx, cy, cz):
             else:
                 voxel_id = STONE
 
-            # Cave Carving using 3D noise
-            cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09)
-            
-            # Taper the cave noise threshold near the surface to create natural, narrow cave mouths
-            surface_dist = world_height - wy
-            cave_threshold = 0.0
-            if surface_dist < 14:
-                # Smoothly increase the threshold as we get closer to the surface
-                taper_factor = (14 - surface_dist) / 14.0
-                
-                # If entrance_mask is low, the target threshold is high (closing the cave dome)
-                # If entrance_mask is high (>0.5), it stays low (0.3), carving a small hole to the surface!
-                target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
-                
-                cave_threshold = target_threshold * taper_factor
-
-            # Check if the block falls within the cave noise and is above the bottom crust
-            if cave_noise > cave_threshold and wy > crust:
-                # Keep water/beaches intact by blocking cave generation in the top sand/dirt layers
+            if wy > crust:
+                surface_dist = world_height - wy
+                # Keep water/beaches intact by blocking cave generation entirely in the top sand/dirt layers
                 if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
-                    voxel_id = 0
+                    
+                    # Cave Carving using 3D noise
+                    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09)
+                    cave_threshold = 0.0
+                    
+                    # Taper the cave noise threshold near the surface to create natural, narrow cave mouths
+                    if surface_dist < 14:
+                        # Smoothly increase the threshold as we get closer to the surface
+                        taper_factor = (14 - surface_dist) / 14.0
+                        target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
+                        cave_threshold = target_threshold * taper_factor
+
+                    if cave_noise > cave_threshold:
+                        voxel_id = 0
 
         # setting ID
         if voxel_id:
