@@ -40,32 +40,45 @@ class Frustum:
 
 @njit(cache=True)
 def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
-    is_visible = np.ones(len(chunk_centers), dtype=np.bool_)
-    
-    for i in range(len(chunk_centers)):
-        center = chunk_centers[i]
-        sphere_vec = center - cam_pos
+    n = len(chunk_centers)
+    is_visible = np.empty(n, dtype=np.bool_)
+
+    cpx, cpy, cpz = cam_pos[0], cam_pos[1], cam_pos[2]
+    cfx, cfy, cfz = cam_forward[0], cam_forward[1], cam_forward[2]
+    crx, cry, crz = cam_right[0], cam_right[1], cam_right[2]
+    cux, cuy, cuz = cam_up[0], cam_up[1], cam_up[2]
+
+    radius_sq = (CHUNK_SPHERE_RADIUS * 1.2) ** 2
+
+    for i in range(n):
+        svx = chunk_centers[i, 0] - cpx
+        svy = chunk_centers[i, 1] - cpy
+        svz = chunk_centers[i, 2] - cpz
         
-        if np.linalg.norm(sphere_vec) < CHUNK_SPHERE_RADIUS * 1.2:
+        dist_sq = svx*svx + svy*svy + svz*svz
+        if dist_sq < radius_sq:
+            is_visible[i] = True
             continue
 
-        sz = np.dot(sphere_vec, cam_forward)
+        sz = svx * cfx + svy * cfy + svz * cfz
         if not (NEAR - CHUNK_SPHERE_RADIUS <= sz <= FAR + CHUNK_SPHERE_RADIUS):
             is_visible[i] = False
             continue
             
         sz = max(0.0, sz)
 
-        sy = np.dot(sphere_vec, cam_up)
+        sy = svx * cux + svy * cuy + svz * cuz
         dist_y = factor_y * CHUNK_SPHERE_RADIUS + sz * tan_y
         if not (-dist_y <= sy <= dist_y):
             is_visible[i] = False
             continue
 
-        sx = np.dot(sphere_vec, cam_right)
+        sx = svx * crx + svy * cry + svz * crz
         dist_x = factor_x * CHUNK_SPHERE_RADIUS + sz * tan_x
         if not (-dist_x <= sx <= dist_x):
             is_visible[i] = False
             continue
+            
+        is_visible[i] = True
             
     return is_visible
