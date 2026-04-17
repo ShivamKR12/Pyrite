@@ -27,7 +27,7 @@ class Item:
         if world.voxel_handler.get_voxel_id(check_pos)[0]:
             self.position.y = check_pos.y + 1.0 + self.scale / 2
             self.velocity.x *= 0.8 # Friction
-            self.velocity.z *= 0.2
+            self.velocity.z *= 0.8 
             self.velocity.y = 0
         elif self.position.y < -10:
             self.is_dead = True

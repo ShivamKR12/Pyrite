@@ -155,6 +155,8 @@ class Player(Camera):
             base_fov = glm.radians(self.app.config['fov'])
             target_fov = base_fov + glm.radians(10.0) if self.is_sprinting and is_walking else base_fov
             self.fov += (target_fov - self.fov) * 0.08 * self.app.delta_time
+            # Cap the lerp factor to 1.0 to prevent mathematical overshoot/camera shaking on lower framerates!
+            self.fov += (target_fov - self.fov) * min(1.0, 0.015 * self.app.delta_time)
             self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
             h_fov = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
             self.frustum.update_factors(self.fov, h_fov)

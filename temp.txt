@@ -230,8 +230,8 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
     water_index = 0
 
     cx, cy, cz = chunk_pos
-    mask0 = np.empty((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
-    mask1 = np.empty((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
+    mask0 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
+    mask1 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
 
     # ================== Y PLANES (Top/Bottom) ==================
     for y in range(CHUNK_SIZE):
@@ -1507,7 +1507,7 @@ class Item:
         if world.voxel_handler.get_voxel_id(check_pos)[0]:
             self.position.y = check_pos.y + 1.0 + self.scale / 2
             self.velocity.x *= 0.8 # Friction
-            self.velocity.z *= 0.2
+            self.velocity.z *= 0.8 
             self.velocity.y = 0
         elif self.position.y < -10:
             self.is_dead = True
@@ -2306,6 +2306,8 @@ class Player(Camera):
             base_fov = glm.radians(self.app.config['fov'])
             target_fov = base_fov + glm.radians(10.0) if self.is_sprinting and is_walking else base_fov
             self.fov += (target_fov - self.fov) * 0.08 * self.app.delta_time
+            # Cap the lerp factor to 1.0 to prevent mathematical overshoot/camera shaking on lower framerates!
+            self.fov += (target_fov - self.fov) * min(1.0, 0.015 * self.app.delta_time)
             self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
             h_fov = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
             self.frustum.update_factors(self.fov, h_fov)

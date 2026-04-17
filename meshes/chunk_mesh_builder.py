@@ -115,8 +115,8 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
     water_index = 0
 
     cx, cy, cz = chunk_pos
-    mask0 = np.empty((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
-    mask1 = np.empty((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
+    mask0 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
+    mask1 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype='uint32')
 
     # ================== Y PLANES (Top/Bottom) ==================
     for y in range(CHUNK_SIZE):

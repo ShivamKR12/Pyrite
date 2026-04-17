@@ -295,8 +295,6 @@ class World:
                         p_vbo.release()
                         p_vao.release()
                 chunk.mesh.vbo, chunk.mesh.vao = None, None
-            if hasattr(chunk, 'query') and chunk.query:
-                chunk.query.release()
             if chunk in self.build_queue:
                 self.build_queue.remove(chunk)
             for item in list(self.load_queue):
@@ -441,7 +439,5 @@ class World:
                 if chunk.mesh:
                     if chunk.mesh.vao: chunk.mesh.vao.release()
                     if chunk.mesh.vbo: chunk.mesh.vbo.release()
-                if hasattr(chunk, 'query') and chunk.query:
-                    chunk.query.release()
         
         self.bbox_mesh.vao.release()
