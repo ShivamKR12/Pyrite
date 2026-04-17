@@ -120,8 +120,6 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
     # ================== Y PLANES (Top/Bottom) ==================
     for y in range(CHUNK_SIZE):
-        mask0.fill(0)
-        mask1.fill(0)
         wy = y + cy * CHUNK_SIZE
         for x in range(CHUNK_SIZE):
             wx = x + cx * CHUNK_SIZE
@@ -212,8 +210,6 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
     # ================== X PLANES (Right/Left) ==================
     for x in range(CHUNK_SIZE):
-        mask0.fill(0)
-        mask1.fill(0)
         wx = x + cx * CHUNK_SIZE
         for y in range(CHUNK_SIZE):
             wy = y + cy * CHUNK_SIZE
@@ -302,8 +298,6 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
     # ================== Z PLANES (Back/Front) ==================
     for z in range(CHUNK_SIZE):
-        mask0.fill(0)
-        mask1.fill(0)
         wz = z + cz * CHUNK_SIZE
         for x in range(CHUNK_SIZE):
             wx = x + cx * CHUNK_SIZE

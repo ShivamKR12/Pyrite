@@ -51,6 +51,10 @@ class World:
                                 data TEXT)''')
         self.conn.commit()
         
+        # Optimize SQLite for async-like high performance disk writing
+        self.cursor.execute('PRAGMA journal_mode = WAL')
+        self.cursor.execute('PRAGMA synchronous = NORMAL')
+        
         # Load player inventory and hotbar state
         self.cursor.execute('SELECT data FROM player_data WHERE id=1')
         row = self.cursor.fetchone()
@@ -221,6 +225,13 @@ class World:
         render_dist = int(self.app.config.get('render_distance', 4))
         player_cx = int(self.app.player.position.x // CHUNK_SIZE)
         player_cz = int(self.app.player.position.z // CHUNK_SIZE)
+        
+        # Optimization: Only scan for chunks to stream if the player moves to a new chunk or changes render distance!
+        stream_state = (player_cx, player_cz, render_dist)
+        if getattr(self, 'last_stream_state', None) == stream_state:
+            return
+            
+        self.last_stream_state = stream_state
         
         # 1. Unload chunks out of range
         for pos in list(self.active_chunks.keys()):

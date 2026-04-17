@@ -235,8 +235,6 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
     # ================== Y PLANES (Top/Bottom) ==================
     for y in range(CHUNK_SIZE):
-        mask0.fill(0)
-        mask1.fill(0)
         wy = y + cy * CHUNK_SIZE
         for x in range(CHUNK_SIZE):
             wx = x + cx * CHUNK_SIZE
@@ -327,8 +325,6 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
     # ================== X PLANES (Right/Left) ==================
     for x in range(CHUNK_SIZE):
-        mask0.fill(0)
-        mask1.fill(0)
         wx = x + cx * CHUNK_SIZE
         for y in range(CHUNK_SIZE):
             wy = y + cy * CHUNK_SIZE
@@ -417,8 +413,6 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
     # ================== Z PLANES (Back/Front) ==================
     for z in range(CHUNK_SIZE):
-        mask0.fill(0)
-        mask1.fill(0)
         wz = z + cz * CHUNK_SIZE
         for x in range(CHUNK_SIZE):
             wx = x + cx * CHUNK_SIZE
@@ -969,7 +963,7 @@ void main() {
     }
 
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    float fog_factor = min(1.0 - exp(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
     vec3 col = mix(cloud_color, bg_color, fog_factor);
 
     fragColor = vec4(col, 0.8);
@@ -1541,6 +1535,9 @@ class ItemManager:
         self.pickaxe_mesh = ObjMesh(app, 'assets/wooden_pickaxe.obj')
 
     def add_item(self, position, voxel_id):
+        # Prevent entity overflow crashes if too many blocks break at once
+        if len(self.items) > 256:
+            self.items.pop(0) # Automatically despawn the oldest item
         self.items.append(Item(self.app, position, voxel_id))
 
     def update(self):
@@ -4925,6 +4922,10 @@ class World:
                                 data TEXT)''')
         self.conn.commit()
         
+        # Optimize SQLite for async-like high performance disk writing
+        self.cursor.execute('PRAGMA journal_mode = WAL')
+        self.cursor.execute('PRAGMA synchronous = NORMAL')
+        
         # Load player inventory and hotbar state
         self.cursor.execute('SELECT data FROM player_data WHERE id=1')
         row = self.cursor.fetchone()
@@ -5095,6 +5096,13 @@ class World:
         render_dist = int(self.app.config.get('render_distance', 4))
         player_cx = int(self.app.player.position.x // CHUNK_SIZE)
         player_cz = int(self.app.player.position.z // CHUNK_SIZE)
+        
+        # Optimization: Only scan for chunks to stream if the player moves to a new chunk or changes render distance!
+        stream_state = (player_cx, player_cz, render_dist)
+        if getattr(self, 'last_stream_state', None) == stream_state:
+            return
+            
+        self.last_stream_state = stream_state
         
         # 1. Unload chunks out of range
         for pos in list(self.active_chunks.keys()):

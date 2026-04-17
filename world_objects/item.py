@@ -55,6 +55,9 @@ class ItemManager:
         self.pickaxe_mesh = ObjMesh(app, 'assets/wooden_pickaxe.obj')
 
     def add_item(self, position, voxel_id):
+        # Prevent entity overflow crashes if too many blocks break at once
+        if len(self.items) > 256:
+            self.items.pop(0) # Automatically despawn the oldest item
         self.items.append(Item(self.app, position, voxel_id))
 
     def update(self):

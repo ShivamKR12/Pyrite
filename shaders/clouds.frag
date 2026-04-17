@@ -20,7 +20,7 @@ void main() {
     }
 
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    float fog_factor = min(1.0 - exp(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
     vec3 col = mix(cloud_color, bg_color, fog_factor);
 
     fragColor = vec4(col, 0.8);
