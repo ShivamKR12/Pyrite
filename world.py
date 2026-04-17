@@ -155,6 +155,10 @@ class World:
                 # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                    while len(self.vbo_pool) > 150:
+                        p_vbo, p_vao = self.vbo_pool.pop(0)
+                        p_vbo.release()
+                        p_vao.release()
                     
                 chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
@@ -275,12 +279,22 @@ class World:
             if chunk.mesh:
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                    while len(self.vbo_pool) > 150:
+                        p_vbo, p_vao = self.vbo_pool.pop(0)
+                        p_vbo.release()
+                        p_vao.release()
                 chunk.mesh.vbo, chunk.mesh.vao = None, None
+            if hasattr(chunk, 'query') and chunk.query:
+                chunk.query.release()
             if chunk in self.build_queue:
                 self.build_queue.remove(chunk)
             for item in list(self.load_queue):
                 if item[0] is chunk:
                     self.load_queue.remove(item)
+                    break
+            for item in list(self.mesh_queue):
+                if item[0] is chunk:
+                    self.mesh_queue.remove(item)
                     break
 
     def render(self):

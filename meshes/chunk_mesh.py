@@ -55,12 +55,6 @@ class ChunkMesh(BaseMesh):
             self.vertex_data = None
             return self.vao
 
-        # Keep the pool from growing infinitely if you fly around too fast
-        if len(pool) > 150:
-            p_vbo, p_vao = pool.pop(0)
-            p_vbo.release()
-            p_vao.release()
-
         # Allocate a new VBO, but round the size up to the nearest power of 2
         # This ensures the VBOs are generic sizes (e.g. 128KB, 256KB) and highly reusable!
         reserve_size = 2 ** math.ceil(math.log2(byte_size)) if byte_size > 0 else 0
