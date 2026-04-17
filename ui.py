@@ -109,6 +109,18 @@ class TextRenderer:
         self.textures[text] = texture
         return texture
 
+    def get_dynamic_texture(self, text):
+        surf = self.font.render(text, True, UI_TEXT_COLOR)
+        shadow_offset = max(2, self.font.get_height() // 15)
+        bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
+        shadow = self.font.render(text, True, UI_SHADOW_COLOR)
+        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
+        bg_surf.blit(surf, (0, 0))
+        texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
+        # Dynamic textures don't need mipmaps since they are only used for one frame
+        texture.filter = (mgl.LINEAR, mgl.LINEAR)
+        return texture
+
 class Crosshair:
     def __init__(self, app):
         self.app = app
@@ -849,7 +861,7 @@ class Slider:
         else:
             display_val = f"{val:.4f}"
             
-        tex = self.text_renderer.get_texture(f"{self.text}: {display_val}")
+        tex = self.text_renderer.get_dynamic_texture(f"{self.text}: {display_val}")
         tex.use(location=4)
         tex_w, tex_h = tex.size
         scale_y = self.size[1] * 0.6
@@ -858,6 +870,7 @@ class Slider:
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
         self.text_mesh.program['u_offset'] = self.pos
         self.text_mesh.render()
+        tex.release()
 
 class OptionsMenu:
     def __init__(self, app):
