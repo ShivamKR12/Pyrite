@@ -955,55 +955,61 @@ class DebugOverlay:
         self.font = pg.font.SysFont('arial', FONT_SIZE_DEBUG, bold=True)
         self.text_mesh = UITextMesh(app)
         self.dynamic_texture = None
+        self.last_update = 0
 
     def render(self):
-        player = self.app.player
-        handler = self.app.scene.world.voxel_handler
-        
-        fps = self.app.clock.get_fps()
-        x, y, z = player.position
-        cx, cy, cz = int(x // CHUNK_SIZE), int(y // CHUNK_SIZE), int(z // CHUNK_SIZE)
-        yaw, pitch = glm.degrees(player.yaw), glm.degrees(player.pitch)
-        
-        target = "Air"
-        if handler.voxel_id:
-            target = f"ID: {handler.voxel_id} at {int(handler.voxel_world_pos.x)} {int(handler.voxel_world_pos.y)} {int(handler.voxel_world_pos.z)}"
-
-        lines = [
-            f"Voxel Engine (FPS: {fps:.0f})",
-            f"XYZ: {x:.3f} / {y:.5f} / {z:.3f}",
-            f"Chunk: {cx} {cy} {cz}",
-            f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
-            f"Time: {self.app.time:.2f}",
-            f"Target Block: {target}",
-            f"Game Mode: {'Survival' if player.game_mode == SURVIVAL else 'Creative'}"
-        ]
-
-        surfaces = []
-        for line in lines:
-            shadow = self.font.render(line, True, (60, 60, 60))
-            text = self.font.render(line, True, (220, 220, 220))
-            merged = pg.Surface((text.get_width() + 2, text.get_height() + 2), pg.SRCALPHA)
-            merged.blit(shadow, (2, 2))
-            merged.blit(text, (0, 0))
-            surfaces.append(merged)
+        current_time = pg.time.get_ticks()
+        if current_time - self.last_update > 250 or self.dynamic_texture is None:
+            self.last_update = current_time
             
-        max_w = max(s.get_width() for s in surfaces)
-        total_h = sum(s.get_height() for s in surfaces)
-        
-        bg_surf = pg.Surface((max_w + 10, total_h + 10), pg.SRCALPHA)
-        bg_surf.fill((0, 0, 0, 120))
-        
-        curr_y = 5
-        for s in surfaces:
-            bg_surf.blit(s, (5, curr_y))
-            curr_y += s.get_height()
-        
-        if self.dynamic_texture:
-            self.dynamic_texture.release() # Prevent VRAM leaks
+            player = self.app.player
+            handler = self.app.scene.world.voxel_handler
             
-        self.dynamic_texture = self.app.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
-        self.dynamic_texture.filter = (mgl.NEAREST, mgl.NEAREST)
+            fps = self.app.clock.get_fps()
+            x, y, z = player.position
+            cx, cy, cz = int(x // CHUNK_SIZE), int(y // CHUNK_SIZE), int(z // CHUNK_SIZE)
+            yaw, pitch = glm.degrees(player.yaw), glm.degrees(player.pitch)
+            
+            target = "Air"
+            if handler.voxel_id:
+                target = f"ID: {handler.voxel_id} at {int(handler.voxel_world_pos.x)} {int(handler.voxel_world_pos.y)} {int(handler.voxel_world_pos.z)}"
+    
+            lines = [
+                f"Voxel Engine (FPS: {fps:.0f})",
+                f"XYZ: {x:.3f} / {y:.5f} / {z:.3f}",
+                f"Chunk: {cx} {cy} {cz}",
+                f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
+                f"Time: {self.app.time:.2f}",
+                f"Target Block: {target}",
+                f"Game Mode: {'Survival' if player.game_mode == SURVIVAL else 'Creative'}"
+            ]
+    
+            surfaces = []
+            for line in lines:
+                shadow = self.font.render(line, True, (60, 60, 60))
+                text = self.font.render(line, True, (220, 220, 220))
+                merged = pg.Surface((text.get_width() + 2, text.get_height() + 2), pg.SRCALPHA)
+                merged.blit(shadow, (2, 2))
+                merged.blit(text, (0, 0))
+                surfaces.append(merged)
+                
+            max_w = max(s.get_width() for s in surfaces)
+            total_h = sum(s.get_height() for s in surfaces)
+            
+            bg_surf = pg.Surface((max_w + 10, total_h + 10), pg.SRCALPHA)
+            bg_surf.fill((0, 0, 0, 120))
+            
+            curr_y = 5
+            for s in surfaces:
+                bg_surf.blit(s, (5, curr_y))
+                curr_y += s.get_height()
+            
+            if self.dynamic_texture:
+                self.dynamic_texture.release() # Prevent VRAM leaks
+                
+            self.dynamic_texture = self.app.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
+            self.dynamic_texture.filter = (mgl.NEAREST, mgl.NEAREST)
+            
         self.dynamic_texture.use(location=4)
         
         tex_w, tex_h = self.dynamic_texture.size

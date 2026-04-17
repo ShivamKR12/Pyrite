@@ -54,15 +54,5 @@ class Chunk:
     @njit(cache=True)
     def generate_terrain(voxels, cx, cy, cz):
         for x in range(CHUNK_SIZE):
-            wx = x + cx
             for z in range(CHUNK_SIZE):
-                wz = z + cz
-                world_height = get_height(wx, wz)
-                
-                # Ensure we also generate blocks up to the water line so lakes/oceans fill with water!
-                max_h = max(world_height, int(WATER_LINE) + 1)
-                local_height = min(max_h - cy, CHUNK_SIZE)
-
-                for y in range(max(0, local_height)):
-                    wy = y + cy
-                    set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height)
+                set_voxel_column(voxels, x, z, cx, cy, cz)

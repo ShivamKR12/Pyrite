@@ -68,10 +68,17 @@ def get_index(x, y, z):
 
 
 @njit(cache=True)
-def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
-    voxel_id = 0
+def set_voxel_column(voxels, x, z, cx, cy, cz):
+    wx = x + cx
+    wz = z + cz
+    world_height = get_height(wx, wz)
+    
+    max_h = max(world_height, int(WATER_LINE) + 1)
+    local_height = min(max_h - cy, CHUNK_SIZE)
+    if local_height <= 0:
+        return
 
-    # Determine biome and surface blocks
+    # Determine biome and surface blocks ONCE per column (Huge Optimization)
     temp, moist = get_biome(wx, wz)
     
     # Add natural dithering to the biome borders so blocks mix organically
@@ -105,62 +112,65 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
     # Deterministic noise for dirt depth mapping from 3 to 8 blocks deep
     dirt_depth = int((noise2(wx * 0.1, wz * 0.1) * 0.5 + 0.5) * 5) + 3
 
-    if wy > world_height - 1:
-        if wy <= WATER_LINE:
-            voxel_id = WATER
+    # Pre-calculate 2D masks once per column instead of every Y block
+    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0)
+    crust = noise2(wx * 0.1, wz * 0.1) * 3 + 3
+
+    for y in range(local_height):
+        wy = y + cy
+        voxel_id = 0
+
+        if wy > world_height - 1:
+            if wy <= WATER_LINE:
+                voxel_id = WATER
         else:
-            pass # Air
-    else:
-        # Determine default solid block type
-        if wy == world_height - 1:
-            voxel_id = surface_id
-        elif wy >= world_height - dirt_depth:
-            voxel_id = subsurface_id
-        else:
-            voxel_id = STONE
+            # Determine default solid block type
+            if wy == world_height - 1:
+                voxel_id = surface_id
+            elif wy >= world_height - dirt_depth:
+                voxel_id = subsurface_id
+            else:
+                voxel_id = STONE
 
-        # Cave Carving using 3D noise
-        cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09)
-        
-        # Taper the cave noise threshold near the surface to create natural, narrow cave mouths
-        surface_dist = world_height - wy
-        cave_threshold = 0.0
-        if surface_dist < 14:
-            # 2D mask to restrict cave entrances to rare, specific locations (~1 per few chunks)
-            entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0)
+            # Cave Carving using 3D noise
+            cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09)
             
-            # Smoothly increase the threshold as we get closer to the surface
-            taper_factor = (14 - surface_dist) / 14.0
-            
-            # If entrance_mask is low, the target threshold is high (closing the cave dome)
-            # If entrance_mask is high (>0.5), it stays low (0.3), carving a small hole to the surface!
-            target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
-            
-            cave_threshold = target_threshold * taper_factor
+            # Taper the cave noise threshold near the surface to create natural, narrow cave mouths
+            surface_dist = world_height - wy
+            cave_threshold = 0.0
+            if surface_dist < 14:
+                # Smoothly increase the threshold as we get closer to the surface
+                taper_factor = (14 - surface_dist) / 14.0
+                
+                # If entrance_mask is low, the target threshold is high (closing the cave dome)
+                # If entrance_mask is high (>0.5), it stays low (0.3), carving a small hole to the surface!
+                target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
+                
+                cave_threshold = target_threshold * taper_factor
 
-        # Check if the block falls within the cave noise and is above the bottom crust
-        if cave_noise > cave_threshold and wy > noise2(wx * 0.1, wz * 0.1) * 3 + 3:
-            # Keep water/beaches intact by blocking cave generation in the top sand/dirt layers
-            if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
-                voxel_id = 0
+            # Check if the block falls within the cave noise and is above the bottom crust
+            if cave_noise > cave_threshold and wy > crust:
+                # Keep water/beaches intact by blocking cave generation in the top sand/dirt layers
+                if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
+                    voxel_id = 0
 
-    # setting ID
-    if voxel_id:
-        voxels[get_index(x, y, z)] = voxel_id
+        # setting ID
+        if voxel_id:
+            voxels[get_index(x, y, z)] = voxel_id
 
-    # Place Tree: No trees underwater, no trees on high mountains, no trees on snow, no floating trees!
-    if wy == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and wy < STONE_LVL:
-        tree_prob = 0.0
-        if surface_id == GRASS:
-            if moist > 0.4: 
-                tree_prob = 0.04   # Dense forest
-            elif moist > 0.0: 
-                tree_prob = 0.005  # Sparse woods
-            else: 
-                tree_prob = 0.0001 # Extreme plains (~1 tree every 5 chunks)
-            
-        if tree_prob > 0:
-            place_tree(voxels, x, y, z, surface_id, tree_prob)
+        # Place Tree: No trees underwater, no trees on high mountains, no trees on snow, no floating trees!
+        if wy == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and wy < STONE_LVL:
+            tree_prob = 0.0
+            if surface_id == GRASS:
+                if moist > 0.4: 
+                    tree_prob = 0.04   # Dense forest
+                elif moist > 0.0: 
+                    tree_prob = 0.005  # Sparse woods
+                else: 
+                    tree_prob = 0.0001 # Extreme plains (~1 tree every 5 chunks)
+                
+            if tree_prob > 0:
+                place_tree(voxels, x, y, z, surface_id, tree_prob)
 
 
 @njit(cache=True)
