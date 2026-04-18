@@ -74,10 +74,10 @@ class VoxelEngine:
         self.pause_menu = PauseMenu(self)
         self.options_menu = OptionsMenu(self)
 
-    def init_game_session(self):
+    def init_game_session(self, save_name="Default_World"):
         self.game_state = 'LOADING'
         
-        self.scene = Scene(self)
+        self.scene = Scene(self, save_name)
         
         self.render_loading_screen("STARTING GAME...")
         

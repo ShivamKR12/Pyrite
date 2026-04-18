@@ -13,10 +13,11 @@ import json
 import time
 import moderngl as mgl
 from frustum import frustum_cull_fast
+import datetime
 
 
 class World:
-    def __init__(self, app):
+    def __init__(self, app, save_name):
         self.app = app
         self.app.render_loading_screen("ALLOCATING MEMORY...")
         self.chunks = [None for _ in range(WORLD_VOL)]
@@ -38,7 +39,9 @@ class World:
         self.bbox_mesh = CubeMesh(app)
 
         self.app.render_loading_screen("CONNECTING TO DATABASE...")
-        self.save_path = 'save.db'
+        self.save_name = save_name
+        os.makedirs('saves', exist_ok=True)
+        self.save_path = f'saves/{self.save_name}.db'
         self.db_lock = threading.Lock()
         self.conn = sqlite3.connect(self.save_path, check_same_thread=False)
         self.cursor = self.conn.cursor()
@@ -49,12 +52,29 @@ class World:
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS player_data (
                                 id INTEGER PRIMARY KEY,
                                 data TEXT)''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS world_meta (
+                                id INTEGER PRIMARY KEY,
+                                world_name TEXT,
+                                seed INTEGER,
+                                game_mode INTEGER,
+                                creation_date TEXT,
+                                last_played TEXT)''')
         self.conn.commit()
         
         # Optimize SQLite for async-like high performance disk writing
         self.cursor.execute('PRAGMA journal_mode = WAL')
         self.cursor.execute('PRAGMA synchronous = NORMAL')
         
+        # Initialize metadata if missing (e.g. creating a new world)
+        self.cursor.execute('SELECT * FROM world_meta WHERE id=1')
+        if not self.cursor.fetchone():
+            now = datetime.datetime.now().isoformat()
+            # We'll default to the global SEED and SURVIVAL for now until Phase 2
+            self.cursor.execute('''INSERT INTO world_meta (id, world_name, seed, game_mode, creation_date, last_played)
+                                   VALUES (?, ?, ?, ?, ?, ?)''', 
+                                (1, self.save_name.replace('_', ' '), SEED, SURVIVAL, now, now))
+            self.conn.commit()
+
         # Load player inventory and hotbar state
         self.cursor.execute('SELECT data FROM player_data WHERE id=1')
         row = self.cursor.fetchone()
@@ -419,7 +439,10 @@ class World:
             'yaw': float(self.app.player.yaw),
             'pitch': float(self.app.player.pitch)
         }
+        
+        now = datetime.datetime.now().isoformat()
         with self.db_lock:
+            self.cursor.execute('UPDATE world_meta SET last_played = ? WHERE id=1', (now,))
             self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', 
                                 (1, json.dumps(p_data)))
             self.conn.commit()
