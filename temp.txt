@@ -508,7 +508,7 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
 from settings import *
 from meshes.base_mesh import BaseMesh
-from noise import *
+from noise import noise2
 
 
 class CloudMesh(BaseMesh):
@@ -524,17 +524,19 @@ class CloudMesh(BaseMesh):
 
     def get_vertex_data(self):
         cloud_data = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
-        self.gen_clouds(cloud_data)
+        
+        import noise
+        self.gen_clouds(cloud_data, noise.perm)
 
         return self.build_mesh(cloud_data)
 
     @staticmethod
     @njit(cache=True)
-    def gen_clouds(cloud_data):
+    def gen_clouds(cloud_data, perm_array):
         for x in range(WORLD_W * CHUNK_SIZE):
             for z in range(WORLD_D * CHUNK_SIZE):
 
-                if noise2(0.13 * x, 0.13 * z) < 0.2:
+                if noise2(0.13 * x, 0.13 * z, perm_array) < 0.2:
                     continue
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
@@ -1403,6 +1405,8 @@ void main() {
 from settings import *
 from meshes.chunk_mesh import ChunkMesh
 from terrain_gen import *
+import numpy as np
+import random
 
 
 class Chunk:
@@ -1454,10 +1458,12 @@ class Chunk:
 
     @staticmethod
     @njit(cache=True)
-    def generate_terrain(voxels, cx, cy, cz):
+    def generate_terrain(voxels, cx, cy, cz, perm_array, perm_grad_array, seed):
+        np.random.seed(seed ^ cx ^ cy ^ cz)
+        random.seed(seed ^ cx ^ cy ^ cz)
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
-                set_voxel_column(voxels, x, z, cx, cy, cz)
+                set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)
 
 ===== D:\Minecraft\world_objects\clouds.py =====
 
@@ -1873,6 +1879,9 @@ from settings import *
 import moderngl as mgl
 import pygame as pg
 import json
+import random
+import sqlite3
+from noise import set_seed
 import os
 import sys
 from shader_program import ShaderProgram
@@ -1945,10 +1954,35 @@ class VoxelEngine:
         self.pause_menu = PauseMenu(self)
         self.options_menu = OptionsMenu(self)
 
-    def init_game_session(self, save_name="Default_World"):
+    def init_game_session(self, save_name="Default_World", force_seed=None, game_mode=None):
         self.game_state = 'LOADING'
         
-        self.scene = Scene(self, save_name)
+        if game_mode is not None:
+            self.player.game_mode = game_mode
+
+        # --- SEED DETERMINATION ---
+        # Determine the seed BEFORE any world objects are created to prevent premature Numba compilation.
+        save_path = f'saves/{save_name}.db'
+        seed = 0
+        
+        if os.path.exists(save_path):
+            try:
+                conn = sqlite3.connect(save_path)
+                cursor = conn.cursor()
+                cursor.execute('SELECT seed FROM world_meta WHERE id=1')
+                row = cursor.fetchone()
+                if row:
+                    seed = row[0]
+                conn.close()
+            except Exception as e:
+                print(f"[SYSTEM] Could not read seed from existing save file: {e}")
+                seed = random.randint(100000, 999999999)
+        else:
+            seed = force_seed if force_seed is not None else random.randint(100000, 999999999)
+            
+        set_seed(seed)
+        
+        self.scene = Scene(self, save_name, seed) # Pass seed to scene/world
         
         self.render_loading_screen("STARTING GAME...")
         
@@ -2072,6 +2106,16 @@ class VoxelEngine:
                 self.freeze_culling = not self.freeze_culling
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if self.game_state == 'IN_GAME':
+                    # Capture screen for thumbnail before UI draws over it!
+                    try:
+                        data = self.ctx.screen.read(components=3)
+                        img = pg.image.frombuffer(data, (int(WIN_RES.x), int(WIN_RES.y)), 'RGB')
+                        img = pg.transform.flip(img, False, True) # OpenGL renders bottom-up
+                        thumb_w, thumb_h = 320, int(320 / ASPECT_RATIO)
+                        img = pg.transform.smoothscale(img, (thumb_w, thumb_h))
+                        pg.image.save(img, f"saves/{self.scene.world.save_name}_thumb.png")
+                    except Exception as e:
+                        print(f"Failed to save thumbnail: {e}")
                     self.game_state = 'PAUSED'
                     pg.event.set_grab(False)
                     pg.mouse.set_visible(True)
@@ -2131,21 +2175,33 @@ if __name__ == '__main__':
 
 ===== D:\Minecraft\noise.py =====
 
-from settings import SEED
 from numba import njit
 from opensimplex.internals import _noise2, _noise3, _init
+import numpy as np
+import random
 
-perm, perm_grad_index3 = _init(seed=SEED)
+# Pre-allocate the arrays with a default seed. Numba will hardcode the memory pointers to these arrays.
+perm, perm_grad_index3 = _init(seed=0)
+
+@njit
+def _seed_numba(new_seed):
+    np.random.seed(new_seed)
+    random.seed(new_seed)
+
+def set_seed(new_seed):
+    global perm, perm_grad_index3
+    perm, perm_grad_index3 = _init(seed=new_seed)
+    _seed_numba(new_seed)
 
 
 @njit(cache=True)
-def noise2(x, y):
-    return _noise2(x, y, perm)
+def noise2(x, y, perm_array):
+    return _noise2(x, y, perm_array)
 
 
 @njit(cache=True)
-def noise3(x, y, z):
-    return _noise3(x, y, z, perm, perm_grad_index3)
+def noise3(x, y, z, perm_array, perm_grad_array):
+    return _noise3(x, y, z, perm_array, perm_grad_array)
 
 ===== D:\Minecraft\player.py =====
 
@@ -2199,6 +2255,7 @@ class Player(Camera):
 
     def find_spawn_position(self):
         from terrain_gen import get_height
+        import noise
         
         center_x = int(CENTER_XZ)
         center_z = int(CENTER_XZ)
@@ -2211,7 +2268,7 @@ class Player(Camera):
                     if abs(dx) == radius or abs(dz) == radius: 
                         x = center_x + dx
                         z = center_z + dz
-                        y = get_height(x, z)
+                        y = get_height(x, z, noise.perm)
                         
                         # Ensure the player doesn't spawn underwater
                         if y > WATER_LINE:
@@ -2619,9 +2676,9 @@ from meshes.cube_mesh import CubeMesh
 
 
 class Scene:
-    def __init__(self, app, save_name):
+    def __init__(self, app, save_name, seed):
         self.app = app
-        self.world = World(self.app, save_name)
+        self.world = World(self.app, save_name, seed)
         self.app.render_loading_screen("INITIALIZING MARKERS...")
         self.voxel_marker = VoxelMarker(self.world.voxel_handler)
         self.app.render_loading_screen("INITIALIZING ENVIRONMENT...")
@@ -2698,9 +2755,6 @@ pygame.init()
 info = pygame.display.Info()
 WIN_RES = glm.vec2(info.current_w,info.current_h-60)
 pygame.quit()
-
-# world generation
-SEED = 16
 
 # ray casting
 MAX_RAY_DIST = 6
@@ -3151,20 +3205,20 @@ from settings import *
 # Terrain generator with temperature, moisture, and continentalness to create distinct biomes and landforms.
 # Has Biome Dithering to create more natural transitions and less blocky borders.
 @njit(cache=True)
-def get_biome(x, z):
+def get_biome(x, z, perm_array):
     # Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)
     # Scaled down frequencies by 10x to create massive, sprawling biomes
-    temp = noise2(x * 0.002, z * 0.002)
-    moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0)
+    temp = noise2(x * 0.002, z * 0.002, perm_array)
+    moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0, perm_array)
     return temp, moist
 
 @njit(cache=True)
-def get_height(x, z):
-    temp, moist = get_biome(x, z)
+def get_height(x, z, perm_array):
+    temp, moist = get_biome(x, z, perm_array)
 
     # Continentalness: Controls overall elevation independently from climate
     # This creates distinct Plains, Hills, Plateaus, and Mountains!
-    cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0)
+    cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0, perm_array)
 
     # Base properties
     a1 = CENTER_Y
@@ -3172,10 +3226,10 @@ def get_height(x, z):
     f1 = 0.005
     f2, f4, f8 = f1 * 2, f1 * 4, f1 * 8
 
-    base_h = noise2(x * f1, z * f1) * a1 + a1
-    detail_1 = noise2(x * f2, z * f2) * a2 - a2
-    detail_2 = noise2(x * f4, z * f4) * a4 + a4
-    detail_3 = noise2(x * f8, z * f8) * a8 - a8
+    base_h = noise2(x * f1, z * f1, perm_array) * a1 + a1
+    detail_1 = noise2(x * f2, z * f2, perm_array) * a2 - a2
+    detail_2 = noise2(x * f4, z * f4, perm_array) * a4 + a4
+    detail_3 = noise2(x * f8, z * f8, perm_array) * a8 - a8
 
     height = base_h + detail_1 + detail_2 + detail_3
 
@@ -3198,7 +3252,7 @@ def get_height(x, z):
             flattened = plat_h + (height - plat_h) * 0.1
             height = height * (1.0 - w) + flattened * w
 
-    height = max(height,  noise2(x * f8, z * f8) + 2)
+    height = max(height,  noise2(x * f8, z * f8, perm_array) + 2)
     
     # Absolute safety net: prevent terrain from ever exceeding the top chunk's limit
     height = min(height, WORLD_H * CHUNK_SIZE - 2)
@@ -3212,10 +3266,10 @@ def get_index(x, y, z):
 
 
 @njit(cache=True)
-def set_voxel_column(voxels, x, z, cx, cy, cz):
+def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
     wx = x + cx
     wz = z + cz
-    world_height = get_height(wx, wz)
+    world_height = get_height(wx, wz, perm_array)
     
     max_h = max(world_height, int(WATER_LINE) + 1)
     local_height = min(max_h - cy, CHUNK_SIZE)
@@ -3223,10 +3277,10 @@ def set_voxel_column(voxels, x, z, cx, cy, cz):
         return
 
     # Determine biome and surface blocks ONCE per column (Huge Optimization)
-    temp, moist = get_biome(wx, wz)
+    temp, moist = get_biome(wx, wz, perm_array)
     
     # Add natural dithering to the biome borders so blocks mix organically
-    dither = noise2(wx * 0.2, wz * 0.2) * 0.05 + noise2(wx * 0.8, wz * 0.8) * 0.03
+    dither = noise2(wx * 0.2, wz * 0.2, perm_array) * 0.05 + noise2(wx * 0.8, wz * 0.8, perm_array) * 0.03
     temp += dither
     moist += dither
     
@@ -3254,11 +3308,11 @@ def set_voxel_column(voxels, x, z, cx, cy, cz):
 
     # Depth logic
     # Deterministic noise for dirt depth mapping from 3 to 8 blocks deep
-    dirt_depth = int((noise2(wx * 0.1, wz * 0.1) * 0.5 + 0.5) * 5) + 3
+    dirt_depth = int((noise2(wx * 0.1, wz * 0.1, perm_array) * 0.5 + 0.5) * 5) + 3
 
     # Pre-calculate 2D masks once per column instead of every Y block
-    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0)
-    crust = noise2(wx * 0.1, wz * 0.1) * 3 + 3
+    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0, perm_array)
+    crust = noise2(wx * 0.1, wz * 0.1, perm_array) * 3 + 3
 
     for y in range(local_height):
         wy = y + cy
@@ -3282,7 +3336,7 @@ def set_voxel_column(voxels, x, z, cx, cy, cz):
                 if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
                     
                     # Cave Carving using 3D noise
-                    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09)
+                    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09, perm_array, perm_grad_array)
                     cave_threshold = 0.0
                     
                     # Taper the cave noise threshold near the surface to create natural, narrow cave mouths
@@ -4329,14 +4383,147 @@ class Button:
         # 2. Render text
         tex = self.text_renderer.get_texture(self.text)
         tex.use(location=4)
-        
         tex_w, tex_h = tex.size
         scale_y = self.size[1] * 0.5
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.render()
+
+class WorldButton:
+    def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action):
+        self.app = app
+        self.save_name = save_name
+        self.display_name = display_name
+        self.seed = seed
+        self.game_mode = "Survival" if game_mode == 1 else "Creative"
+        self.creation_date = creation_date
+        self.last_played = last_played
+        self.pos = pos
+        self.size = size
+        self.action = action
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=True)
+        self.text_mesh = UITextMesh(app)
+
+        self.is_hovered = False
+        self.base_color = UI_BUTTON_COLOR
+        self.hover_color = UI_HOVER_COLOR
+        
+        import os
+        thumb_path = f'saves/{save_name}_thumb.png'
+        if os.path.exists(thumb_path):
+            img = pg.image.load(thumb_path).convert_alpha()
+        else:
+            img = pg.Surface((320, 180), pg.SRCALPHA)
+            img.fill((80, 80, 80, 255))
+        
+        self.thumb_tex = self.app.ctx.texture(img.get_size(), 4, pg.image.tostring(img, 'RGBA', True))
+        self.thumb_tex.filter = (mgl.LINEAR, mgl.LINEAR)
+
+    def check_hover(self, mouse_pos):
+        x, y = self.pos
+        w, h = self.size
+        win_w, win_h = WIN_RES
+        btn_x = (x + 1) * 0.5 * win_w
+        btn_y = (-y + 1) * 0.5 * win_h
+        btn_w = w * 0.5 * win_w
+        btn_h = h * 0.5 * win_h
+        
+        self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
+                          btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+        return self.is_hovered
+
+    def render(self):
+        color = self.hover_color if self.is_hovered else self.base_color
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = color
+        self.color_mesh.render()
+
+        self.thumb_tex.use(location=4)
+        thumb_h = self.size[1] * 0.8
+        thumb_w = thumb_h * (self.thumb_tex.width / self.thumb_tex.height) / ASPECT_RATIO
+        thumb_x = self.pos[0] - self.size[0] + 0.02 + thumb_w
+        self.text_mesh.program['u_scale'] = (thumb_w, thumb_h)
+        self.text_mesh.program['u_offset'] = (thumb_x, self.pos[1])
+        self.text_mesh.render()
+        
+        text_x = thumb_x + thumb_w + 0.02
+        
+        def render_text(text, offset_y, scale_h):
+            tex = self.text_renderer.get_dynamic_texture(text)
+            tex.use(location=4)
+            scale_y = self.size[1] * scale_h
+            scale_x = scale_y * (tex.width / tex.height) / ASPECT_RATIO
+            self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+            self.text_mesh.program['u_offset'] = (text_x + scale_x, self.pos[1] + self.size[1] * offset_y)
+            self.text_mesh.render()
+            tex.release()
+
+        render_text(self.display_name, 0.4, 0.25)
+        render_text(f"{self.game_mode} Mode  |  Seed: {self.seed}", -0.05, 0.15)
+        render_text(f"Created: {self.creation_date}  |  Last Played: {self.last_played}", -0.4, 0.12)
+
+class TextInput:
+    def __init__(self, app, pos, size, label=""):
+        self.app = app
+        self.pos = pos
+        self.size = size
+        self.label = label
+        self.text = ""
+        self.is_active = False
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=False)
+        self.text_mesh = UITextMesh(app)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pg.mouse.get_pos()
+            x, y = self.pos
+            w, h = self.size
+            win_w, win_h = WIN_RES
+            btn_x = (x + 1) * 0.5 * win_w
+            btn_y = (-y + 1) * 0.5 * win_h
+            btn_w = w * 0.5 * win_w
+            btn_h = h * 0.5 * win_h
+            self.is_active = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
+                             btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+
+        if self.is_active and event.type == pg.KEYDOWN:
+            if event.key == pg.K_BACKSPACE:
+                self.text = self.text[:-1]
+            elif event.key == pg.K_RETURN or event.key == pg.K_ESCAPE:
+                self.is_active = False
+            else:
+                if len(self.text) < 20 and event.unicode.isprintable():
+                    self.text += event.unicode
+
+    def render(self):
+        color = (0.2, 0.2, 0.2, 0.9) if self.is_active else (0.1, 0.1, 0.1, 0.7)
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = color
+        self.color_mesh.render()
+
+        display_text = self.text + ("_" if self.is_active and (pg.time.get_ticks() // 500) % 2 == 0 else "")
+        if not display_text and not self.is_active:
+            display_text = self.label
+            
+        tex = self.text_renderer.get_dynamic_texture(display_text)
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = self.size[1] * 0.6
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
         self.text_mesh.program['u_offset'] = self.pos
         self.text_mesh.render()
+        tex.release() # Release dynamic memory instantly to prevent VRAM leaking
 
 class Menu:
     def __init__(self, app):
@@ -4345,27 +4532,198 @@ class Menu:
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_TITLE, bold=True)
         self.title_mesh = UITextMesh(app)
 
-        self.buttons = [
-            Button(app, 'Start Game', (0, 0.15), (0.2, 0.07), self.app.init_game_session),
-            Button(app, 'Options', (0, 0.0), (0.2, 0.07), self.open_options),
-            Button(app, 'Quit', (0, -0.15), (0.2, 0.07), self.app.quit_game)
-        ]
+        self.state = 'MAIN'
+        self.world_buttons = []
+        self.delete_buttons = []
+        self.scroll_offset = 0.0
+
+        # Main Menu
+        self.btn_play = Button(app, 'Play', (0, 0.15), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
+        self.btn_options = Button(app, 'Options', (0, 0.0), (0.2, 0.07), self.open_options)
+        self.btn_quit = Button(app, 'Quit', (0, -0.15), (0.2, 0.07), self.app.quit_game)
+
+        # Create World
+        self.input_name = TextInput(app, (0, 0.15), (0.3, 0.05), "World Name")
+        self.input_seed = TextInput(app, (0, 0.0), (0.3, 0.05), "Seed (Leave blank for random)")
+        self.create_game_mode = 1 # 1 is SURVIVAL
+        self.btn_game_mode = Button(app, 'Game Mode: Survival', (0, -0.15), (0.3, 0.05), self.toggle_game_mode)
+        self.btn_create = Button(app, 'Create New World', (0, -0.3), (0.3, 0.07), self.create_world)
+        self.btn_back_create = Button(app, 'Back', (0, -0.5), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
+        
+        # Select World (will be populated dynamically)
+        self.btn_new_world = Button(app, 'Create New World', (0, 0.32), (0.3, 0.07), lambda: self.set_state('CREATE_WORLD'))
+        self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.set_state('MAIN'))
 
     def open_options(self):
         self.app.options_menu.previous_state = 'MAIN_MENU'
         self.app.game_state = 'OPTIONS'
 
+    def toggle_game_mode(self):
+        self.create_game_mode = 0 if self.create_game_mode == 1 else 1
+        mode_text = "Survival" if self.create_game_mode == 1 else "Creative"
+        self.btn_game_mode.text = f"Game Mode: {mode_text}"
+
+    def set_state(self, new_state):
+        self.state = new_state
+        if new_state == 'SELECT_WORLD':
+            self.load_world_list()
+        elif new_state == 'CREATE_WORLD':
+            self.input_name.text = ""
+            self.input_seed.text = ""
+            self.input_name.is_active = True
+            self.create_game_mode = 1
+            self.btn_game_mode.text = 'Game Mode: Survival'
+
+    def load_world_list(self):
+        import os
+        import sqlite3
+        for btn in self.world_buttons:
+            if hasattr(btn, 'thumb_tex'):
+                btn.thumb_tex.release() # Safely release old image memory
+        self.world_buttons = []
+        self.delete_buttons = []
+        self.scroll_offset = 0.0
+        os.makedirs('saves', exist_ok=True)
+        # Sort by modification time (most recent first)
+        saves = sorted([f for f in os.listdir('saves') if f.endswith('.db')], 
+                       key=lambda x: os.path.getmtime(os.path.join('saves', x)), 
+                       reverse=True)
+        
+        y_offset = 0.05
+        for save_file in saves: # Load all worlds dynamically
+            save_name = save_file[:-3]
+            display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
+            try:
+                conn = sqlite3.connect(f'saves/{save_file}')
+                cursor = conn.cursor()
+                cursor.execute('SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1')
+                row = cursor.fetchone()
+                if row:
+                    display_name = row[0]
+                    seed = row[1]
+                    game_mode = row[2]
+                    creation_date = row[3][:16].replace('T', ' ') if row[3] else "Unknown"
+                    last_played = row[4][:16].replace('T', ' ') if row[4] else "Unknown"
+                conn.close()
+            except:
+                pass
+            
+            btn = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
+                              (0, y_offset), (0.65, 0.12), lambda sn=save_name: self.app.init_game_session(sn))
+            self.world_buttons.append(btn)
+            
+            # Create a small red 'X' button positioned right next to the WorldButton
+            del_btn = Button(self.app, 'X', (0.55, y_offset), (0.05, 0.08), lambda sn=save_name: self.delete_world(sn))
+            del_btn.base_color = (0.4, 0.1, 0.1, 0.7)
+            del_btn.hover_color = (0.8, 0.1, 0.1, 0.9)
+            self.delete_buttons.append(del_btn)
+            
+            y_offset -= 0.26
+
+    def delete_world(self, save_name):
+        import os
+        try:
+            if os.path.exists(f'saves/{save_name}.db'):
+                os.remove(f'saves/{save_name}.db')
+            if os.path.exists(f'saves/{save_name}_thumb.png'):
+                os.remove(f'saves/{save_name}_thumb.png')
+        except Exception as e:
+            print(f"[SYSTEM] Failed to delete world: {e}")
+        self.load_world_list() # Refresh the UI list instantly!
+
+    def create_world(self):
+        name = self.input_name.text.strip()
+        if not name:
+            name = "New_World"
+            
+        base_save_name = name.replace(" ", "_")
+        save_name = base_save_name
+        
+        import os
+        counter = 1
+        while os.path.exists(f'saves/{save_name}.db'):
+            save_name = f"{base_save_name}_{counter}"
+            counter += 1
+
+        seed_str = self.input_seed.text.strip()
+        if not seed_str:
+            import random
+            seed = random.randint(100000, 999999999)
+        else:
+            try:
+                seed = int(seed_str)
+            except ValueError:
+                # Convert letters into an exact numerical seed!
+                import hashlib
+                seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % (10**9)
+                
+        self.app.init_game_session(save_name, seed, self.create_game_mode)
+
     def update(self):
         mouse_pos = pg.mouse.get_pos()
-        for button in self.buttons:
-            button.check_hover(mouse_pos)
+        if self.state == 'MAIN':
+            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
+                btn.check_hover(mouse_pos)
+        elif self.state == 'SELECT_WORLD':
+            self.btn_new_world.check_hover(mouse_pos)
+            self.btn_back_select.check_hover(mouse_pos)
+            
+            # Apply the scroll offset and disable hover interactions if the button goes out of bounds
+            base_y = 0.05
+            for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons)):
+                new_y = base_y - i * 0.26 + self.scroll_offset
+                btn.pos = (0, new_y)
+                del_btn.pos = (0.55, new_y)
+                if -0.45 < new_y < 0.12:
+                    btn.check_hover(mouse_pos)
+                    del_btn.check_hover(mouse_pos)
+                else:
+                    btn.is_hovered = False
+                    del_btn.is_hovered = False
+        elif self.state == 'CREATE_WORLD':
+            self.btn_game_mode.check_hover(mouse_pos)
+            self.btn_create.check_hover(mouse_pos)
+            self.btn_back_create.check_hover(mouse_pos)
 
     def handle_event(self, event):
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            for button in self.buttons:
-                if button.is_hovered:
-                    button.action()
-                    break
+        if self.state == 'CREATE_WORLD':
+            self.input_name.handle_event(event)
+            self.input_seed.handle_event(event)
+            
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if self.state == 'MAIN':
+                    for btn in [self.btn_play, self.btn_options, self.btn_quit]:
+                        if btn.is_hovered:
+                            btn.action()
+                            break
+                elif self.state == 'SELECT_WORLD':
+                    if self.btn_new_world.is_hovered:
+                        self.btn_new_world.action()
+                    elif self.btn_back_select.is_hovered:
+                        self.btn_back_select.action()
+                    else:
+                        for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
+                            if -0.45 < btn.pos[1] < 0.12:
+                                if del_btn.is_hovered:
+                                    del_btn.action()
+                                    break
+                                elif btn.is_hovered:
+                                    btn.action()
+                                    break
+                elif self.state == 'CREATE_WORLD':
+                    if self.btn_game_mode.is_hovered:
+                        self.btn_game_mode.action()
+                    elif self.btn_create.is_hovered:
+                        self.btn_create.action()
+                    elif self.btn_back_create.is_hovered:
+                        self.btn_back_create.action()
+            elif self.state == 'SELECT_WORLD':
+                if event.button == 4: # Mouse Wheel Scroll Up
+                    self.scroll_offset = max(0.0, self.scroll_offset - 0.26)
+                elif event.button == 5: # Mouse Wheel Scroll Down
+                    max_scroll = max(0.0, (len(self.world_buttons) - 2) * 0.26)
+                    self.scroll_offset = min(max_scroll, self.scroll_offset + 0.26)
 
     def render(self):
         # Render title
@@ -4380,9 +4738,22 @@ class Menu:
         self.title_mesh.program['u_offset'] = (0.0, 0.5)
         self.title_mesh.render()
 
-        # Render buttons
-        for button in self.buttons:
-            button.render()
+        if self.state == 'MAIN':
+            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
+                btn.render()
+        elif self.state == 'SELECT_WORLD':
+            self.btn_new_world.render()
+            for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
+                if -0.45 < btn.pos[1] < 0.12:
+                    btn.render()
+                    del_btn.render()
+            self.btn_back_select.render()
+        elif self.state == 'CREATE_WORLD':
+            self.input_name.render()
+            self.input_seed.render()
+            self.btn_game_mode.render()
+            self.btn_create.render()
+            self.btn_back_create.render()
 
 class PauseMenu:
     def __init__(self, app):
@@ -4891,10 +5262,13 @@ import time
 import moderngl as mgl
 from frustum import frustum_cull_fast
 import datetime
+import random
+from noise import set_seed
 
 
 class World:
-    def __init__(self, app, save_name):
+    def __init__(self, app, save_name, world_seed):
+        self.world_seed = world_seed
         self.app = app
         self.app.render_loading_screen("ALLOCATING MEMORY...")
         self.chunks = [None for _ in range(WORLD_VOL)]
@@ -4944,13 +5318,16 @@ class World:
         
         # Initialize metadata if missing (e.g. creating a new world)
         self.cursor.execute('SELECT * FROM world_meta WHERE id=1')
-        if not self.cursor.fetchone():
+        meta_row = self.cursor.fetchone()
+        if not meta_row:
             now = datetime.datetime.now().isoformat()
-            # We'll default to the global SEED and SURVIVAL for now until Phase 2
+            # Use the seed passed from main.py
             self.cursor.execute('''INSERT INTO world_meta (id, world_name, seed, game_mode, creation_date, last_played)
                                    VALUES (?, ?, ?, ?, ?, ?)''', 
-                                (1, self.save_name.replace('_', ' '), SEED, SURVIVAL, now, now))
+                                (1, self.save_name.replace('_', ' '), world_seed, self.app.player.game_mode, now, now))
             self.conn.commit()
+        else:
+            self.app.player.game_mode = meta_row[3]
 
         # Load player inventory and hotbar state
         self.cursor.execute('SELECT data FROM player_data WHERE id=1')
@@ -4973,6 +5350,8 @@ class World:
                     self.app.player.position = glm.vec3(pos[0], pos[1], pos[2])
                     self.app.player.feet_pos = glm.vec3(pos[0], pos[1] - PLAYER_EYE_HEIGHT, pos[2])
                     self.app.player.highest_y = pos[1]
+                else:
+                    self.app.player.respawn()
                     
                 yaw = p_data.get('yaw')
                 if yaw is not None:
@@ -4983,6 +5362,9 @@ class World:
                     self.app.player.pitch = pitch
             except Exception as e:
                 print(f"[SYSTEM] Failed to load player data: {e}")
+                self.app.player.respawn()
+        else:
+            self.app.player.respawn()
 
         # WARM UP NUMBA COMPILER:
         # Run Numba compilation on a background thread so the main thread can keep pumping Pygame events!
@@ -4992,8 +5374,9 @@ class World:
         
         def compile_numba():
             from meshes.chunk_mesh_builder import build_chunk_mesh
+            import noise
             dummy_voxels = np.zeros(CHUNK_VOL, dtype='uint8')
-            Chunk.generate_terrain(dummy_voxels, 0, 0, 0)
+            Chunk.generate_terrain(dummy_voxels, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed)
             build_chunk_mesh(
                 chunk_voxels=dummy_voxels,
                 format_size=1,
@@ -5114,7 +5497,8 @@ class World:
         else:
             voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
             cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
-            Chunk.generate_terrain(voxel_data, cx, cy, cz)
+            import noise
+            Chunk.generate_terrain(voxel_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
             is_empty = not np.any(voxel_data)
             return ('gen', time.perf_counter() - t0, voxel_data, is_empty)
 
@@ -5319,7 +5703,7 @@ class World:
         
         now = datetime.datetime.now().isoformat()
         with self.db_lock:
-            self.cursor.execute('UPDATE world_meta SET last_played = ? WHERE id=1', (now,))
+            self.cursor.execute('UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1', (now, self.app.player.game_mode))
             self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', 
                                 (1, json.dumps(p_data)))
             self.conn.commit()

@@ -48,6 +48,7 @@ class Player(Camera):
 
     def find_spawn_position(self):
         from terrain_gen import get_height
+        import noise
         
         center_x = int(CENTER_XZ)
         center_z = int(CENTER_XZ)
@@ -60,7 +61,7 @@ class Player(Camera):
                     if abs(dx) == radius or abs(dz) == radius: 
                         x = center_x + dx
                         z = center_z + dz
-                        y = get_height(x, z)
+                        y = get_height(x, z, noise.perm)
                         
                         # Ensure the player doesn't spawn underwater
                         if y > WATER_LINE:

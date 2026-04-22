@@ -14,10 +14,13 @@ import time
 import moderngl as mgl
 from frustum import frustum_cull_fast
 import datetime
+import random
+from noise import set_seed
 
 
 class World:
-    def __init__(self, app, save_name):
+    def __init__(self, app, save_name, world_seed):
+        self.world_seed = world_seed
         self.app = app
         self.app.render_loading_screen("ALLOCATING MEMORY...")
         self.chunks = [None for _ in range(WORLD_VOL)]
@@ -67,13 +70,16 @@ class World:
         
         # Initialize metadata if missing (e.g. creating a new world)
         self.cursor.execute('SELECT * FROM world_meta WHERE id=1')
-        if not self.cursor.fetchone():
+        meta_row = self.cursor.fetchone()
+        if not meta_row:
             now = datetime.datetime.now().isoformat()
-            # We'll default to the global SEED and SURVIVAL for now until Phase 2
+            # Use the seed passed from main.py
             self.cursor.execute('''INSERT INTO world_meta (id, world_name, seed, game_mode, creation_date, last_played)
                                    VALUES (?, ?, ?, ?, ?, ?)''', 
-                                (1, self.save_name.replace('_', ' '), SEED, SURVIVAL, now, now))
+                                (1, self.save_name.replace('_', ' '), world_seed, self.app.player.game_mode, now, now))
             self.conn.commit()
+        else:
+            self.app.player.game_mode = meta_row[3]
 
         # Load player inventory and hotbar state
         self.cursor.execute('SELECT data FROM player_data WHERE id=1')
@@ -96,6 +102,8 @@ class World:
                     self.app.player.position = glm.vec3(pos[0], pos[1], pos[2])
                     self.app.player.feet_pos = glm.vec3(pos[0], pos[1] - PLAYER_EYE_HEIGHT, pos[2])
                     self.app.player.highest_y = pos[1]
+                else:
+                    self.app.player.respawn()
                     
                 yaw = p_data.get('yaw')
                 if yaw is not None:
@@ -106,6 +114,9 @@ class World:
                     self.app.player.pitch = pitch
             except Exception as e:
                 print(f"[SYSTEM] Failed to load player data: {e}")
+                self.app.player.respawn()
+        else:
+            self.app.player.respawn()
 
         # WARM UP NUMBA COMPILER:
         # Run Numba compilation on a background thread so the main thread can keep pumping Pygame events!
@@ -115,8 +126,9 @@ class World:
         
         def compile_numba():
             from meshes.chunk_mesh_builder import build_chunk_mesh
+            import noise
             dummy_voxels = np.zeros(CHUNK_VOL, dtype='uint8')
-            Chunk.generate_terrain(dummy_voxels, 0, 0, 0)
+            Chunk.generate_terrain(dummy_voxels, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed)
             build_chunk_mesh(
                 chunk_voxels=dummy_voxels,
                 format_size=1,
@@ -237,7 +249,8 @@ class World:
         else:
             voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
             cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
-            Chunk.generate_terrain(voxel_data, cx, cy, cz)
+            import noise
+            Chunk.generate_terrain(voxel_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
             is_empty = not np.any(voxel_data)
             return ('gen', time.perf_counter() - t0, voxel_data, is_empty)
 
@@ -442,7 +455,7 @@ class World:
         
         now = datetime.datetime.now().isoformat()
         with self.db_lock:
-            self.cursor.execute('UPDATE world_meta SET last_played = ? WHERE id=1', (now,))
+            self.cursor.execute('UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1', (now, self.app.player.game_mode))
             self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', 
                                 (1, json.dumps(p_data)))
             self.conn.commit()

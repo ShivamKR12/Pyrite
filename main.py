@@ -2,6 +2,9 @@ from settings import *
 import moderngl as mgl
 import pygame as pg
 import json
+import random
+import sqlite3
+from noise import set_seed
 import os
 import sys
 from shader_program import ShaderProgram
@@ -74,10 +77,35 @@ class VoxelEngine:
         self.pause_menu = PauseMenu(self)
         self.options_menu = OptionsMenu(self)
 
-    def init_game_session(self, save_name="Default_World"):
+    def init_game_session(self, save_name="Default_World", force_seed=None, game_mode=None):
         self.game_state = 'LOADING'
         
-        self.scene = Scene(self, save_name)
+        if game_mode is not None:
+            self.player.game_mode = game_mode
+
+        # --- SEED DETERMINATION ---
+        # Determine the seed BEFORE any world objects are created to prevent premature Numba compilation.
+        save_path = f'saves/{save_name}.db'
+        seed = 0
+        
+        if os.path.exists(save_path):
+            try:
+                conn = sqlite3.connect(save_path)
+                cursor = conn.cursor()
+                cursor.execute('SELECT seed FROM world_meta WHERE id=1')
+                row = cursor.fetchone()
+                if row:
+                    seed = row[0]
+                conn.close()
+            except Exception as e:
+                print(f"[SYSTEM] Could not read seed from existing save file: {e}")
+                seed = random.randint(100000, 999999999)
+        else:
+            seed = force_seed if force_seed is not None else random.randint(100000, 999999999)
+            
+        set_seed(seed)
+        
+        self.scene = Scene(self, save_name, seed) # Pass seed to scene/world
         
         self.render_loading_screen("STARTING GAME...")
         
@@ -201,6 +229,16 @@ class VoxelEngine:
                 self.freeze_culling = not self.freeze_culling
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if self.game_state == 'IN_GAME':
+                    # Capture screen for thumbnail before UI draws over it!
+                    try:
+                        data = self.ctx.screen.read(components=3)
+                        img = pg.image.frombuffer(data, (int(WIN_RES.x), int(WIN_RES.y)), 'RGB')
+                        img = pg.transform.flip(img, False, True) # OpenGL renders bottom-up
+                        thumb_w, thumb_h = 320, int(320 / ASPECT_RATIO)
+                        img = pg.transform.smoothscale(img, (thumb_w, thumb_h))
+                        pg.image.save(img, f"saves/{self.scene.world.save_name}_thumb.png")
+                    except Exception as e:
+                        print(f"Failed to save thumbnail: {e}")
                     self.game_state = 'PAUSED'
                     pg.event.set_grab(False)
                     pg.mouse.set_visible(True)

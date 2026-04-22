@@ -1,6 +1,8 @@
 from settings import *
 from meshes.chunk_mesh import ChunkMesh
 from terrain_gen import *
+import numpy as np
+import random
 
 
 class Chunk:
@@ -52,7 +54,9 @@ class Chunk:
 
     @staticmethod
     @njit(cache=True)
-    def generate_terrain(voxels, cx, cy, cz):
+    def generate_terrain(voxels, cx, cy, cz, perm_array, perm_grad_array, seed):
+        np.random.seed(seed ^ cx ^ cy ^ cz)
+        random.seed(seed ^ cx ^ cy ^ cz)
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
-                set_voxel_column(voxels, x, z, cx, cy, cz)
+                set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)

@@ -14,9 +14,9 @@ from meshes.cube_mesh import CubeMesh
 
 
 class Scene:
-    def __init__(self, app, save_name):
+    def __init__(self, app, save_name, seed):
         self.app = app
-        self.world = World(self.app, save_name)
+        self.world = World(self.app, save_name, seed)
         self.app.render_loading_screen("INITIALIZING MARKERS...")
         self.voxel_marker = VoxelMarker(self.world.voxel_handler)
         self.app.render_loading_screen("INITIALIZING ENVIRONMENT...")

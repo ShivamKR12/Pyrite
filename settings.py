@@ -15,9 +15,6 @@ info = pygame.display.Info()
 WIN_RES = glm.vec2(info.current_w,info.current_h-60)
 pygame.quit()
 
-# world generation
-SEED = 16
-
 # ray casting
 MAX_RAY_DIST = 6
 

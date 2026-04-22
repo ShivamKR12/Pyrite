@@ -1,6 +1,6 @@
 from settings import *
 from meshes.base_mesh import BaseMesh
-from noise import *
+from noise import noise2
 
 
 class CloudMesh(BaseMesh):
@@ -16,17 +16,19 @@ class CloudMesh(BaseMesh):
 
     def get_vertex_data(self):
         cloud_data = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
-        self.gen_clouds(cloud_data)
+        
+        import noise
+        self.gen_clouds(cloud_data, noise.perm)
 
         return self.build_mesh(cloud_data)
 
     @staticmethod
     @njit(cache=True)
-    def gen_clouds(cloud_data):
+    def gen_clouds(cloud_data, perm_array):
         for x in range(WORLD_W * CHUNK_SIZE):
             for z in range(WORLD_D * CHUNK_SIZE):
 
-                if noise2(0.13 * x, 0.13 * z) < 0.2:
+                if noise2(0.13 * x, 0.13 * z, perm_array) < 0.2:
                     continue
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 

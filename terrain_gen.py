@@ -7,20 +7,20 @@ from settings import *
 # Terrain generator with temperature, moisture, and continentalness to create distinct biomes and landforms.
 # Has Biome Dithering to create more natural transitions and less blocky borders.
 @njit(cache=True)
-def get_biome(x, z):
+def get_biome(x, z, perm_array):
     # Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)
     # Scaled down frequencies by 10x to create massive, sprawling biomes
-    temp = noise2(x * 0.002, z * 0.002)
-    moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0)
+    temp = noise2(x * 0.002, z * 0.002, perm_array)
+    moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0, perm_array)
     return temp, moist
 
 @njit(cache=True)
-def get_height(x, z):
-    temp, moist = get_biome(x, z)
+def get_height(x, z, perm_array):
+    temp, moist = get_biome(x, z, perm_array)
 
     # Continentalness: Controls overall elevation independently from climate
     # This creates distinct Plains, Hills, Plateaus, and Mountains!
-    cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0)
+    cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0, perm_array)
 
     # Base properties
     a1 = CENTER_Y
@@ -28,10 +28,10 @@ def get_height(x, z):
     f1 = 0.005
     f2, f4, f8 = f1 * 2, f1 * 4, f1 * 8
 
-    base_h = noise2(x * f1, z * f1) * a1 + a1
-    detail_1 = noise2(x * f2, z * f2) * a2 - a2
-    detail_2 = noise2(x * f4, z * f4) * a4 + a4
-    detail_3 = noise2(x * f8, z * f8) * a8 - a8
+    base_h = noise2(x * f1, z * f1, perm_array) * a1 + a1
+    detail_1 = noise2(x * f2, z * f2, perm_array) * a2 - a2
+    detail_2 = noise2(x * f4, z * f4, perm_array) * a4 + a4
+    detail_3 = noise2(x * f8, z * f8, perm_array) * a8 - a8
 
     height = base_h + detail_1 + detail_2 + detail_3
 
@@ -54,7 +54,7 @@ def get_height(x, z):
             flattened = plat_h + (height - plat_h) * 0.1
             height = height * (1.0 - w) + flattened * w
 
-    height = max(height,  noise2(x * f8, z * f8) + 2)
+    height = max(height,  noise2(x * f8, z * f8, perm_array) + 2)
     
     # Absolute safety net: prevent terrain from ever exceeding the top chunk's limit
     height = min(height, WORLD_H * CHUNK_SIZE - 2)
@@ -68,10 +68,10 @@ def get_index(x, y, z):
 
 
 @njit(cache=True)
-def set_voxel_column(voxels, x, z, cx, cy, cz):
+def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
     wx = x + cx
     wz = z + cz
-    world_height = get_height(wx, wz)
+    world_height = get_height(wx, wz, perm_array)
     
     max_h = max(world_height, int(WATER_LINE) + 1)
     local_height = min(max_h - cy, CHUNK_SIZE)
@@ -79,10 +79,10 @@ def set_voxel_column(voxels, x, z, cx, cy, cz):
         return
 
     # Determine biome and surface blocks ONCE per column (Huge Optimization)
-    temp, moist = get_biome(wx, wz)
+    temp, moist = get_biome(wx, wz, perm_array)
     
     # Add natural dithering to the biome borders so blocks mix organically
-    dither = noise2(wx * 0.2, wz * 0.2) * 0.05 + noise2(wx * 0.8, wz * 0.8) * 0.03
+    dither = noise2(wx * 0.2, wz * 0.2, perm_array) * 0.05 + noise2(wx * 0.8, wz * 0.8, perm_array) * 0.03
     temp += dither
     moist += dither
     
@@ -110,11 +110,11 @@ def set_voxel_column(voxels, x, z, cx, cy, cz):
 
     # Depth logic
     # Deterministic noise for dirt depth mapping from 3 to 8 blocks deep
-    dirt_depth = int((noise2(wx * 0.1, wz * 0.1) * 0.5 + 0.5) * 5) + 3
+    dirt_depth = int((noise2(wx * 0.1, wz * 0.1, perm_array) * 0.5 + 0.5) * 5) + 3
 
     # Pre-calculate 2D masks once per column instead of every Y block
-    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0)
-    crust = noise2(wx * 0.1, wz * 0.1) * 3 + 3
+    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0, perm_array)
+    crust = noise2(wx * 0.1, wz * 0.1, perm_array) * 3 + 3
 
     for y in range(local_height):
         wy = y + cy
@@ -138,7 +138,7 @@ def set_voxel_column(voxels, x, z, cx, cy, cz):
                 if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
                     
                     # Cave Carving using 3D noise
-                    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09)
+                    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09, perm_array, perm_grad_array)
                     cave_threshold = 0.0
                     
                     # Taper the cave noise threshold near the surface to create natural, narrow cave mouths
