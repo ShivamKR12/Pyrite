@@ -79,6 +79,11 @@ class Player(Camera):
                 self.keyboard_control()
             else:
                 self.velocity = glm.vec3(0)
+                
+            # Check if player HEAD is in water so the blue fog shader updates properly in creative mode!
+            head_pos = glm.ivec3(glm.floor(self.position.x), glm.floor(self.position.y), glm.floor(self.position.z))
+            voxel_head, *_ = self.app.scene.world.voxel_handler.get_voxel_id(head_pos)
+            self.head_in_water = (voxel_head == WATER)
         else:
             # player mode — physics + collisions
             was_on_ground = self.on_ground
@@ -129,7 +134,7 @@ class Player(Camera):
                 self.highest_y = self.position.y
 
             # Update highest Y for fall damage
-            if self.velocity.y > 0 or self.in_water or self.game_mode == CREATIVE:
+            if self.velocity.y > 0 or self.in_water:
                 self.highest_y = self.position.y
             elif self.position.y > self.highest_y:
                 self.highest_y = self.position.y
@@ -201,6 +206,7 @@ class Player(Camera):
                     # sync camera to feet when exiting creative
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
+                self.highest_y = self.position.y
             
             # Hotbar numeric keys
             if pg.K_1 <= event.key <= pg.K_1 + HOTBAR_SIZE - 1:

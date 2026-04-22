@@ -96,6 +96,9 @@ class World:
                     self.app.player.inventory_counts[i] = loaded_counts[i]
                     
                 self.app.player.hotbar_index = p_data.get('hotbar_index', self.app.player.hotbar_index)
+                self.app.player.health = p_data.get('health', self.app.player.max_health)
+                self.app.player.hunger = p_data.get('hunger', self.app.player.max_hunger)
+                self.app.player.oxygen = p_data.get('oxygen', self.app.player.max_oxygen)
                 
                 pos = p_data.get('position')
                 if pos:
@@ -450,7 +453,10 @@ class World:
             'hotbar_index': int(self.app.player.hotbar_index),
             'position': [float(self.app.player.position.x), float(self.app.player.position.y), float(self.app.player.position.z)],
             'yaw': float(self.app.player.yaw),
-            'pitch': float(self.app.player.pitch)
+            'pitch': float(self.app.player.pitch),
+            'health': float(self.app.player.health),
+            'hunger': float(self.app.player.hunger),
+            'oxygen': float(self.app.player.oxygen)
         }
         
         now = datetime.datetime.now().isoformat()
