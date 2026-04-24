@@ -47,6 +47,8 @@ class VoxelHandler:
                 
                 if chunk not in self.app.scene.world.build_queue:
                     self.app.scene.world.build_queue.append(chunk)
+                
+                self.rebuild_adjacent_chunks(new_voxel_pos, is_light_update=True)
                 self.app.sounds.play_dig(current_id)
 
                 # Consume item from hotbar if in Survival mode
@@ -59,32 +61,33 @@ class VoxelHandler:
                 if chunk.is_empty:
                     chunk.is_empty = False
 
-    def rebuild_adj_chunk(self, adj_voxel_pos):
-        cx, cy, cz = int(adj_voxel_pos[0] // CHUNK_SIZE), int(adj_voxel_pos[1] // CHUNK_SIZE), int(adj_voxel_pos[2] // CHUNK_SIZE)
-        chunk_pos = (cx, cy, cz)
-        if chunk_pos in self.app.scene.world.active_chunks:
-            chunk = self.app.scene.world.active_chunks[chunk_pos]
-            if chunk not in self.app.scene.world.build_queue:
-                self.app.scene.world.build_queue.append(chunk)
+    def rebuild_adjacent_chunks(self, world_pos, is_light_update=True):
+        wx, wy, wz = int(world_pos.x), int(world_pos.y), int(world_pos.z)
+        cx, cy, cz = wx // CHUNK_SIZE, wy // CHUNK_SIZE, wz // CHUNK_SIZE
 
-    def rebuild_adjacent_chunks(self):
-        lx, ly, lz = self.voxel_local_pos
-        wx, wy, wz = self.voxel_world_pos
+        # Light updates (breaking a block, placing a light source) can travel up to 15 blocks
+        radius = 15 if is_light_update else 1
 
-        if lx == 0:
-            self.rebuild_adj_chunk((wx - 1, wy, wz))
-        elif lx == CHUNK_SIZE - 1:
-            self.rebuild_adj_chunk((wx + 1, wy, wz))
+        min_cx = (wx - radius) // CHUNK_SIZE
+        max_cx = (wx + radius) // CHUNK_SIZE
+        min_cz = (wz - radius) // CHUNK_SIZE
+        max_cz = (wz + radius) // CHUNK_SIZE
+        
+        # Sunlight casts shadows all the way down, so update everything below!
+        min_cy = 0 if is_light_update else (wy - radius) // CHUNK_SIZE
+        max_cy = (wy + radius) // CHUNK_SIZE
 
-        if ly == 0:
-            self.rebuild_adj_chunk((wx, wy - 1, wz))
-        elif ly == CHUNK_SIZE - 1:
-            self.rebuild_adj_chunk((wx, wy + 1, wz))
-
-        if lz == 0:
-            self.rebuild_adj_chunk((wx, wy, wz - 1))
-        elif lz == CHUNK_SIZE - 1:
-            self.rebuild_adj_chunk((wx, wy, wz + 1))
+        for x in range(min_cx, max_cx + 1):
+            for y in range(min_cy, max_cy + 1):
+                for z in range(min_cz, max_cz + 1):
+                    if x == cx and y == cy and z == cz:
+                        continue # Main chunk is already in the build queue
+                    
+                    chunk_pos = (x, y, z)
+                    if chunk_pos in self.app.scene.world.active_chunks:
+                        chunk = self.app.scene.world.active_chunks[chunk_pos]
+                        if chunk not in self.app.scene.world.build_queue:
+                            self.app.scene.world.build_queue.append(chunk)
 
     def remove_voxel(self):
         if self.voxel_id:
@@ -99,7 +102,7 @@ class VoxelHandler:
 
             if self.chunk not in self.app.scene.world.build_queue:
                 self.app.scene.world.build_queue.append(self.chunk)
-            self.rebuild_adjacent_chunks()
+            self.rebuild_adjacent_chunks(self.voxel_world_pos, is_light_update=True)
             self.app.sounds.play_dig(self.voxel_id)
             
             # Spawn dropped item only in Survival mode
