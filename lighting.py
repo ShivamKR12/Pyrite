@@ -9,7 +9,7 @@ DIRS = np.array([
 ], dtype=np.int32)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx == -1: return 1
@@ -17,7 +17,7 @@ def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
     return world_voxels[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx == -1: return 0
@@ -25,7 +25,7 @@ def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
     return world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx != -1:
@@ -33,7 +33,7 @@ def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
         world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA] = val
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, chunk_positions):
     head = 0
     while head < tail and tail < 199990:
@@ -71,7 +71,7 @@ def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, ch
                 tail += 1
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
     queue_sun = np.empty((200000, 3), dtype=np.int32)
     tail_sun = 0
@@ -130,7 +130,7 @@ def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positio
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill):
     queue = np.empty((200000, 4), dtype=np.int32)
     head = 0
@@ -164,7 +164,7 @@ def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_po
     return tail_refill
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     sun, block = curr_val >> 4, curr_val & 15
@@ -179,7 +179,7 @@ def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_po
         propagate_light_queue(refill_queue, tail_refill, False, world_voxels, world_lightmaps, chunk_positions)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     queue_sun = np.empty((6, 3), dtype=np.int32)
     tail_sun = 0
@@ -208,7 +208,7 @@ def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_p
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)

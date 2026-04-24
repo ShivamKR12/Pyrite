@@ -116,10 +116,9 @@ class ChunkMesh(BaseMesh):
 ===== D:\Minecraft\meshes\chunk_mesh_builder.py =====
 
 from settings import *
-from numba import uint8
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     x, y, z = local_pos
     wx, wy, wz = world_pos
@@ -158,7 +157,7 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     return ao
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
@@ -181,7 +180,7 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
     return packed_data, light_val
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_chunk_index(world_voxel_pos, chunk_positions):
     wx, wy, wz = world_voxel_pos
     cx = wx // CHUNK_SIZE
@@ -196,7 +195,7 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
     return -1
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
@@ -209,7 +208,7 @@ def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_
     return chunk_voxels[voxel_index]
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_positions):
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
@@ -219,18 +218,18 @@ def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_
     voxel_index = x % CHUNK_SIZE + z % CHUNK_SIZE * CHUNK_SIZE + y % CHUNK_SIZE * CHUNK_AREA
     return chunk_lights[voxel_index]
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def is_transparent(voxel_id):
     return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions)
     # Transparent blocks do not cast AO shadows!
     return is_transparent(val)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def add_data(vertex_data, index, *vertices):
     for vertex in vertices:
         vertex_data[index] = vertex[0]
@@ -239,7 +238,7 @@ def add_data(vertex_data, index, *vertices):
     return index
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world_voxels, world_lightmaps, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
@@ -536,6 +535,7 @@ def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world
 from settings import *
 from meshes.base_mesh import BaseMesh
 from noise import noise2
+from numba import prange
 import noise
 
 
@@ -557,9 +557,9 @@ class CloudMesh(BaseMesh):
         return self.build_mesh(cloud_data)
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=True, fastmath=True, parallel=True, nogil=True)
     def gen_clouds(cloud_data, perm_array):
-        for x in range(WORLD_W * CHUNK_SIZE):
+        for x in prange(WORLD_W * CHUNK_SIZE):
             for z in range(WORLD_D * CHUNK_SIZE):
 
                 if noise2(0.13 * x, 0.13 * z, perm_array) < 0.2:
@@ -567,7 +567,7 @@ class CloudMesh(BaseMesh):
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=True, fastmath=True, nogil=True)
     def build_mesh(cloud_data):
         mesh = np.empty(WORLD_AREA * CHUNK_AREA * 6 * 3, dtype='uint16')
         index = 0
@@ -1866,7 +1866,7 @@ class Camera:
 ===== D:\Minecraft\frustum.py =====
 
 from settings import *
-from numba import njit
+from numba import njit, prange
 import numpy as np
 import glm
 
@@ -1907,7 +1907,7 @@ class Frustum:
         return True
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, parallel=True)
 def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
     n = len(chunk_centers)
     is_visible = np.empty(n, dtype=np.bool_)
@@ -1919,7 +1919,7 @@ def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, ta
 
     radius_sq = (CHUNK_SPHERE_RADIUS * 1.2) ** 2
 
-    for i in range(n):
+    for i in prange(n):
         svx = chunk_centers[i, 0] - cpx
         svy = chunk_centers[i, 1] - cpy
         svz = chunk_centers[i, 2] - cpz
@@ -1965,7 +1965,7 @@ DIRS = np.array([
 ], dtype=np.int32)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx == -1: return 1
@@ -1973,7 +1973,7 @@ def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
     return world_voxels[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx == -1: return 0
@@ -1981,7 +1981,7 @@ def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
     return world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx != -1:
@@ -1989,7 +1989,7 @@ def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
         world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA] = val
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, chunk_positions):
     head = 0
     while head < tail and tail < 199990:
@@ -2027,7 +2027,7 @@ def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, ch
                 tail += 1
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
     queue_sun = np.empty((200000, 3), dtype=np.int32)
     tail_sun = 0
@@ -2086,7 +2086,7 @@ def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positio
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill):
     queue = np.empty((200000, 4), dtype=np.int32)
     head = 0
@@ -2120,7 +2120,7 @@ def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_po
     return tail_refill
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     sun, block = curr_val >> 4, curr_val & 15
@@ -2135,7 +2135,7 @@ def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_po
         propagate_light_queue(refill_queue, tail_refill, False, world_voxels, world_lightmaps, chunk_positions)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     queue_sun = np.empty((6, 3), dtype=np.int32)
     tail_sun = 0
@@ -2164,7 +2164,7 @@ def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_p
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)
@@ -2500,12 +2500,12 @@ def set_seed(new_seed):
     _seed_numba(new_seed)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def noise2(x, y, perm_array):
     return _noise2(x, y, perm_array)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def noise3(x, y, z, perm_array, perm_grad_array):
     return _noise3(x, y, z, perm_array, perm_grad_array)
 
@@ -3557,7 +3557,7 @@ from settings import *
 
 # Terrain generator with temperature, moisture, and continentalness to create distinct biomes and landforms.
 # Has Biome Dithering to create more natural transitions and less blocky borders.
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def get_biome(x, z, perm_array):
     # Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)
     # Scaled down frequencies by 10x to create massive, sprawling biomes
@@ -3566,7 +3566,7 @@ def get_biome(x, z, perm_array):
     return temp, moist
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def get_height(x, z, perm_array):
     temp, moist = get_biome(x, z, perm_array)
 
@@ -3614,12 +3614,12 @@ def get_height(x, z, perm_array):
     return int(height)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def get_index(x, y, z):
     return x + CHUNK_SIZE * z + CHUNK_AREA * y
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
     wx = x + cx
     wz = z + cz
@@ -3722,7 +3722,7 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
                 place_tree(voxels, x, y, z, surface_id, tree_prob)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def place_tree(voxels, x, y, z, voxel_id, tree_prob):
     rnd = random()
     if rnd > tree_prob:
@@ -3756,7 +3756,7 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
     voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array):
     for x in range(CHUNK_SIZE):
         for z in range(CHUNK_SIZE):

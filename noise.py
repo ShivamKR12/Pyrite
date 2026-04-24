@@ -20,11 +20,11 @@ def set_seed(new_seed):
     _seed_numba(new_seed)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def noise2(x, y, perm_array):
     return _noise2(x, y, perm_array)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def noise3(x, y, z, perm_array, perm_grad_array):
     return _noise3(x, y, z, perm_array, perm_grad_array)

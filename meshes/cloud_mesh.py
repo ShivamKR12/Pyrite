@@ -1,6 +1,7 @@
 from settings import *
 from meshes.base_mesh import BaseMesh
 from noise import noise2
+from numba import prange
 import noise
 
 
@@ -22,9 +23,9 @@ class CloudMesh(BaseMesh):
         return self.build_mesh(cloud_data)
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=True, fastmath=True, parallel=True, nogil=True)
     def gen_clouds(cloud_data, perm_array):
-        for x in range(WORLD_W * CHUNK_SIZE):
+        for x in prange(WORLD_W * CHUNK_SIZE):
             for z in range(WORLD_D * CHUNK_SIZE):
 
                 if noise2(0.13 * x, 0.13 * z, perm_array) < 0.2:
@@ -32,7 +33,7 @@ class CloudMesh(BaseMesh):
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=True, fastmath=True, nogil=True)
     def build_mesh(cloud_data):
         mesh = np.empty(WORLD_AREA * CHUNK_AREA * 6 * 3, dtype='uint16')
         index = 0

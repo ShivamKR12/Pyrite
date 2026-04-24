@@ -1,8 +1,7 @@
 from settings import *
-from numba import uint8
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     x, y, z = local_pos
     wx, wy, wz = world_pos
@@ -41,7 +40,7 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
     return ao
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
@@ -64,7 +63,7 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
     return packed_data, light_val
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_chunk_index(world_voxel_pos, chunk_positions):
     wx, wy, wz = world_voxel_pos
     cx = wx // CHUNK_SIZE
@@ -79,7 +78,7 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
     return -1
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
@@ -92,7 +91,7 @@ def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_
     return chunk_voxels[voxel_index]
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_positions):
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
@@ -102,18 +101,18 @@ def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_
     voxel_index = x % CHUNK_SIZE + z % CHUNK_SIZE * CHUNK_SIZE + y % CHUNK_SIZE * CHUNK_AREA
     return chunk_lights[voxel_index]
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def is_transparent(voxel_id):
     return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions)
     # Transparent blocks do not cast AO shadows!
     return is_transparent(val)
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def add_data(vertex_data, index, *vertices):
     for vertex in vertices:
         vertex_data[index] = vertex[0]
@@ -122,7 +121,7 @@ def add_data(vertex_data, index, *vertices):
     return index
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world_voxels, world_lightmaps, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')

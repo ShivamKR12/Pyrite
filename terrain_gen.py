@@ -6,7 +6,7 @@ from settings import *
 
 # Terrain generator with temperature, moisture, and continentalness to create distinct biomes and landforms.
 # Has Biome Dithering to create more natural transitions and less blocky borders.
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def get_biome(x, z, perm_array):
     # Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)
     # Scaled down frequencies by 10x to create massive, sprawling biomes
@@ -15,7 +15,7 @@ def get_biome(x, z, perm_array):
     return temp, moist
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def get_height(x, z, perm_array):
     temp, moist = get_biome(x, z, perm_array)
 
@@ -63,12 +63,12 @@ def get_height(x, z, perm_array):
     return int(height)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def get_index(x, y, z):
     return x + CHUNK_SIZE * z + CHUNK_AREA * y
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
     wx = x + cx
     wz = z + cz
@@ -171,7 +171,7 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
                 place_tree(voxels, x, y, z, surface_id, tree_prob)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def place_tree(voxels, x, y, z, voxel_id, tree_prob):
     rnd = random()
     if rnd > tree_prob:
@@ -205,7 +205,7 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
     voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, nogil=True)
 def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array):
     for x in range(CHUNK_SIZE):
         for z in range(CHUNK_SIZE):

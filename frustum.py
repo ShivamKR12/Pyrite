@@ -1,5 +1,5 @@
 from settings import *
-from numba import njit
+from numba import njit, prange
 import numpy as np
 import glm
 
@@ -40,7 +40,7 @@ class Frustum:
         return True
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True, parallel=True)
 def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
     n = len(chunk_centers)
     is_visible = np.empty(n, dtype=np.bool_)
@@ -52,7 +52,7 @@ def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, ta
 
     radius_sq = (CHUNK_SPHERE_RADIUS * 1.2) ** 2
 
-    for i in range(n):
+    for i in prange(n):
         svx = chunk_centers[i, 0] - cpx
         svy = chunk_centers[i, 1] - cpy
         svz = chunk_centers[i, 2] - cpz
