@@ -12,3 +12,4 @@ command.txt
 convert_audio.ps1
 test_obj.py
 append_texture.py
+audio_length.py

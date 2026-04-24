@@ -33,6 +33,7 @@ class VoxelEngine:
         self.clock = pg.time.Clock()
         self.delta_time = 0
         self.time = 0
+        self.world_session_time = 0.0 # New variable for in-game time
         self.bg_color = BG_COLOR
 
         self.is_running = True
@@ -105,6 +106,7 @@ class VoxelEngine:
             
         set_seed(seed)
         
+        self.world_session_time = 0.0 # Reset world session time for the new world
         self.scene = Scene(self, save_name, seed) # Pass seed to scene/world
         
         self.render_loading_screen("STARTING GAME...")
@@ -181,6 +183,7 @@ class VoxelEngine:
         elif self.game_state in ('IN_GAME', 'INVENTORY'):
             self.player.update()
             self.shader_program.update()
+            self.world_session_time += self.delta_time * 0.001
             self.scene.update()
         elif self.game_state == 'PAUSED':
             self.pause_menu.update()

@@ -45,9 +45,9 @@ class ChunkMesh(BaseMesh):
         self.ctx = self.app.ctx
         self.program = self.app.shader_program.chunk
 
-        self.vbo_format = '1u4'
-        self.format_size = sum(int(fmt[:1]) for fmt in self.vbo_format.split())
-        self.attrs = ('packed_data',)
+        self.vbo_format = '1u4 1u4'
+        self.format_size = 2
+        self.attrs = ('packed_data', 'light_data')
         self.vao = None
         self.vbo = None
         self.vertex_data = None
@@ -104,9 +104,11 @@ class ChunkMesh(BaseMesh):
     def get_vertex_data(self):
         mesh = build_chunk_mesh(
             chunk_voxels=self.chunk.voxels,
+            chunk_lightmap=self.chunk.lightmap,
             format_size=self.format_size,
             chunk_pos=self.chunk.position,
             world_voxels=self.chunk.world.voxels,
+            world_lightmaps=self.chunk.world.lightmaps,
             chunk_positions=self.chunk.world.chunk_positions
         )
         return mesh
@@ -157,7 +159,7 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
 
 
 @njit(cache=True)
-def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
+def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
 
@@ -176,7 +178,7 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
         e << fg_bit |
         f << g_bit | g
     )
-    return packed_data
+    return packed_data, light_val
 
 
 @njit(cache=True)
@@ -208,22 +210,37 @@ def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_
 
 
 @njit(cache=True)
+def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_positions):
+    chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
+    if chunk_index == -1:
+        return 255
+    chunk_lights = world_lightmaps[chunk_index]
+    x, y, z = local_voxel_pos
+    voxel_index = x % CHUNK_SIZE + z % CHUNK_SIZE * CHUNK_SIZE + y % CHUNK_SIZE * CHUNK_AREA
+    return chunk_lights[voxel_index]
+
+@njit(cache=True)
+def is_transparent(voxel_id):
+    return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
+
+@njit(cache=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions)
-    # 9 is WATER. Water does not cast AO shadows!
-    return val == 0 or val == WATER
+    # Transparent blocks do not cast AO shadows!
+    return is_transparent(val)
 
 
 @njit(cache=True)
 def add_data(vertex_data, index, *vertices):
     for vertex in vertices:
-        vertex_data[index] = vertex
-        index += 1
+        vertex_data[index] = vertex[0]
+        vertex_data[index + 1] = vertex[1]
+        index += 2
     return index
 
 
 @njit(cache=True)
-def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_positions):
+def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world_voxels, world_lightmaps, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0
@@ -245,19 +262,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
                 # top face
                 neighbor_id = get_neighbor_voxel_id((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask0[x, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x, y + 1, z), (wx, wy + 1, wz), world_lightmaps, chunk_positions)
+                    mask0[x, z] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
                 # bottom face
                 neighbor_id = get_neighbor_voxel_id((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask1[x, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x, y - 1, z), (wx, wy - 1, wz), world_lightmaps, chunk_positions)
+                    mask1[x, z] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
@@ -272,14 +291,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y + 1, z    , v_id, 0, ao0, flip_id)
-                    v1 = pack_data(x + w, y + 1, z    , v_id, 0, ao1, flip_id)
-                    v2 = pack_data(x + w, y + 1, z + h, v_id, 0, ao2, flip_id)
-                    v3 = pack_data(x    , y + 1, z + h, v_id, 0, ao3, flip_id)
+                    v0 = pack_data(x    , y + 1, z    , v_id, 0, ao0, flip_id, light_val)
+                    v1 = pack_data(x + w, y + 1, z    , v_id, 0, ao1, flip_id, light_val)
+                    v2 = pack_data(x + w, y + 1, z + h, v_id, 0, ao2, flip_id, light_val)
+                    v3 = pack_data(x    , y + 1, z + h, v_id, 0, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v1, v0, v3, v1, v3, v2)
@@ -304,14 +324,14 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
-                    flip_id = val & 1
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
 
-                    v0 = pack_data(x    , y, z    , v_id, 1, ao0, flip_id)
-                    v1 = pack_data(x + w, y, z    , v_id, 1, ao1, flip_id)
-                    v2 = pack_data(x + w, y, z + h, v_id, 1, ao2, flip_id)
-                    v3 = pack_data(x    , y, z + h, v_id, 1, ao3, flip_id)
+                    v0 = pack_data(x    , y, z    , v_id, 1, ao0, flip_id, light_val)
+                    v1 = pack_data(x + w, y, z    , v_id, 1, ao1, flip_id, light_val)
+                    v2 = pack_data(x + w, y, z + h, v_id, 1, ao2, flip_id, light_val)
+                    v3 = pack_data(x    , y, z + h, v_id, 1, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v1, v3, v0, v1, v2, v3)
@@ -334,19 +354,20 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 if not voxel_id: continue
 
                 neighbor_id = get_neighbor_voxel_id((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask0[y, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x + 1, y, z), (wx + 1, wy, wz), world_lightmaps, chunk_positions)
+                    mask0[y, z] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
                 neighbor_id = get_neighbor_voxel_id((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask1[y, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
-
+                    light_val = get_neighbor_light((x - 1, y, z), (wx - 1, wy, wz), world_lightmaps, chunk_positions)
+                    mask1[y, z] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
         for y in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
                 val = mask0[y, z]
@@ -360,14 +381,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x + 1, y    , z    , v_id, 2, ao0, flip_id)
-                    v1 = pack_data(x + 1, y + w, z    , v_id, 2, ao1, flip_id)
-                    v2 = pack_data(x + 1, y + w, z + h, v_id, 2, ao2, flip_id)
-                    v3 = pack_data(x + 1, y    , z + h, v_id, 2, ao3, flip_id)
+                    v0 = pack_data(x + 1, y    , z    , v_id, 2, ao0, flip_id, light_val)
+                    v1 = pack_data(x + 1, y + w, z    , v_id, 2, ao1, flip_id, light_val)
+                    v2 = pack_data(x + 1, y + w, z + h, v_id, 2, ao2, flip_id, light_val)
+                    v3 = pack_data(x + 1, y    , z + h, v_id, 2, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
@@ -392,14 +414,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x, y    , z    , v_id, 3, ao0, flip_id)
-                    v1 = pack_data(x, y + w, z    , v_id, 3, ao1, flip_id)
-                    v2 = pack_data(x, y + w, z + h, v_id, 3, ao2, flip_id)
-                    v3 = pack_data(x, y    , z + h, v_id, 3, ao3, flip_id)
+                    v0 = pack_data(x, y    , z    , v_id, 3, ao0, flip_id, light_val)
+                    v1 = pack_data(x, y + w, z    , v_id, 3, ao1, flip_id, light_val)
+                    v2 = pack_data(x, y + w, z + h, v_id, 3, ao2, flip_id, light_val)
+                    v3 = pack_data(x, y    , z + h, v_id, 3, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
@@ -422,18 +445,20 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 if not voxel_id: continue
 
                 neighbor_id = get_neighbor_voxel_id((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask0[x, y] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x, y, z - 1), (wx, wy, wz - 1), world_lightmaps, chunk_positions)
+                    mask0[x, y] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
                 neighbor_id = get_neighbor_voxel_id((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask1[x, y] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x, y, z + 1), (wx, wy, wz + 1), world_lightmaps, chunk_positions)
+                    mask1[x, y] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
         for x in range(CHUNK_SIZE):
             for y in range(CHUNK_SIZE):
@@ -448,14 +473,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y    , z, v_id, 4, ao0, flip_id)
-                    v1 = pack_data(x    , y + h, z, v_id, 4, ao1, flip_id)
-                    v2 = pack_data(x + w, y + h, z, v_id, 4, ao2, flip_id)
-                    v3 = pack_data(x + w, y    , z, v_id, 4, ao3, flip_id)
+                    v0 = pack_data(x    , y    , z, v_id, 4, ao0, flip_id, light_val)
+                    v1 = pack_data(x    , y + h, z, v_id, 4, ao1, flip_id, light_val)
+                    v2 = pack_data(x + w, y + h, z, v_id, 4, ao2, flip_id, light_val)
+                    v3 = pack_data(x + w, y    , z, v_id, 4, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
@@ -480,14 +506,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y    , z + 1, v_id, 5, ao0, flip_id)
-                    v1 = pack_data(x    , y + h, z + 1, v_id, 5, ao1, flip_id)
-                    v2 = pack_data(x + w, y + h, z + 1, v_id, 5, ao2, flip_id)
-                    v3 = pack_data(x + w, y    , z + 1, v_id, 5, ao3, flip_id)
+                    v0 = pack_data(x    , y    , z + 1, v_id, 5, ao0, flip_id, light_val)
+                    v1 = pack_data(x    , y + h, z + 1, v_id, 5, ao1, flip_id, light_val)
+                    v2 = pack_data(x + w, y + h, z + 1, v_id, 5, ao2, flip_id, light_val)
+                    v3 = pack_data(x + w, y    , z + 1, v_id, 5, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
@@ -509,6 +536,7 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 from settings import *
 from meshes.base_mesh import BaseMesh
 from noise import noise2
+import noise
 
 
 class CloudMesh(BaseMesh):
@@ -524,8 +552,6 @@ class CloudMesh(BaseMesh):
 
     def get_vertex_data(self):
         cloud_data = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
-        
-        import noise
         self.gen_clouds(cloud_data, noise.perm)
 
         return self.build_mesh(cloud_data)
@@ -651,6 +677,7 @@ class CubeMesh(BaseMesh):
 import numpy as np
 from meshes.base_mesh import BaseMesh
 
+
 class ItemMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()
@@ -691,6 +718,7 @@ class ItemMesh(BaseMesh):
 import numpy as np
 from meshes.base_mesh import BaseMesh
 import os
+
 
 class ObjMesh(BaseMesh):
     def __init__(self, app, obj_path, tex_id=None):
@@ -806,10 +834,14 @@ uniform bool u_underwater_tint;
 uniform float u_fog_density;
 uniform float u_fog_max_opacity;
 uniform float u_time;
+uniform vec3 u_sun_direction;
+uniform int u_texture_map[256];
 
 in vec2 uv;
 in float shading;
 in vec3 frag_world_pos;
+in float sun_light;
+in float block_light;
 
 flat in int face_id;
 flat in int voxel_id;
@@ -827,10 +859,29 @@ void main() {
     }
     
     face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
-    vec3 tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
+    int tex_id = u_texture_map[voxel_id];
+    vec4 tex_sample = textureGrad(u_texture_array_0, vec3(face_uv, tex_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y));
     
+    if (tex_sample.a < 0.1) {
+        discard;
+    }
+    vec3 tex_col = tex_sample.rgb;
     tex_col = pow(tex_col, gamma);
-    tex_col *= shading;
+    
+    // Dynamic Block Light Flicker
+    float flicker = 1.0;
+    if (block_light > 0.5) {
+        flicker = 1.0 + 0.05 * sin(u_time * 10.0) * cos(u_time * 23.0);
+    }
+    
+    // Apply Day/Night cycle to sunlight
+    float day_light = max(0.05, u_sun_direction.y + 0.2); 
+    
+    // Final combined light
+    float final_light = max(sun_light * day_light, block_light * flicker);
+    final_light = max(0.02, pow(final_light, 1.5)); // Gamma curve for natural darkness
+
+    tex_col *= shading * final_light;
 
     // underwater effect
     if (u_underwater_tint && is_water_neighbor == 1 && voxel_id != 11) {
@@ -857,6 +908,7 @@ void main() {
 #version 330 core
 
 layout (location = 0) in uint packed_data;
+layout (location = 1) in uint light_data;
 
 int x, y, z;
 int ao_id;
@@ -875,6 +927,8 @@ flat out int is_water_neighbor;
 out vec2 uv;
 out float shading;
 out vec3 frag_world_pos;
+out float sun_light;
+out float block_light;
 
 const float ao_values[4] = float[4](0.1, 0.25, 0.5, 1.0);
 
@@ -922,6 +976,9 @@ void unpack(uint packed_data) {
 void main() {
     unpack(packed_data);
 
+    sun_light = float((light_data >> 4u) & 15u) / 15.0;
+    block_light = float(light_data & 15u) / 15.0;
+
     vec3 in_position = vec3(x, y, z);
     // Generate naturally tiling UVs scaled to the size of the greedy quad!
     if (face_id == 0)      uv = vec2(x, -z);
@@ -933,8 +990,8 @@ void main() {
 
     vec3 normal = face_normals[face_id];
     float diffuse = max(0.0, dot(normal, u_sun_direction));
-    float ambient = max(0.05, 0.3 * (u_sun_direction.y + 0.5)); // smooth transition for night
-    shading = (ambient + diffuse * 0.7) * ao_values[ao_id];
+    float ambient = max(0.2, 0.4 * (u_sun_direction.y + 0.5)); // Base lighting
+    shading = (ambient + diffuse * 0.4) * ao_values[ao_id];
 
     frag_world_pos = (m_model * vec4(in_position, 1.0)).xyz;
 
@@ -1010,14 +1067,20 @@ uniform int voxel_id;
 uniform vec3 bg_color;
 uniform float u_fog_density;
 uniform float u_fog_max_opacity;
+uniform int u_texture_map[256];
 
 const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
 
 void main() {
+    int tex_id = u_texture_map[voxel_id];
     vec2 face_uv = vec2(uv.x / 3.0 - min(face_id, 2) / 3.0, uv.y);
-    vec3 tex_col = texture(u_texture_array_0, vec3(face_uv, voxel_id)).rgb;
+    vec4 tex_sample = texture(u_texture_array_0, vec3(face_uv, tex_id));
     
+    if (tex_sample.a < 0.1) {
+        discard;
+    }
+    vec3 tex_col = tex_sample.rgb;
     tex_col = pow(tex_col, gamma) * shading;
     tex_col = pow(tex_col, inv_gamma);
 
@@ -1250,10 +1313,16 @@ in vec2 uv;
 
 uniform sampler2DArray u_texture_array_0;
 uniform int voxel_id;
+uniform int u_texture_map[256];
 
 void main() {
+    int tex_id = u_texture_map[voxel_id];
     vec2 face_uv = vec2(uv.x / 3.0, uv.y); // Sample the top face of the block
-    fragColor = texture(u_texture_array_0, vec3(face_uv, voxel_id));
+    vec4 tex_sample = texture(u_texture_array_0, vec3(face_uv, tex_id));
+    if (tex_sample.a < 0.1) {
+        discard;
+    }
+    fragColor = tex_sample;
 }
 
 ===== D:\Minecraft\shaders\ui_block.vert =====
@@ -1416,6 +1485,7 @@ class Chunk:
         self.position = position
         self.m_model = self.get_model_matrix()
         self.voxels: np.array = None
+        self.lightmap: np.array = None
         self.mesh: ChunkMesh = None
         self.is_empty = True
 
@@ -1458,12 +1528,18 @@ class Chunk:
 
     @staticmethod
     @njit(cache=True)
-    def generate_terrain(voxels, cx, cy, cz, perm_array, perm_grad_array, seed):
+    def generate_terrain(voxels, lightmap, cx, cy, cz, perm_array, perm_grad_array, seed):
         np.random.seed(seed ^ cx ^ cy ^ cz)
         random.seed(seed ^ cx ^ cy ^ cz)
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
                 set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)
+        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
+
+    @staticmethod
+    @njit(cache=True)
+    def fill_initial_sunlight_only(voxels, lightmap, cx, cy, cz, perm_array):
+        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
 
 ===== D:\Minecraft\world_objects\clouds.py =====
 
@@ -1477,7 +1553,7 @@ class Clouds:
         self.mesh = CloudMesh(app)
 
     def update(self):
-        self.mesh.program['u_time'] = self.app.time
+        self.mesh.program['u_time'] = self.app.world_session_time
 
     def render(self):
         self.mesh.render()
@@ -1576,6 +1652,7 @@ class ItemManager:
 import numpy as np
 import moderngl as mgl
 from meshes.base_mesh import BaseMesh
+
 
 class SkyMesh(BaseMesh):
     def __init__(self, app):
@@ -1684,7 +1761,7 @@ if __name__ == '__main__':
     # Provide your image paths here
     # For example, using paths from the Minecraft project assets folder
     base_texture = 'assets/tex_array_2.png'  # Your current texture array
-    texture_to_append = 'assets/water.png'  # The texture you want to add
+    texture_to_append = 'assets/stone_brick.png'  # The texture you want to add
     output_texture = 'assets/tex_array_2.png'   # The resulting combined texture
     
     append_texture_row(base_texture, texture_to_append, output_texture)
@@ -1793,6 +1870,7 @@ from numba import njit
 import numpy as np
 import glm
 
+
 class Frustum:
     def __init__(self, camera):
         self.cam: Camera = camera # type: ignore
@@ -1827,6 +1905,7 @@ class Frustum:
             return False
 
         return True
+
 
 @njit(cache=True)
 def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
@@ -1873,6 +1952,227 @@ def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, ta
             
     return is_visible
 
+===== D:\Minecraft\lighting.py =====
+
+from numba import njit
+import numpy as np
+from settings import *
+from meshes.chunk_mesh_builder import get_chunk_index
+
+
+DIRS = np.array([
+    [0, 1, 0], [0, -1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, -1], [0, 0, 1]
+], dtype=np.int32)
+
+
+@njit(cache=True)
+def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
+    idx = get_chunk_index((wx, wy, wz), chunk_positions)
+    if idx == -1: return 1
+    lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
+    return world_voxels[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
+
+
+@njit(cache=True)
+def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
+    idx = get_chunk_index((wx, wy, wz), chunk_positions)
+    if idx == -1: return 0
+    lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
+    return world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
+
+
+@njit(cache=True)
+def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
+    idx = get_chunk_index((wx, wy, wz), chunk_positions)
+    if idx != -1:
+        lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
+        world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA] = val
+
+
+@njit(cache=True)
+def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, chunk_positions):
+    head = 0
+    while head < tail and tail < 199990:
+        x, y, z = queue[head]
+        head += 1
+        val = get_light_fast(x, y, z, world_lightmaps, chunk_positions)
+        L = (val >> 4) if is_sun else (val & 15)
+
+        for i in range(6):
+            nx, ny, nz = x + DIRS[i][0], y + DIRS[i][1], z + DIRS[i][2]
+            if ny < 0 or ny >= WORLD_H * CHUNK_SIZE: continue
+
+            voxel_id = get_voxel_fast(nx, ny, nz, world_voxels, chunk_positions)
+            if voxel_id != AIR and voxel_id != WATER and voxel_id != GLASS and voxel_id != LEAVES: continue
+
+            n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)
+            n_L = (n_val >> 4) if is_sun else (n_val & 15)
+
+            if voxel_id == WATER or voxel_id == LEAVES:
+                diminish = 2
+            else:
+                diminish = 1
+            new_L = L - diminish
+            # Sunlight drops vertically through air without losing power!
+            if is_sun and DIRS[i][1] == -1 and L == 15 and voxel_id == 0:
+                new_L = 15
+
+            if n_L < new_L:
+                if is_sun:
+                    set_light_fast(nx, ny, nz, (new_L << 4) | (n_val & 15), world_lightmaps, chunk_positions)
+                else:
+                    set_light_fast(nx, ny, nz, ((n_val >> 4) << 4) | new_L, world_lightmaps, chunk_positions)
+                
+                queue[tail] = (nx, ny, nz)
+                tail += 1
+
+
+@njit(cache=True)
+def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
+    queue_sun = np.empty((200000, 3), dtype=np.int32)
+    tail_sun = 0
+    queue_block = np.empty((200000, 3), dtype=np.int32)
+    tail_block = 0
+
+    chunk_idx = get_chunk_index((cx, cy, cz), chunk_positions)
+    if chunk_idx != -1:
+        local_lightmap = world_lightmaps[chunk_idx]
+        local_voxels = world_voxels[chunk_idx]
+        
+        for y in range(CHUNK_SIZE):
+            for z in range(CHUNK_SIZE):
+                for x in range(CHUNK_SIZE):
+                    # Calculate the raw 1D array index instantly
+                    idx = x + z * CHUNK_SIZE + y * CHUNK_AREA
+                    val = local_lightmap[idx]
+                    voxel_id = local_voxels[idx]
+                    
+                    # Fallback for old save files: Ignite un-cached Glowstone blocks!
+                    if voxel_id == GLOWSTONE:
+                        val = (val & 240) | 14 # Preserve sunlight (240), set block light to 14
+                        local_lightmap[idx] = val
+                    
+                    sun = val >> 4
+                    if sun > 0:
+                        if x == 0 or x == CHUNK_SIZE - 1 or y == 0 or y == CHUNK_SIZE - 1 or z == 0 or z == CHUNK_SIZE - 1:
+                            queue_sun[tail_sun] = (x + cx, y + cy, z + cz)
+                            tail_sun += 1
+                        else:
+                            if (local_lightmap[(x-1) + z*CHUNK_SIZE + y*CHUNK_AREA] >> 4) < sun or \
+                               (local_lightmap[(x+1) + z*CHUNK_SIZE + y*CHUNK_AREA] >> 4) < sun or \
+                               (local_lightmap[x + (z-1)*CHUNK_SIZE + y*CHUNK_AREA] >> 4) < sun or \
+                               (local_lightmap[x + (z+1)*CHUNK_SIZE + y*CHUNK_AREA] >> 4) < sun or \
+                               (local_lightmap[x + z*CHUNK_SIZE + (y-1)*CHUNK_AREA] >> 4) < sun or \
+                               (local_lightmap[x + z*CHUNK_SIZE + (y+1)*CHUNK_AREA] >> 4) < sun:
+                                queue_sun[tail_sun] = (x + cx, y + cy, z + cz)
+                                tail_sun += 1
+                                
+                    block = val & 15
+                    if block > 0:
+                        if x == 0 or x == CHUNK_SIZE - 1 or y == 0 or y == CHUNK_SIZE - 1 or z == 0 or z == CHUNK_SIZE - 1:
+                            queue_block[tail_block] = (x + cx, y + cy, z + cz)
+                            tail_block += 1
+                        else:
+                            if (local_lightmap[(x-1) + z*CHUNK_SIZE + y*CHUNK_AREA] & 15) < block or \
+                               (local_lightmap[(x+1) + z*CHUNK_SIZE + y*CHUNK_AREA] & 15) < block or \
+                               (local_lightmap[x + (z-1)*CHUNK_SIZE + y*CHUNK_AREA] & 15) < block or \
+                               (local_lightmap[x + (z+1)*CHUNK_SIZE + y*CHUNK_AREA] & 15) < block or \
+                               (local_lightmap[x + z*CHUNK_SIZE + (y-1)*CHUNK_AREA] & 15) < block or \
+                               (local_lightmap[x + z*CHUNK_SIZE + (y+1)*CHUNK_AREA] & 15) < block:
+                                queue_block[tail_block] = (x + cx, y + cy, z + cz)
+                                tail_block += 1
+                    
+    propagate_light_queue(queue_sun, tail_sun, True, world_voxels, world_lightmaps, chunk_positions)
+    propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
+
+
+@njit(cache=True)
+def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill):
+    queue = np.empty((200000, 4), dtype=np.int32)
+    head = 0
+    tail = 0
+    queue[tail] = (wx, wy, wz, light_level)
+    tail += 1
+
+    while head < tail and tail < 199990:
+        x, y, z, L = queue[head]
+        head += 1
+
+        for i in range(6):
+            nx, ny, nz = x + DIRS[i][0], y + DIRS[i][1], z + DIRS[i][2]
+            if ny < 0 or ny >= WORLD_H * CHUNK_SIZE: continue
+
+            n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)
+            n_L = (n_val >> 4) if is_sun else (n_val & 15)
+
+            if n_L != 0 and n_L < L:
+                if is_sun:
+                    set_light_fast(nx, ny, nz, (0 << 4) | (n_val & 15), world_lightmaps, chunk_positions)
+                else:
+                    set_light_fast(nx, ny, nz, ((n_val >> 4) << 4) | 0, world_lightmaps, chunk_positions)
+                
+                queue[tail] = (nx, ny, nz, n_L)
+                tail += 1
+            elif n_L >= L:
+                refill_queue[tail_refill] = (nx, ny, nz)
+                tail_refill += 1
+                
+    return tail_refill
+
+
+@njit(cache=True)
+def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
+    sun, block = curr_val >> 4, curr_val & 15
+    set_light_fast(wx, wy, wz, 0, world_lightmaps, chunk_positions)
+    
+    refill_queue = np.empty((200000, 3), dtype=np.int32)
+    if sun > 0:
+        tail_refill = remove_light_node(wx, wy, wz, sun, True, world_lightmaps, chunk_positions, refill_queue, 0)
+        propagate_light_queue(refill_queue, tail_refill, True, world_voxels, world_lightmaps, chunk_positions)
+    if block > 0:
+        tail_refill = remove_light_node(wx, wy, wz, block, False, world_lightmaps, chunk_positions, refill_queue, 0)
+        propagate_light_queue(refill_queue, tail_refill, False, world_voxels, world_lightmaps, chunk_positions)
+
+
+@njit(cache=True)
+def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    queue_sun = np.empty((6, 3), dtype=np.int32)
+    tail_sun = 0
+    queue_block = np.empty((6, 3), dtype=np.int32)
+    tail_block = 0
+    
+    up_val = get_light_fast(wx, wy + 1, wz, world_lightmaps, chunk_positions)
+    if (up_val >> 4) == 15:
+        set_light_fast(wx, wy, wz, (15 << 4) | 0, world_lightmaps, chunk_positions)
+        queue_sun[tail_sun] = (wx, wy, wz)
+        tail_sun += 1
+        
+    for i in range(6):
+        nx, ny, nz = wx + DIRS[i][0], wy + DIRS[i][1], wz + DIRS[i][2]
+        if ny < 0 or ny >= WORLD_H * CHUNK_SIZE: continue
+        
+        n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)
+        if (n_val >> 4) > 0:
+            queue_sun[tail_sun] = (nx, ny, nz)
+            tail_sun += 1
+        if (n_val & 15) > 0:
+            queue_block[tail_block] = (nx, ny, nz)
+            tail_block += 1
+            
+    propagate_light_queue(queue_sun, tail_sun, True, world_voxels, world_lightmaps, chunk_positions)
+    propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
+
+
+@njit(cache=True)
+def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
+    set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)
+    
+    queue = np.empty((200000, 3), dtype=np.int32)
+    queue[0] = (wx, wy, wz)
+    propagate_light_queue(queue, 1, False, world_voxels, world_lightmaps, chunk_positions)
+
 ===== D:\Minecraft\main.py =====
 
 from settings import *
@@ -1910,6 +2210,7 @@ class VoxelEngine:
         self.clock = pg.time.Clock()
         self.delta_time = 0
         self.time = 0
+        self.world_session_time = 0.0 # New variable for in-game time
         self.bg_color = BG_COLOR
 
         self.is_running = True
@@ -1982,6 +2283,7 @@ class VoxelEngine:
             
         set_seed(seed)
         
+        self.world_session_time = 0.0 # Reset world session time for the new world
         self.scene = Scene(self, save_name, seed) # Pass seed to scene/world
         
         self.render_loading_screen("STARTING GAME...")
@@ -2058,6 +2360,7 @@ class VoxelEngine:
         elif self.game_state in ('IN_GAME', 'INVENTORY'):
             self.player.update()
             self.shader_program.update()
+            self.world_session_time += self.delta_time * 0.001
             self.scene.update()
         elif self.game_state == 'PAUSED':
             self.pause_menu.update()
@@ -2180,13 +2483,16 @@ from opensimplex.internals import _noise2, _noise3, _init
 import numpy as np
 import random
 
+
 # Pre-allocate the arrays with a default seed. Numba will hardcode the memory pointers to these arrays.
 perm, perm_grad_index3 = _init(seed=0)
+
 
 @njit
 def _seed_numba(new_seed):
     np.random.seed(new_seed)
     random.seed(new_seed)
+
 
 def set_seed(new_seed):
     global perm, perm_grad_index3
@@ -2210,6 +2516,8 @@ import glm
 import math
 from camera import Camera
 from settings import *
+from terrain_gen import get_height
+import noise
 
 
 class Player(Camera):
@@ -2253,10 +2561,7 @@ class Player(Camera):
         self.last_damage_time = 0
         self.spawn_immunity = True
 
-    def find_spawn_position(self):
-        from terrain_gen import get_height
-        import noise
-        
+    def find_spawn_position(self):        
         center_x = int(CENTER_XZ)
         center_z = int(CENTER_XZ)
         
@@ -2678,7 +2983,6 @@ from ui import HeldBlock
 from ui import InventoryUI
 from ui import DebugOverlay
 from world_objects.item import ItemManager
-from meshes.cube_mesh import CubeMesh
 
 
 class Scene:
@@ -2710,6 +3014,9 @@ class Scene:
         
         # skybox rendering FIRST, entirely in the background
         self.sky.render()
+
+        # Disable face culling so we can see the inside of glass and leaves!
+        self.app.ctx.enable(mgl.CULL_FACE)
 
         # chunks rendering
         self.world.render()
@@ -2750,6 +3057,7 @@ import numpy as np
 import glm
 import math
 import pygame
+
 
 # OpenGL settings
 MAJOR_VER, MINOR_VER = 3, 3
@@ -2802,6 +3110,7 @@ MOUSE_SENSITIVITY = 0.002
 BG_COLOR = glm.vec3(0.58, 0.83, 0.99)
 
 # textures
+AIR = 0
 SAND = 1
 GRASS = 2
 DIRT = 3
@@ -2813,10 +3122,34 @@ GRAVEL = 8
 WOOD_PLANKS = 9
 COBBELSTONE = 10
 WATER = 11
-STICK = 12
-WOODEN_PICKAXE = 13
+GLOWSTONE = 12
+GLASS = 13
+CACTUS = 14
+STONE_BRICKS = 15
+# 16-32 are reserved for other blocks, 33+ are items
+STICK = 33
+WOODEN_PICKAXE = 34
 
 NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
+
+# Texture Array Mapping (Global UID -> Row in tex_array_2.png)
+TEXTURE_MAP = {
+    SAND: 1,
+    GRASS: 2,
+    DIRT: 3,
+    STONE: 4,
+    SNOW: 5,
+    LEAVES: 6,
+    WOOD: 7,
+    GRAVEL: 8,
+    WOOD_PLANKS: 9,
+    COBBELSTONE: 10,
+    WATER: 11,
+    GLOWSTONE: 12,
+    GLASS: 13,
+    CACTUS: 14,
+    STONE_BRICKS: 15
+}
 
 # terrain levels
 SNOW_LVL = 54
@@ -2839,7 +3172,11 @@ BLOCK_HARDNESS = {
     SNOW: 200,
     LEAVES: 150,
     WOOD: 1000,
-    WATER: 0 # Water can't be normally mined
+    WATER: 0, # Water can't be normally mined
+    GLOWSTONE: 100,
+    GLASS: 100,
+    CACTUS: 150,
+    STONE_BRICKS: 1500
 }
 
 # game modes
@@ -2936,11 +3273,18 @@ class ShaderProgram:
         self.set_uniforms_on_init()
 
     def set_uniforms_on_init(self):
+        # Build the fast lookup array for the shaders
+        tex_map = np.zeros(256, dtype='int32')
+        for uid, tex_id in TEXTURE_MAP.items():
+            tex_map[uid] = tex_id
+        tex_map_bytes = tex_map.tobytes()
+
         # chunk
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['u_texture_array_0'] = 1
         self.chunk['bg_color'].write(BG_COLOR)
+        if 'u_texture_map' in self.chunk: self.chunk['u_texture_map'].write(tex_map_bytes)
 
         # marker
         self.voxel_marker['m_proj'].write(self.player.m_proj)
@@ -2968,6 +3312,7 @@ class ShaderProgram:
         
         # ui block
         self.ui_block['u_texture_array_0'] = 1
+        if 'u_texture_map' in self.ui_block: self.ui_block['u_texture_map'].write(tex_map_bytes)
         
         # ui text
         self.ui_text['u_texture_0'] = 4
@@ -2977,6 +3322,7 @@ class ShaderProgram:
         self.item['m_model'].write(glm.mat4())
         self.item['u_texture_array_0'] = 1
         self.item['bg_color'].write(BG_COLOR)
+        if 'u_texture_map' in self.item: self.item['u_texture_map'].write(tex_map_bytes)
         
         # obj
         self.obj['m_proj'].write(self.player.m_proj)
@@ -2986,8 +3332,8 @@ class ShaderProgram:
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
-        if 'u_time' in self.chunk:
-            self.chunk['u_time'] = self.app.time
+        if 'u_time' in self.chunk: # Make sure the shader actually has the uniform before writing
+            self.chunk['u_time'] = self.app.world_session_time
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
         self.clouds['player_pos'].write(self.player.position)
@@ -3002,9 +3348,10 @@ class ShaderProgram:
         self.obj['m_proj'].write(self.player.m_proj)
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
+        if 'u_time' in self.sky: self.sky['u_time'] = self.app.world_session_time
 
-        time_speed = 0.1 # Adjust this to make the day longer or shorter
-        sun_y = glm.cos(self.app.time * time_speed)
+        time_speed = 0.1 # Adjust this to make the day longer or shorter based on world_session_time
+        sun_y = glm.cos(self.app.world_session_time * time_speed)
 
         is_underwater = getattr(self.player, 'head_in_water', False)
         
@@ -3040,7 +3387,7 @@ class ShaderProgram:
         self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
-        sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
+        sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.world_session_time * time_speed)))
         
         # Safely write sun direction only if the shader currently supports it
         if 'u_sun_direction' in self.chunk:
@@ -3217,6 +3564,7 @@ def get_biome(x, z, perm_array):
     temp = noise2(x * 0.002, z * 0.002, perm_array)
     moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0, perm_array)
     return temp, moist
+
 
 @njit(cache=True)
 def get_height(x, z, perm_array):
@@ -3406,6 +3754,34 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
 
     # top
     voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
+
+
+@njit(cache=True)
+def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array):
+    for x in range(CHUNK_SIZE):
+        for z in range(CHUNK_SIZE):
+            wx = x + cx
+            wz = z + cz
+            world_height = get_height(wx, wz, perm_array)
+            for y in range(CHUNK_SIZE):
+                wy = y + cy
+                index = get_index(x, y, z)
+                if wy >= world_height:
+                    voxel_id = voxels[index]
+                    if voxel_id == AIR or voxel_id == GLASS:
+                        lightmap[index] = (15 << 4) | 0
+                    elif voxel_id == WATER:
+                        depth = world_height - wy
+                        sun = max(0, 15 + depth * 2)
+                        lightmap[index] = (sun << 4) | 0
+                    elif voxel_id == LEAVES:
+                        lightmap[index] = (14 << 4) | 0
+                    else:
+                        lightmap[index] = 0
+                else:
+                    lightmap[index] = 0
+
+
 # """
 
 
@@ -3728,6 +4104,7 @@ import glm
 from meshes.item_mesh import ItemMesh
 from meshes.obj_mesh import ObjMesh
 
+
 class CrosshairMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()
@@ -3753,6 +4130,7 @@ class CrosshairMesh(BaseMesh):
         colors = [(0.9, 0.9, 0.9) for _ in vertices]
         return np.hstack([vertices, colors]).astype('float32')
 
+
 class BlockIconMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()
@@ -3772,6 +4150,7 @@ class BlockIconMesh(BaseMesh):
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
         return np.hstack([vertices, tex_coords]).astype('float32')
 
+
 class UIColorMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()
@@ -3788,6 +4167,7 @@ class UIColorMesh(BaseMesh):
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
         ]
         return np.array(vertices, dtype='float32')
+
 
 class UITextMesh(BaseMesh):
     def __init__(self, app):
@@ -3806,6 +4186,7 @@ class UITextMesh(BaseMesh):
         ]
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
         return np.hstack([vertices, tex_coords]).astype('float32')
+
 
 class TextRenderer:
     def __init__(self, app):
@@ -3842,6 +4223,7 @@ class TextRenderer:
         texture.filter = (mgl.LINEAR, mgl.LINEAR)
         return texture
 
+
 class Crosshair:
     def __init__(self, app):
         self.app = app
@@ -3849,6 +4231,7 @@ class Crosshair:
 
     def render(self):
         self.mesh.render()
+
 
 class Hotbar:
     def __init__(self, app):
@@ -3964,6 +4347,7 @@ class Hotbar:
                 draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), 
                          f"O2: {int(player.oxygen)}/{player.max_oxygen}")
 
+
 class HeldBlock:
     def __init__(self, app):
         self.app = app
@@ -4031,8 +4415,10 @@ class HeldBlock:
             mesh.program['voxel_id'] = voxel_id
 
         self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
+        self.app.ctx.enable(mgl.CULL_FACE)   # Toggle this to enable/disable backfaces!
         mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
+
 
 class InventoryUI:
     def __init__(self, app):
@@ -4058,7 +4444,14 @@ class InventoryUI:
             (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4),
             (0, WOOD_PLANKS, 0, WOOD_PLANKS): (STICK, 4),
             # Wooden Pickaxe -> Top row planks, Bottom left stick
-            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1)
+            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1),
+            # Glowstone!
+            (SAND, SAND, SAND, SAND): (GLOWSTONE, 4),
+            # Glass
+            (SAND, 0, 0, 0): (GLASS, 1), (0, SAND, 0, 0): (GLASS, 1),
+            (0, 0, SAND, 0): (GLASS, 1), (0, 0, 0, SAND): (GLASS, 1),
+            # Stone Bricks
+            (STONE, STONE, STONE, STONE): (STONE_BRICKS, 4)
         }
         
         if grid in recipes:
@@ -4343,6 +4736,7 @@ class InventoryUI:
                 self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
                 self.text_mesh.render()
 
+
 class Button:
     def __init__(self, app, text, pos, size, action):
         self.app = app
@@ -4395,6 +4789,7 @@ class Button:
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
         self.text_mesh.program['u_offset'] = self.pos
         self.text_mesh.render()
+
 
 class WorldButton:
     def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action):
@@ -4473,6 +4868,7 @@ class WorldButton:
         render_text(f"{self.game_mode} Mode  |  Seed: {self.seed}", -0.05, 0.15)
         render_text(f"Created: {self.creation_date}  |  Last Played: {self.last_played}", -0.4, 0.12)
 
+
 class TextInput:
     def __init__(self, app, pos, size, label=""):
         self.app = app
@@ -4530,6 +4926,7 @@ class TextInput:
         self.text_mesh.program['u_offset'] = self.pos
         self.text_mesh.render()
         tex.release() # Release dynamic memory instantly to prevent VRAM leaking
+
 
 class Menu:
     def __init__(self, app):
@@ -4761,6 +5158,7 @@ class Menu:
             self.btn_create.render()
             self.btn_back_create.render()
 
+
 class PauseMenu:
     def __init__(self, app):
         self.app = app
@@ -4819,6 +5217,7 @@ class PauseMenu:
 
         for button in self.buttons:
             button.render()
+
 
 class Slider:
     def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None, is_int=False):
@@ -4910,6 +5309,7 @@ class Slider:
         self.text_mesh.render()
         tex.release()
 
+
 class OptionsMenu:
     def __init__(self, app):
         self.app = app
@@ -4987,6 +5387,7 @@ class OptionsMenu:
         for button in self.buttons:
             button.render()
 
+
 class DebugOverlay:
     def __init__(self, app):
         self.app = app
@@ -5017,7 +5418,7 @@ class DebugOverlay:
                 f"XYZ: {x:.3f} / {y:.5f} / {z:.3f}",
                 f"Chunk: {cx} {cy} {cz}",
                 f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
-                f"Time: {self.app.time:.2f}",
+                f"Time: {self.app.world_session_time:.2f}",
                 f"Target Block: {target}",
                 f"Game Mode: {'Survival' if player.game_mode == SURVIVAL else 'Creative'}"
             ]
@@ -5064,7 +5465,7 @@ class DebugOverlay:
 ===== D:\Minecraft\voxel_handler.py =====
 
 from settings import *
-from meshes.chunk_mesh_builder import get_chunk_index
+from lighting import update_light_place_block, place_torch, update_light_remove_block
 
 
 class VoxelHandler:
@@ -5104,6 +5505,12 @@ class VoxelHandler:
 
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = current_id
+
+                wx, wy, wz = new_voxel_pos
+                update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                if current_id == GLOWSTONE:
+                    place_torch(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                
                 if chunk not in self.app.scene.world.build_queue:
                     self.app.scene.world.build_queue.append(chunk)
                 self.app.sounds.play_dig(current_id)
@@ -5147,7 +5554,14 @@ class VoxelHandler:
 
     def remove_voxel(self):
         if self.voxel_id:
+            wx, wy, wz = self.voxel_world_pos
+            if self.voxel_id == GLOWSTONE:
+                # Strips torch block light from the area first!
+                update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                
             self.chunk.voxels[self.voxel_index] = 0
+            # Allows sunlight/blocklight from neighbors back into the new hole!
+            update_light_remove_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
 
             if self.chunk not in self.app.scene.world.build_queue:
                 self.app.scene.world.build_queue.append(self.chunk)
@@ -5268,8 +5682,9 @@ import time
 import moderngl as mgl
 from frustum import frustum_cull_fast
 import datetime
-import random
-from noise import set_seed
+from meshes.chunk_mesh_builder import build_chunk_mesh
+from lighting import init_chunk_lighting, update_light_place_block, update_light_remove_block, place_torch
+import noise
 
 
 class World:
@@ -5287,6 +5702,7 @@ class World:
         self.load_queue = []
         
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
+        self.lightmaps = np.full([WORLD_VOL, CHUNK_VOL], 255, dtype='uint8')
         self.voxel_handler = VoxelHandler(self)
         self.vbo_pool = []
         self.last_player_chunk_pos = None
@@ -5316,6 +5732,13 @@ class World:
                                 game_mode INTEGER,
                                 creation_date TEXT,
                                 last_played TEXT)''')
+        
+        # Safely upgrade existing databases to support lightmap caching!
+        try:
+            self.cursor.execute('ALTER TABLE chunks ADD COLUMN lightmap BLOB')
+        except sqlite3.OperationalError:
+            pass # Column already exists!
+            
         self.conn.commit()
         
         # Optimize SQLite for async-like high performance disk writing
@@ -5353,6 +5776,7 @@ class World:
                 self.app.player.health = p_data.get('health', self.app.player.max_health)
                 self.app.player.hunger = p_data.get('hunger', self.app.player.max_hunger)
                 self.app.player.oxygen = p_data.get('oxygen', self.app.player.max_oxygen)
+                self.app.world_session_time = p_data.get('time_played', 0.0)
                 
                 pos = p_data.get('position')
                 if pos:
@@ -5382,15 +5806,20 @@ class World:
         t0 = time.perf_counter()
         
         def compile_numba():
-            from meshes.chunk_mesh_builder import build_chunk_mesh
-            import noise
             dummy_voxels = np.zeros(CHUNK_VOL, dtype='uint8')
-            Chunk.generate_terrain(dummy_voxels, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed)
+            dummy_lights = np.full(CHUNK_VOL, 255, dtype='uint8')
+            Chunk.generate_terrain(dummy_voxels, dummy_lights, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed)
+            init_chunk_lighting(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
+            update_light_place_block(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
+            update_light_remove_block(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
+            place_torch(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
             build_chunk_mesh(
                 chunk_voxels=dummy_voxels,
-                format_size=1,
+                chunk_lightmap=dummy_lights,
+                format_size=2,
                 chunk_pos=(0, 0, 0),
                 world_voxels=self.voxels,
+                world_lightmaps=self.lightmaps,
                 chunk_positions=self.chunk_positions
             )
             
@@ -5456,14 +5885,16 @@ class World:
                 chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
                 ready_count += 1
-                if ready_count >= 2 and self.app.game_state != 'LOADING':  # Process max 2 per frame to keep FPS high
+                limit = 10 if self.app.game_state == 'LOADING' else 2
+                if ready_count >= limit:  # Limit processing to prevent frame drops
                     break
 
     def process_load_queue(self):
+        processed = 0
         for item in list(self.load_queue):
             chunk, future = item
             if future.done():
-                source, elapsed_time, voxel_data, is_empty = future.result()
+                source, elapsed_time, voxel_data, lightmap_data, is_empty, needs_lighting = future.result()
                 
                 if source == 'db':
                     self.db_load_time += elapsed_time
@@ -5473,17 +5904,24 @@ class World:
                 # Only apply if the chunk wasn't unloaded while loading
                 if self.active_chunks.get(chunk.position) is chunk:
                     chunk_index = (chunk.position[0] % WORLD_W) + WORLD_W * (chunk.position[2] % WORLD_D) + WORLD_AREA * (chunk.position[1] % WORLD_H)
+                    x, y, z = chunk.position
                     
                     self.voxels[chunk_index] = voxel_data
                     chunk.voxels = self.voxels[chunk_index]
+                    
+                    self.lightmaps[chunk_index] = lightmap_data
+                    chunk.lightmap = self.lightmaps[chunk_index]
+                    
                     chunk.is_empty = is_empty
                     self.chunk_positions[chunk_index] = chunk.position
+                    
+                    if needs_lighting:
+                        init_chunk_lighting(x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
                     
                     chunk.build_mesh()
                     self.build_queue.append(chunk)
 
                     # Force remesh of neighbors to clean up boundaries
-                    x, y, z = chunk.position
                     for dx, dz in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                         n_pos = (x + dx, y, z + dz)
                         if n_pos in self.active_chunks:
@@ -5492,24 +5930,39 @@ class World:
                                 self.build_queue.append(n_chunk)
                 
                 self.load_queue.remove(item)
+                processed += 1
+                
+                # Limit chunks processed per frame to prevent FPS drops and Main Thread freezing!
+                limit = 10 if self.app.game_state == 'LOADING' else 1
+                if processed >= limit:
+                    break
 
     def _fetch_or_generate_voxels(self, x, y, z):
         t0 = time.perf_counter()
+        cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
         with self.db_lock:
-            self.cursor.execute('SELECT data FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
+            self.cursor.execute('SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
             row = self.cursor.fetchone()
 
         if row:
             voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8').copy()
             is_empty = not np.any(voxel_data)
-            return ('db', time.perf_counter() - t0, voxel_data, is_empty)
+            
+            if len(row) > 1 and row[1] is not None:
+                # Lightmap exists in DB! Skip expensive Numba BFS calculations entirely!
+                lightmap_data = np.frombuffer(zlib.decompress(row[1]), dtype='uint8').copy()
+                return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, False)
+            else:
+                # Old save file format, fallback to generating sunlight
+                lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
+                Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, cx, cy, cz, noise.perm)
+                return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
         else:
             voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
-            cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
-            import noise
-            Chunk.generate_terrain(voxel_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
+            lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
+            Chunk.generate_terrain(voxel_data, lightmap_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
             is_empty = not np.any(voxel_data)
-            return ('gen', time.perf_counter() - t0, voxel_data, is_empty)
+            return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
     def stream_chunks(self):
         render_dist = int(self.app.config.get('render_distance', 4))
@@ -5561,10 +6014,11 @@ class World:
         future = self.executor.submit(self._fetch_or_generate_voxels, x, y, z)
         self.load_queue.append((chunk, future))
 
-    def save_chunk_to_db(self, x, y, z, voxels):
+    def save_chunk_to_db(self, x, y, z, voxels, lightmap):
         data = zlib.compress(voxels.tobytes())
+        l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
         with self.db_lock:
-            self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data) VALUES (?, ?, ?, ?)', (x, y, z, data))
+            self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)', (x, y, z, data, l_data))
             self.conn.commit()
 
     def unload_chunk(self, pos):
@@ -5572,7 +6026,7 @@ class World:
             chunk = self.active_chunks.pop(pos)
 
             if not chunk.is_empty and chunk.voxels is not None:
-                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels)
+                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels, chunk.lightmap)
 
             chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
             self.chunks[chunk_index] = None
@@ -5698,7 +6152,7 @@ class World:
         # Save all currently active chunks synchronously
         for chunk in self.active_chunks.values():
             if not chunk.is_empty and chunk.voxels is not None:
-                self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels)
+                self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels, chunk.lightmap)
                 
         # Save player inventory, hotbar state & position
         p_data = {
@@ -5710,7 +6164,8 @@ class World:
             'pitch': float(self.app.player.pitch),
             'health': float(self.app.player.health),
             'hunger': float(self.app.player.hunger),
-            'oxygen': float(self.app.player.oxygen)
+            'oxygen': float(self.app.player.oxygen),
+            'time_played': float(self.app.world_session_time)
         }
         
         now = datetime.datetime.now().isoformat()

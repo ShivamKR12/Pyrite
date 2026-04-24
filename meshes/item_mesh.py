@@ -1,6 +1,7 @@
 import numpy as np
 from meshes.base_mesh import BaseMesh
 
+
 class ItemMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()

@@ -4,6 +4,7 @@ import glm
 import math
 import pygame
 
+
 # OpenGL settings
 MAJOR_VER, MINOR_VER = 3, 3
 DEPTH_SIZE = 24
@@ -55,6 +56,7 @@ MOUSE_SENSITIVITY = 0.002
 BG_COLOR = glm.vec3(0.58, 0.83, 0.99)
 
 # textures
+AIR = 0
 SAND = 1
 GRASS = 2
 DIRT = 3
@@ -66,10 +68,34 @@ GRAVEL = 8
 WOOD_PLANKS = 9
 COBBELSTONE = 10
 WATER = 11
-STICK = 12
-WOODEN_PICKAXE = 13
+GLOWSTONE = 12
+GLASS = 13
+CACTUS = 14
+STONE_BRICKS = 15
+# 16-32 are reserved for other blocks, 33+ are items
+STICK = 33
+WOODEN_PICKAXE = 34
 
 NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
+
+# Texture Array Mapping (Global UID -> Row in tex_array_2.png)
+TEXTURE_MAP = {
+    SAND: 1,
+    GRASS: 2,
+    DIRT: 3,
+    STONE: 4,
+    SNOW: 5,
+    LEAVES: 6,
+    WOOD: 7,
+    GRAVEL: 8,
+    WOOD_PLANKS: 9,
+    COBBELSTONE: 10,
+    WATER: 11,
+    GLOWSTONE: 12,
+    GLASS: 13,
+    CACTUS: 14,
+    STONE_BRICKS: 15
+}
 
 # terrain levels
 SNOW_LVL = 54
@@ -92,7 +118,11 @@ BLOCK_HARDNESS = {
     SNOW: 200,
     LEAVES: 150,
     WOOD: 1000,
-    WATER: 0 # Water can't be normally mined
+    WATER: 0, # Water can't be normally mined
+    GLOWSTONE: 100,
+    GLASS: 100,
+    CACTUS: 150,
+    STONE_BRICKS: 1500
 }
 
 # game modes

@@ -3,6 +3,8 @@ import glm
 import math
 from camera import Camera
 from settings import *
+from terrain_gen import get_height
+import noise
 
 
 class Player(Camera):
@@ -46,10 +48,7 @@ class Player(Camera):
         self.last_damage_time = 0
         self.spawn_immunity = True
 
-    def find_spawn_position(self):
-        from terrain_gen import get_height
-        import noise
-        
+    def find_spawn_position(self):        
         center_x = int(CENTER_XZ)
         center_z = int(CENTER_XZ)
         

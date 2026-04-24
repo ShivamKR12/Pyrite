@@ -14,6 +14,7 @@ def get_biome(x, z, perm_array):
     moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0, perm_array)
     return temp, moist
 
+
 @njit(cache=True)
 def get_height(x, z, perm_array):
     temp, moist = get_biome(x, z, perm_array)
@@ -202,6 +203,34 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
 
     # top
     voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
+
+
+@njit(cache=True)
+def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array):
+    for x in range(CHUNK_SIZE):
+        for z in range(CHUNK_SIZE):
+            wx = x + cx
+            wz = z + cz
+            world_height = get_height(wx, wz, perm_array)
+            for y in range(CHUNK_SIZE):
+                wy = y + cy
+                index = get_index(x, y, z)
+                if wy >= world_height:
+                    voxel_id = voxels[index]
+                    if voxel_id == AIR or voxel_id == GLASS:
+                        lightmap[index] = (15 << 4) | 0
+                    elif voxel_id == WATER:
+                        depth = world_height - wy
+                        sun = max(0, 15 + depth * 2)
+                        lightmap[index] = (sun << 4) | 0
+                    elif voxel_id == LEAVES:
+                        lightmap[index] = (14 << 4) | 0
+                    else:
+                        lightmap[index] = 0
+                else:
+                    lightmap[index] = 0
+
+
 # """
 
 

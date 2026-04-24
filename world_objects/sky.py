@@ -2,6 +2,7 @@ import numpy as np
 import moderngl as mgl
 from meshes.base_mesh import BaseMesh
 
+
 class SkyMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()

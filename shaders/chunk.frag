@@ -11,10 +11,14 @@ uniform bool u_underwater_tint;
 uniform float u_fog_density;
 uniform float u_fog_max_opacity;
 uniform float u_time;
+uniform vec3 u_sun_direction;
+uniform int u_texture_map[256];
 
 in vec2 uv;
 in float shading;
 in vec3 frag_world_pos;
+in float sun_light;
+in float block_light;
 
 flat in int face_id;
 flat in int voxel_id;
@@ -32,10 +36,29 @@ void main() {
     }
     
     face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
-    vec3 tex_col = textureGrad(u_texture_array_0, vec3(face_uv, voxel_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y)).rgb;
+    int tex_id = u_texture_map[voxel_id];
+    vec4 tex_sample = textureGrad(u_texture_array_0, vec3(face_uv, tex_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y));
     
+    if (tex_sample.a < 0.1) {
+        discard;
+    }
+    vec3 tex_col = tex_sample.rgb;
     tex_col = pow(tex_col, gamma);
-    tex_col *= shading;
+    
+    // Dynamic Block Light Flicker
+    float flicker = 1.0;
+    if (block_light > 0.5) {
+        flicker = 1.0 + 0.05 * sin(u_time * 10.0) * cos(u_time * 23.0);
+    }
+    
+    // Apply Day/Night cycle to sunlight
+    float day_light = max(0.05, u_sun_direction.y + 0.2); 
+    
+    // Final combined light
+    float final_light = max(sun_light * day_light, block_light * flicker);
+    final_light = max(0.02, pow(final_light, 1.5)); // Gamma curve for natural darkness
+
+    tex_col *= shading * final_light;
 
     // underwater effect
     if (u_underwater_tint && is_water_neighbor == 1 && voxel_id != 11) {

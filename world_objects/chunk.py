@@ -12,6 +12,7 @@ class Chunk:
         self.position = position
         self.m_model = self.get_model_matrix()
         self.voxels: np.array = None
+        self.lightmap: np.array = None
         self.mesh: ChunkMesh = None
         self.is_empty = True
 
@@ -54,9 +55,15 @@ class Chunk:
 
     @staticmethod
     @njit(cache=True)
-    def generate_terrain(voxels, cx, cy, cz, perm_array, perm_grad_array, seed):
+    def generate_terrain(voxels, lightmap, cx, cy, cz, perm_array, perm_grad_array, seed):
         np.random.seed(seed ^ cx ^ cy ^ cz)
         random.seed(seed ^ cx ^ cy ^ cz)
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
                 set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)
+        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
+
+    @staticmethod
+    @njit(cache=True)
+    def fill_initial_sunlight_only(voxels, lightmap, cx, cy, cz, perm_array):
+        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)

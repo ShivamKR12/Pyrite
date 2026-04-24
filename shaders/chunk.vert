@@ -1,6 +1,7 @@
 #version 330 core
 
 layout (location = 0) in uint packed_data;
+layout (location = 1) in uint light_data;
 
 int x, y, z;
 int ao_id;
@@ -19,6 +20,8 @@ flat out int is_water_neighbor;
 out vec2 uv;
 out float shading;
 out vec3 frag_world_pos;
+out float sun_light;
+out float block_light;
 
 const float ao_values[4] = float[4](0.1, 0.25, 0.5, 1.0);
 
@@ -66,6 +69,9 @@ void unpack(uint packed_data) {
 void main() {
     unpack(packed_data);
 
+    sun_light = float((light_data >> 4u) & 15u) / 15.0;
+    block_light = float(light_data & 15u) / 15.0;
+
     vec3 in_position = vec3(x, y, z);
     // Generate naturally tiling UVs scaled to the size of the greedy quad!
     if (face_id == 0)      uv = vec2(x, -z);
@@ -77,8 +83,8 @@ void main() {
 
     vec3 normal = face_normals[face_id];
     float diffuse = max(0.0, dot(normal, u_sun_direction));
-    float ambient = max(0.05, 0.3 * (u_sun_direction.y + 0.5)); // smooth transition for night
-    shading = (ambient + diffuse * 0.7) * ao_values[ao_id];
+    float ambient = max(0.2, 0.4 * (u_sun_direction.y + 0.5)); // Base lighting
+    shading = (ambient + diffuse * 0.4) * ao_values[ao_id];
 
     frag_world_pos = (m_model * vec4(in_position, 1.0)).xyz;
 

@@ -21,11 +21,18 @@ class ShaderProgram:
         self.set_uniforms_on_init()
 
     def set_uniforms_on_init(self):
+        # Build the fast lookup array for the shaders
+        tex_map = np.zeros(256, dtype='int32')
+        for uid, tex_id in TEXTURE_MAP.items():
+            tex_map[uid] = tex_id
+        tex_map_bytes = tex_map.tobytes()
+
         # chunk
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['u_texture_array_0'] = 1
         self.chunk['bg_color'].write(BG_COLOR)
+        if 'u_texture_map' in self.chunk: self.chunk['u_texture_map'].write(tex_map_bytes)
 
         # marker
         self.voxel_marker['m_proj'].write(self.player.m_proj)
@@ -53,6 +60,7 @@ class ShaderProgram:
         
         # ui block
         self.ui_block['u_texture_array_0'] = 1
+        if 'u_texture_map' in self.ui_block: self.ui_block['u_texture_map'].write(tex_map_bytes)
         
         # ui text
         self.ui_text['u_texture_0'] = 4
@@ -62,6 +70,7 @@ class ShaderProgram:
         self.item['m_model'].write(glm.mat4())
         self.item['u_texture_array_0'] = 1
         self.item['bg_color'].write(BG_COLOR)
+        if 'u_texture_map' in self.item: self.item['u_texture_map'].write(tex_map_bytes)
         
         # obj
         self.obj['m_proj'].write(self.player.m_proj)
@@ -71,8 +80,8 @@ class ShaderProgram:
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
-        if 'u_time' in self.chunk:
-            self.chunk['u_time'] = self.app.time
+        if 'u_time' in self.chunk: # Make sure the shader actually has the uniform before writing
+            self.chunk['u_time'] = self.app.world_session_time
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
         self.clouds['player_pos'].write(self.player.position)
@@ -87,9 +96,10 @@ class ShaderProgram:
         self.obj['m_proj'].write(self.player.m_proj)
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
+        if 'u_time' in self.sky: self.sky['u_time'] = self.app.world_session_time
 
-        time_speed = 0.1 # Adjust this to make the day longer or shorter
-        sun_y = glm.cos(self.app.time * time_speed)
+        time_speed = 0.1 # Adjust this to make the day longer or shorter based on world_session_time
+        sun_y = glm.cos(self.app.world_session_time * time_speed)
 
         is_underwater = getattr(self.player, 'head_in_water', False)
         
@@ -125,7 +135,7 @@ class ShaderProgram:
         self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
-        sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.time * time_speed)))
+        sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.world_session_time * time_speed)))
         
         # Safely write sun direction only if the shader currently supports it
         if 'u_sun_direction' in self.chunk:

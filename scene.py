@@ -10,7 +10,6 @@ from ui import HeldBlock
 from ui import InventoryUI
 from ui import DebugOverlay
 from world_objects.item import ItemManager
-from meshes.cube_mesh import CubeMesh
 
 
 class Scene:
@@ -42,6 +41,9 @@ class Scene:
         
         # skybox rendering FIRST, entirely in the background
         self.sky.render()
+
+        # Disable face culling so we can see the inside of glass and leaves!
+        self.app.ctx.enable(mgl.CULL_FACE)
 
         # chunks rendering
         self.world.render()

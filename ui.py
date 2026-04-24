@@ -7,6 +7,7 @@ import glm
 from meshes.item_mesh import ItemMesh
 from meshes.obj_mesh import ObjMesh
 
+
 class CrosshairMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()
@@ -32,6 +33,7 @@ class CrosshairMesh(BaseMesh):
         colors = [(0.9, 0.9, 0.9) for _ in vertices]
         return np.hstack([vertices, colors]).astype('float32')
 
+
 class BlockIconMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()
@@ -51,6 +53,7 @@ class BlockIconMesh(BaseMesh):
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
         return np.hstack([vertices, tex_coords]).astype('float32')
 
+
 class UIColorMesh(BaseMesh):
     def __init__(self, app):
         super().__init__()
@@ -67,6 +70,7 @@ class UIColorMesh(BaseMesh):
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
         ]
         return np.array(vertices, dtype='float32')
+
 
 class UITextMesh(BaseMesh):
     def __init__(self, app):
@@ -85,6 +89,7 @@ class UITextMesh(BaseMesh):
         ]
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
         return np.hstack([vertices, tex_coords]).astype('float32')
+
 
 class TextRenderer:
     def __init__(self, app):
@@ -121,6 +126,7 @@ class TextRenderer:
         texture.filter = (mgl.LINEAR, mgl.LINEAR)
         return texture
 
+
 class Crosshair:
     def __init__(self, app):
         self.app = app
@@ -128,6 +134,7 @@ class Crosshair:
 
     def render(self):
         self.mesh.render()
+
 
 class Hotbar:
     def __init__(self, app):
@@ -243,6 +250,7 @@ class Hotbar:
                 draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), 
                          f"O2: {int(player.oxygen)}/{player.max_oxygen}")
 
+
 class HeldBlock:
     def __init__(self, app):
         self.app = app
@@ -310,8 +318,10 @@ class HeldBlock:
             mesh.program['voxel_id'] = voxel_id
 
         self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
+        self.app.ctx.enable(mgl.CULL_FACE)   # Toggle this to enable/disable backfaces!
         mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
+
 
 class InventoryUI:
     def __init__(self, app):
@@ -337,7 +347,14 @@ class InventoryUI:
             (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4),
             (0, WOOD_PLANKS, 0, WOOD_PLANKS): (STICK, 4),
             # Wooden Pickaxe -> Top row planks, Bottom left stick
-            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1)
+            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1),
+            # Glowstone!
+            (SAND, SAND, SAND, SAND): (GLOWSTONE, 4),
+            # Glass
+            (SAND, 0, 0, 0): (GLASS, 1), (0, SAND, 0, 0): (GLASS, 1),
+            (0, 0, SAND, 0): (GLASS, 1), (0, 0, 0, SAND): (GLASS, 1),
+            # Stone Bricks
+            (STONE, STONE, STONE, STONE): (STONE_BRICKS, 4)
         }
         
         if grid in recipes:
@@ -622,6 +639,7 @@ class InventoryUI:
                 self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
                 self.text_mesh.render()
 
+
 class Button:
     def __init__(self, app, text, pos, size, action):
         self.app = app
@@ -674,6 +692,7 @@ class Button:
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
         self.text_mesh.program['u_offset'] = self.pos
         self.text_mesh.render()
+
 
 class WorldButton:
     def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action):
@@ -752,6 +771,7 @@ class WorldButton:
         render_text(f"{self.game_mode} Mode  |  Seed: {self.seed}", -0.05, 0.15)
         render_text(f"Created: {self.creation_date}  |  Last Played: {self.last_played}", -0.4, 0.12)
 
+
 class TextInput:
     def __init__(self, app, pos, size, label=""):
         self.app = app
@@ -809,6 +829,7 @@ class TextInput:
         self.text_mesh.program['u_offset'] = self.pos
         self.text_mesh.render()
         tex.release() # Release dynamic memory instantly to prevent VRAM leaking
+
 
 class Menu:
     def __init__(self, app):
@@ -1040,6 +1061,7 @@ class Menu:
             self.btn_create.render()
             self.btn_back_create.render()
 
+
 class PauseMenu:
     def __init__(self, app):
         self.app = app
@@ -1098,6 +1120,7 @@ class PauseMenu:
 
         for button in self.buttons:
             button.render()
+
 
 class Slider:
     def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None, is_int=False):
@@ -1189,6 +1212,7 @@ class Slider:
         self.text_mesh.render()
         tex.release()
 
+
 class OptionsMenu:
     def __init__(self, app):
         self.app = app
@@ -1266,6 +1290,7 @@ class OptionsMenu:
         for button in self.buttons:
             button.render()
 
+
 class DebugOverlay:
     def __init__(self, app):
         self.app = app
@@ -1296,7 +1321,7 @@ class DebugOverlay:
                 f"XYZ: {x:.3f} / {y:.5f} / {z:.3f}",
                 f"Chunk: {cx} {cy} {cz}",
                 f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
-                f"Time: {self.app.time:.2f}",
+                f"Time: {self.app.world_session_time:.2f}",
                 f"Target Block: {target}",
                 f"Game Mode: {'Survival' if player.game_mode == SURVIVAL else 'Creative'}"
             ]

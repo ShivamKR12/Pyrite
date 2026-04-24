@@ -1,5 +1,5 @@
 from settings import *
-from meshes.chunk_mesh_builder import get_chunk_index
+from lighting import update_light_place_block, place_torch, update_light_remove_block
 
 
 class VoxelHandler:
@@ -39,6 +39,12 @@ class VoxelHandler:
 
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = current_id
+
+                wx, wy, wz = new_voxel_pos
+                update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                if current_id == GLOWSTONE:
+                    place_torch(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                
                 if chunk not in self.app.scene.world.build_queue:
                     self.app.scene.world.build_queue.append(chunk)
                 self.app.sounds.play_dig(current_id)
@@ -82,7 +88,14 @@ class VoxelHandler:
 
     def remove_voxel(self):
         if self.voxel_id:
+            wx, wy, wz = self.voxel_world_pos
+            if self.voxel_id == GLOWSTONE:
+                # Strips torch block light from the area first!
+                update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                
             self.chunk.voxels[self.voxel_index] = 0
+            # Allows sunlight/blocklight from neighbors back into the new hole!
+            update_light_remove_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
 
             if self.chunk not in self.app.scene.world.build_queue:
                 self.app.scene.world.build_queue.append(self.chunk)

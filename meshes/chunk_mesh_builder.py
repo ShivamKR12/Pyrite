@@ -42,7 +42,7 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
 
 
 @njit(cache=True)
-def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
+def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
 
@@ -61,7 +61,7 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id):
         e << fg_bit |
         f << g_bit | g
     )
-    return packed_data
+    return packed_data, light_val
 
 
 @njit(cache=True)
@@ -93,22 +93,37 @@ def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_
 
 
 @njit(cache=True)
+def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_positions):
+    chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
+    if chunk_index == -1:
+        return 255
+    chunk_lights = world_lightmaps[chunk_index]
+    x, y, z = local_voxel_pos
+    voxel_index = x % CHUNK_SIZE + z % CHUNK_SIZE * CHUNK_SIZE + y % CHUNK_SIZE * CHUNK_AREA
+    return chunk_lights[voxel_index]
+
+@njit(cache=True)
+def is_transparent(voxel_id):
+    return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
+
+@njit(cache=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
     val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions)
-    # 9 is WATER. Water does not cast AO shadows!
-    return val == 0 or val == WATER
+    # Transparent blocks do not cast AO shadows!
+    return is_transparent(val)
 
 
 @njit(cache=True)
 def add_data(vertex_data, index, *vertices):
     for vertex in vertices:
-        vertex_data[index] = vertex
-        index += 1
+        vertex_data[index] = vertex[0]
+        vertex_data[index + 1] = vertex[1]
+        index += 2
     return index
 
 
 @njit(cache=True)
-def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_positions):
+def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world_voxels, world_lightmaps, chunk_positions):
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0
@@ -130,19 +145,21 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
 
                 # top face
                 neighbor_id = get_neighbor_voxel_id((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask0[x, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x, y + 1, z), (wx, wy + 1, wz), world_lightmaps, chunk_positions)
+                    mask0[x, z] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
                 # bottom face
                 neighbor_id = get_neighbor_voxel_id((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions, plane='Y')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask1[x, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x, y - 1, z), (wx, wy - 1, wz), world_lightmaps, chunk_positions)
+                    mask1[x, z] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
@@ -157,14 +174,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y + 1, z    , v_id, 0, ao0, flip_id)
-                    v1 = pack_data(x + w, y + 1, z    , v_id, 0, ao1, flip_id)
-                    v2 = pack_data(x + w, y + 1, z + h, v_id, 0, ao2, flip_id)
-                    v3 = pack_data(x    , y + 1, z + h, v_id, 0, ao3, flip_id)
+                    v0 = pack_data(x    , y + 1, z    , v_id, 0, ao0, flip_id, light_val)
+                    v1 = pack_data(x + w, y + 1, z    , v_id, 0, ao1, flip_id, light_val)
+                    v2 = pack_data(x + w, y + 1, z + h, v_id, 0, ao2, flip_id, light_val)
+                    v3 = pack_data(x    , y + 1, z + h, v_id, 0, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v1, v0, v3, v1, v3, v2)
@@ -189,14 +207,14 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
-                    flip_id = val & 1
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
 
-                    v0 = pack_data(x    , y, z    , v_id, 1, ao0, flip_id)
-                    v1 = pack_data(x + w, y, z    , v_id, 1, ao1, flip_id)
-                    v2 = pack_data(x + w, y, z + h, v_id, 1, ao2, flip_id)
-                    v3 = pack_data(x    , y, z + h, v_id, 1, ao3, flip_id)
+                    v0 = pack_data(x    , y, z    , v_id, 1, ao0, flip_id, light_val)
+                    v1 = pack_data(x + w, y, z    , v_id, 1, ao1, flip_id, light_val)
+                    v2 = pack_data(x + w, y, z + h, v_id, 1, ao2, flip_id, light_val)
+                    v3 = pack_data(x    , y, z + h, v_id, 1, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v1, v3, v0, v1, v2, v3)
@@ -219,19 +237,20 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 if not voxel_id: continue
 
                 neighbor_id = get_neighbor_voxel_id((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask0[y, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x + 1, y, z), (wx + 1, wy, wz), world_lightmaps, chunk_positions)
+                    mask0[y, z] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
                 neighbor_id = get_neighbor_voxel_id((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions, plane='X')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask1[y, z] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
-
+                    light_val = get_neighbor_light((x - 1, y, z), (wx - 1, wy, wz), world_lightmaps, chunk_positions)
+                    mask1[y, z] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
         for y in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
                 val = mask0[y, z]
@@ -245,14 +264,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x + 1, y    , z    , v_id, 2, ao0, flip_id)
-                    v1 = pack_data(x + 1, y + w, z    , v_id, 2, ao1, flip_id)
-                    v2 = pack_data(x + 1, y + w, z + h, v_id, 2, ao2, flip_id)
-                    v3 = pack_data(x + 1, y    , z + h, v_id, 2, ao3, flip_id)
+                    v0 = pack_data(x + 1, y    , z    , v_id, 2, ao0, flip_id, light_val)
+                    v1 = pack_data(x + 1, y + w, z    , v_id, 2, ao1, flip_id, light_val)
+                    v2 = pack_data(x + 1, y + w, z + h, v_id, 2, ao2, flip_id, light_val)
+                    v3 = pack_data(x + 1, y    , z + h, v_id, 2, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
@@ -277,14 +297,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x, y    , z    , v_id, 3, ao0, flip_id)
-                    v1 = pack_data(x, y + w, z    , v_id, 3, ao1, flip_id)
-                    v2 = pack_data(x, y + w, z + h, v_id, 3, ao2, flip_id)
-                    v3 = pack_data(x, y    , z + h, v_id, 3, ao3, flip_id)
+                    v0 = pack_data(x, y    , z    , v_id, 3, ao0, flip_id, light_val)
+                    v1 = pack_data(x, y + w, z    , v_id, 3, ao1, flip_id, light_val)
+                    v2 = pack_data(x, y + w, z + h, v_id, 3, ao2, flip_id, light_val)
+                    v3 = pack_data(x, y    , z + h, v_id, 3, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
@@ -307,18 +328,20 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                 if not voxel_id: continue
 
                 neighbor_id = get_neighbor_voxel_id((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask0[x, y] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x, y, z - 1), (wx, wy, wz - 1), world_lightmaps, chunk_positions)
+                    mask0[x, y] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
                 neighbor_id = get_neighbor_voxel_id((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions)
-                if (voxel_id == WATER and neighbor_id == 0) or (voxel_id != WATER and (neighbor_id == 0 or neighbor_id == WATER)):
+                if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions, plane='Z')
                     flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    mask1[x, y] = (v_id << 10) | (ao[0] << 8) | (ao[1] << 6) | (ao[2] << 4) | (ao[3] << 2) | flip_id
+                    light_val = get_neighbor_light((x, y, z + 1), (wx, wy, wz + 1), world_lightmaps, chunk_positions)
+                    mask1[x, y] = (v_id << 17) | (light_val << 9) | (ao[0] << 7) | (ao[1] << 5) | (ao[2] << 3) | (ao[3] << 1) | flip_id
 
         for x in range(CHUNK_SIZE):
             for y in range(CHUNK_SIZE):
@@ -333,14 +356,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y    , z, v_id, 4, ao0, flip_id)
-                    v1 = pack_data(x    , y + h, z, v_id, 4, ao1, flip_id)
-                    v2 = pack_data(x + w, y + h, z, v_id, 4, ao2, flip_id)
-                    v3 = pack_data(x + w, y    , z, v_id, 4, ao3, flip_id)
+                    v0 = pack_data(x    , y    , z, v_id, 4, ao0, flip_id, light_val)
+                    v1 = pack_data(x    , y + h, z, v_id, 4, ao1, flip_id, light_val)
+                    v2 = pack_data(x + w, y + h, z, v_id, 4, ao2, flip_id, light_val)
+                    v3 = pack_data(x + w, y    , z, v_id, 4, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
@@ -365,14 +389,15 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels, chunk_p
                         if done: break
                         h += 1
                     
-                    v_id = (val >> 10) & 0xFF
-                    ao0, ao1, ao2, ao3 = (val >> 8) & 3, (val >> 6) & 3, (val >> 4) & 3, (val >> 2) & 3
+                    v_id = (val >> 17) & 0xFF
+                    light_val = (val >> 9) & 0xFF
+                    ao0, ao1, ao2, ao3 = (val >> 7) & 3, (val >> 5) & 3, (val >> 3) & 3, (val >> 1) & 3
                     flip_id = val & 1
 
-                    v0 = pack_data(x    , y    , z + 1, v_id, 5, ao0, flip_id)
-                    v1 = pack_data(x    , y + h, z + 1, v_id, 5, ao1, flip_id)
-                    v2 = pack_data(x + w, y + h, z + 1, v_id, 5, ao2, flip_id)
-                    v3 = pack_data(x + w, y    , z + 1, v_id, 5, ao3, flip_id)
+                    v0 = pack_data(x    , y    , z + 1, v_id, 5, ao0, flip_id, light_val)
+                    v1 = pack_data(x    , y + h, z + 1, v_id, 5, ao1, flip_id, light_val)
+                    v2 = pack_data(x + w, y + h, z + 1, v_id, 5, ao2, flip_id, light_val)
+                    v3 = pack_data(x + w, y    , z + 1, v_id, 5, ao3, flip_id, light_val)
 
                     if v_id == WATER:
                         if flip_id: water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)

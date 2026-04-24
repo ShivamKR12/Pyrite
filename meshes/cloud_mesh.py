@@ -1,6 +1,7 @@
 from settings import *
 from meshes.base_mesh import BaseMesh
 from noise import noise2
+import noise
 
 
 class CloudMesh(BaseMesh):
@@ -16,8 +17,6 @@ class CloudMesh(BaseMesh):
 
     def get_vertex_data(self):
         cloud_data = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
-        
-        import noise
         self.gen_clouds(cloud_data, noise.perm)
 
         return self.build_mesh(cloud_data)

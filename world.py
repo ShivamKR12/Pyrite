@@ -14,8 +14,9 @@ import time
 import moderngl as mgl
 from frustum import frustum_cull_fast
 import datetime
-import random
-from noise import set_seed
+from meshes.chunk_mesh_builder import build_chunk_mesh
+from lighting import init_chunk_lighting, update_light_place_block, update_light_remove_block, place_torch
+import noise
 
 
 class World:
@@ -33,6 +34,7 @@ class World:
         self.load_queue = []
         
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
+        self.lightmaps = np.full([WORLD_VOL, CHUNK_VOL], 255, dtype='uint8')
         self.voxel_handler = VoxelHandler(self)
         self.vbo_pool = []
         self.last_player_chunk_pos = None
@@ -62,6 +64,13 @@ class World:
                                 game_mode INTEGER,
                                 creation_date TEXT,
                                 last_played TEXT)''')
+        
+        # Safely upgrade existing databases to support lightmap caching!
+        try:
+            self.cursor.execute('ALTER TABLE chunks ADD COLUMN lightmap BLOB')
+        except sqlite3.OperationalError:
+            pass # Column already exists!
+            
         self.conn.commit()
         
         # Optimize SQLite for async-like high performance disk writing
@@ -99,6 +108,7 @@ class World:
                 self.app.player.health = p_data.get('health', self.app.player.max_health)
                 self.app.player.hunger = p_data.get('hunger', self.app.player.max_hunger)
                 self.app.player.oxygen = p_data.get('oxygen', self.app.player.max_oxygen)
+                self.app.world_session_time = p_data.get('time_played', 0.0)
                 
                 pos = p_data.get('position')
                 if pos:
@@ -128,15 +138,20 @@ class World:
         t0 = time.perf_counter()
         
         def compile_numba():
-            from meshes.chunk_mesh_builder import build_chunk_mesh
-            import noise
             dummy_voxels = np.zeros(CHUNK_VOL, dtype='uint8')
-            Chunk.generate_terrain(dummy_voxels, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed)
+            dummy_lights = np.full(CHUNK_VOL, 255, dtype='uint8')
+            Chunk.generate_terrain(dummy_voxels, dummy_lights, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed)
+            init_chunk_lighting(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
+            update_light_place_block(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
+            update_light_remove_block(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
+            place_torch(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
             build_chunk_mesh(
                 chunk_voxels=dummy_voxels,
-                format_size=1,
+                chunk_lightmap=dummy_lights,
+                format_size=2,
                 chunk_pos=(0, 0, 0),
                 world_voxels=self.voxels,
+                world_lightmaps=self.lightmaps,
                 chunk_positions=self.chunk_positions
             )
             
@@ -202,14 +217,16 @@ class World:
                 chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
                 ready_count += 1
-                if ready_count >= 2 and self.app.game_state != 'LOADING':  # Process max 2 per frame to keep FPS high
+                limit = 10 if self.app.game_state == 'LOADING' else 2
+                if ready_count >= limit:  # Limit processing to prevent frame drops
                     break
 
     def process_load_queue(self):
+        processed = 0
         for item in list(self.load_queue):
             chunk, future = item
             if future.done():
-                source, elapsed_time, voxel_data, is_empty = future.result()
+                source, elapsed_time, voxel_data, lightmap_data, is_empty, needs_lighting = future.result()
                 
                 if source == 'db':
                     self.db_load_time += elapsed_time
@@ -219,17 +236,24 @@ class World:
                 # Only apply if the chunk wasn't unloaded while loading
                 if self.active_chunks.get(chunk.position) is chunk:
                     chunk_index = (chunk.position[0] % WORLD_W) + WORLD_W * (chunk.position[2] % WORLD_D) + WORLD_AREA * (chunk.position[1] % WORLD_H)
+                    x, y, z = chunk.position
                     
                     self.voxels[chunk_index] = voxel_data
                     chunk.voxels = self.voxels[chunk_index]
+                    
+                    self.lightmaps[chunk_index] = lightmap_data
+                    chunk.lightmap = self.lightmaps[chunk_index]
+                    
                     chunk.is_empty = is_empty
                     self.chunk_positions[chunk_index] = chunk.position
+                    
+                    if needs_lighting:
+                        init_chunk_lighting(x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
                     
                     chunk.build_mesh()
                     self.build_queue.append(chunk)
 
                     # Force remesh of neighbors to clean up boundaries
-                    x, y, z = chunk.position
                     for dx, dz in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                         n_pos = (x + dx, y, z + dz)
                         if n_pos in self.active_chunks:
@@ -238,24 +262,39 @@ class World:
                                 self.build_queue.append(n_chunk)
                 
                 self.load_queue.remove(item)
+                processed += 1
+                
+                # Limit chunks processed per frame to prevent FPS drops and Main Thread freezing!
+                limit = 10 if self.app.game_state == 'LOADING' else 1
+                if processed >= limit:
+                    break
 
     def _fetch_or_generate_voxels(self, x, y, z):
         t0 = time.perf_counter()
+        cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
         with self.db_lock:
-            self.cursor.execute('SELECT data FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
+            self.cursor.execute('SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
             row = self.cursor.fetchone()
 
         if row:
             voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8').copy()
             is_empty = not np.any(voxel_data)
-            return ('db', time.perf_counter() - t0, voxel_data, is_empty)
+            
+            if len(row) > 1 and row[1] is not None:
+                # Lightmap exists in DB! Skip expensive Numba BFS calculations entirely!
+                lightmap_data = np.frombuffer(zlib.decompress(row[1]), dtype='uint8').copy()
+                return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, False)
+            else:
+                # Old save file format, fallback to generating sunlight
+                lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
+                Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, cx, cy, cz, noise.perm)
+                return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
         else:
             voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
-            cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
-            import noise
-            Chunk.generate_terrain(voxel_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
+            lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
+            Chunk.generate_terrain(voxel_data, lightmap_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
             is_empty = not np.any(voxel_data)
-            return ('gen', time.perf_counter() - t0, voxel_data, is_empty)
+            return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
     def stream_chunks(self):
         render_dist = int(self.app.config.get('render_distance', 4))
@@ -307,10 +346,11 @@ class World:
         future = self.executor.submit(self._fetch_or_generate_voxels, x, y, z)
         self.load_queue.append((chunk, future))
 
-    def save_chunk_to_db(self, x, y, z, voxels):
+    def save_chunk_to_db(self, x, y, z, voxels, lightmap):
         data = zlib.compress(voxels.tobytes())
+        l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
         with self.db_lock:
-            self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data) VALUES (?, ?, ?, ?)', (x, y, z, data))
+            self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)', (x, y, z, data, l_data))
             self.conn.commit()
 
     def unload_chunk(self, pos):
@@ -318,7 +358,7 @@ class World:
             chunk = self.active_chunks.pop(pos)
 
             if not chunk.is_empty and chunk.voxels is not None:
-                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels)
+                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels, chunk.lightmap)
 
             chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
             self.chunks[chunk_index] = None
@@ -444,7 +484,7 @@ class World:
         # Save all currently active chunks synchronously
         for chunk in self.active_chunks.values():
             if not chunk.is_empty and chunk.voxels is not None:
-                self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels)
+                self.save_chunk_to_db(chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels, chunk.lightmap)
                 
         # Save player inventory, hotbar state & position
         p_data = {
@@ -456,7 +496,8 @@ class World:
             'pitch': float(self.app.player.pitch),
             'health': float(self.app.player.health),
             'hunger': float(self.app.player.hunger),
-            'oxygen': float(self.app.player.oxygen)
+            'oxygen': float(self.app.player.oxygen),
+            'time_played': float(self.app.world_session_time)
         }
         
         now = datetime.datetime.now().isoformat()

@@ -3,6 +3,7 @@ from numba import njit
 import numpy as np
 import glm
 
+
 class Frustum:
     def __init__(self, camera):
         self.cam: Camera = camera # type: ignore
@@ -37,6 +38,7 @@ class Frustum:
             return False
 
         return True
+
 
 @njit(cache=True)
 def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):

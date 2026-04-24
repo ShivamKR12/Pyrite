@@ -8,7 +8,7 @@ class Clouds:
         self.mesh = CloudMesh(app)
 
     def update(self):
-        self.mesh.program['u_time'] = self.app.time
+        self.mesh.program['u_time'] = self.app.world_session_time
 
     def render(self):
         self.mesh.render()

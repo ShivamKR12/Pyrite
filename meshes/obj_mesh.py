@@ -2,6 +2,7 @@ import numpy as np
 from meshes.base_mesh import BaseMesh
 import os
 
+
 class ObjMesh(BaseMesh):
     def __init__(self, app, obj_path, tex_id=None):
         super().__init__()
