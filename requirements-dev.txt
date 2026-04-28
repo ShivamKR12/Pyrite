@@ -1,0 +1,9 @@
+pygame-ce
+moderngl
+numba
+PyGLM
+numpy
+opensimplex[numpy]
+pytest
+sphinx
+sphinx-rtd-theme

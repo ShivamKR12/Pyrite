@@ -1,0 +1,209 @@
+from numba import njit
+import numpy as np
+from pyglm import glm
+import math
+import pygame
+import os
+import sys
+
+
+def get_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # Not running as bundle, use project root (one folder up from src/)
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+    return os.path.join(base_path, relative_path)
+
+
+# OpenGL settings
+MAJOR_VER, MINOR_VER = 3, 3
+DEPTH_SIZE = 24
+NUM_SAMPLES = 1  # antialiasing
+
+# resolution
+pygame.init()
+info = pygame.display.Info()
+WIN_RES = glm.vec2(info.current_w, info.current_h)
+pygame.quit()
+
+# ray casting
+MAX_RAY_DIST = 6
+
+# chunk
+CHUNK_SIZE = 48
+H_CHUNK_SIZE = CHUNK_SIZE // 2
+CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE
+CHUNK_VOL = CHUNK_AREA * CHUNK_SIZE
+CHUNK_SPHERE_RADIUS = H_CHUNK_SIZE * math.sqrt(3)
+
+# world
+WORLD_W, WORLD_H = 30, 5
+WORLD_D = WORLD_W
+WORLD_AREA = WORLD_W * WORLD_D
+WORLD_VOL = WORLD_AREA * WORLD_H
+
+# world center
+CENTER_XZ = WORLD_W * H_CHUNK_SIZE
+CENTER_Y = 48
+
+# camera
+ASPECT_RATIO = WIN_RES.x / WIN_RES.y
+FOV_DEG = 50
+V_FOV = glm.radians(FOV_DEG)  # vertical FOV
+H_FOV = 2 * math.atan(math.tan(V_FOV * 0.5) * ASPECT_RATIO)  # horizontal FOV
+NEAR = 0.1
+FAR = 2000.0
+PITCH_MAX = glm.radians(89)
+
+# player
+PLAYER_SPEED = 0.005
+PLAYER_ROT_SPEED = 0.003
+# PLAYER_POS = glm.vec3(CENTER_XZ, WORLD_H * CHUNK_SIZE, CENTER_XZ)
+PLAYER_POS = glm.vec3(CENTER_XZ, CHUNK_SIZE, CENTER_XZ)
+MOUSE_SENSITIVITY = 0.002
+
+# colors
+BG_COLOR = glm.vec3(0.58, 0.83, 0.99)
+
+# textures
+AIR = 0
+SAND = 1
+GRASS = 2
+DIRT = 3
+STONE = 4
+SNOW = 5
+LEAVES = 6
+WOOD = 7
+GRAVEL = 8
+WOOD_PLANKS = 9
+COBBELSTONE = 10
+WATER = 11
+GLOWSTONE = 12
+GLASS = 13
+CACTUS = 14
+STONE_BRICKS = 15
+# 16-32 are reserved for other blocks, 33+ are items
+STICK = 33
+WOODEN_PICKAXE = 34
+
+NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
+
+# Texture Array Mapping (Global UID -> Row in tex_array_2.png)
+TEXTURE_MAP = {
+    SAND: 1,
+    GRASS: 2,
+    DIRT: 3,
+    STONE: 4,
+    SNOW: 5,
+    LEAVES: 6,
+    WOOD: 7,
+    GRAVEL: 8,
+    WOOD_PLANKS: 9,
+    COBBELSTONE: 10,
+    WATER: 11,
+    GLOWSTONE: 12,
+    GLASS: 13,
+    CACTUS: 14,
+    STONE_BRICKS: 15
+}
+
+# terrain levels
+SNOW_LVL = 54
+STONE_LVL = 49
+DIRT_LVL = 40
+GRASS_LVL = 8
+SAND_LVL = 7
+
+# tree settings
+TREE_PROBABILITY = 0.02
+TREE_WIDTH, TREE_HEIGHT = 4, 8
+TREE_H_WIDTH, TREE_H_HEIGHT = TREE_WIDTH // 2, TREE_HEIGHT // 2
+
+# block hardness (ms to break)
+BLOCK_HARDNESS = {
+    SAND: 300,
+    GRASS: 450,
+    DIRT: 400,
+    STONE: 1500,
+    SNOW: 200,
+    LEAVES: 150,
+    WOOD: 1000,
+    WATER: 0, # Water can't be normally mined
+    GLOWSTONE: 100,
+    GLASS: 100,
+    CACTUS: 150,
+    STONE_BRICKS: 1500
+}
+
+# game modes
+CREATIVE = 0
+SURVIVAL = 1
+
+# player interaction
+INTERACTION_DELAY = 150 # ms delay for continuous mining/placing
+
+# ui
+HOTBAR_SCALE = 0.045
+SLOT_SCALE = 0.05
+HOTBAR_SPACING = 0.1
+HOTBAR_Y = -0.85
+
+# water
+WATER_LINE = 5.6
+WATER_AREA = 5 * CHUNK_SIZE * WORLD_W
+
+# cloud
+CLOUD_SCALE = 25
+CLOUD_HEIGHT = 200
+
+PLAYER_WIDTH  = 0.6
+PLAYER_HEIGHT = 1.8
+PLAYER_HALF_W = PLAYER_WIDTH / 2
+PLAYER_EYE_HEIGHT = 1.6
+
+GRAVITY = -0.000025
+JUMP_VELOCITY = 0.0075
+
+# survival mechanics
+MAX_HEALTH = 20
+MAX_HUNGER = 20
+MAX_OXYGEN = 20
+FALL_DAMAGE_THRESHOLD = 3.0
+VOID_DEATH_Y = -20
+HUNGER_DRAIN_SPRINT = 0.002
+HUNGER_DRAIN_WALK = 0.0005
+OXYGEN_LOSE_TIMER = 1000
+OXYGEN_GAIN_TIMER = 200
+
+# inventory
+INVENTORY_SIZE = 41 # 36 main + 4 crafting grid + 1 output
+HOTBAR_SIZE = 9
+
+# item drops
+ITEM_PICKUP_RADIUS = 2.5
+ITEM_PICKUP_DELAY = 200
+ITEM_SCALE = 0.25
+
+# ui palette & fonts
+FONT_SIZE_STATS = 20
+FONT_SIZE_SLIDERS = 30
+FONT_SIZE_BUTTONS = 40
+FONT_SIZE_SUBTITLE = 60
+FONT_SIZE_LOADING = 140
+FONT_SIZE_PAUSED = 160
+FONT_SIZE_TITLE = 180
+FONT_SIZE_DEBUG = 18
+
+UI_BG_COLOR = (0.85, 0.85, 0.85, 0.5)
+UI_HOVER_COLOR = (0.3, 0.3, 0.3, 0.8)
+UI_BUTTON_COLOR = (0.2, 0.2, 0.2, 0.7)
+UI_SLOT_BG_COLOR = (0.2, 0.2, 0.2, 0.6)
+UI_SLOT_HOVER_COLOR = (0.9, 0.9, 0.9, 0.5)
+UI_SLOT_SELECTED_FRAME_COLOR = (0.9, 0.9, 0.9, 0.9)
+UI_SLOT_SELECTED_BG_COLOR = (0.5, 0.5, 0.5, 0.7)
+UI_TEXT_COLOR = (210, 210, 210)
+UI_SHADOW_COLOR = (40, 40, 40)

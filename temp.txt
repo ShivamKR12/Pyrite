@@ -1,5 +1,253 @@
 
-===== D:\Minecraft\meshes\base_mesh.py =====
+===== D:\Pyrite\.github\workflows\build.yml =====
+
+name: Build Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # Allows you to manually click a "Build" button on GitHub!
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt pyinstaller
+        
+    - name: Build & Zip Executable
+      run: |
+        pyinstaller build.spec
+        Compress-Archive -Path dist/Pyrite -DestinationPath Pyrite_Windows.zip
+        
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v2
+      with:
+        files: Pyrite_Windows.zip
+
+===== D:\Pyrite\.github\workflows\test.yml =====
+
+name: Engine Tests
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        
+    - name: Install dependencies and test
+      run: |
+        pip install -r requirements.txt pytest
+        pytest tests/
+
+===== D:\Pyrite\docs\architecture.rst =====
+
+Engine Architecture
+===================
+
+Pyrite is built on a hybrid architecture combining Pygame (for windowing and events), ModernGL (for hardware-accelerated OpenGL rendering), and Numba (for high-performance mathematics).
+
+The Main Loop & Asynchronous Processing
+---------------------------------------
+The core game loop runs strictly on the main thread, handling player inputs, camera updates, and issuing draw calls to the GPU. Because Python's Global Interpreter Lock (GIL) prevents true multi-threading for standard Python objects, heavy engine tasks are offloaded using two techniques:
+
+1. **The ThreadPoolExecutor:** Database I/O (SQLite) and chunk streaming management are dispatched to a background thread pool.
+2. **Numba `nogil=True`:** The heaviest tasks (Procedural Noise, Greedy Meshing, and BFS Lighting) are compiled to raw LLVM machine code via Numba. By passing the `nogil=True` flag, these functions completely detach from the Python interpreter, allowing them to utilize 100% of all available physical CPU cores simultaneously without interrupting the Pygame render loop.
+
+World & Data Persistence
+------------------------
+Pyrite handles infinite terrain through a chunk-based streaming system.
+
+To prevent RAM exhaustion, active chunks are stored in a centralized dictionary (`world.active_chunks`). As the player moves, a 2D grid distance check determines which chunks fall out of the configured `render_distance`.
+
+Unloaded chunks are dynamically serialized via `zlib` compression and written to a SQLite `.db` file using Write-Ahead Logging (WAL) for async-like high-performance disk writes. The engine caches three primary states:
+
+- **Voxel Data:** The 3D array of block IDs.
+- **Lightmap Data:** The pre-calculated BFS sunlight and blocklight values, completely skipping expensive recalculations upon returning to an area.
+- **World Meta:** The player's exact XYZ coordinates, camera angles, and full inventory states.
+
+===== D:\Pyrite\docs\conf.py =====
+
+import os
+import sys
+
+# Add the src directory to the path so Sphinx can find your modules if needed later
+sys.path.insert(0, os.path.abspath('../src'))
+
+project = 'Pyrite'
+copyright = '2026, ShivamKR12'
+author = 'ShivamKR12'
+
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
+]
+
+templates_path = ['_templates']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+# The Read the Docs theme provides the collapsible sidebar, search, and next/prev links!
+html_theme = 'sphinx_rtd_theme'
+html_static_path = ['_static']
+html_css_files = ['custom.css']
+
+html_theme_options = {
+    'navigation_depth': 4,
+    'collapse_navigation': False,
+}
+
+===== D:\Pyrite\docs\index.rst =====
+
+Welcome to Pyrite's Engine Documentation!
+=========================================
+
+Pyrite is a highly-optimized, procedural 3D Voxel Engine written entirely in Python.
+
+Unlike standard Python projects, Pyrite heavily utilizes Just-In-Time (JIT) LLVM compilation via Numba to bypass the Global Interpreter Lock (GIL) and achieve near C++ performance.
+
+This documentation breaks down the core systems of the engine, explaining how terrain is generated, how light propagates, and how millions of voxels are rendered smoothly at 60+ FPS.
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Engine Systems:
+
+   architecture
+   rendering
+   terrain
+   lighting
+   survival
+
+* :ref:`search`
+
+===== D:\Pyrite\docs\lighting.rst =====
+
+Volumetric Lighting Engine
+==========================
+
+Pyrite implements a dynamic, voxel-based lighting system using a Numba-optimized Breadth-First Search (BFS) algorithm. The light map holds two separate values packed into a single byte: Sunlight (0-15) and Blocklight (0-15).
+
+Bit-Packed Propagation Queues
+-----------------------------
+Because Python object queues are too slow, the lighting engine uses flat `uint64` Numpy arrays as C-style ring buffers. When a light updates, its X, Y, Z coordinates and light-level are bit-shifted and packed into a single 64-bit integer, preventing memory overhead and bounding-box overflow issues.
+
+Sunlight Propagation
+--------------------
+When a chunk generates, sunlight is cast straight down from the sky. If a ray of sunlight hits Air, Water, or Leaves, it populates the chunk's lightmap.
+
+To optimize vertical sunlight updates when a block is broken, the engine avoids 3D volumetric expansion. Instead, it performs an O(1) vertical linear raycast, dropping the light level down the newly created hole instantly until it hits a solid surface.
+
+Blocklight (Glowstone / Torches)
+--------------------------------
+Blocklight spreads spherically, diminishing by 1 level per block. When a light source is broken:
+1. The engine strips the existing light values from the immediate area, replacing them with zeroes and queuing the dark nodes.
+2. The BFS algorithm expands outward, finding any surviving neighbor lights that were previously overlapping.
+3. Those neighbors are then re-queued to flood light back into the area.
+
+Shader Integration
+------------------
+The Fragment Shader reads the interpolated sunlight and blocklight values. It applies a dynamic day/night ambient tinting to the sunlight channel, and applies a trigonometric flicker formula to the blocklight channel to simulate glowing light sources.
+
+===== D:\Pyrite\docs\rendering.rst =====
+
+Rendering Pipeline
+==================
+
+Rendering millions of individual block faces in Python is impossible. Pyrite solves this using a multi-stage, highly optimized rendering pipeline utilizing OpenGL 3.3.
+
+Greedy Meshing
+--------------
+Instead of rendering 6 faces for every block, Pyrite's mesher scans a chunk's voxel array and groups adjacent, identical faces into massive, single polygons. 
+
+A flat grassy plain that would normally require 4,096 separate quads is compressed into a single massive quad. This drastically reduces the number of vertices uploaded to the GPU via Vertex Buffer Objects (VBOs).
+
+Vectorized Frustum Culling
+--------------------------
+Before issuing draw calls, the engine checks if a chunk is actually within the camera's field of view.
+Instead of looping through chunks in Python (which is slow), Pyrite extracts all chunk center coordinates into a flat Numpy array and passes them to a Numba JIT-compiled function. This performs vector math (dot products against the camera's forward, right, and up vectors) to cull thousands of chunks in a fraction of a millisecond.
+
+Hardware Occlusion Queries
+--------------------------
+If a chunk is behind a massive mountain, it shouldn't be rendered, even if it is inside the camera's frustum.
+
+Pyrite leverages ModernGL's hardware Occlusion Queries. The engine renders a cheap "Bounding Box" around chunks. If the GPU reports that 0 pixels of that bounding box were drawn to the screen, the engine completely skips rendering the complex, greedy-meshed geometry for that chunk on the next frame.
+
+Multi-Pass Transparency
+-----------------------
+To render water correctly:
+1. The engine first renders all opaque geometry (Stone, Dirt, Wood).
+2. The Depth Buffer is preserved, but face-culling is adjusted.
+3. The engine performs a second pass, rendering transparent geometry (Water, Glass) over the existing terrain, applying a time-based UV distortion to simulate flowing waves.
+
+Texture Atlases
+---------------
+To prevent expensive texture-binding swaps mid-frame, all block textures are combined into a single 2D Texture Array. Blocks are assigned a 1D uniform array mapping, allowing the Fragment Shader to instantly look up the correct texture layer based on the vertex's `voxel_id`.
+
+===== D:\Pyrite\docs\survival.rst =====
+
+Survival & Physics Mechanics
+============================
+
+Pyrite includes a fully functional collision and physics engine to support its survival gameplay loop.
+
+Player Physics & AABB Collisions
+--------------------------------
+The player is represented as an Axis-Aligned Bounding Box (AABB). Movement is separated into X, Y, and Z axis steps. After moving on an axis, the engine loops over the immediate surrounding voxel grid. If a solid voxel intersects with the player's AABB, the player's position is snapped exactly to the face of the voxel, resolving the collision and preventing clipping.
+
+Fluids and swimming mechanics apply a heavy dampening multiplier to the player's velocity, simulating drag, and reverse the gravity vector slightly to allow for upward swimming.
+
+Inventory & Crafting
+--------------------
+The UI handles a 41-slot inventory system (36 storage, 4 crafting grid, 1 output). Items are tracked via standard numerical arrays representing `voxel_id` and `stack_count`. 
+
+The 2x2 crafting grid matches the 4 target slots against a hardcoded dictionary tuple matrix. If a match is found, the output slot populates. When the item is extracted, 1 count is removed from all participating input slots.
+
+3D Item Entities
+----------------
+When blocks are mined, they are spawned into the world as independent 3D entities with their own velocity and gravity vectors. To protect CPU physics threads and GPU draw limits, the `ItemManager` enforces a hard cap of 256 entities, automatically despawning the oldest dropped item if the queue overflows.
+
+===== D:\Pyrite\docs\terrain.rst =====
+
+Procedural Terrain Generation
+=============================
+
+Pyrite generates infinite, deterministic worlds using highly vectorized 3D Simplex noise. By utilizing MD5 string-hashing, custom seed strings are converted into numerical seeds, ensuring the exact same world generates every time.
+
+Biome & Topography System
+-------------------------
+The terrain generation heavily relies on independent, overlapping noise frequencies:
+
+- **Continentalness:** Determines the physical landform. Very low values carve deep oceans, mid values create sweeping plains, and high values force the terrain upward into extreme mountains or steep cliffs.
+- **Temperature & Moisture:** Evaluated via separate 2D noise maps to dictate the biome surface (e.g., Snow vs. Desert Sand vs. Grass).
+
+To prevent blocky biome borders, a subtle noise "dithering" offset is applied to the temperature and moisture values, allowing blocks from adjacent biomes to naturally mix at the edges.
+
+Cave Carving
+------------
+Underground systems are carved dynamically. First, the engine determines the surface "crust" thickness. Below this layer, 3D Simplex noise is evaluated. If the 3D noise exceeds a specific threshold, the block is forced to become Air.
+
+To create natural entrances, the threshold is tapered near the surface using an `entrance_mask` noise map, forcing caves to narrow out before breaking through the grass.
+
+===== D:\Pyrite\src\meshes\base_mesh.py =====
 
 import numpy as np
 
@@ -30,7 +278,7 @@ class BaseMesh:
     def render(self):
         self.vao.render()
 
-===== D:\Minecraft\meshes\chunk_mesh.py =====
+===== D:\Pyrite\src\meshes\chunk_mesh.py =====
 
 from meshes.base_mesh import BaseMesh
 from meshes.chunk_mesh_builder import build_chunk_mesh
@@ -113,7 +361,7 @@ class ChunkMesh(BaseMesh):
         )
         return mesh
 
-===== D:\Minecraft\meshes\chunk_mesh_builder.py =====
+===== D:\Pyrite\src\meshes\chunk_mesh_builder.py =====
 
 from settings import *
 
@@ -218,9 +466,11 @@ def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_
     voxel_index = x % CHUNK_SIZE + z % CHUNK_SIZE * CHUNK_SIZE + y % CHUNK_SIZE * CHUNK_AREA
     return chunk_lights[voxel_index]
 
+
 @njit(cache=True, nogil=True)
 def is_transparent(voxel_id):
     return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
+
 
 @njit(cache=True, nogil=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
@@ -530,12 +780,12 @@ def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world
     combined_mesh = np.hstack((opaque_mesh, water_mesh))
     return combined_mesh, index // format_size, water_index // format_size
 
-===== D:\Minecraft\meshes\cloud_mesh.py =====
+===== D:\Pyrite\src\meshes\cloud_mesh.py =====
 
 from settings import *
 from meshes.base_mesh import BaseMesh
 from noise import noise2
-from numba import prange
+from numba import prange, njit
 import noise
 
 
@@ -622,7 +872,7 @@ class CloudMesh(BaseMesh):
         mesh = mesh[:index + 1]
         return mesh
 
-===== D:\Minecraft\meshes\cube_mesh.py =====
+===== D:\Pyrite\src\meshes\cube_mesh.py =====
 
 from settings import *
 from meshes.base_mesh import BaseMesh
@@ -672,7 +922,7 @@ class CubeMesh(BaseMesh):
         vertex_data = np.hstack([tex_coord_data, vertex_data])
         return vertex_data
 
-===== D:\Minecraft\meshes\item_mesh.py =====
+===== D:\Pyrite\src\meshes\item_mesh.py =====
 
 import numpy as np
 from meshes.base_mesh import BaseMesh
@@ -713,7 +963,7 @@ class ItemMesh(BaseMesh):
         ]
         return np.array(vertices, dtype='float32')
 
-===== D:\Minecraft\meshes\obj_mesh.py =====
+===== D:\Pyrite\src\meshes\obj_mesh.py =====
 
 import numpy as np
 from meshes.base_mesh import BaseMesh
@@ -819,7 +1069,10 @@ class ObjMesh(BaseMesh):
             
         return vertex_data
 
-===== D:\Minecraft\shaders\chunk.frag =====
+===== D:\Pyrite\src\meshes\__init__.py =====
+
+
+===== D:\Pyrite\src\shaders\chunk.frag =====
 
 #version 330 core
 
@@ -903,7 +1156,7 @@ void main() {
     fragColor = vec4(tex_col, alpha);
 }
 
-===== D:\Minecraft\shaders\chunk.vert =====
+===== D:\Pyrite\src\shaders\chunk.vert =====
 
 #version 330 core
 
@@ -998,7 +1251,7 @@ void main() {
     gl_Position = m_proj * m_view * vec4(frag_world_pos, 1.0);
 }
 
-===== D:\Minecraft\shaders\clouds.frag =====
+===== D:\Pyrite\src\shaders\clouds.frag =====
 
 #version 330 core
 
@@ -1028,7 +1281,7 @@ void main() {
     fragColor = vec4(col, 0.8);
 }
 
-===== D:\Minecraft\shaders\clouds.vert =====
+===== D:\Pyrite\src\shaders\clouds.vert =====
 
 #version 330 core
 
@@ -1052,7 +1305,7 @@ void main() {
     gl_Position = m_proj * m_view * vec4(pos, 1.0);
 }
 
-===== D:\Minecraft\shaders\item.frag =====
+===== D:\Pyrite\src\shaders\item.frag =====
 
 #version 330 core
 
@@ -1091,7 +1344,7 @@ void main() {
     fragColor = vec4(tex_col, 1.0);
 }
 
-===== D:\Minecraft\shaders\item.vert =====
+===== D:\Pyrite\src\shaders\item.vert =====
 
 #version 330 core
 
@@ -1125,7 +1378,7 @@ void main() {
     gl_Position = m_proj * m_view * m_model * vec4(in_position - 0.5, 1.0); // Center at origin
 }
 
-===== D:\Minecraft\shaders\obj.frag =====
+===== D:\Pyrite\src\shaders\obj.frag =====
 
 #version 330 core
 
@@ -1169,7 +1422,7 @@ void main() {
     fragColor = vec4(rgb, alpha);
 }
 
-===== D:\Minecraft\shaders\obj.vert =====
+===== D:\Pyrite\src\shaders\obj.vert =====
 
 #version 330 core
 
@@ -1199,7 +1452,7 @@ void main() {
     gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
 }
 
-===== D:\Minecraft\shaders\quad.frag =====
+===== D:\Pyrite\src\shaders\quad.frag =====
 
 #version 330 core
 
@@ -1212,7 +1465,7 @@ void main() {
     fragColor = vec4(color, 1.0);
 }
 
-===== D:\Minecraft\shaders\quad.vert =====
+===== D:\Pyrite\src\shaders\quad.vert =====
 
 #version 330 core
 
@@ -1231,7 +1484,7 @@ void main() {
     gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
 }
 
-===== D:\Minecraft\shaders\sky.frag =====
+===== D:\Pyrite\src\shaders\sky.frag =====
 
 #version 330 core
 
@@ -1285,7 +1538,7 @@ void main() {
     fragColor = vec4(color, 1.0);
 }
 
-===== D:\Minecraft\shaders\sky.vert =====
+===== D:\Pyrite\src\shaders\sky.vert =====
 
 #version 330 core
 
@@ -1303,7 +1556,7 @@ void main() {
     view_dir = (m_inv_view * vec4(t.xyz, 0.0)).xyz; // 0.0 ignores translation, keeping only rotation
 }
 
-===== D:\Minecraft\shaders\ui_block.frag =====
+===== D:\Pyrite\src\shaders\ui_block.frag =====
 
 #version 330 core
 
@@ -1325,7 +1578,7 @@ void main() {
     fragColor = tex_sample;
 }
 
-===== D:\Minecraft\shaders\ui_block.vert =====
+===== D:\Pyrite\src\shaders\ui_block.vert =====
 
 #version 330 core
 
@@ -1342,7 +1595,7 @@ void main() {
     gl_Position = vec4((in_position * u_scale) + u_offset, 0.0, 1.0);
 }
 
-===== D:\Minecraft\shaders\ui_color.frag =====
+===== D:\Pyrite\src\shaders\ui_color.frag =====
 
 #version 330 core
 
@@ -1353,7 +1606,7 @@ void main() {
     fragColor = u_color;
 }
 
-===== D:\Minecraft\shaders\ui_color.vert =====
+===== D:\Pyrite\src\shaders\ui_color.vert =====
 
 #version 330 core
 
@@ -1366,7 +1619,7 @@ void main() {
     gl_Position = vec4((in_position * u_scale) + u_offset, 0.0, 1.0);
 }
 
-===== D:\Minecraft\shaders\ui_text.frag =====
+===== D:\Pyrite\src\shaders\ui_text.frag =====
 
 #version 330 core
 
@@ -1379,7 +1632,7 @@ void main() {
     fragColor = texture(u_texture_0, uv);
 }
 
-===== D:\Minecraft\shaders\ui_text.vert =====
+===== D:\Pyrite\src\shaders\ui_text.vert =====
 
 #version 330 core
 
@@ -1396,7 +1649,7 @@ void main() {
     gl_Position = vec4((in_position * u_scale) + u_offset, 0.0, 1.0);
 }
 
-===== D:\Minecraft\shaders\voxel_marker.frag =====
+===== D:\Pyrite\src\shaders\voxel_marker.frag =====
 
 #version 330 core
 
@@ -1440,7 +1693,7 @@ void main() {
     fragColor.a = max(frame_col.a, break_col.a);
 }
 
-===== D:\Minecraft\shaders\voxel_marker.vert =====
+===== D:\Pyrite\src\shaders\voxel_marker.vert =====
 
 #version 330 core
 
@@ -1469,7 +1722,1421 @@ void main() {
     }
 }
 
-===== D:\Minecraft\world_objects\chunk.py =====
+===== D:\Pyrite\src\ui\components.py =====
+
+from settings import *
+import moderngl as mgl
+import pygame as pg
+from .meshes import UIColorMesh, UITextMesh
+from .text import TextRenderer
+
+
+class Button:
+    def __init__(self, app, text, pos, size, action):
+        self.app = app
+        self.text = text
+        self.pos = pos
+        self.size = size
+        self.action = action
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=True)
+        self.text_mesh = UITextMesh(app)
+
+        self.is_hovered = False
+        self.base_color = UI_BUTTON_COLOR
+        self.hover_color = UI_HOVER_COLOR
+
+    def check_hover(self, mouse_pos):
+        x, y = self.pos
+        w, h = self.size
+        
+        # Convert normalized screen coords to pixel coords
+        mouse_x, mouse_y = mouse_pos
+        win_w, win_h = WIN_RES
+        
+        # Convert button normalized pos/size to pixel coords
+        btn_x = (x + 1) * 0.5 * win_w
+        btn_y = (-y + 1) * 0.5 * win_h
+        btn_w = w * 0.5 * win_w
+        btn_h = h * 0.5 * win_h
+        
+        self.is_hovered = btn_x - btn_w < mouse_x < btn_x + btn_w and \
+                          btn_y - btn_h < mouse_y < btn_y + btn_h
+        return self.is_hovered
+
+    def render(self):
+        # 1. Render background
+        color = self.hover_color if self.is_hovered else self.base_color
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = color
+        self.color_mesh.render()
+
+        # 2. Render text
+        tex = self.text_renderer.get_texture(self.text)
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = self.size[1] * 0.5
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.render()
+
+
+class WorldButton:
+    def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action):
+        self.app = app
+        self.save_name = save_name
+        self.display_name = display_name
+        self.seed = seed
+        self.game_mode = "Survival" if game_mode == 1 else "Creative"
+        self.creation_date = creation_date
+        self.last_played = last_played
+        self.pos = pos
+        self.size = size
+        self.action = action
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=True)
+        self.text_mesh = UITextMesh(app)
+
+        self.is_hovered = False
+        self.base_color = UI_BUTTON_COLOR
+        self.hover_color = UI_HOVER_COLOR
+        
+        import os
+        thumb_path = f'saves/{save_name}_thumb.png'
+        if os.path.exists(thumb_path):
+            img = pg.image.load(thumb_path).convert_alpha()
+        else:
+            img = pg.Surface((320, 180), pg.SRCALPHA)
+            img.fill((80, 80, 80, 255))
+        
+        self.thumb_tex = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
+        self.thumb_tex.filter = (mgl.LINEAR, mgl.LINEAR)
+
+    def check_hover(self, mouse_pos):
+        x, y = self.pos
+        w, h = self.size
+        win_w, win_h = WIN_RES
+        btn_x = (x + 1) * 0.5 * win_w
+        btn_y = (-y + 1) * 0.5 * win_h
+        btn_w = w * 0.5 * win_w
+        btn_h = h * 0.5 * win_h
+        
+        self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
+                          btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+        return self.is_hovered
+
+    def render(self):
+        color = self.hover_color if self.is_hovered else self.base_color
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = color
+        self.color_mesh.render()
+
+        self.thumb_tex.use(location=4)
+        thumb_h = self.size[1] * 0.8
+        thumb_w = thumb_h * (self.thumb_tex.width / self.thumb_tex.height) / ASPECT_RATIO
+        thumb_x = self.pos[0] - self.size[0] + 0.02 + thumb_w
+        self.text_mesh.program['u_scale'] = (thumb_w, thumb_h)
+        self.text_mesh.program['u_offset'] = (thumb_x, self.pos[1])
+        self.text_mesh.render()
+        
+        text_x = thumb_x + thumb_w + 0.02
+        
+        def render_text(text, offset_y, scale_h):
+            tex = self.text_renderer.get_dynamic_texture(text)
+            tex.use(location=4)
+            scale_y = self.size[1] * scale_h
+            scale_x = scale_y * (tex.width / tex.height) / ASPECT_RATIO
+            self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+            self.text_mesh.program['u_offset'] = (text_x + scale_x, self.pos[1] + self.size[1] * offset_y)
+            self.text_mesh.render()
+            tex.release()
+
+        render_text(self.display_name, 0.4, 0.25)
+        render_text(f"{self.game_mode} Mode  |  Seed: {self.seed}", -0.05, 0.15)
+        render_text(f"Created: {self.creation_date}  |  Last Played: {self.last_played}", -0.4, 0.12)
+
+
+class TextInput:
+    def __init__(self, app, pos, size, label=""):
+        self.app = app
+        self.pos = pos
+        self.size = size
+        self.label = label
+        self.text = ""
+        self.is_active = False
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=False)
+        self.text_mesh = UITextMesh(app)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pg.mouse.get_pos()
+            x, y = self.pos
+            w, h = self.size
+            win_w, win_h = WIN_RES
+            btn_x = (x + 1) * 0.5 * win_w
+            btn_y = (-y + 1) * 0.5 * win_h
+            btn_w = w * 0.5 * win_w
+            btn_h = h * 0.5 * win_h
+            self.is_active = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
+                             btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+
+        if self.is_active and event.type == pg.KEYDOWN:
+            if event.key == pg.K_BACKSPACE:
+                self.text = self.text[:-1]
+            elif event.key == pg.K_RETURN or event.key == pg.K_ESCAPE:
+                self.is_active = False
+            else:
+                if len(self.text) < 20 and event.unicode.isprintable():
+                    self.text += event.unicode
+
+    def render(self):
+        color = (0.2, 0.2, 0.2, 0.9) if self.is_active else (0.1, 0.1, 0.1, 0.7)
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = color
+        self.color_mesh.render()
+
+        display_text = self.text + ("_" if self.is_active and (pg.time.get_ticks() // 500) % 2 == 0 else "")
+        if not display_text and not self.is_active:
+            display_text = self.label
+            
+        tex = self.text_renderer.get_dynamic_texture(display_text)
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = self.size[1] * 0.6
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.render()
+        tex.release() # Release dynamic memory instantly to prevent VRAM leaking
+
+
+class Slider:
+    def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None, is_int=False):
+        self.app = app
+        self.text = text
+        self.pos = pos
+        self.size = size
+        self.min_val = min_val
+        self.max_val = max_val
+        self.config_key = config_key
+        self.action = action
+        self.is_int = is_int
+
+        self.color_mesh = UIColorMesh(app)
+        self.text_renderer = TextRenderer(app)
+        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_SLIDERS, bold=True)
+        self.text_mesh = UITextMesh(app)
+
+        self.is_hovered = False
+        self.is_dragging = False
+
+    def update(self):
+        mouse_pos = pg.mouse.get_pos()
+        x, y = self.pos
+        w, h = self.size
+        win_w, win_h = WIN_RES
+        
+        btn_x = (x + 1) * 0.5 * win_w
+        btn_y = (-y + 1) * 0.5 * win_h
+        btn_w = w * 0.5 * win_w
+        btn_h = h * 0.5 * win_h
+        
+        self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
+                          btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+
+        if self.is_dragging:
+            if not pg.mouse.get_pressed()[0]:
+                self.is_dragging = False
+                self.app.save_config()
+            else:
+                progress = (mouse_pos[0] - (btn_x - btn_w)) / (btn_w * 2)
+                progress = max(0.0, min(1.0, progress))
+                val = self.min_val + progress * (self.max_val - self.min_val)
+                
+                if self.is_int:
+                    val = int(round(val))
+                elif self.config_key == 'sensitivity':
+                    val = round(val, 4)
+                    
+                self.app.config[self.config_key] = val
+                if self.action:
+                    self.action(val)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.is_hovered:
+                self.is_dragging = True
+
+    def render(self):
+        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
+        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8)
+        self.color_mesh.render()
+        
+        val = self.app.config[self.config_key]
+        progress = (val - self.min_val) / (self.max_val - self.min_val)
+        
+        fill_w = self.size[0] * progress
+        fill_x = self.pos[0] - self.size[0] + fill_w
+        
+        self.color_mesh.program['u_scale'] = (fill_w, self.size[1])
+        self.color_mesh.program['u_offset'] = (fill_x, self.pos[1])
+        self.color_mesh.program['u_color'] = (0.2, 0.6, 0.3, 0.8)
+        self.color_mesh.render()
+
+        if self.is_int or self.config_key == 'fov':
+            display_val = int(val)
+        else:
+            display_val = f"{val:.4f}"
+            
+        tex = self.text_renderer.get_dynamic_texture(f"{self.text}: {display_val}")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = self.size[1] * 0.6
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.render()
+        tex.release()
+
+===== D:\Pyrite\src\ui\hud.py =====
+
+from settings import *
+import moderngl as mgl
+import pygame as pg
+from pyglm import glm
+from meshes.item_mesh import ItemMesh
+from meshes.obj_mesh import ObjMesh
+from .meshes import CrosshairMesh, BlockIconMesh, UIColorMesh, UITextMesh
+from .text import TextRenderer
+
+
+class Crosshair:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = CrosshairMesh(app)
+
+    def render(self):
+        self.mesh.render()
+
+
+class Hotbar:
+    def __init__(self, app):
+        self.app = app
+        self.block_mesh = BlockIconMesh(app)
+        self.color_mesh = UIColorMesh(app)
+        self.text_mesh = UITextMesh(app)
+        self.text_renderer = TextRenderer(app)
+        
+    def render(self):
+        player = self.app.player
+        s = HOTBAR_SCALE
+        slot_s = SLOT_SCALE
+        gap = 0.01
+        x_spacing = (slot_s * 2 + gap) / ASPECT_RATIO
+        start_x = -4 * x_spacing
+        y = HOTBAR_Y
+        
+        # 1. Draw the transparent slot backgrounds and selection frame
+        for i in range(HOTBAR_SIZE):
+            x = start_x + i * x_spacing
+            is_selected = (i == player.hotbar_index)
+            
+            if is_selected:
+                # Draw white outline frame
+                sel_s = slot_s + 0.006
+                self.color_mesh.program['u_scale'] = (sel_s / ASPECT_RATIO, sel_s)
+                self.color_mesh.program['u_offset'] = (x, y)
+                self.color_mesh.program['u_color'] = UI_SLOT_SELECTED_FRAME_COLOR
+                self.color_mesh.render()
+                
+                # Draw slightly lighter inner background
+                self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
+                self.color_mesh.program['u_color'] = UI_SLOT_SELECTED_BG_COLOR
+                self.color_mesh.render()
+            else:
+                # Draw standard dark background
+                self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
+                self.color_mesh.program['u_offset'] = (x, y)
+                self.color_mesh.program['u_color'] = UI_SLOT_BG_COLOR
+                self.color_mesh.render()
+
+        # 2. Draw the 3D block icons inside the slots
+        for i in range(HOTBAR_SIZE):
+            voxel_id = player.inventory[i]
+            if voxel_id != 0:
+                if voxel_id in (STICK, WOODEN_PICKAXE):
+                    self.text_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+                    self.text_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
+                    self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
+                    self.text_mesh.render()
+                    self.text_mesh.program['u_texture_0'] = 4 # Restore font texture
+                else:
+                    self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+                    self.block_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
+                    self.block_mesh.program['voxel_id'] = voxel_id
+                    self.block_mesh.render()
+
+        # 3. Draw the stack counts
+        for i in range(HOTBAR_SIZE):
+            count = player.inventory_counts[i]
+            if count > 0:
+                tex = self.text_renderer.get_texture(str(count))
+                tex.use(location=4)
+                
+                tex_w, tex_h = tex.size
+                scale_y = 0.025
+                scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+                
+                offset_x = start_x + i * x_spacing + 0.015
+                offset_y = y - 0.025
+                
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.text_mesh.render()
+
+        # 4. Draw Survival Stats (Health, Hunger, Oxygen)
+        if player.game_mode == SURVIVAL:
+            # Helper to draw a stat bar
+            def draw_bar(ratio, offset_x, offset_y, bg_color, fg_color, text):
+                # Background
+                self.color_mesh.program['u_scale'] = (0.2, 0.01)
+                self.color_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.color_mesh.program['u_color'] = bg_color
+                self.color_mesh.render()
+                
+                # Foreground
+                if ratio > 0:
+                    self.color_mesh.program['u_scale'] = (0.2 * ratio, 0.01)
+                    self.color_mesh.program['u_offset'] = (offset_x - 0.2*(1.0 - ratio), offset_y)
+                    self.color_mesh.program['u_color'] = fg_color
+                    self.color_mesh.render()
+                    
+                # Text
+                tex = self.text_renderer.get_texture(text)
+                tex.use(location=4)
+                scale_y = 0.015
+                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
+                self.text_mesh.render()
+
+            health_ratio = max(0.0, player.health / player.max_health)
+            draw_bar(health_ratio, -0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.1, 0.1, 0.9), 
+                     f"HP: {int(player.health)}/{player.max_health}")
+
+            hunger_ratio = max(0.0, player.hunger / player.max_hunger)
+            draw_bar(hunger_ratio, 0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.5, 0.1, 0.9), 
+                     f"Food: {int(player.hunger)}/{player.max_hunger}")
+
+            if player.oxygen < player.max_oxygen:
+                oxy_ratio = max(0.0, player.oxygen / player.max_oxygen)
+                draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), 
+                         f"O2: {int(player.oxygen)}/{player.max_oxygen}")
+
+
+class HeldBlock:
+    def __init__(self, app):
+        self.app = app
+        self.mesh = ItemMesh(app)
+        self.stick_mesh = ObjMesh(app, get_path('assets/stick/stick.obj'), tex_id=5)
+        self.pickaxe_mesh = ObjMesh(app, get_path('assets/wooden_pickaxe/wooden_pickaxe.obj'))
+
+    def render(self):
+        player = self.app.player
+        voxel_id = player.inventory[player.hotbar_index]
+        if voxel_id == 0:
+            return
+
+        # 1. View bobbing
+        bob_offset_y = glm.sin(player.step_counter) * 0.03
+        bob_offset_x = glm.cos(player.step_counter * 0.5) * 0.02
+
+        # 2. Swinging animation
+        swing_offset_y = 0.0
+        swing_offset_z = 0.0
+        swing_rot_x = 0.0
+        
+        if player.mining_time > 0.0:
+            swing_val = max(0, glm.sin(player.mining_time * 0.03))
+            swing_offset_y = swing_val * 0.15
+            swing_offset_z = -swing_val * 0.1
+            swing_rot_x = swing_val * 0.4
+        else:
+            time_since_place = pg.time.get_ticks() - player.interaction_timer
+            if time_since_place < player.interaction_delay:
+                progress = time_since_place / player.interaction_delay
+                swing_val = glm.sin(progress * glm.pi())
+                swing_offset_y = swing_val * 0.2
+                swing_rot_x = swing_val * 0.3
+
+        # 3. Position the block in the bottom right (in local camera space)
+        pos = glm.vec3(0.5 + bob_offset_x, -0.4 + bob_offset_y - swing_offset_y, -1.0 + swing_offset_z)
+        
+        # Compute Model Matrix in World Space for perfectly accurate lighting
+        m_model = glm.inverse(player.m_view)
+        m_model = glm.translate(m_model, pos)
+
+        if voxel_id == STICK:
+            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
+            m_model = glm.scale(m_model, glm.vec3(0.5))
+            mesh = self.stick_mesh
+        elif voxel_id == WOODEN_PICKAXE:
+            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
+            m_model = glm.scale(m_model, glm.vec3(0.35))
+            mesh = self.pickaxe_mesh
+        else:
+            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
+            m_model = glm.scale(m_model, glm.vec3(0.35))
+            mesh = self.mesh
+
+        mesh.program['m_proj'].write(player.m_proj)
+        mesh.program['m_view'].write(player.m_view) 
+        mesh.program['m_model'].write(m_model)
+        if 'voxel_id' in mesh.program:
+            mesh.program['voxel_id'] = voxel_id
+
+        self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
+        self.app.ctx.enable(mgl.CULL_FACE)   # Toggle this to enable/disable backfaces!
+        mesh.render()
+        self.app.ctx.enable(mgl.DEPTH_TEST)
+
+
+class InventoryUI:
+    def __init__(self, app):
+        self.app = app
+        self.block_mesh = BlockIconMesh(app)
+        self.color_mesh = UIColorMesh(app)
+        self.text_mesh = UITextMesh(app)
+        self.text_renderer = TextRenderer(app)
+        
+        self.drag_id = 0
+        self.drag_count = 0
+        self.drag_start_pos = (0, 0)
+
+    def update_crafting(self):
+        player = self.app.player
+        grid = tuple(player.inventory[36:40]) # Tuple is hashable for dictionary lookup
+        
+        recipes = {
+            # Wood -> 4 Planks
+            (WOOD, 0, 0, 0): (WOOD_PLANKS, 4), (0, WOOD, 0, 0): (WOOD_PLANKS, 4),
+            (0, 0, WOOD, 0): (WOOD_PLANKS, 4), (0, 0, 0, WOOD): (WOOD_PLANKS, 4),
+            # 2 Planks -> 4 Sticks (Vertical)
+            (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4),
+            (0, WOOD_PLANKS, 0, WOOD_PLANKS): (STICK, 4),
+            # Wooden Pickaxe -> Top row planks, Bottom left stick
+            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1),
+            # Glowstone!
+            (SAND, SAND, SAND, SAND): (GLOWSTONE, 4),
+            # Glass
+            (SAND, 0, 0, 0): (GLASS, 1), (0, SAND, 0, 0): (GLASS, 1),
+            (0, 0, SAND, 0): (GLASS, 1), (0, 0, 0, SAND): (GLASS, 1),
+            # Stone Bricks
+            (STONE, STONE, STONE, STONE): (STONE_BRICKS, 4)
+        }
+        
+        if grid in recipes:
+            player.inventory[40], player.inventory_counts[40] = recipes[grid]
+        else:
+            player.inventory[40], player.inventory_counts[40] = 0, 0
+
+    def get_slot_pos(self, i):
+        gap = 0.01
+        x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
+        y_spacing = SLOT_SCALE * 2 + gap
+        
+        if i < HOTBAR_SIZE:
+            col = i % HOTBAR_SIZE
+            x = -4 * x_spacing + col * x_spacing
+            y = HOTBAR_Y # Hotbar
+        elif i < 36:
+            col = i % HOTBAR_SIZE
+            row = 2 - ((i - HOTBAR_SIZE) // HOTBAR_SIZE) 
+            y = HOTBAR_Y + (row + 1.5) * y_spacing
+            x = -4 * x_spacing + col * x_spacing
+        elif i < 40: # 2x2 Crafting Grid
+            grid_idx = i - 36
+            x = 0.5 * x_spacing + (grid_idx % 2) * x_spacing
+            y = HOTBAR_Y + (6.0 - (grid_idx // 2)) * y_spacing
+        else: # Output Slot
+            x = 3.0 * x_spacing
+            y = HOTBAR_Y + 5.5 * y_spacing
+        return x, y
+
+    def get_slot_at_mouse(self, mouse_pos):
+        mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
+        my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+        
+        slot_w = SLOT_SCALE / ASPECT_RATIO
+        slot_h = SLOT_SCALE
+        
+        for i in range(INVENTORY_SIZE):
+            sx, sy = self.get_slot_pos(i)
+            if sx - slot_w < mx < sx + slot_w and sy - slot_h < my < sy + slot_h:
+                return i
+        return -1
+
+    def get_closest_valid_slot(self, mouse_pos, drag_id, drag_count):
+        mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
+        my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+        
+        best_i = -1
+        best_dist_sq = float('inf')
+        gap = 0.01
+        y_spacing = SLOT_SCALE * 2 + gap
+        # Max snap distance based on UI scale
+        max_dist_sq = (y_spacing * 1.5) ** 2 
+        
+        player = self.app.player
+        
+        for i in range(INVENTORY_SIZE):
+            if i == 40: continue # Prevent dropping items into the output slot
+            sx, sy = self.get_slot_pos(i)
+            dx = (mx - sx) * ASPECT_RATIO
+            dy = my - sy
+            dist_sq = dx*dx + dy*dy
+            
+            if dist_sq < best_dist_sq and dist_sq < max_dist_sq:
+                slot_id = player.inventory[i]
+                if slot_id == 0 or (slot_id == drag_id and player.inventory_counts[i] < 64):
+                    best_i = i
+                    best_dist_sq = dist_sq
+        return best_i
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN:
+            i = self.get_slot_at_mouse(pg.mouse.get_pos())
+            if i != -1:
+                player = self.app.player
+                slot_id = player.inventory[i]
+                slot_count = player.inventory_counts[i]
+                
+                if event.button == 1: # Left click (Pick up stack / Swap / Place stack)
+                    if i == 40: # Output slot logic
+                        if slot_id != 0:
+                            can_take = False
+                            if self.drag_id == 0:
+                                self.drag_id = slot_id
+                                self.drag_count = slot_count
+                                can_take = True
+                            elif self.drag_id == slot_id and self.drag_count + slot_count <= 64:
+                                self.drag_count += slot_count
+                                can_take = True
+                                
+                            if can_take: # Consume 1 from each crafting input!
+                                for c in range(36, 40):
+                                    if player.inventory_counts[c] > 0:
+                                        player.inventory_counts[c] -= 1
+                                        if player.inventory_counts[c] <= 0:
+                                            player.inventory[c] = 0
+                                self.drag_start_pos = pg.mouse.get_pos()
+                    else:
+                        if self.drag_id == 0:
+                            if slot_id != 0:
+                                self.drag_id = slot_id
+                                self.drag_count = slot_count
+                                player.inventory[i] = 0
+                                player.inventory_counts[i] = 0
+                                self.drag_start_pos = pg.mouse.get_pos()
+                        else:
+                            if slot_id == 0:
+                                player.inventory[i] = self.drag_id
+                                player.inventory_counts[i] = self.drag_count
+                                self.drag_id = 0
+                                self.drag_count = 0
+                            elif slot_id == self.drag_id:
+                                space = 64 - slot_count
+                                if space >= self.drag_count:
+                                    player.inventory_counts[i] += self.drag_count
+                                    self.drag_id = 0
+                                    self.drag_count = 0
+                                else:
+                                    player.inventory_counts[i] = 64
+                                    self.drag_count -= space
+                            else:
+                                player.inventory[i], self.drag_id = self.drag_id, slot_id
+                                player.inventory_counts[i], self.drag_count = self.drag_count, slot_count
+                                self.drag_start_pos = pg.mouse.get_pos()
+                    self.update_crafting()
+                elif event.button == 3: # Right click (Split half / Place one)
+                    if i != 40:
+                        if self.drag_id == 0:
+                            if slot_id != 0:
+                                half = slot_count - (slot_count // 2)
+                                self.drag_id = slot_id
+                                self.drag_count = half
+                                player.inventory_counts[i] -= half
+                                if player.inventory_counts[i] <= 0:
+                                    player.inventory[i] = 0
+                                self.drag_start_pos = pg.mouse.get_pos()
+                        else:
+                            if slot_id == 0:
+                                player.inventory[i] = self.drag_id
+                                player.inventory_counts[i] = 1
+                                self.drag_count -= 1
+                                if self.drag_count <= 0: self.drag_id = 0
+                            elif slot_id == self.drag_id and slot_count < 64:
+                                player.inventory_counts[i] += 1
+                                self.drag_count -= 1
+                                if self.drag_count <= 0: self.drag_id = 0
+                    self.update_crafting()
+        elif event.type == pg.MOUSEBUTTONUP:
+            if event.button == 1 and self.drag_id != 0:
+                mouse_pos = pg.mouse.get_pos()
+                dx = mouse_pos[0] - self.drag_start_pos[0]
+                dy = mouse_pos[1] - self.drag_start_pos[1]
+                
+                # Check if mouse moved more than 10 pixels (to separate drag from standard click)
+                if dx*dx + dy*dy > 100: 
+                    i = self.get_closest_valid_slot(mouse_pos, self.drag_id, self.drag_count)
+                    if i != -1:
+                        player = self.app.player
+                        slot_id = player.inventory[i]
+                        slot_count = player.inventory_counts[i]
+                        
+                        if slot_id == 0:
+                            player.inventory[i] = self.drag_id
+                            player.inventory_counts[i] = self.drag_count
+                            self.drag_id = 0
+                            self.drag_count = 0
+                        elif slot_id == self.drag_id:
+                            space = 64 - slot_count
+                            if space >= self.drag_count:
+                                player.inventory_counts[i] += self.drag_count
+                                self.drag_id = 0
+                                self.drag_count = 0
+                            else:
+                                player.inventory_counts[i] = 64
+                                self.drag_count -= space
+                    self.update_crafting()
+
+    def close(self):
+        if self.drag_id != 0:
+            player = self.app.player
+            
+            # Eject crafting items back into inventory (or drop them!)
+            for i in range(36, 40):
+                if player.inventory[i] != 0:
+                    for _ in range(player.inventory_counts[i]):
+                        if not player.add_item(player.inventory[i]):
+                            self.app.scene.item_manager.add_item(player.position, player.inventory[i])
+                    player.inventory[i], player.inventory_counts[i] = 0, 0
+            self.update_crafting()
+            
+            # Re-inject leftover dragged item or drop it!
+            while self.drag_count > 0:
+                if not player.add_item(self.drag_id):
+                    # Inventory completely full, drop in the world
+                    for _ in range(self.drag_count):
+                        self.app.scene.item_manager.add_item(player.position, self.drag_id)
+                    break
+                self.drag_count -= 1
+            self.drag_id = 0
+            self.drag_count = 0
+
+    def render(self):
+        gap = 0.01
+        x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
+        y_spacing = SLOT_SCALE * 2 + gap
+        
+        # Unified background for the entire inventory and crafting menu
+        bg_w = 4.5 * x_spacing + 0.02
+        bg_h = 3.0 * y_spacing + 0.02
+
+        self.color_mesh.program['u_scale'] = (bg_w, bg_h)
+        self.color_mesh.program['u_offset'] = (0.0, HOTBAR_Y + 4.0 * y_spacing)
+        self.color_mesh.program['u_color'] = UI_BG_COLOR
+        self.color_mesh.render()
+
+        player = self.app.player
+        hover_idx = self.get_slot_at_mouse(pg.mouse.get_pos())
+        
+        for i in range(INVENTORY_SIZE):
+            x, y = self.get_slot_pos(i)
+            s = SLOT_SCALE
+            
+            if i == hover_idx:
+                self.color_mesh.program['u_scale'] = ((s+0.005) / ASPECT_RATIO, s+0.005)
+                self.color_mesh.program['u_offset'] = (x, y)
+                self.color_mesh.program['u_color'] = UI_SLOT_HOVER_COLOR
+                self.color_mesh.render()
+
+            self.color_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+            self.color_mesh.program['u_offset'] = (x, y)
+            self.color_mesh.program['u_color'] = UI_SLOT_BG_COLOR
+            self.color_mesh.render()
+
+            voxel_id = player.inventory[i]
+            if voxel_id != 0:
+                if voxel_id in (STICK, WOODEN_PICKAXE):
+                    self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                    self.text_mesh.program['u_offset'] = (x, y)
+                    self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
+                    self.text_mesh.render()
+                    self.text_mesh.program['u_texture_0'] = 4
+                else:
+                    self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                    self.block_mesh.program['u_offset'] = (x, y)
+                    self.block_mesh.program['voxel_id'] = voxel_id
+                    self.block_mesh.render()
+
+            count = player.inventory_counts[i]
+            if count > 0:
+                tex = self.text_renderer.get_texture(str(count))
+                tex.use(location=4)
+                scale_y = 0.025
+                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (x + 0.015, y - 0.025)
+                self.text_mesh.render()
+
+        # Dragged Item Render (Follows Mouse Cursor)
+        if self.drag_id != 0:
+            mouse_pos = pg.mouse.get_pos()
+            mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
+            my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+            
+            if self.drag_id in (STICK, WOODEN_PICKAXE):
+                self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                self.text_mesh.program['u_offset'] = (mx, my)
+                self.text_mesh.program['u_texture_0'] = 5 if self.drag_id == STICK else 6
+                self.text_mesh.render()
+                self.text_mesh.program['u_texture_0'] = 4
+            else:
+                self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
+                self.block_mesh.program['u_offset'] = (mx, my)
+                self.block_mesh.program['voxel_id'] = self.drag_id
+                self.block_mesh.render()
+            
+            if self.drag_count > 0:
+                tex = self.text_renderer.get_texture(str(self.drag_count))
+                tex.use(location=4)
+                scale_y = 0.025
+                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
+                self.text_mesh.render()
+
+
+class DebugOverlay:
+    def __init__(self, app):
+        self.app = app
+        self.font = pg.font.SysFont('arial', FONT_SIZE_DEBUG, bold=True)
+        self.text_mesh = UITextMesh(app)
+        self.dynamic_texture = None
+        self.last_update = 0
+
+    def render(self):
+        current_time = pg.time.get_ticks()
+        if current_time - self.last_update > 250 or self.dynamic_texture is None:
+            self.last_update = current_time
+            
+            player = self.app.player
+            handler = self.app.scene.world.voxel_handler
+            
+            fps = self.app.clock.get_fps()
+            x, y, z = player.position
+            cx, cy, cz = int(x // CHUNK_SIZE), int(y // CHUNK_SIZE), int(z // CHUNK_SIZE)
+            yaw, pitch = glm.degrees(player.yaw), glm.degrees(player.pitch)
+            
+            target = "Air"
+            if handler.voxel_id:
+                target = f"ID: {handler.voxel_id} at {int(handler.voxel_world_pos.x)} {int(handler.voxel_world_pos.y)} {int(handler.voxel_world_pos.z)}"
+    
+            lines = [
+                f"Pyrite (FPS: {fps:.0f})",
+                f"XYZ: {x:.3f} / {y:.5f} / {z:.3f}",
+                f"Chunk: {cx} {cy} {cz}",
+                f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
+                f"Time: {self.app.world_session_time:.2f}",
+                f"Target Block: {target}",
+                f"Game Mode: {'Survival' if player.game_mode == SURVIVAL else 'Creative'}"
+            ]
+    
+            surfaces = []
+            for line in lines:
+                shadow = self.font.render(line, True, (60, 60, 60))
+                text = self.font.render(line, True, (220, 220, 220))
+                merged = pg.Surface((text.get_width() + 2, text.get_height() + 2), pg.SRCALPHA)
+                merged.blit(shadow, (2, 2))
+                merged.blit(text, (0, 0))
+                surfaces.append(merged)
+                
+            max_w = max(s.get_width() for s in surfaces)
+            total_h = sum(s.get_height() for s in surfaces)
+            
+            bg_surf = pg.Surface((max_w + 10, total_h + 10), pg.SRCALPHA)
+            bg_surf.fill((0, 0, 0, 120))
+            
+            curr_y = 5
+            for s in surfaces:
+                bg_surf.blit(s, (5, curr_y))
+                curr_y += s.get_height()
+            
+            if self.dynamic_texture:
+                self.dynamic_texture.release() # Prevent VRAM leaks
+                
+            self.dynamic_texture = self.app.ctx.texture(bg_surf.get_size(), 4, pg.image.tobytes(bg_surf, 'RGBA', True))
+            self.dynamic_texture.filter = (mgl.NEAREST, mgl.NEAREST)
+            
+        self.dynamic_texture.use(location=4)
+        
+        tex_w, tex_h = self.dynamic_texture.size
+        scale_y = (tex_h / WIN_RES.y)
+        scale_x = (tex_w / WIN_RES.x)
+        
+        x_offset = -1.0 + scale_x
+        y_offset = 1.0 - scale_y
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = (x_offset, y_offset)
+        self.text_mesh.render()
+
+===== D:\Pyrite\src\ui\menus.py =====
+
+from settings import *
+import pygame as pg
+import moderngl as mgl
+from pyglm import glm
+from .components import Button, WorldButton, TextInput, Slider
+from .meshes import UIColorMesh, UITextMesh
+from .text import TextRenderer
+
+
+class Menu:
+    def __init__(self, app):
+        self.app = app
+        self.title_renderer = TextRenderer(app)
+        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_TITLE, bold=True)
+        self.title_mesh = UITextMesh(app)
+
+        try:
+            img = pg.image.load(get_path('assets/pyrite.png')).convert_alpha()
+            self.title_tex = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
+            self.title_tex.build_mipmaps()
+            self.title_tex.filter = (mgl.LINEAR_MIPMAP_LINEAR, mgl.LINEAR)
+        except Exception:
+            self.title_tex = self.title_renderer.get_texture("Pyrite")
+
+        self.state = 'MAIN'
+        self.world_buttons = []
+        self.delete_buttons = []
+        self.scroll_offset = 0.0
+
+        # Main Menu
+        self.btn_play = Button(app, 'Play', (0, 0.15), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
+        self.btn_options = Button(app, 'Options', (0, 0.0), (0.2, 0.07), self.open_options)
+        self.btn_quit = Button(app, 'Quit', (0, -0.15), (0.2, 0.07), self.app.quit_game)
+
+        # Create World
+        self.input_name = TextInput(app, (0, 0.15), (0.3, 0.05), "World Name")
+        self.input_seed = TextInput(app, (0, 0.0), (0.3, 0.05), "Seed (Leave blank for random)")
+        self.create_game_mode = 1 # 1 is SURVIVAL
+        self.btn_game_mode = Button(app, 'Game Mode: Survival', (0, -0.15), (0.3, 0.05), self.toggle_game_mode)
+        self.btn_create = Button(app, 'Create New World', (0, -0.3), (0.3, 0.07), self.create_world)
+        self.btn_back_create = Button(app, 'Back', (0, -0.5), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
+        
+        # Select World (will be populated dynamically)
+        self.btn_new_world = Button(app, 'Create New World', (0, 0.32), (0.3, 0.07), lambda: self.set_state('CREATE_WORLD'))
+        self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.set_state('MAIN'))
+
+    def open_options(self):
+        self.app.options_menu.previous_state = 'MAIN_MENU'
+        self.app.game_state = 'OPTIONS'
+
+    def toggle_game_mode(self):
+        self.create_game_mode = 0 if self.create_game_mode == 1 else 1
+        mode_text = "Survival" if self.create_game_mode == 1 else "Creative"
+        self.btn_game_mode.text = f"Game Mode: {mode_text}"
+
+    def set_state(self, new_state):
+        self.state = new_state
+        if new_state == 'SELECT_WORLD':
+            self.load_world_list()
+        elif new_state == 'CREATE_WORLD':
+            self.input_name.text = ""
+            self.input_seed.text = ""
+            self.input_name.is_active = True
+            self.create_game_mode = 1
+            self.btn_game_mode.text = 'Game Mode: Survival'
+
+    def load_world_list(self):
+        import os
+        import sqlite3
+        for btn in self.world_buttons:
+            if hasattr(btn, 'thumb_tex'):
+                btn.thumb_tex.release() # Safely release old image memory
+        self.world_buttons = []
+        self.delete_buttons = []
+        self.scroll_offset = 0.0
+        os.makedirs('saves', exist_ok=True)
+        # Sort by modification time (most recent first)
+        saves = sorted([f for f in os.listdir('saves') if f.endswith('.db')], 
+                       key=lambda x: os.path.getmtime(os.path.join('saves', x)), 
+                       reverse=True)
+        
+        y_offset = 0.05
+        for save_file in saves: # Load all worlds dynamically
+            save_name = save_file[:-3]
+            display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
+            try:
+                conn = sqlite3.connect(f'saves/{save_file}')
+                cursor = conn.cursor()
+                cursor.execute('SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1')
+                row = cursor.fetchone()
+                if row:
+                    display_name = row[0]
+                    seed = row[1]
+                    game_mode = row[2]
+                    creation_date = row[3][:16].replace('T', ' ') if row[3] else "Unknown"
+                    last_played = row[4][:16].replace('T', ' ') if row[4] else "Unknown"
+                conn.close()
+            except:
+                pass
+            
+            btn = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
+                              (0, y_offset), (0.65, 0.12), lambda sn=save_name: self.app.init_game_session(sn))
+            self.world_buttons.append(btn)
+            
+            # Create a small red 'X' button positioned right next to the WorldButton
+            del_btn = Button(self.app, 'X', (0.55, y_offset), (0.05, 0.08), lambda sn=save_name: self.delete_world(sn))
+            del_btn.base_color = (0.4, 0.1, 0.1, 0.7)
+            del_btn.hover_color = (0.8, 0.1, 0.1, 0.9)
+            self.delete_buttons.append(del_btn)
+            
+            y_offset -= 0.26
+
+    def delete_world(self, save_name):
+        import os
+        try:
+            if os.path.exists(f'saves/{save_name}.db'):
+                os.remove(f'saves/{save_name}.db')
+            if os.path.exists(f'saves/{save_name}_thumb.png'):
+                os.remove(f'saves/{save_name}_thumb.png')
+        except Exception as e:
+            print(f"[SYSTEM] Failed to delete world: {e}")
+        self.load_world_list() # Refresh the UI list instantly!
+
+    def create_world(self):
+        name = self.input_name.text.strip()
+        if not name:
+            name = "New_World"
+            
+        base_save_name = name.replace(" ", "_")
+        save_name = base_save_name
+        
+        import os
+        counter = 1
+        while os.path.exists(f'saves/{save_name}.db'):
+            save_name = f"{base_save_name}_{counter}"
+            counter += 1
+
+        seed_str = self.input_seed.text.strip()
+        if not seed_str:
+            import random
+            seed = random.randint(100000, 999999999)
+        else:
+            try:
+                seed = int(seed_str)
+            except ValueError:
+                # Convert letters into an exact numerical seed!
+                import hashlib
+                seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % (10**9)
+                
+        self.app.init_game_session(save_name, seed, self.create_game_mode)
+
+    def update(self):
+        mouse_pos = pg.mouse.get_pos()
+        if self.state == 'MAIN':
+            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
+                btn.check_hover(mouse_pos)
+        elif self.state == 'SELECT_WORLD':
+            self.btn_new_world.check_hover(mouse_pos)
+            self.btn_back_select.check_hover(mouse_pos)
+            
+            # Apply the scroll offset and disable hover interactions if the button goes out of bounds
+            base_y = 0.05
+            for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons)):
+                new_y = base_y - i * 0.26 + self.scroll_offset
+                btn.pos = (0, new_y)
+                del_btn.pos = (0.55, new_y)
+                if -0.45 < new_y < 0.12:
+                    btn.check_hover(mouse_pos)
+                    del_btn.check_hover(mouse_pos)
+                else:
+                    btn.is_hovered = False
+                    del_btn.is_hovered = False
+        elif self.state == 'CREATE_WORLD':
+            self.btn_game_mode.check_hover(mouse_pos)
+            self.btn_create.check_hover(mouse_pos)
+            self.btn_back_create.check_hover(mouse_pos)
+
+    def handle_event(self, event):
+        if self.state == 'CREATE_WORLD':
+            self.input_name.handle_event(event)
+            self.input_seed.handle_event(event)
+            
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if self.state == 'MAIN':
+                    for btn in [self.btn_play, self.btn_options, self.btn_quit]:
+                        if btn.is_hovered:
+                            btn.action()
+                            break
+                elif self.state == 'SELECT_WORLD':
+                    if self.btn_new_world.is_hovered:
+                        self.btn_new_world.action()
+                    elif self.btn_back_select.is_hovered:
+                        self.btn_back_select.action()
+                    else:
+                        for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
+                            if -0.45 < btn.pos[1] < 0.12:
+                                if del_btn.is_hovered:
+                                    del_btn.action()
+                                    break
+                                elif btn.is_hovered:
+                                    btn.action()
+                                    break
+                elif self.state == 'CREATE_WORLD':
+                    if self.btn_game_mode.is_hovered:
+                        self.btn_game_mode.action()
+                    elif self.btn_create.is_hovered:
+                        self.btn_create.action()
+                    elif self.btn_back_create.is_hovered:
+                        self.btn_back_create.action()
+            elif self.state == 'SELECT_WORLD':
+                if event.button == 4: # Mouse Wheel Scroll Up
+                    self.scroll_offset = max(0.0, self.scroll_offset - 0.26)
+                elif event.button == 5: # Mouse Wheel Scroll Down
+                    max_scroll = max(0.0, (len(self.world_buttons) - 2) * 0.26)
+                    self.scroll_offset = min(max_scroll, self.scroll_offset + 0.26)
+
+    def render(self):
+        # Render title
+        self.title_tex.use(location=4)
+        
+        tex_w, tex_h = self.title_tex.size
+        scale_y = 0.15
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.title_mesh.program['u_offset'] = (0.0, 0.5)
+        self.title_mesh.render()
+
+        if self.state == 'MAIN':
+            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
+                btn.render()
+        elif self.state == 'SELECT_WORLD':
+            self.btn_new_world.render()
+            for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
+                if -0.45 < btn.pos[1] < 0.12:
+                    btn.render()
+                    del_btn.render()
+            self.btn_back_select.render()
+        elif self.state == 'CREATE_WORLD':
+            self.input_name.render()
+            self.input_seed.render()
+            self.btn_game_mode.render()
+            self.btn_create.render()
+            self.btn_back_create.render()
+
+
+class PauseMenu:
+    def __init__(self, app):
+        self.app = app
+        self.title_renderer = TextRenderer(app)
+        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
+        self.title_mesh = UITextMesh(app)
+        self.bg_mesh = UIColorMesh(app)
+
+        self.buttons = [
+            Button(app, 'Resume', (0, 0.15), (0.3, 0.07), self.resume_game),
+            Button(app, 'Options', (0, 0.0), (0.3, 0.07), self.open_options),
+            Button(app, 'Quit to Menu', (0, -0.15), (0.3, 0.07), self.quit_to_menu)
+        ]
+
+    def open_options(self):
+        self.app.options_menu.previous_state = 'PAUSED'
+        self.app.game_state = 'OPTIONS'
+
+    def resume_game(self):
+        self.app.game_state = 'IN_GAME'
+        pg.event.set_grab(True)
+        pg.mouse.set_visible(False)
+
+    def quit_to_menu(self):
+        self.app.game_state = 'MAIN_MENU'
+        if self.app.scene:
+            self.app.scene.world.save()
+            self.app.scene = None # Unload the world to free memory
+
+    def update(self):
+        mouse_pos = pg.mouse.get_pos()
+        for button in self.buttons:
+            button.check_hover(mouse_pos)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            for button in self.buttons:
+                if button.is_hovered:
+                    button.action()
+                    break
+
+    def render(self):
+        self.bg_mesh.program['u_scale'] = (1.0, 1.0)
+        self.bg_mesh.program['u_offset'] = (0.0, 0.0)
+        self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6)
+        self.bg_mesh.render()
+
+        tex = self.title_renderer.get_texture("Game Paused")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = 0.08
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.title_mesh.program['u_offset'] = (0.0, 0.4)
+        self.title_mesh.render()
+
+        for button in self.buttons:
+            button.render()
+
+
+class OptionsMenu:
+    def __init__(self, app):
+        self.app = app
+        self.title_renderer = TextRenderer(app)
+        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
+        self.title_mesh = UITextMesh(app)
+        self.bg_mesh = UIColorMesh(app)
+
+        self.sliders = [
+            Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
+            Slider(app, 'Sensitivity', (0, 0.0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
+            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
+            Slider(app, 'Render Distance', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
+        ]
+        self.buttons = [
+            Button(app, '', (0, -0.6), (0.3, 0.05), self.toggle_tint),
+            Button(app, 'Back', (0, -0.8), (0.2, 0.07), self.go_back)
+        ]
+        self.previous_state = 'MAIN_MENU'
+
+    def update_fov(self, val):
+        if self.app.scene:
+            self.app.player.fov = glm.radians(val)
+
+    def update_volume(self, val):
+        pg.mixer.music.set_volume(val / 100.0)
+
+    def toggle_tint(self):
+        current_val = self.app.config.get('underwater_tint', False)
+        self.app.config['underwater_tint'] = not current_val
+        self.app.save_config()
+
+    def go_back(self):
+        self.app.save_config()
+        self.app.game_state = self.previous_state
+
+    def update(self):
+        for slider in self.sliders:
+            slider.update()
+
+        tint_on = self.app.config.get('underwater_tint', False)
+        self.buttons[0].text = f"Underwater Tint: {'On' if tint_on else 'Off'}"
+
+        mouse_pos = pg.mouse.get_pos()
+        for button in self.buttons:
+            button.check_hover(mouse_pos)
+
+    def handle_event(self, event):
+        for slider in self.sliders:
+            slider.handle_event(event)
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            for button in self.buttons:
+                if button.is_hovered:
+                    button.action()
+                    break
+
+    def render(self):
+        if self.previous_state == 'PAUSED':
+            self.bg_mesh.program['u_scale'] = (1.0, 1.0)
+            self.bg_mesh.program['u_offset'] = (0.0, 0.0)
+            self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8)
+            self.bg_mesh.render()
+
+        tex = self.title_renderer.get_texture("Options")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = 0.08
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.title_mesh.program['u_offset'] = (0.0, 0.45)
+        self.title_mesh.render()
+
+        for slider in self.sliders:
+            slider.render()
+        for button in self.buttons:
+            button.render()
+
+===== D:\Pyrite\src\ui\meshes.py =====
+
+from settings import *
+from meshes.base_mesh import BaseMesh
+import numpy as np
+
+
+class CrosshairMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.quad
+        self.vbo_format = '3f 3f'
+        self.attrs = ('in_position', 'in_color')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        w = 0.015
+        h = w * ASPECT_RATIO
+        # Creates a perfect '+' sign in the center of the screen
+        vertices = [
+            # Horizontal line
+            (-w, -0.002 * ASPECT_RATIO, 0.0), (w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0),
+            (-w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0), (-w, 0.002 * ASPECT_RATIO, 0.0),
+            # Vertical line
+            (-0.002, -h, 0.0), (0.002, -h, 0.0), (0.002, h, 0.0),
+            (-0.002, -h, 0.0), (0.002, h, 0.0), (-0.002, h, 0.0)
+        ]
+        colors = [(0.9, 0.9, 0.9) for _ in vertices]
+        return np.hstack([vertices, colors]).astype('float32')
+
+
+class BlockIconMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.ui_block
+        self.vbo_format = '2f 2f'
+        self.attrs = ('in_position', 'in_tex_coord')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        # Standard normalized quad [-1, 1]
+        vertices = [
+            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
+            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
+        ]
+        tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
+        return np.hstack([vertices, tex_coords]).astype('float32')
+
+
+class UIColorMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.ui_color
+        self.vbo_format = '2f'
+        self.attrs = ('in_position',)
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        vertices = [
+            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
+            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
+        ]
+        return np.array(vertices, dtype='float32')
+
+
+class UITextMesh(BaseMesh):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.ctx = self.app.ctx
+        self.program = self.app.shader_program.ui_text
+        self.vbo_format = '2f 2f'
+        self.attrs = ('in_position', 'in_tex_coord')
+        self.vao = self.get_vao()
+
+    def get_vertex_data(self):
+        vertices = [
+            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
+            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
+        ]
+        tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
+        return np.hstack([vertices, tex_coords]).astype('float32')
+
+===== D:\Pyrite\src\ui\text.py =====
+
+from settings import *
+import moderngl as mgl
+import pygame as pg
+
+
+class TextRenderer:
+    def __init__(self, app):
+        self.app = app
+        self.ctx = app.ctx
+        pg.font.init()
+        self.font = pg.font.SysFont('arial', FONT_SIZE_STATS, bold=True)
+        self.textures = {}
+
+    def get_texture(self, text):
+        if text in self.textures:
+            return self.textures[text]
+        surf = self.font.render(text, True, UI_TEXT_COLOR)
+        shadow_offset = max(2, self.font.get_height() // 15)
+        bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
+        shadow = self.font.render(text, True, UI_SHADOW_COLOR)
+        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
+        bg_surf.blit(surf, (0, 0))
+        texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tobytes(bg_surf, 'RGBA', True))
+        texture.build_mipmaps()
+        texture.filter = (mgl.LINEAR_MIPMAP_LINEAR, mgl.LINEAR)
+        self.textures[text] = texture
+        return texture
+
+    def get_dynamic_texture(self, text):
+        surf = self.font.render(text, True, UI_TEXT_COLOR)
+        shadow_offset = max(2, self.font.get_height() // 15)
+        bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
+        shadow = self.font.render(text, True, UI_SHADOW_COLOR)
+        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
+        bg_surf.blit(surf, (0, 0))
+        texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tobytes(bg_surf, 'RGBA', True))
+        # Dynamic textures don't need mipmaps since they are only used for one frame
+        texture.filter = (mgl.LINEAR, mgl.LINEAR)
+        return texture
+
+===== D:\Pyrite\src\ui\__init__.py =====
+
+from .meshes import CrosshairMesh, BlockIconMesh, UIColorMesh, UITextMesh
+from .text import TextRenderer
+from .components import Button, WorldButton, TextInput, Slider
+from .menus import Menu, PauseMenu, OptionsMenu
+from .hud import Crosshair, Hotbar, HeldBlock, InventoryUI, DebugOverlay
+
+===== D:\Pyrite\src\world_objects\chunk.py =====
 
 from settings import *
 from meshes.chunk_mesh import ChunkMesh
@@ -1541,7 +3208,7 @@ class Chunk:
     def fill_initial_sunlight_only(voxels, lightmap, cx, cy, cz, perm_array):
         fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
 
-===== D:\Minecraft\world_objects\clouds.py =====
+===== D:\Pyrite\src\world_objects\clouds.py =====
 
 from settings import *
 from meshes.cloud_mesh import CloudMesh
@@ -1558,12 +3225,12 @@ class Clouds:
     def render(self):
         self.mesh.render()
 
-===== D:\Minecraft\world_objects\item.py =====
+===== D:\Pyrite\src\world_objects\item.py =====
 
 import random
 import pygame as pg
 from settings import *
-import glm
+from pyglm import glm
 from meshes.item_mesh import ItemMesh
 from meshes.obj_mesh import ObjMesh
 
@@ -1613,8 +3280,8 @@ class ItemManager:
         self.app = app
         self.items = []
         self.mesh = ItemMesh(app)
-        self.stick_mesh = ObjMesh(app, 'assets/stick.obj', tex_id=5)
-        self.pickaxe_mesh = ObjMesh(app, 'assets/wooden_pickaxe.obj')
+        self.stick_mesh = ObjMesh(app, get_path('assets/stick/stick.obj'), tex_id=5)
+        self.pickaxe_mesh = ObjMesh(app, get_path('assets/wooden_pickaxe/wooden_pickaxe.obj'))
 
     def add_item(self, position, voxel_id):
         # Prevent entity overflow crashes if too many blocks break at once
@@ -1647,7 +3314,7 @@ class ItemManager:
                 mesh.program['voxel_id'] = item.voxel_id
             mesh.render()
 
-===== D:\Minecraft\world_objects\sky.py =====
+===== D:\Pyrite\src\world_objects\sky.py =====
 
 import numpy as np
 import moderngl as mgl
@@ -1681,7 +3348,7 @@ class Sky:
         self.mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
 
-===== D:\Minecraft\world_objects\voxel_marker.py =====
+===== D:\Pyrite\src\world_objects\voxel_marker.py =====
 
 from settings import *
 from meshes.cube_mesh import CubeMesh
@@ -1715,93 +3382,10 @@ class VoxelMarker:
             self.set_uniform()
             self.mesh.render()
 
-===== D:\Minecraft\append_texture.py =====
+===== D:\Pyrite\src\world_objects\__init__.py =====
 
-import pygame as pg
-import sys
 
-def append_texture_row(base_texture_path, append_texture_path, output_path):
-    # Initialize pygame modules
-    pg.init()
-    
-    try:
-        # Load the existing texture array and the new texture to append
-        base_tex = pg.image.load(base_texture_path)
-        append_tex = pg.image.load(append_texture_path)
-    except pg.error as e:
-        print(f"Error loading images: {e}")
-        pg.quit()
-        sys.exit(1)
-        
-    # Scale the second texture to exactly 128x128 pixels
-    append_tex_scaled = pg.transform.scale(append_tex, (128, 128))
-    
-    # Calculate the size of the new combined texture
-    # 3 copies of 128x128 make the appended row 384 pixels wide
-    new_width = max(base_tex.get_width(), 384)
-    new_height = base_tex.get_height() + 128
-    
-    # Create a new surface (with SRCALPHA for transparency support)
-    new_surf = pg.Surface((new_width, new_height), pg.SRCALPHA)
-    
-    # Blit the original texture array at the top (0, 0)
-    new_surf.blit(base_tex, (0, 0))
-    
-    # Blit 3 copies of the scaled texture directly below the base texture
-    start_y = base_tex.get_height()
-    for i in range(3):
-        new_surf.blit(append_tex_scaled, (i * 128, start_y))
-        
-    # Save the resulting image
-    pg.image.save(new_surf, output_path)
-    print(f"Successfully saved combined texture to {output_path}")
-    pg.quit()
-
-if __name__ == '__main__':
-    # Provide your image paths here
-    # For example, using paths from the Minecraft project assets folder
-    base_texture = 'assets/tex_array_2.png'  # Your current texture array
-    texture_to_append = 'assets/stone_brick.png'  # The texture you want to add
-    output_texture = 'assets/tex_array_2.png'   # The resulting combined texture
-    
-    append_texture_row(base_texture, texture_to_append, output_texture)
-
-===== D:\Minecraft\audio_length.py =====
-
-import pygame
-
-pygame.mixer.init()
-
-sounds = [
-    "Grass_break.mp3",
-    "Grass_dig1.ogg",
-    "Grass_dig2.ogg",
-    "Grass_dig3.ogg",
-    "Grass_dig4.ogg",
-    "Grass_hit1.ogg",
-    "Grass_hit2.ogg",
-    "Grass_hit3.ogg",
-    "Grass_hit4.ogg",
-    "Grass_hit5.ogg",
-    "Grass_hit6.ogg",
-    "Grass_jump1.wav.mp3",
-    "Grass_jump2.wav.mp3",
-    "Grass_jump3.wav.mp3",
-    "Grass_jump4.wav.mp3",
-    "Grass_mining1.ogg",
-    "Grass_mining2.ogg",
-    "Grass_mining3.ogg.mp3",
-    "Grass_mining4.ogg",
-    "Grass_mining5.ogg",
-    "Grass_mining6.ogg"
-]
-
-for sound in sounds:
-    Sound = pygame.mixer.Sound(f"sounds/{sound}")
-    length = Sound.get_length()
-    print(f"Audio length for {sound}: {length} seconds")
-
-===== D:\Minecraft\camera.py =====
+===== D:\Pyrite\src\camera.py =====
 
 from settings import *
 from frustum import Frustum
@@ -1863,12 +3447,12 @@ class Camera:
     def move_back(self, velocity):
         self.position -= self.forward * velocity
 
-===== D:\Minecraft\frustum.py =====
+===== D:\Pyrite\src\frustum.py =====
 
 from settings import *
 from numba import njit, prange
 import numpy as np
-import glm
+from pyglm import glm
 
 
 class Frustum:
@@ -1952,7 +3536,7 @@ def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, ta
             
     return is_visible
 
-===== D:\Minecraft\lighting.py =====
+===== D:\Pyrite\src\lighting.py =====
 
 from numba import njit
 import numpy as np
@@ -2223,7 +3807,7 @@ def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     queue[0] = (np.uint64(wx) << 32) | (np.uint64(wy) << 16) | np.uint64(wz)
     propagate_light_queue(queue, 1, False, world_voxels, world_lightmaps, chunk_positions)
 
-===== D:\Minecraft\main.py =====
+===== D:\Pyrite\src\main.py =====
 
 from settings import *
 import moderngl as mgl
@@ -2242,16 +3826,21 @@ from textures import Textures
 from ui import TextRenderer, UITextMesh, Menu, PauseMenu, OptionsMenu
 
 
-class VoxelEngine:
+class Pyrite:
     def __init__(self):
         pg.init()
+        try:
+            icon_img = pg.image.load(get_path('assets/icon-nobg.png'))
+            pg.display.set_icon(icon_img)
+        except Exception:
+            pass
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, MAJOR_VER)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, MINOR_VER)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
         pg.display.gl_set_attribute(pg.GL_DEPTH_SIZE, DEPTH_SIZE)
         pg.display.gl_set_attribute(pg.GL_MULTISAMPLESAMPLES, NUM_SAMPLES)
 
-        pg.display.set_mode(WIN_RES, flags=pg.OPENGL | pg.DOUBLEBUF)
+        pg.display.set_mode(WIN_RES, flags=pg.OPENGL | pg.DOUBLEBUF | pg.FULLSCREEN)
         self.ctx = mgl.create_context()
 
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE | mgl.BLEND)
@@ -2424,7 +4013,7 @@ class VoxelEngine:
         elif self.game_state == 'PAUSED':
             pg.display.set_caption('Game Paused')
         else:
-            pg.display.set_caption('Voxel Engine')
+            pg.display.set_caption('Pyrite')
 
     def render(self):
         self.ctx.clear(color=self.bg_color)
@@ -2523,10 +4112,10 @@ class VoxelEngine:
 
 
 if __name__ == '__main__':
-    app = VoxelEngine()
+    app = Pyrite()
     app.run()
 
-===== D:\Minecraft\noise.py =====
+===== D:\Pyrite\src\noise.py =====
 
 from numba import njit
 from opensimplex.internals import _noise2, _noise3, _init
@@ -2559,10 +4148,10 @@ def noise2(x, y, perm_array):
 def noise3(x, y, z, perm_array, perm_grad_array):
     return _noise3(x, y, z, perm_array, perm_grad_array)
 
-===== D:\Minecraft\player.py =====
+===== D:\Pyrite\src\player.py =====
 
 import pygame as pg
-import glm
+from pyglm import glm
 import math
 from camera import Camera
 from settings import *
@@ -2716,7 +4305,7 @@ class Player(Camera):
 
                 current_time = pg.time.get_ticks()
                 if current_time - self.last_step_time > 400: # ms between steps
-                    self.app.sounds.play_hit(voxel_under)
+                    self.app.sounds.play_walk(voxel_under)
                     self.last_step_time = current_time
                     
             # Dynamic FOV for sprinting
@@ -2803,7 +4392,7 @@ class Player(Camera):
         if mouse_pressed[0] and voxel_handler.voxel_id:
             if self.target_voxel_pos == voxel_handler.voxel_world_pos:
                 self.mining_time += self.app.delta_time
-                self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
+                self.app.sounds.play_breaking(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
                 if self.mining_time >= self.mining_duration and current_time - self.interaction_timer > self.interaction_delay:
                     voxel_handler.set_voxel(mode='remove')
                     self.mining_time = 0.0
@@ -2821,7 +4410,7 @@ class Player(Camera):
                         hardness *= 5.0 # 5x slower without a pickaxe!
                         
                 self.mining_duration = 0.0 if self.game_mode == CREATIVE else hardness
-                self.app.sounds.play_mining(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
+                self.app.sounds.play_breaking(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
                 
                 if self.mining_time >= self.mining_duration and current_time - self.interaction_timer > self.interaction_delay:
                     voxel_handler.set_voxel(mode='remove')
@@ -3004,7 +4593,7 @@ class Player(Camera):
         if self.game_mode == CREATIVE:
             return
         self.health -= amount
-        self.app.sounds.play_hit(GRASS) # Generic damage sound
+        self.app.sounds.play_walk(GRASS) # Generic damage sound
         if self.health <= 0:
             self.respawn()
 
@@ -3019,7 +4608,7 @@ class Player(Camera):
         self.highest_y = self.position.y
         self.spawn_immunity = True
 
-===== D:\Minecraft\scene.py =====
+===== D:\Pyrite\src\scene.py =====
 
 from settings import *
 import moderngl as mgl
@@ -3100,13 +4689,27 @@ class Scene:
             self.debug_overlay.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
 
-===== D:\Minecraft\settings.py =====
+===== D:\Pyrite\src\settings.py =====
 
 from numba import njit
 import numpy as np
-import glm
+from pyglm import glm
 import math
 import pygame
+import os
+import sys
+
+
+def get_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # Not running as bundle, use project root (one folder up from src/)
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+    return os.path.join(base_path, relative_path)
 
 
 # OpenGL settings
@@ -3117,7 +4720,7 @@ NUM_SAMPLES = 1  # antialiasing
 # resolution
 pygame.init()
 info = pygame.display.Info()
-WIN_RES = glm.vec2(info.current_w,info.current_h-60)
+WIN_RES = glm.vec2(info.current_w, info.current_h)
 pygame.quit()
 
 # ray casting
@@ -3298,7 +4901,7 @@ UI_SLOT_SELECTED_BG_COLOR = (0.5, 0.5, 0.5, 0.7)
 UI_TEXT_COLOR = (210, 210, 210)
 UI_SHADOW_COLOR = (40, 40, 40)
 
-===== D:\Minecraft\shader_program.py =====
+===== D:\Pyrite\src\shader_program.py =====
 
 from settings import *
 
@@ -3459,16 +5062,16 @@ class ShaderProgram:
         self.sky['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
-        with open(f'shaders/{shader_name}.vert') as file:
+        with open(get_path(f'src/shaders/{shader_name}.vert')) as file:
             vertex_shader = file.read()
 
-        with open(f'shaders/{shader_name}.frag') as file:
+        with open(get_path(f'src/shaders/{shader_name}.frag')) as file:
             fragment_shader = file.read()
 
         program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
         return program
 
-===== D:\Minecraft\sounds.py =====
+===== D:\Pyrite\src\sounds.py =====
 
 import pygame as pg
 import random
@@ -3482,7 +5085,7 @@ class Sounds:
         pg.mixer.set_num_channels(32)
 
         def load(filename):
-            s = pg.mixer.Sound(f'sounds/{filename}')
+            s = pg.mixer.Sound(get_path(f'assets/sounds/{filename}'))
             s.set_volume(0.2)
             return s
 
@@ -3490,78 +5093,132 @@ class Sounds:
         
         # SAND
         self.sounds[SAND] = {
-            'dig': [load(f"sand/Sand_dig{i}.ogg") for i in range(1, 5)],
-            'hit': [load(f"sand/Sand_hit{i}.ogg") for i in range(1, 6)],
-            'jump': [load(f"sand/Sand_jump{i}.ogg") for i in range(1, 5)],
-            'mining': [load(f"sand/Sand_mining{i}.ogg") for i in range(1, 6)]
+            'break': [load(f"sand/Sand_dig{i}.ogg") for i in range(1, 5)],
+            'place': [load(f"sand/Sand_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"sand/Sand_mining{i}.ogg") for i in range(1, 6)],
+            'jump': [load(f"sand/Sand_hit{i}.ogg") for i in range(1, 5)],
+            'walk': [load(f"sand/Sand_hit{i}.ogg") for i in range(1, 6)]
         }
         
         # GRASS
         self.sounds[GRASS] = {
-            'dig': [load(f"grass/Grass_dig{i}.ogg") for i in range(1, 5)],
-            'hit': [load(f"grass/Grass_hit{i}.ogg") for i in range(1, 7)],
-            'jump': [load(f"grass/Grass_jump{i}.ogg") for i in range(1, 5)],
-            'mining': [load(f"grass/Grass_mining{i}.ogg") for i in range(1, 7)]
-        }
-        
-        # WOOD
-        self.sounds[WOOD] = {
-            'dig': [load(f"wood/Wood_dig{i}.ogg") for i in range(1, 5)],
-            'hit': [load(f"wood/Wood_hit{i}.ogg") for i in range(1, 7)],
-            'jump': [load(f"wood/Wood_jump{i}.ogg") for i in range(1, 5)],
-            'mining': [load(f"wood/Wood_mining{i}.ogg") for i in range(1, 7)]
+            'break': [load(f"grass/Grass_dig{i}.ogg") for i in range(1, 5)],
+            'place': [load(f"grass/Grass_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"grass/Grass_mining{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"grass/Grass_hit{i}.ogg") for i in range(1, 5)],
+            'walk': [load(f"grass/Grass_hit{i}.ogg") for i in range(1, 7)]
         }
 
-        # DIRT ( gravel and dirt have the same sounds in Minecraft )
-        self.sounds[DIRT] = {
-            'dig': [load(f"dirt/Gravel_dig{i}.ogg") for i in range(1, 5)],
-            'hit': [load(f"dirt/Gravel_hit{i}.ogg") for i in range(1, 5)],
-            'jump': [load(f"dirt/Gravel_jump{i}.ogg") for i in range(1, 5)],
-            'mining': [load(f"dirt/Gravel_mining{i}.ogg") for i in range(1, 5)]
+        # GRAVEL ( gravel and dirt have the same sounds in Minecraft )
+        self.sounds[GRAVEL] = {
+            'break': [load(f"gravel/Gravel_dig{i}.ogg") for i in range(1, 5)],
+            'place': [load(f"gravel/Gravel_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"gravel/Gravel_mining{i}.ogg") for i in range(1, 5)],
+            'jump': [load(f"gravel/Gravel_hit{i}.ogg") for i in range(1, 5)],
+            'walk': [load(f"gravel/Gravel_hit{i}.ogg") for i in range(1, 5)]
         }
         
         # STONE
         self.sounds[STONE] = {
-            'dig': [load(f"stone/Stone_dig{i}.ogg") for i in range(1, 5)],
-            'hit': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)],
-            'jump': [load(f"stone/Stone_jump{i}.ogg") for i in range(1, 5)],
-            'mining': [load(f"stone/Stone_mining{i}.ogg") for i in range(1, 7)]
+            'break': [load(f"stone/Stone_dig{i}.ogg") for i in range(1, 5)],
+            'place': [load(f"stone/Stone_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"stone/Stone_mining{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)],
+            'walk': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)]
         }
 
         # SNOW
         self.sounds[SNOW] = {
-            'dig': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)],
-            'hit': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)],
-            'jump': [load(f"snow/Snow_jump{i}.ogg") for i in range(1, 5)],
-            'mining': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)]
+            'break': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)],
+            'place': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)],
+            'jump': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)],
+            'walk': [load(f"snow/Snow_dig{i}.ogg") for i in range(1, 5)]
         }
 
         # LEAVES
         self.sounds[LEAVES] = self.sounds[GRASS]
+        
+        # WOOD
+        self.sounds[WOOD] = {
+            'break': [load(f"wood/Wood_dig{i}.ogg") for i in range(1, 5)],
+            'place': [load(f"wood/Wood_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"wood/Wood_mining{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"wood/Wood_hit{i}.ogg") for i in range(1, 7)],
+            'walk': [load(f"wood/Wood_hit{i}.ogg") for i in range(1, 7)]
+        }
+
+        # DIRT
+        self.sounds[DIRT] = self.sounds[GRAVEL]
+
+        # GLASS
+        self.sounds[GLASS] = {
+            'break': [load(f"glass/Glass_dig{i}.ogg") for i in range(1, 4)],
+            'place': [load(f"stone/Stone_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"ice/Ice_mining{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)],
+            'walk': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)]
+        }
+
+        # WOOD PLANKS
+        self.sounds[WOOD_PLANKS] = self.sounds[WOOD]
+
+        # COBBELSTONE
+        self.sounds[COBBELSTONE] = self.sounds[STONE]
+        
+        # GLOWSTONE
+        self.sounds[GLOWSTONE] = {
+            'break': [load(f"glass/Glass_dig{i}.ogg") for i in range(1, 4)],
+            'place': [load(f"stone/Stone_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"ice/Ice_mining{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)],
+            'walk': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)]
+        }
+
+        # GLASS
+        self.sounds[GLASS] = {
+            'break': [load(f"glass/Glass_dig{i}.ogg") for i in range(1, 4)],
+            'place': [load(f"stone/Stone_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"ice/Ice_mining{i}.ogg") for i in range(1, 7)],
+            'jump': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)],
+            'walk': [load(f"stone/Stone_hit{i}.ogg") for i in range(1, 7)]
+        }
+
+        # CACTUS
+        self.sounds[CACTUS] = {
+            'break': [load(f"cloth/Cloth_dig{i}.ogg") for i in range(1, 5)],
+            'place': [load(f"cloth/Cloth_dig{i}.ogg") for i in range(1, 5)],
+            'breaking': [load(f"cloth/Cloth_dig{i}.ogg") for i in range(1, 5)],
+            'jump': [load(f"cloth/Cloth_dig{i}.ogg") for i in range(1, 5)],
+            'walk': [load(f"cloth/Cloth_dig{i}.ogg") for i in range(1, 5)]
+        }
+
+        # STONE BRICKS
+        self.sounds[STONE_BRICKS] = self.sounds[STONE]
 
         self.hit_index = 0
         self.last_hit_time = 0
         self.mining_index = -1
         
-        self.pop_sound = pg.mixer.Sound('sounds/pickup-sound.ogg')
+        self.pop_sound = pg.mixer.Sound(get_path('assets/sounds/others/pickup-sound.ogg'))
         self.pop_sound.set_volume(1.0)
         
         # Background Music
         self.music_tracks = [
-            'sounds/c418-aria-math-(minecraft-volume-beta).ogg',
-            'sounds/c418-minecraft.ogg'
+            get_path('assets/sounds/background/c418-aria-math-(minecraft-volume-beta).ogg'),
+            get_path('assets/sounds/background/c418-minecraft.ogg')
         ]
         pg.mixer.music.load(random.choice(self.music_tracks))
         pg.mixer.music.set_volume(self.app.config['volume'] / 100.0)
         pg.mixer.music.play(-1) # Loop forever in the background
 
-    def play_hit(self, voxel_id):
+    def play_walk(self, voxel_id):
         current_time = pg.time.get_ticks()
         if current_time - self.last_hit_time > 500: # Reset to 1 if you stop walking
             self.hit_index = 0
             
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
-        hits = s_dict['hit']
+        hits = s_dict['walk']
         
         if self.hit_index >= len(hits):
             self.hit_index = 0
@@ -3570,20 +5227,24 @@ class Sounds:
         self.hit_index += 1
         self.last_hit_time = current_time
 
-    def play_dig(self, voxel_id):
+    def play_break(self, voxel_id):
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
-        random.choice(s_dict['dig']).play()
+        random.choice(s_dict['break']).play()
+
+    def play_place(self, voxel_id):
+        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        random.choice(s_dict['place']).play()
 
     def play_jump(self, voxel_id):
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['jump']).play()
         
-    def play_mining(self, voxel_id, mining_time, mining_duration):
+    def play_breaking(self, voxel_id, mining_time, mining_duration):
         if mining_time == 0.0:
             self.mining_index = -1
             
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
-        mining_sounds = s_dict['mining']
+        mining_sounds = s_dict['breaking']
         num_sounds = len(mining_sounds)
         
         progress = mining_time / mining_duration
@@ -3597,7 +5258,7 @@ class Sounds:
     def play_place_block(self): # Played when items pop into the player's inventory
         self.pop_sound.play()
 
-===== D:\Minecraft\terrain_gen.py =====
+===== D:\Pyrite\src\terrain_gen.py =====
 
 # """
 from noise import noise2, noise3
@@ -4065,39 +5726,11 @@ def place_tree(voxels, x, y, z, voxel_id):
 
 """
 
-===== D:\Minecraft\test_obj.py =====
-
-import os
-
-def analyze_obj(filepath):
-    print(f"--- Analyzing {filepath} ---")
-    if not os.path.exists(filepath):
-        print("File not found!")
-        return
-        
-    triangles = 0
-    quads = 0
-    n_gons = 0
-    
-    with open(filepath, 'r') as f:
-        for line in f:
-            if line.startswith('f '):
-                vertices = len(line.split()[1:])
-                if vertices == 3: triangles += 1
-                elif vertices == 4: quads += 1
-                else: n_gons += 1
-                
-    print(f"Triangles (Supported natively by GL_TRIANGLES): {triangles}")
-    print(f"Quads (Will break GL_TRIANGLES without conversion): {quads}")
-    print(f"N-Gons: {n_gons}")
-
-if __name__ == '__main__':
-    analyze_obj('assets/stick.obj')
-
-===== D:\Minecraft\textures.py =====
+===== D:\Pyrite\src\textures.py =====
 
 import pygame as pg
 import moderngl as mgl
+from settings import get_path
 
 
 class Textures:
@@ -4106,11 +5739,11 @@ class Textures:
         self.ctx = app.ctx
 
         # load textures
-        self.texture_0 = self.load('frame.png')
-        self.texture_array_0 = self.load('tex_array_2.png', is_tex_array=True)
-        self.texture_breaking = self.load('block_breaking_texture.png')
-        self.texture_stick = self.load('stick.png')
-        self.texture_pickaxe = self.load('wooden_pickaxe.png', rotation=-90)
+        self.texture_0 = self.load('others/frame.png')
+        self.texture_array_0 = self.load('texture-arrays/tex_array_2.png', is_tex_array=True)
+        self.texture_breaking = self.load('others/block_breaking_texture.png')
+        self.texture_stick = self.load('stick/stick.png')
+        self.texture_pickaxe = self.load('wooden_pickaxe/wooden_pickaxe.png', rotation=-90)
 
         # assign texture unit
         self.texture_0.use(location=0)
@@ -4120,7 +5753,7 @@ class Textures:
         self.texture_pickaxe.use(location=6)
 
     def load(self, file_name, is_tex_array=False, rotation=0):
-        texture = pg.image.load(f'assets/{file_name}')
+        texture = pg.image.load(get_path(f'assets/{file_name}'))
         if rotation != 0:
             texture = pg.transform.rotate(texture, rotation)
         texture = pg.transform.flip(texture, flip_x=True, flip_y=False)
@@ -4130,1389 +5763,20 @@ class Textures:
             texture = self.app.ctx.texture_array(
                 size=(texture.get_width(), texture.get_height() // num_layers, num_layers),
                 components=4,
-                data=pg.image.tostring(texture, 'RGBA')
+                data=pg.image.tobytes(texture, 'RGBA', False)
             )
         else:
             texture = self.ctx.texture(
                 size=texture.get_size(),
                 components=4,
-                data=pg.image.tostring(texture, 'RGBA', False)
+                data=pg.image.tobytes(texture, 'RGBA', False)
             )
         texture.anisotropy = 32.0
         texture.build_mipmaps()
         texture.filter = (mgl.NEAREST, mgl.NEAREST)
         return texture
 
-===== D:\Minecraft\ui.py =====
-
-from settings import *
-from meshes.base_mesh import BaseMesh
-import numpy as np
-import moderngl as mgl
-import pygame as pg
-import glm
-from meshes.item_mesh import ItemMesh
-from meshes.obj_mesh import ObjMesh
-
-
-class CrosshairMesh(BaseMesh):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
-        self.ctx = self.app.ctx
-        self.program = self.app.shader_program.quad
-        self.vbo_format = '3f 3f'
-        self.attrs = ('in_position', 'in_color')
-        self.vao = self.get_vao()
-
-    def get_vertex_data(self):
-        w = 0.015
-        h = w * ASPECT_RATIO
-        # Creates a perfect '+' sign in the center of the screen
-        vertices = [
-            # Horizontal line
-            (-w, -0.002 * ASPECT_RATIO, 0.0), (w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0),
-            (-w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0), (-w, 0.002 * ASPECT_RATIO, 0.0),
-            # Vertical line
-            (-0.002, -h, 0.0), (0.002, -h, 0.0), (0.002, h, 0.0),
-            (-0.002, -h, 0.0), (0.002, h, 0.0), (-0.002, h, 0.0)
-        ]
-        colors = [(0.9, 0.9, 0.9) for _ in vertices]
-        return np.hstack([vertices, colors]).astype('float32')
-
-
-class BlockIconMesh(BaseMesh):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
-        self.ctx = self.app.ctx
-        self.program = self.app.shader_program.ui_block
-        self.vbo_format = '2f 2f'
-        self.attrs = ('in_position', 'in_tex_coord')
-        self.vao = self.get_vao()
-
-    def get_vertex_data(self):
-        # Standard normalized quad [-1, 1]
-        vertices = [
-            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
-            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
-        ]
-        tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
-        return np.hstack([vertices, tex_coords]).astype('float32')
-
-
-class UIColorMesh(BaseMesh):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
-        self.ctx = self.app.ctx
-        self.program = self.app.shader_program.ui_color
-        self.vbo_format = '2f'
-        self.attrs = ('in_position',)
-        self.vao = self.get_vao()
-
-    def get_vertex_data(self):
-        vertices = [
-            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
-            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
-        ]
-        return np.array(vertices, dtype='float32')
-
-
-class UITextMesh(BaseMesh):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
-        self.ctx = self.app.ctx
-        self.program = self.app.shader_program.ui_text
-        self.vbo_format = '2f 2f'
-        self.attrs = ('in_position', 'in_tex_coord')
-        self.vao = self.get_vao()
-
-    def get_vertex_data(self):
-        vertices = [
-            (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
-            (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
-        ]
-        tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
-        return np.hstack([vertices, tex_coords]).astype('float32')
-
-
-class TextRenderer:
-    def __init__(self, app):
-        self.app = app
-        self.ctx = app.ctx
-        pg.font.init()
-        self.font = pg.font.SysFont('arial', FONT_SIZE_STATS, bold=True)
-        self.textures = {}
-
-    def get_texture(self, text):
-        if text in self.textures:
-            return self.textures[text]
-        surf = self.font.render(text, True, UI_TEXT_COLOR)
-        shadow_offset = max(2, self.font.get_height() // 15)
-        bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
-        shadow = self.font.render(text, True, UI_SHADOW_COLOR)
-        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
-        bg_surf.blit(surf, (0, 0))
-        texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
-        texture.build_mipmaps()
-        texture.filter = (mgl.LINEAR_MIPMAP_LINEAR, mgl.LINEAR)
-        self.textures[text] = texture
-        return texture
-
-    def get_dynamic_texture(self, text):
-        surf = self.font.render(text, True, UI_TEXT_COLOR)
-        shadow_offset = max(2, self.font.get_height() // 15)
-        bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
-        shadow = self.font.render(text, True, UI_SHADOW_COLOR)
-        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
-        bg_surf.blit(surf, (0, 0))
-        texture = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
-        # Dynamic textures don't need mipmaps since they are only used for one frame
-        texture.filter = (mgl.LINEAR, mgl.LINEAR)
-        return texture
-
-
-class Crosshair:
-    def __init__(self, app):
-        self.app = app
-        self.mesh = CrosshairMesh(app)
-
-    def render(self):
-        self.mesh.render()
-
-
-class Hotbar:
-    def __init__(self, app):
-        self.app = app
-        self.block_mesh = BlockIconMesh(app)
-        self.color_mesh = UIColorMesh(app)
-        self.text_mesh = UITextMesh(app)
-        self.text_renderer = TextRenderer(app)
-        
-    def render(self):
-        player = self.app.player
-        s = HOTBAR_SCALE
-        slot_s = SLOT_SCALE
-        gap = 0.01
-        x_spacing = (slot_s * 2 + gap) / ASPECT_RATIO
-        start_x = -4 * x_spacing
-        y = HOTBAR_Y
-        
-        # 1. Draw the transparent slot backgrounds and selection frame
-        for i in range(HOTBAR_SIZE):
-            x = start_x + i * x_spacing
-            is_selected = (i == player.hotbar_index)
-            
-            if is_selected:
-                # Draw white outline frame
-                sel_s = slot_s + 0.006
-                self.color_mesh.program['u_scale'] = (sel_s / ASPECT_RATIO, sel_s)
-                self.color_mesh.program['u_offset'] = (x, y)
-                self.color_mesh.program['u_color'] = UI_SLOT_SELECTED_FRAME_COLOR
-                self.color_mesh.render()
-                
-                # Draw slightly lighter inner background
-                self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
-                self.color_mesh.program['u_color'] = UI_SLOT_SELECTED_BG_COLOR
-                self.color_mesh.render()
-            else:
-                # Draw standard dark background
-                self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
-                self.color_mesh.program['u_offset'] = (x, y)
-                self.color_mesh.program['u_color'] = UI_SLOT_BG_COLOR
-                self.color_mesh.render()
-
-        # 2. Draw the 3D block icons inside the slots
-        for i in range(HOTBAR_SIZE):
-            voxel_id = player.inventory[i]
-            if voxel_id != 0:
-                if voxel_id in (STICK, WOODEN_PICKAXE):
-                    self.text_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-                    self.text_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
-                    self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
-                    self.text_mesh.render()
-                    self.text_mesh.program['u_texture_0'] = 4 # Restore font texture
-                else:
-                    self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-                    self.block_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
-                    self.block_mesh.program['voxel_id'] = voxel_id
-                    self.block_mesh.render()
-
-        # 3. Draw the stack counts
-        for i in range(HOTBAR_SIZE):
-            count = player.inventory_counts[i]
-            if count > 0:
-                tex = self.text_renderer.get_texture(str(count))
-                tex.use(location=4)
-                
-                tex_w, tex_h = tex.size
-                scale_y = 0.025
-                scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
-                
-                offset_x = start_x + i * x_spacing + 0.015
-                offset_y = y - 0.025
-                
-                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
-                self.text_mesh.render()
-
-        # 4. Draw Survival Stats (Health, Hunger, Oxygen)
-        if player.game_mode == SURVIVAL:
-            # Helper to draw a stat bar
-            def draw_bar(ratio, offset_x, offset_y, bg_color, fg_color, text):
-                # Background
-                self.color_mesh.program['u_scale'] = (0.2, 0.01)
-                self.color_mesh.program['u_offset'] = (offset_x, offset_y)
-                self.color_mesh.program['u_color'] = bg_color
-                self.color_mesh.render()
-                
-                # Foreground
-                if ratio > 0:
-                    self.color_mesh.program['u_scale'] = (0.2 * ratio, 0.01)
-                    self.color_mesh.program['u_offset'] = (offset_x - 0.2*(1.0 - ratio), offset_y)
-                    self.color_mesh.program['u_color'] = fg_color
-                    self.color_mesh.render()
-                    
-                # Text
-                tex = self.text_renderer.get_texture(text)
-                tex.use(location=4)
-                scale_y = 0.015
-                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
-                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
-                self.text_mesh.render()
-
-            health_ratio = max(0.0, player.health / player.max_health)
-            draw_bar(health_ratio, -0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.1, 0.1, 0.9), 
-                     f"HP: {int(player.health)}/{player.max_health}")
-
-            hunger_ratio = max(0.0, player.hunger / player.max_hunger)
-            draw_bar(hunger_ratio, 0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.5, 0.1, 0.9), 
-                     f"Food: {int(player.hunger)}/{player.max_hunger}")
-
-            if player.oxygen < player.max_oxygen:
-                oxy_ratio = max(0.0, player.oxygen / player.max_oxygen)
-                draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), 
-                         f"O2: {int(player.oxygen)}/{player.max_oxygen}")
-
-
-class HeldBlock:
-    def __init__(self, app):
-        self.app = app
-        self.mesh = ItemMesh(app)
-        self.stick_mesh = ObjMesh(app, 'assets/stick.obj', tex_id=5)
-        self.pickaxe_mesh = ObjMesh(app, 'assets/wooden_pickaxe.obj')
-
-    def render(self):
-        player = self.app.player
-        voxel_id = player.inventory[player.hotbar_index]
-        if voxel_id == 0:
-            return
-
-        # 1. View bobbing
-        bob_offset_y = glm.sin(player.step_counter) * 0.03
-        bob_offset_x = glm.cos(player.step_counter * 0.5) * 0.02
-
-        # 2. Swinging animation
-        swing_offset_y = 0.0
-        swing_offset_z = 0.0
-        swing_rot_x = 0.0
-        
-        if player.mining_time > 0.0:
-            swing_val = max(0, glm.sin(player.mining_time * 0.03))
-            swing_offset_y = swing_val * 0.15
-            swing_offset_z = -swing_val * 0.1
-            swing_rot_x = swing_val * 0.4
-        else:
-            time_since_place = pg.time.get_ticks() - player.interaction_timer
-            if time_since_place < player.interaction_delay:
-                progress = time_since_place / player.interaction_delay
-                swing_val = glm.sin(progress * glm.pi())
-                swing_offset_y = swing_val * 0.2
-                swing_rot_x = swing_val * 0.3
-
-        # 3. Position the block in the bottom right (in local camera space)
-        pos = glm.vec3(0.5 + bob_offset_x, -0.4 + bob_offset_y - swing_offset_y, -1.0 + swing_offset_z)
-        
-        # Compute Model Matrix in World Space for perfectly accurate lighting
-        m_model = glm.inverse(player.m_view)
-        m_model = glm.translate(m_model, pos)
-
-        if voxel_id == STICK:
-            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
-            m_model = glm.scale(m_model, glm.vec3(0.5))
-            mesh = self.stick_mesh
-        elif voxel_id == WOODEN_PICKAXE:
-            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
-            m_model = glm.scale(m_model, glm.vec3(0.35))
-            mesh = self.pickaxe_mesh
-        else:
-            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
-            m_model = glm.scale(m_model, glm.vec3(0.35))
-            mesh = self.mesh
-
-        mesh.program['m_proj'].write(player.m_proj)
-        mesh.program['m_view'].write(player.m_view) 
-        mesh.program['m_model'].write(m_model)
-        if 'voxel_id' in mesh.program:
-            mesh.program['voxel_id'] = voxel_id
-
-        self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
-        self.app.ctx.enable(mgl.CULL_FACE)   # Toggle this to enable/disable backfaces!
-        mesh.render()
-        self.app.ctx.enable(mgl.DEPTH_TEST)
-
-
-class InventoryUI:
-    def __init__(self, app):
-        self.app = app
-        self.block_mesh = BlockIconMesh(app)
-        self.color_mesh = UIColorMesh(app)
-        self.text_mesh = UITextMesh(app)
-        self.text_renderer = TextRenderer(app)
-        
-        self.drag_id = 0
-        self.drag_count = 0
-        self.drag_start_pos = (0, 0)
-
-    def update_crafting(self):
-        player = self.app.player
-        grid = tuple(player.inventory[36:40]) # Tuple is hashable for dictionary lookup
-        
-        recipes = {
-            # Wood -> 4 Planks
-            (WOOD, 0, 0, 0): (WOOD_PLANKS, 4), (0, WOOD, 0, 0): (WOOD_PLANKS, 4),
-            (0, 0, WOOD, 0): (WOOD_PLANKS, 4), (0, 0, 0, WOOD): (WOOD_PLANKS, 4),
-            # 2 Planks -> 4 Sticks (Vertical)
-            (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4),
-            (0, WOOD_PLANKS, 0, WOOD_PLANKS): (STICK, 4),
-            # Wooden Pickaxe -> Top row planks, Bottom left stick
-            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1),
-            # Glowstone!
-            (SAND, SAND, SAND, SAND): (GLOWSTONE, 4),
-            # Glass
-            (SAND, 0, 0, 0): (GLASS, 1), (0, SAND, 0, 0): (GLASS, 1),
-            (0, 0, SAND, 0): (GLASS, 1), (0, 0, 0, SAND): (GLASS, 1),
-            # Stone Bricks
-            (STONE, STONE, STONE, STONE): (STONE_BRICKS, 4)
-        }
-        
-        if grid in recipes:
-            player.inventory[40], player.inventory_counts[40] = recipes[grid]
-        else:
-            player.inventory[40], player.inventory_counts[40] = 0, 0
-
-    def get_slot_pos(self, i):
-        gap = 0.01
-        x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
-        y_spacing = SLOT_SCALE * 2 + gap
-        
-        if i < HOTBAR_SIZE:
-            col = i % HOTBAR_SIZE
-            x = -4 * x_spacing + col * x_spacing
-            y = HOTBAR_Y # Hotbar
-        elif i < 36:
-            col = i % HOTBAR_SIZE
-            row = 2 - ((i - HOTBAR_SIZE) // HOTBAR_SIZE) 
-            y = HOTBAR_Y + (row + 1.5) * y_spacing
-            x = -4 * x_spacing + col * x_spacing
-        elif i < 40: # 2x2 Crafting Grid
-            grid_idx = i - 36
-            x = 0.5 * x_spacing + (grid_idx % 2) * x_spacing
-            y = HOTBAR_Y + (6.0 - (grid_idx // 2)) * y_spacing
-        else: # Output Slot
-            x = 3.0 * x_spacing
-            y = HOTBAR_Y + 5.5 * y_spacing
-        return x, y
-
-    def get_slot_at_mouse(self, mouse_pos):
-        mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
-        my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
-        
-        slot_w = SLOT_SCALE / ASPECT_RATIO
-        slot_h = SLOT_SCALE
-        
-        for i in range(INVENTORY_SIZE):
-            sx, sy = self.get_slot_pos(i)
-            if sx - slot_w < mx < sx + slot_w and sy - slot_h < my < sy + slot_h:
-                return i
-        return -1
-
-    def get_closest_valid_slot(self, mouse_pos, drag_id, drag_count):
-        mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
-        my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
-        
-        best_i = -1
-        best_dist_sq = float('inf')
-        gap = 0.01
-        y_spacing = SLOT_SCALE * 2 + gap
-        # Max snap distance based on UI scale
-        max_dist_sq = (y_spacing * 1.5) ** 2 
-        
-        player = self.app.player
-        
-        for i in range(INVENTORY_SIZE):
-            if i == 40: continue # Prevent dropping items into the output slot
-            sx, sy = self.get_slot_pos(i)
-            dx = (mx - sx) * ASPECT_RATIO
-            dy = my - sy
-            dist_sq = dx*dx + dy*dy
-            
-            if dist_sq < best_dist_sq and dist_sq < max_dist_sq:
-                slot_id = player.inventory[i]
-                if slot_id == 0 or (slot_id == drag_id and player.inventory_counts[i] < 64):
-                    best_i = i
-                    best_dist_sq = dist_sq
-        return best_i
-
-    def handle_event(self, event):
-        if event.type == pg.MOUSEBUTTONDOWN:
-            i = self.get_slot_at_mouse(pg.mouse.get_pos())
-            if i != -1:
-                player = self.app.player
-                slot_id = player.inventory[i]
-                slot_count = player.inventory_counts[i]
-                
-                if event.button == 1: # Left click (Pick up stack / Swap / Place stack)
-                    if i == 40: # Output slot logic
-                        if slot_id != 0:
-                            can_take = False
-                            if self.drag_id == 0:
-                                self.drag_id = slot_id
-                                self.drag_count = slot_count
-                                can_take = True
-                            elif self.drag_id == slot_id and self.drag_count + slot_count <= 64:
-                                self.drag_count += slot_count
-                                can_take = True
-                                
-                            if can_take: # Consume 1 from each crafting input!
-                                for c in range(36, 40):
-                                    if player.inventory_counts[c] > 0:
-                                        player.inventory_counts[c] -= 1
-                                        if player.inventory_counts[c] <= 0:
-                                            player.inventory[c] = 0
-                                self.drag_start_pos = pg.mouse.get_pos()
-                    else:
-                        if self.drag_id == 0:
-                            if slot_id != 0:
-                                self.drag_id = slot_id
-                                self.drag_count = slot_count
-                                player.inventory[i] = 0
-                                player.inventory_counts[i] = 0
-                                self.drag_start_pos = pg.mouse.get_pos()
-                        else:
-                            if slot_id == 0:
-                                player.inventory[i] = self.drag_id
-                                player.inventory_counts[i] = self.drag_count
-                                self.drag_id = 0
-                                self.drag_count = 0
-                            elif slot_id == self.drag_id:
-                                space = 64 - slot_count
-                                if space >= self.drag_count:
-                                    player.inventory_counts[i] += self.drag_count
-                                    self.drag_id = 0
-                                    self.drag_count = 0
-                                else:
-                                    player.inventory_counts[i] = 64
-                                    self.drag_count -= space
-                            else:
-                                player.inventory[i], self.drag_id = self.drag_id, slot_id
-                                player.inventory_counts[i], self.drag_count = self.drag_count, slot_count
-                                self.drag_start_pos = pg.mouse.get_pos()
-                    self.update_crafting()
-                elif event.button == 3: # Right click (Split half / Place one)
-                    if i != 40:
-                        if self.drag_id == 0:
-                            if slot_id != 0:
-                                half = slot_count - (slot_count // 2)
-                                self.drag_id = slot_id
-                                self.drag_count = half
-                                player.inventory_counts[i] -= half
-                                if player.inventory_counts[i] <= 0:
-                                    player.inventory[i] = 0
-                                self.drag_start_pos = pg.mouse.get_pos()
-                        else:
-                            if slot_id == 0:
-                                player.inventory[i] = self.drag_id
-                                player.inventory_counts[i] = 1
-                                self.drag_count -= 1
-                                if self.drag_count <= 0: self.drag_id = 0
-                            elif slot_id == self.drag_id and slot_count < 64:
-                                player.inventory_counts[i] += 1
-                                self.drag_count -= 1
-                                if self.drag_count <= 0: self.drag_id = 0
-                    self.update_crafting()
-        elif event.type == pg.MOUSEBUTTONUP:
-            if event.button == 1 and self.drag_id != 0:
-                mouse_pos = pg.mouse.get_pos()
-                dx = mouse_pos[0] - self.drag_start_pos[0]
-                dy = mouse_pos[1] - self.drag_start_pos[1]
-                
-                # Check if mouse moved more than 10 pixels (to separate drag from standard click)
-                if dx*dx + dy*dy > 100: 
-                    i = self.get_closest_valid_slot(mouse_pos, self.drag_id, self.drag_count)
-                    if i != -1:
-                        player = self.app.player
-                        slot_id = player.inventory[i]
-                        slot_count = player.inventory_counts[i]
-                        
-                        if slot_id == 0:
-                            player.inventory[i] = self.drag_id
-                            player.inventory_counts[i] = self.drag_count
-                            self.drag_id = 0
-                            self.drag_count = 0
-                        elif slot_id == self.drag_id:
-                            space = 64 - slot_count
-                            if space >= self.drag_count:
-                                player.inventory_counts[i] += self.drag_count
-                                self.drag_id = 0
-                                self.drag_count = 0
-                            else:
-                                player.inventory_counts[i] = 64
-                                self.drag_count -= space
-                    self.update_crafting()
-
-    def close(self):
-        if self.drag_id != 0:
-            player = self.app.player
-            
-            # Eject crafting items back into inventory (or drop them!)
-            for i in range(36, 40):
-                if player.inventory[i] != 0:
-                    for _ in range(player.inventory_counts[i]):
-                        if not player.add_item(player.inventory[i]):
-                            self.app.scene.item_manager.add_item(player.position, player.inventory[i])
-                    player.inventory[i], player.inventory_counts[i] = 0, 0
-            self.update_crafting()
-            
-            # Re-inject leftover dragged item or drop it!
-            while self.drag_count > 0:
-                if not player.add_item(self.drag_id):
-                    # Inventory completely full, drop in the world
-                    for _ in range(self.drag_count):
-                        self.app.scene.item_manager.add_item(player.position, self.drag_id)
-                    break
-                self.drag_count -= 1
-            self.drag_id = 0
-            self.drag_count = 0
-
-    def render(self):
-        gap = 0.01
-        x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
-        y_spacing = SLOT_SCALE * 2 + gap
-        
-        # Unified background for the entire inventory and crafting menu
-        bg_w = 4.5 * x_spacing + 0.02
-        bg_h = 3.0 * y_spacing + 0.02
-
-        self.color_mesh.program['u_scale'] = (bg_w, bg_h)
-        self.color_mesh.program['u_offset'] = (0.0, HOTBAR_Y + 4.0 * y_spacing)
-        self.color_mesh.program['u_color'] = UI_BG_COLOR
-        self.color_mesh.render()
-
-        player = self.app.player
-        hover_idx = self.get_slot_at_mouse(pg.mouse.get_pos())
-        
-        for i in range(INVENTORY_SIZE):
-            x, y = self.get_slot_pos(i)
-            s = SLOT_SCALE
-            
-            if i == hover_idx:
-                self.color_mesh.program['u_scale'] = ((s+0.005) / ASPECT_RATIO, s+0.005)
-                self.color_mesh.program['u_offset'] = (x, y)
-                self.color_mesh.program['u_color'] = UI_SLOT_HOVER_COLOR
-                self.color_mesh.render()
-
-            self.color_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
-            self.color_mesh.program['u_offset'] = (x, y)
-            self.color_mesh.program['u_color'] = UI_SLOT_BG_COLOR
-            self.color_mesh.render()
-
-            voxel_id = player.inventory[i]
-            if voxel_id != 0:
-                if voxel_id in (STICK, WOODEN_PICKAXE):
-                    self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-                    self.text_mesh.program['u_offset'] = (x, y)
-                    self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
-                    self.text_mesh.render()
-                    self.text_mesh.program['u_texture_0'] = 4
-                else:
-                    self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-                    self.block_mesh.program['u_offset'] = (x, y)
-                    self.block_mesh.program['voxel_id'] = voxel_id
-                    self.block_mesh.render()
-
-            count = player.inventory_counts[i]
-            if count > 0:
-                tex = self.text_renderer.get_texture(str(count))
-                tex.use(location=4)
-                scale_y = 0.025
-                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
-                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-                self.text_mesh.program['u_offset'] = (x + 0.015, y - 0.025)
-                self.text_mesh.render()
-
-        # Dragged Item Render (Follows Mouse Cursor)
-        if self.drag_id != 0:
-            mouse_pos = pg.mouse.get_pos()
-            mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
-            my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
-            
-            if self.drag_id in (STICK, WOODEN_PICKAXE):
-                self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-                self.text_mesh.program['u_offset'] = (mx, my)
-                self.text_mesh.program['u_texture_0'] = 5 if self.drag_id == STICK else 6
-                self.text_mesh.render()
-                self.text_mesh.program['u_texture_0'] = 4
-            else:
-                self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-                self.block_mesh.program['u_offset'] = (mx, my)
-                self.block_mesh.program['voxel_id'] = self.drag_id
-                self.block_mesh.render()
-            
-            if self.drag_count > 0:
-                tex = self.text_renderer.get_texture(str(self.drag_count))
-                tex.use(location=4)
-                scale_y = 0.025
-                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
-                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-                self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
-                self.text_mesh.render()
-
-
-class Button:
-    def __init__(self, app, text, pos, size, action):
-        self.app = app
-        self.text = text
-        self.pos = pos
-        self.size = size
-        self.action = action
-
-        self.color_mesh = UIColorMesh(app)
-        self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=True)
-        self.text_mesh = UITextMesh(app)
-
-        self.is_hovered = False
-        self.base_color = UI_BUTTON_COLOR
-        self.hover_color = UI_HOVER_COLOR
-
-    def check_hover(self, mouse_pos):
-        x, y = self.pos
-        w, h = self.size
-        
-        # Convert normalized screen coords to pixel coords
-        mouse_x, mouse_y = mouse_pos
-        win_w, win_h = WIN_RES
-        
-        # Convert button normalized pos/size to pixel coords
-        btn_x = (x + 1) * 0.5 * win_w
-        btn_y = (-y + 1) * 0.5 * win_h
-        btn_w = w * 0.5 * win_w
-        btn_h = h * 0.5 * win_h
-        
-        self.is_hovered = btn_x - btn_w < mouse_x < btn_x + btn_w and \
-                          btn_y - btn_h < mouse_y < btn_y + btn_h
-        return self.is_hovered
-
-    def render(self):
-        # 1. Render background
-        color = self.hover_color if self.is_hovered else self.base_color
-        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = self.pos
-        self.color_mesh.program['u_color'] = color
-        self.color_mesh.render()
-
-        # 2. Render text
-        tex = self.text_renderer.get_texture(self.text)
-        tex.use(location=4)
-        tex_w, tex_h = tex.size
-        scale_y = self.size[1] * 0.5
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
-        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = self.pos
-        self.text_mesh.render()
-
-
-class WorldButton:
-    def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action):
-        self.app = app
-        self.save_name = save_name
-        self.display_name = display_name
-        self.seed = seed
-        self.game_mode = "Survival" if game_mode == 1 else "Creative"
-        self.creation_date = creation_date
-        self.last_played = last_played
-        self.pos = pos
-        self.size = size
-        self.action = action
-
-        self.color_mesh = UIColorMesh(app)
-        self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=True)
-        self.text_mesh = UITextMesh(app)
-
-        self.is_hovered = False
-        self.base_color = UI_BUTTON_COLOR
-        self.hover_color = UI_HOVER_COLOR
-        
-        import os
-        thumb_path = f'saves/{save_name}_thumb.png'
-        if os.path.exists(thumb_path):
-            img = pg.image.load(thumb_path).convert_alpha()
-        else:
-            img = pg.Surface((320, 180), pg.SRCALPHA)
-            img.fill((80, 80, 80, 255))
-        
-        self.thumb_tex = self.app.ctx.texture(img.get_size(), 4, pg.image.tostring(img, 'RGBA', True))
-        self.thumb_tex.filter = (mgl.LINEAR, mgl.LINEAR)
-
-    def check_hover(self, mouse_pos):
-        x, y = self.pos
-        w, h = self.size
-        win_w, win_h = WIN_RES
-        btn_x = (x + 1) * 0.5 * win_w
-        btn_y = (-y + 1) * 0.5 * win_h
-        btn_w = w * 0.5 * win_w
-        btn_h = h * 0.5 * win_h
-        
-        self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
-                          btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
-        return self.is_hovered
-
-    def render(self):
-        color = self.hover_color if self.is_hovered else self.base_color
-        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = self.pos
-        self.color_mesh.program['u_color'] = color
-        self.color_mesh.render()
-
-        self.thumb_tex.use(location=4)
-        thumb_h = self.size[1] * 0.8
-        thumb_w = thumb_h * (self.thumb_tex.width / self.thumb_tex.height) / ASPECT_RATIO
-        thumb_x = self.pos[0] - self.size[0] + 0.02 + thumb_w
-        self.text_mesh.program['u_scale'] = (thumb_w, thumb_h)
-        self.text_mesh.program['u_offset'] = (thumb_x, self.pos[1])
-        self.text_mesh.render()
-        
-        text_x = thumb_x + thumb_w + 0.02
-        
-        def render_text(text, offset_y, scale_h):
-            tex = self.text_renderer.get_dynamic_texture(text)
-            tex.use(location=4)
-            scale_y = self.size[1] * scale_h
-            scale_x = scale_y * (tex.width / tex.height) / ASPECT_RATIO
-            self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-            self.text_mesh.program['u_offset'] = (text_x + scale_x, self.pos[1] + self.size[1] * offset_y)
-            self.text_mesh.render()
-            tex.release()
-
-        render_text(self.display_name, 0.4, 0.25)
-        render_text(f"{self.game_mode} Mode  |  Seed: {self.seed}", -0.05, 0.15)
-        render_text(f"Created: {self.creation_date}  |  Last Played: {self.last_played}", -0.4, 0.12)
-
-
-class TextInput:
-    def __init__(self, app, pos, size, label=""):
-        self.app = app
-        self.pos = pos
-        self.size = size
-        self.label = label
-        self.text = ""
-        self.is_active = False
-
-        self.color_mesh = UIColorMesh(app)
-        self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=False)
-        self.text_mesh = UITextMesh(app)
-
-    def handle_event(self, event):
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = pg.mouse.get_pos()
-            x, y = self.pos
-            w, h = self.size
-            win_w, win_h = WIN_RES
-            btn_x = (x + 1) * 0.5 * win_w
-            btn_y = (-y + 1) * 0.5 * win_h
-            btn_w = w * 0.5 * win_w
-            btn_h = h * 0.5 * win_h
-            self.is_active = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
-                             btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
-
-        if self.is_active and event.type == pg.KEYDOWN:
-            if event.key == pg.K_BACKSPACE:
-                self.text = self.text[:-1]
-            elif event.key == pg.K_RETURN or event.key == pg.K_ESCAPE:
-                self.is_active = False
-            else:
-                if len(self.text) < 20 and event.unicode.isprintable():
-                    self.text += event.unicode
-
-    def render(self):
-        color = (0.2, 0.2, 0.2, 0.9) if self.is_active else (0.1, 0.1, 0.1, 0.7)
-        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = self.pos
-        self.color_mesh.program['u_color'] = color
-        self.color_mesh.render()
-
-        display_text = self.text + ("_" if self.is_active and (pg.time.get_ticks() // 500) % 2 == 0 else "")
-        if not display_text and not self.is_active:
-            display_text = self.label
-            
-        tex = self.text_renderer.get_dynamic_texture(display_text)
-        tex.use(location=4)
-        tex_w, tex_h = tex.size
-        scale_y = self.size[1] * 0.6
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
-        
-        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = self.pos
-        self.text_mesh.render()
-        tex.release() # Release dynamic memory instantly to prevent VRAM leaking
-
-
-class Menu:
-    def __init__(self, app):
-        self.app = app
-        self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_TITLE, bold=True)
-        self.title_mesh = UITextMesh(app)
-
-        self.state = 'MAIN'
-        self.world_buttons = []
-        self.delete_buttons = []
-        self.scroll_offset = 0.0
-
-        # Main Menu
-        self.btn_play = Button(app, 'Play', (0, 0.15), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
-        self.btn_options = Button(app, 'Options', (0, 0.0), (0.2, 0.07), self.open_options)
-        self.btn_quit = Button(app, 'Quit', (0, -0.15), (0.2, 0.07), self.app.quit_game)
-
-        # Create World
-        self.input_name = TextInput(app, (0, 0.15), (0.3, 0.05), "World Name")
-        self.input_seed = TextInput(app, (0, 0.0), (0.3, 0.05), "Seed (Leave blank for random)")
-        self.create_game_mode = 1 # 1 is SURVIVAL
-        self.btn_game_mode = Button(app, 'Game Mode: Survival', (0, -0.15), (0.3, 0.05), self.toggle_game_mode)
-        self.btn_create = Button(app, 'Create New World', (0, -0.3), (0.3, 0.07), self.create_world)
-        self.btn_back_create = Button(app, 'Back', (0, -0.5), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
-        
-        # Select World (will be populated dynamically)
-        self.btn_new_world = Button(app, 'Create New World', (0, 0.32), (0.3, 0.07), lambda: self.set_state('CREATE_WORLD'))
-        self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.set_state('MAIN'))
-
-    def open_options(self):
-        self.app.options_menu.previous_state = 'MAIN_MENU'
-        self.app.game_state = 'OPTIONS'
-
-    def toggle_game_mode(self):
-        self.create_game_mode = 0 if self.create_game_mode == 1 else 1
-        mode_text = "Survival" if self.create_game_mode == 1 else "Creative"
-        self.btn_game_mode.text = f"Game Mode: {mode_text}"
-
-    def set_state(self, new_state):
-        self.state = new_state
-        if new_state == 'SELECT_WORLD':
-            self.load_world_list()
-        elif new_state == 'CREATE_WORLD':
-            self.input_name.text = ""
-            self.input_seed.text = ""
-            self.input_name.is_active = True
-            self.create_game_mode = 1
-            self.btn_game_mode.text = 'Game Mode: Survival'
-
-    def load_world_list(self):
-        import os
-        import sqlite3
-        for btn in self.world_buttons:
-            if hasattr(btn, 'thumb_tex'):
-                btn.thumb_tex.release() # Safely release old image memory
-        self.world_buttons = []
-        self.delete_buttons = []
-        self.scroll_offset = 0.0
-        os.makedirs('saves', exist_ok=True)
-        # Sort by modification time (most recent first)
-        saves = sorted([f for f in os.listdir('saves') if f.endswith('.db')], 
-                       key=lambda x: os.path.getmtime(os.path.join('saves', x)), 
-                       reverse=True)
-        
-        y_offset = 0.05
-        for save_file in saves: # Load all worlds dynamically
-            save_name = save_file[:-3]
-            display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
-            try:
-                conn = sqlite3.connect(f'saves/{save_file}')
-                cursor = conn.cursor()
-                cursor.execute('SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1')
-                row = cursor.fetchone()
-                if row:
-                    display_name = row[0]
-                    seed = row[1]
-                    game_mode = row[2]
-                    creation_date = row[3][:16].replace('T', ' ') if row[3] else "Unknown"
-                    last_played = row[4][:16].replace('T', ' ') if row[4] else "Unknown"
-                conn.close()
-            except:
-                pass
-            
-            btn = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
-                              (0, y_offset), (0.65, 0.12), lambda sn=save_name: self.app.init_game_session(sn))
-            self.world_buttons.append(btn)
-            
-            # Create a small red 'X' button positioned right next to the WorldButton
-            del_btn = Button(self.app, 'X', (0.55, y_offset), (0.05, 0.08), lambda sn=save_name: self.delete_world(sn))
-            del_btn.base_color = (0.4, 0.1, 0.1, 0.7)
-            del_btn.hover_color = (0.8, 0.1, 0.1, 0.9)
-            self.delete_buttons.append(del_btn)
-            
-            y_offset -= 0.26
-
-    def delete_world(self, save_name):
-        import os
-        try:
-            if os.path.exists(f'saves/{save_name}.db'):
-                os.remove(f'saves/{save_name}.db')
-            if os.path.exists(f'saves/{save_name}_thumb.png'):
-                os.remove(f'saves/{save_name}_thumb.png')
-        except Exception as e:
-            print(f"[SYSTEM] Failed to delete world: {e}")
-        self.load_world_list() # Refresh the UI list instantly!
-
-    def create_world(self):
-        name = self.input_name.text.strip()
-        if not name:
-            name = "New_World"
-            
-        base_save_name = name.replace(" ", "_")
-        save_name = base_save_name
-        
-        import os
-        counter = 1
-        while os.path.exists(f'saves/{save_name}.db'):
-            save_name = f"{base_save_name}_{counter}"
-            counter += 1
-
-        seed_str = self.input_seed.text.strip()
-        if not seed_str:
-            import random
-            seed = random.randint(100000, 999999999)
-        else:
-            try:
-                seed = int(seed_str)
-            except ValueError:
-                # Convert letters into an exact numerical seed!
-                import hashlib
-                seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % (10**9)
-                
-        self.app.init_game_session(save_name, seed, self.create_game_mode)
-
-    def update(self):
-        mouse_pos = pg.mouse.get_pos()
-        if self.state == 'MAIN':
-            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
-                btn.check_hover(mouse_pos)
-        elif self.state == 'SELECT_WORLD':
-            self.btn_new_world.check_hover(mouse_pos)
-            self.btn_back_select.check_hover(mouse_pos)
-            
-            # Apply the scroll offset and disable hover interactions if the button goes out of bounds
-            base_y = 0.05
-            for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons)):
-                new_y = base_y - i * 0.26 + self.scroll_offset
-                btn.pos = (0, new_y)
-                del_btn.pos = (0.55, new_y)
-                if -0.45 < new_y < 0.12:
-                    btn.check_hover(mouse_pos)
-                    del_btn.check_hover(mouse_pos)
-                else:
-                    btn.is_hovered = False
-                    del_btn.is_hovered = False
-        elif self.state == 'CREATE_WORLD':
-            self.btn_game_mode.check_hover(mouse_pos)
-            self.btn_create.check_hover(mouse_pos)
-            self.btn_back_create.check_hover(mouse_pos)
-
-    def handle_event(self, event):
-        if self.state == 'CREATE_WORLD':
-            self.input_name.handle_event(event)
-            self.input_seed.handle_event(event)
-            
-        if event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                if self.state == 'MAIN':
-                    for btn in [self.btn_play, self.btn_options, self.btn_quit]:
-                        if btn.is_hovered:
-                            btn.action()
-                            break
-                elif self.state == 'SELECT_WORLD':
-                    if self.btn_new_world.is_hovered:
-                        self.btn_new_world.action()
-                    elif self.btn_back_select.is_hovered:
-                        self.btn_back_select.action()
-                    else:
-                        for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                            if -0.45 < btn.pos[1] < 0.12:
-                                if del_btn.is_hovered:
-                                    del_btn.action()
-                                    break
-                                elif btn.is_hovered:
-                                    btn.action()
-                                    break
-                elif self.state == 'CREATE_WORLD':
-                    if self.btn_game_mode.is_hovered:
-                        self.btn_game_mode.action()
-                    elif self.btn_create.is_hovered:
-                        self.btn_create.action()
-                    elif self.btn_back_create.is_hovered:
-                        self.btn_back_create.action()
-            elif self.state == 'SELECT_WORLD':
-                if event.button == 4: # Mouse Wheel Scroll Up
-                    self.scroll_offset = max(0.0, self.scroll_offset - 0.26)
-                elif event.button == 5: # Mouse Wheel Scroll Down
-                    max_scroll = max(0.0, (len(self.world_buttons) - 2) * 0.26)
-                    self.scroll_offset = min(max_scroll, self.scroll_offset + 0.26)
-
-    def render(self):
-        # Render title
-        tex = self.title_renderer.get_texture("Voxel Engine")
-        tex.use(location=4)
-        
-        tex_w, tex_h = tex.size
-        scale_y = 0.1
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
-        
-        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.title_mesh.program['u_offset'] = (0.0, 0.5)
-        self.title_mesh.render()
-
-        if self.state == 'MAIN':
-            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
-                btn.render()
-        elif self.state == 'SELECT_WORLD':
-            self.btn_new_world.render()
-            for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                if -0.45 < btn.pos[1] < 0.12:
-                    btn.render()
-                    del_btn.render()
-            self.btn_back_select.render()
-        elif self.state == 'CREATE_WORLD':
-            self.input_name.render()
-            self.input_seed.render()
-            self.btn_game_mode.render()
-            self.btn_create.render()
-            self.btn_back_create.render()
-
-
-class PauseMenu:
-    def __init__(self, app):
-        self.app = app
-        self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
-        self.title_mesh = UITextMesh(app)
-        self.bg_mesh = UIColorMesh(app)
-
-        self.buttons = [
-            Button(app, 'Resume', (0, 0.15), (0.3, 0.07), self.resume_game),
-            Button(app, 'Options', (0, 0.0), (0.3, 0.07), self.open_options),
-            Button(app, 'Quit to Menu', (0, -0.15), (0.3, 0.07), self.quit_to_menu)
-        ]
-
-    def open_options(self):
-        self.app.options_menu.previous_state = 'PAUSED'
-        self.app.game_state = 'OPTIONS'
-
-    def resume_game(self):
-        self.app.game_state = 'IN_GAME'
-        pg.event.set_grab(True)
-        pg.mouse.set_visible(False)
-
-    def quit_to_menu(self):
-        self.app.game_state = 'MAIN_MENU'
-        if self.app.scene:
-            self.app.scene.world.save()
-            self.app.scene = None # Unload the world to free memory
-
-    def update(self):
-        mouse_pos = pg.mouse.get_pos()
-        for button in self.buttons:
-            button.check_hover(mouse_pos)
-
-    def handle_event(self, event):
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            for button in self.buttons:
-                if button.is_hovered:
-                    button.action()
-                    break
-
-    def render(self):
-        self.bg_mesh.program['u_scale'] = (1.0, 1.0)
-        self.bg_mesh.program['u_offset'] = (0.0, 0.0)
-        self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6)
-        self.bg_mesh.render()
-
-        tex = self.title_renderer.get_texture("Game Paused")
-        tex.use(location=4)
-        tex_w, tex_h = tex.size
-        scale_y = 0.08
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
-        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.title_mesh.program['u_offset'] = (0.0, 0.4)
-        self.title_mesh.render()
-
-        for button in self.buttons:
-            button.render()
-
-
-class Slider:
-    def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None, is_int=False):
-        self.app = app
-        self.text = text
-        self.pos = pos
-        self.size = size
-        self.min_val = min_val
-        self.max_val = max_val
-        self.config_key = config_key
-        self.action = action
-        self.is_int = is_int
-
-        self.color_mesh = UIColorMesh(app)
-        self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_SLIDERS, bold=True)
-        self.text_mesh = UITextMesh(app)
-
-        self.is_hovered = False
-        self.is_dragging = False
-
-    def update(self):
-        mouse_pos = pg.mouse.get_pos()
-        x, y = self.pos
-        w, h = self.size
-        win_w, win_h = WIN_RES
-        
-        btn_x = (x + 1) * 0.5 * win_w
-        btn_y = (-y + 1) * 0.5 * win_h
-        btn_w = w * 0.5 * win_w
-        btn_h = h * 0.5 * win_h
-        
-        self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
-                          btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
-
-        if self.is_dragging:
-            if not pg.mouse.get_pressed()[0]:
-                self.is_dragging = False
-                self.app.save_config()
-            else:
-                progress = (mouse_pos[0] - (btn_x - btn_w)) / (btn_w * 2)
-                progress = max(0.0, min(1.0, progress))
-                val = self.min_val + progress * (self.max_val - self.min_val)
-                
-                if self.is_int:
-                    val = int(round(val))
-                elif self.config_key == 'sensitivity':
-                    val = round(val, 4)
-                    
-                self.app.config[self.config_key] = val
-                if self.action:
-                    self.action(val)
-
-    def handle_event(self, event):
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            if self.is_hovered:
-                self.is_dragging = True
-
-    def render(self):
-        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = self.pos
-        self.color_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8)
-        self.color_mesh.render()
-        
-        val = self.app.config[self.config_key]
-        progress = (val - self.min_val) / (self.max_val - self.min_val)
-        
-        fill_w = self.size[0] * progress
-        fill_x = self.pos[0] - self.size[0] + fill_w
-        
-        self.color_mesh.program['u_scale'] = (fill_w, self.size[1])
-        self.color_mesh.program['u_offset'] = (fill_x, self.pos[1])
-        self.color_mesh.program['u_color'] = (0.2, 0.6, 0.3, 0.8)
-        self.color_mesh.render()
-
-        if self.is_int or self.config_key == 'fov':
-            display_val = int(val)
-        else:
-            display_val = f"{val:.4f}"
-            
-        tex = self.text_renderer.get_dynamic_texture(f"{self.text}: {display_val}")
-        tex.use(location=4)
-        tex_w, tex_h = tex.size
-        scale_y = self.size[1] * 0.6
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
-        
-        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = self.pos
-        self.text_mesh.render()
-        tex.release()
-
-
-class OptionsMenu:
-    def __init__(self, app):
-        self.app = app
-        self.title_renderer = TextRenderer(app)
-        self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
-        self.title_mesh = UITextMesh(app)
-        self.bg_mesh = UIColorMesh(app)
-
-        self.sliders = [
-            Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
-            Slider(app, 'Sensitivity', (0, 0.0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
-            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
-            Slider(app, 'Render Distance', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
-        ]
-        self.buttons = [
-            Button(app, '', (0, -0.6), (0.3, 0.05), self.toggle_tint),
-            Button(app, 'Back', (0, -0.8), (0.2, 0.07), self.go_back)
-        ]
-        self.previous_state = 'MAIN_MENU'
-
-    def update_fov(self, val):
-        if self.app.scene:
-            self.app.player.fov = glm.radians(val)
-
-    def update_volume(self, val):
-        pg.mixer.music.set_volume(val / 100.0)
-
-    def toggle_tint(self):
-        current_val = self.app.config.get('underwater_tint', False)
-        self.app.config['underwater_tint'] = not current_val
-        self.app.save_config()
-
-    def go_back(self):
-        self.app.save_config()
-        self.app.game_state = self.previous_state
-
-    def update(self):
-        for slider in self.sliders:
-            slider.update()
-
-        tint_on = self.app.config.get('underwater_tint', False)
-        self.buttons[0].text = f"Underwater Tint: {'On' if tint_on else 'Off'}"
-
-        mouse_pos = pg.mouse.get_pos()
-        for button in self.buttons:
-            button.check_hover(mouse_pos)
-
-    def handle_event(self, event):
-        for slider in self.sliders:
-            slider.handle_event(event)
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            for button in self.buttons:
-                if button.is_hovered:
-                    button.action()
-                    break
-
-    def render(self):
-        if self.previous_state == 'PAUSED':
-            self.bg_mesh.program['u_scale'] = (1.0, 1.0)
-            self.bg_mesh.program['u_offset'] = (0.0, 0.0)
-            self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8)
-            self.bg_mesh.render()
-
-        tex = self.title_renderer.get_texture("Options")
-        tex.use(location=4)
-        tex_w, tex_h = tex.size
-        scale_y = 0.08
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
-        self.title_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.title_mesh.program['u_offset'] = (0.0, 0.45)
-        self.title_mesh.render()
-
-        for slider in self.sliders:
-            slider.render()
-        for button in self.buttons:
-            button.render()
-
-
-class DebugOverlay:
-    def __init__(self, app):
-        self.app = app
-        self.font = pg.font.SysFont('arial', FONT_SIZE_DEBUG, bold=True)
-        self.text_mesh = UITextMesh(app)
-        self.dynamic_texture = None
-        self.last_update = 0
-
-    def render(self):
-        current_time = pg.time.get_ticks()
-        if current_time - self.last_update > 250 or self.dynamic_texture is None:
-            self.last_update = current_time
-            
-            player = self.app.player
-            handler = self.app.scene.world.voxel_handler
-            
-            fps = self.app.clock.get_fps()
-            x, y, z = player.position
-            cx, cy, cz = int(x // CHUNK_SIZE), int(y // CHUNK_SIZE), int(z // CHUNK_SIZE)
-            yaw, pitch = glm.degrees(player.yaw), glm.degrees(player.pitch)
-            
-            target = "Air"
-            if handler.voxel_id:
-                target = f"ID: {handler.voxel_id} at {int(handler.voxel_world_pos.x)} {int(handler.voxel_world_pos.y)} {int(handler.voxel_world_pos.z)}"
-    
-            lines = [
-                f"Voxel Engine (FPS: {fps:.0f})",
-                f"XYZ: {x:.3f} / {y:.5f} / {z:.3f}",
-                f"Chunk: {cx} {cy} {cz}",
-                f"Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}",
-                f"Time: {self.app.world_session_time:.2f}",
-                f"Target Block: {target}",
-                f"Game Mode: {'Survival' if player.game_mode == SURVIVAL else 'Creative'}"
-            ]
-    
-            surfaces = []
-            for line in lines:
-                shadow = self.font.render(line, True, (60, 60, 60))
-                text = self.font.render(line, True, (220, 220, 220))
-                merged = pg.Surface((text.get_width() + 2, text.get_height() + 2), pg.SRCALPHA)
-                merged.blit(shadow, (2, 2))
-                merged.blit(text, (0, 0))
-                surfaces.append(merged)
-                
-            max_w = max(s.get_width() for s in surfaces)
-            total_h = sum(s.get_height() for s in surfaces)
-            
-            bg_surf = pg.Surface((max_w + 10, total_h + 10), pg.SRCALPHA)
-            bg_surf.fill((0, 0, 0, 120))
-            
-            curr_y = 5
-            for s in surfaces:
-                bg_surf.blit(s, (5, curr_y))
-                curr_y += s.get_height()
-            
-            if self.dynamic_texture:
-                self.dynamic_texture.release() # Prevent VRAM leaks
-                
-            self.dynamic_texture = self.app.ctx.texture(bg_surf.get_size(), 4, pg.image.tostring(bg_surf, 'RGBA', True))
-            self.dynamic_texture.filter = (mgl.NEAREST, mgl.NEAREST)
-            
-        self.dynamic_texture.use(location=4)
-        
-        tex_w, tex_h = self.dynamic_texture.size
-        scale_y = (tex_h / WIN_RES.y)
-        scale_x = (tex_w / WIN_RES.x)
-        
-        x_offset = -1.0 + scale_x
-        y_offset = 1.0 - scale_y
-        
-        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = (x_offset, y_offset)
-        self.text_mesh.render()
-
-===== D:\Minecraft\voxel_handler.py =====
+===== D:\Pyrite\src\voxel_handler.py =====
 
 from settings import *
 from lighting import update_light_place_block, place_torch, update_light_remove_block
@@ -5565,7 +5829,7 @@ class VoxelHandler:
                     self.app.scene.world.build_queue.append(chunk)
                 
                 self.rebuild_adjacent_chunks(new_voxel_pos, is_light_update=True)
-                self.app.sounds.play_dig(current_id)
+                self.app.sounds.play_place(current_id)
 
                 # Consume item from hotbar if in Survival mode
                 if self.app.player.game_mode == SURVIVAL:
@@ -5619,7 +5883,7 @@ class VoxelHandler:
             if self.chunk not in self.app.scene.world.build_queue:
                 self.app.scene.world.build_queue.append(self.chunk)
             self.rebuild_adjacent_chunks(self.voxel_world_pos, is_light_update=True)
-            self.app.sounds.play_dig(self.voxel_id)
+            self.app.sounds.play_break(self.voxel_id)
             
             # Spawn dropped item only in Survival mode
             if self.app.player.game_mode == SURVIVAL:
@@ -5717,14 +5981,14 @@ class VoxelHandler:
             return voxel_id, voxel_index, voxel_local_pos, chunk
         return 0, 0, 0, 0
 
-===== D:\Minecraft\world.py =====
+===== D:\Pyrite\src\world.py =====
 
 from settings import *
 from world_objects.chunk import Chunk
 from meshes.cube_mesh import CubeMesh
 from voxel_handler import VoxelHandler
 import concurrent.futures
-import glm
+from pyglm import glm
 import numpy as np
 import os
 import sqlite3
@@ -6245,3 +6509,339 @@ class World:
                     if chunk.mesh.vbo: chunk.mesh.vbo.release()
         
         self.bbox_mesh.vao.release()
+
+===== D:\Pyrite\tests\test_engine.py =====
+
+from settings import AIR, WATER, GLASS, LEAVES, STONE, GRASS
+from meshes.chunk_mesh_builder import is_transparent
+
+
+def test_transparent_blocks():
+    """Ensure the meshing engine correctly identifies transparent blocks for face culling."""
+    assert is_transparent(AIR) == True
+    assert is_transparent(WATER) == True
+    assert is_transparent(GLASS) == True
+    assert is_transparent(LEAVES) == True
+    assert is_transparent(STONE) == False
+    assert is_transparent(GRASS) == False
+
+===== D:\Pyrite\.gitignore =====
+
+__pycache__/
+.pytest_cache/
+extra/
+*.mp3
+*.pyc
+*.nbc
+*.nbi
+saves/
+build/
+dist/
+docs/
+docs/_build/
+command.txt
+convert_audio.ps1
+test_obj.py
+append_texture.py
+audio_length.py
+ui.py
+config.json
+plans.txt
+
+===== D:\Pyrite\append_texture.py =====
+
+import pygame as pg
+import sys
+
+
+def append_texture_row(base_texture_path, append_texture_path, output_path):
+    # Initialize pygame modules
+    pg.init()
+    
+    try:
+        # Load the existing texture array and the new texture to append
+        base_tex = pg.image.load(base_texture_path)
+        append_tex = pg.image.load(append_texture_path)
+    except pg.error as e:
+        print(f"Error loading images: {e}")
+        pg.quit()
+        sys.exit(1)
+        
+    # Scale the second texture to exactly 128x128 pixels
+    append_tex_scaled = pg.transform.scale(append_tex, (128, 128))
+    
+    # Calculate the size of the new combined texture
+    # 3 copies of 128x128 make the appended row 384 pixels wide
+    new_width = max(base_tex.get_width(), 384)
+    new_height = base_tex.get_height() + 128
+    
+    # Create a new surface (with SRCALPHA for transparency support)
+    new_surf = pg.Surface((new_width, new_height), pg.SRCALPHA)
+    
+    # Blit the original texture array at the top (0, 0)
+    new_surf.blit(base_tex, (0, 0))
+    
+    # Blit 3 copies of the scaled texture directly below the base texture
+    start_y = base_tex.get_height()
+    for i in range(3):
+        new_surf.blit(append_tex_scaled, (i * 128, start_y))
+        
+    # Save the resulting image
+    pg.image.save(new_surf, output_path)
+    print(f"Successfully saved combined texture to {output_path}")
+    pg.quit()
+
+
+if __name__ == '__main__':
+    # Provide your image paths here
+    # For example, using paths from the Minecraft project assets folder
+    base_texture = 'assets/tex_array_2.png'  # Your current texture array
+    texture_to_append = 'assets/stone_brick.png'  # The texture you want to add
+    output_texture = 'assets/tex_array_2.png'   # The resulting combined texture
+    
+    append_texture_row(base_texture, texture_to_append, output_texture)
+
+===== D:\Pyrite\audio_length.py =====
+
+import pygame
+
+
+pygame.mixer.init()
+
+
+sounds = []
+
+for sound in sounds:
+    Sound = pygame.mixer.Sound(f"sounds/{sound}")
+    length = Sound.get_length()
+    print(f"Audio length for {sound}: {length} seconds")
+
+===== D:\Pyrite\build.spec =====
+
+# -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_dynamic_libs
+
+block_cipher = None
+
+a = Analysis(
+    ['run.py'],
+    pathex=['src'],
+    # Manually include Numba's TBB libraries and other potential missing DLLs
+    binaries=collect_dynamic_libs('numba'),
+    datas=[('assets', 'assets'), ('src/shaders', 'src/shaders')],
+    # Add scipy hidden imports as a fallback for numpy dependencies
+    hiddenimports=['numba', 'llvmlite', 'noise', 'glm', 'moderngl', 'pygame', 'scipy.linalg.cython_blas', 'scipy.linalg.cython_lapack'],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='Pyrite',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=True, # Set to False in the future to hide the background terminal window!
+    icon='assets/icon-nobg.ico',
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='Pyrite',
+)
+
+===== D:\Pyrite\ISSUES.MD =====
+
+The stick model is missing it's textures. ( ! FIXED ! )
+The jump height is too low, so it's impossible to jump up a block and move forward, if the jump action happens first and then the walk forward action.
+The environment lighting is propogating actross chunks, so while one has the right lighting, the other adjucent chunk has the incorrect lighting at it's chunk borders.
+The Day-Night cycle is moving wayy too fast !
+Fix the rotation of the Pickaxe model when it is held in hand by the player. perhaps scale it down a bit too.
+Move the stick model a bit upward for when the player is holding it in his hands. It's rotation and scale are all perfect !
+Update the Terrain Generation system. The current system generates wayy too weird terrain. we need nice look and predictable terrain at the time. "Nice Lookinb" being completely subjective here ! 
+Update all the UI to reflect the same theme and coloring as the game's name and theme. the title of the game screen is a giood example of this, which we have already done !
+Move the options menu's UI a little upward.
+Add different colors/phases/states for all the buttons, such as the active, disabled, hovering, clicked. This would make the UI/UX even better.
+Add animations such as fade in and out, move up, down, left and right, pop in and out, etc etc... to the menus for greater UI/UX.
+Add more tests to the tests directory.
+Update the docs in the docs directory. Right now, it is wayy too vague and misses a lot of Key points and smaller facts, etc. The explainations of all the system are also wayy to high level and vagie, making it impossible for others to ready the docs and easily replicate or create their own versions of the same system, without reading and understand the source code itslef.
+Add doc strings to all the classes, methods and functions in all the python files and modules. The main focus of these doc strings should be on explain, describing or atleast breifing on what that specific class, method or function does, rather than on type hinting and such, etc.
+Plan and add nice background to all the different menus in the main screen. perhaps of gorgeous looking terrain from our game ? or anything that may work and enhance the UX.
+Upgrade the scroll frame for the world buttons in the main menu screen to show kinda of a bar moving up and down when we are scrolling through it.
+Add Damage to player when the hunger reaches zero. Also, decrease the player's movement speed when in survival mode and the hunger is less than or equal to 30. For now, to recorver the hunger, the player has simply be standing in a place for maybe 3 sec ? befor the hunger starts to recover own it's own. The health of the player should also only be recovering when the player's hunger is full. this would create kinda of a cycle where a player would just be standing doing nothing for minutes if his health is very low and his hunger is also down as well. this means, when the player's hunger reaches full, his health would start to recover. should we make it so that when the player's health increases, his hunger decreases ? putting him in a visius cycle to health increasing hunger bar deceasing, then hunger bar increasing again, and due to which the health increasing and the hunger bar deceasing again ! is this actually a good idea for gameplay or UX ? is this whole idea even good for our game's survival mechanics or gameplay or UX ?
+We also need to move the create new world button a little down from it's current position, as it is touching thr bottom of the Pyrite game title image on the main screen.
+We also need to update our return to main menu mechanics so instead of returning to the create new world menu screen when exiting out of a newly created world, or returning to the worlds menu screen from where we select the world to start playing, we always return to the MAIN main menu screen ! where the "play", "options" and "quit" buttons exists.
+We need to add actual shadows to our gamem, casted by the trees, enviroment, etc; upon each other. we should also make it toggle if possible and helpful in maintain smooth performence for the future.
+We also need to plan about how we are going to add the Async LOD generation and steaming to our existing world, without breaking anything that already exists, How it will work with the Greedy Mesher, AO, Lighting and the Textures.
+Update the conf.py in docs directory, so that the pages generated by sphinx don't have width less than that of the viewer's screen width. i am pretty sure it should be dynamic for that to happen, veen if it's not. need to check repos such as https://github.com/panda3d/panda3d-docs , https://numba.readthedocs.io/en/stable/user/jit.html , https://docs.panda3d.org/1.10/python , etc to see hoe they hadle such issues. And specially take a look at their conf.py files !
+
+===== D:\Pyrite\pytest.ini =====
+
+[pytest]
+pythonpath = src
+
+===== D:\Pyrite\README.md =====
+
+<div align="center">
+  <img src="assets/new-label.png" alt="Pyrite Logo" width="600"/>
+  <br>
+  <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/build.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/build.yml/badge.svg" alt="Build Status"></a>
+  <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/tests.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/tests.yml/badge.svg" alt="Test Status"></a>
+  <a href="https://github.com/ShivamKR12/Pyrite/releases/latest"><img src="https://img.shields.io/github/v/release/ShivamKR12/Pyrite?label=Download%20Latest%20Release&color=success" alt="Latest Release"></a>
+</div>
+
+# Pyrite
+
+Pyrite is a highly-optimized, procedural 3D Voxel Engine written entirely in Python.
+
+## Features
+### 🚀 Insane Engine Performance
+- **Numba LLVM JIT Compilation:** Bypasses the Python GIL using `nogil=True`, `fastmath=True`, and `parallel=True` to run chunk generation, vectorized noise math, and frustum culling across all CPU cores at near C++ speeds.
+- **True Asynchronous Loading:** Utilizes `ThreadPoolExecutor` to load SQLite databases and generate terrain entirely in the background, keeping the Pygame main thread stutter-free.
+- **Advanced Rendering Pipeline:** Combines **Greedy Meshing** (to drastically reduce GPU draw calls), **Vectorized Frustum Culling**, and **Hardware Occlusion Queries** via ModernGL to ensure the GPU only draws what the player can actually see.
+- **Volumetric BFS Lighting Engine:** A highly optimized Breadth-First Search lighting system using 64-bit integer bit-packing and fast 1D array paths for ultra-fast, real-time sunlight and block-light propagation.
+
+### 🌍 Deep World Management & Generation
+- **Infinite Procedural Terrain:** Uses 3D Simplex noise to generate height-based biomes, complete with deep sprawling caves, dynamic dirt depth, and natural tree placements.
+- **Dynamic Seeding:** MD5 string-hashing allows players to input custom text seeds to deterministically generate unique worlds.
+- **SQLite Disk Storage:** Worlds are saved using SQLite Write-Ahead Logging (WAL) for async-like high-performance disk writing. `lightmap` arrays, player XYZ coordinates, and full inventories are cached to completely skip expensive recalculations on load!
+
+### ⛏️ Complete Survival Mechanics
+- **Progression & Crafting:** A fully interactive 36-slot inventory, hotbar, and 2x2 crafting grid with drag-and-drop UI. Features a tool dependency system (e.g., Wooden Pickaxes mine stone 5x faster).
+- **Survival Stats:** Dynamic health, hunger, and oxygen mechanics. Features fall damage, drowning, void death, and a smart spawn system to prevent spawning underwater.
+- **3D Physics & Audio:** Mined blocks drop as physically simulated, rotating 3D entities. Features block-specific stereo audio (footsteps, breaking, placing) and C418 background music.
+
+### 🌅 Atmospheric Visuals
+- **Dynamic Day/Night Cycle:** The sun, moon, and twinkling stars rotate through the sky, dynamically altering ambient lighting, sunset fog colors, and shadow intensity.
+- **Volumetric Fluids & Custom Fog:** Fully 3D flowing water blocks, underwater screen-tinting, and density-scaled fog that seamlessly hides chunk boundaries.
+- **Custom OBJ Parsing:** Parses raw `.obj` files and `.mtl` colors directly in Python to render custom 3D tool models (sticks, pickaxes) in-hand.
+
+## Controls
+| Key / Input | Action |
+| :--- | :--- |
+| **W A S D** | Move |
+| **Space** | Jump / Swim up |
+| **L-Shift** | Sprint / Move down (Creative) |
+| **Mouse** | Look around |
+| **Left Click** | Mine / Break block |
+| **Right Click** | Place block |
+| **E** | Open Inventory / Crafting |
+| **F** | Toggle Creative / Survival mode |
+| **1 - 9** | Select Hotbar slot |
+| **Scroll Wheel** | Cycle Hotbar slot |
+| **P** | Toggle Wireframe view |
+| **O** | Toggle Frustum Culling (Debug) |
+| **F3** | Toggle Debug Overlay |
+| **ESC** | Pause Game / Menu |
+
+## Run from Source
+
+It is highly recommended to use a Python Virtual Environment (`venv`) to install Pyrite's dependencies, so you don't mess up your system-wide Python packages.
+
+### Windows
+```cmd
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python run.py
+```
+
+### Linux
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 run.py
+```
+
+### macOS
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 run.py
+```
+
+## Running Tests
+To ensure the engine's core mechanics (like transparent block rendering and lighting logic) are working correctly, you can run the test suite locally using `pytest`:
+
+```bash
+# Ensure your virtual environment is activated, then install pytest if you haven't already:
+pip install pytest
+
+# Run the entire test suite:
+pytest tests/
+```
+
+===== D:\Pyrite\run.py =====
+
+import sys
+import os
+import traceback
+
+# Add the 'src' directory to the Python path so absolute imports work perfectly
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
+
+if __name__ == '__main__':
+    try:
+        from main import Pyrite
+        app = Pyrite()
+        app.run()
+    except Exception as e:
+        with open("crash_log.txt", "w") as f:
+            traceback.print_exc(file=f)
+        print("\n==================================================")
+        print("CRASH DETECTED! Saved to crash_log.txt")
+        print("==================================================")
+        traceback.print_exc()
+        input("\nPress ENTER to exit...")
+
+===== D:\Pyrite\test_obj.py =====
+
+import os
+
+def analyze_obj(filepath):
+    print(f"--- Analyzing {filepath} ---")
+    if not os.path.exists(filepath):
+        print("File not found!")
+        return
+        
+    triangles = 0
+    quads = 0
+    n_gons = 0
+    
+    with open(filepath, 'r') as f:
+        for line in f:
+            if line.startswith('f '):
+                vertices = len(line.split()[1:])
+                if vertices == 3: triangles += 1
+                elif vertices == 4: quads += 1
+                else: n_gons += 1
+                
+    print(f"Triangles (Supported natively by GL_TRIANGLES): {triangles}")
+    print(f"Quads (Will break GL_TRIANGLES without conversion): {quads}")
+    print(f"N-Gons: {n_gons}")
+
+if __name__ == '__main__':
+    analyze_obj('assets/stick.obj')
