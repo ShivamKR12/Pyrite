@@ -8,7 +8,7 @@ extra/
 saves/
 build/
 dist/
-docs/
+# docs/
 docs/_build/
 command.txt
 convert_audio.ps1
