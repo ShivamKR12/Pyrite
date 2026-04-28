@@ -10,7 +10,10 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: write
     steps:
@@ -25,15 +28,22 @@ jobs:
       run: |
         pip install -r requirements.txt pyinstaller
         
-    - name: Build & Zip Executable
+    - name: Build Executable
       run: |
         pyinstaller build.spec
-        Compress-Archive -Path dist/Pyrite -DestinationPath Pyrite_Windows.zip
         
+    - name: Zip Executable (Windows)
+      if: runner.os == 'Windows'
+      run: Compress-Archive -Path dist/Pyrite -DestinationPath Pyrite_${{ runner.os }}.zip
+
+    - name: Zip Executable (Linux & macOS)
+      if: runner.os != 'Windows'
+      run: cd dist && zip -r ../Pyrite_${{ runner.os }}.zip Pyrite/
+
     - name: Upload Release Asset
       uses: softprops/action-gh-release@v2
       with:
-        files: Pyrite_Windows.zip
+        files: Pyrite_${{ runner.os }}.zip
 
 ===== D:\Pyrite\.github\workflows\docs.yml =====
 
@@ -6660,7 +6670,7 @@ extra/
 saves/
 build/
 dist/
-docs/
+# docs/
 docs/_build/
 command.txt
 convert_audio.ps1
