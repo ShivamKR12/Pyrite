@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
     
@@ -32,6 +34,42 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: Pyrite_Windows.zip
+
+===== D:\Pyrite\.github\workflows\docs.yml =====
+
+name: Build Documentation
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        
+    - name: Install dependencies
+      run: |
+        pip install -r requirements-dev.txt
+        
+    - name: Build Sphinx Docs
+      run: |
+        cd docs
+        sphinx-build -b html . _build/html
+        
+    - name: Upload Built Docs
+      uses: actions/upload-artifact@v4
+      with:
+        name: pyrite-docs
+        path: docs/_build/html/
 
 ===== D:\Pyrite\.github\workflows\test.yml =====
 
@@ -68,22 +106,46 @@ Pyrite is built on a hybrid architecture combining Pygame (for windowing and eve
 
 The Main Loop & Asynchronous Processing
 ---------------------------------------
-The core game loop runs strictly on the main thread, handling player inputs, camera updates, and issuing draw calls to the GPU. Because Python's Global Interpreter Lock (GIL) prevents true multi-threading for standard Python objects, heavy engine tasks are offloaded using two techniques:
+The core game loop runs strictly on the main thread, handling player inputs, camera updates, and issuing draw calls to the GPU. Because Python's Global Interpreter Lock (GIL) prevents true multi-threading for standard Python objects, heavy engine tasks are offloaded using two specific techniques:
 
-1. **The ThreadPoolExecutor:** Database I/O (SQLite) and chunk streaming management are dispatched to a background thread pool.
-2. **Numba `nogil=True`:** The heaviest tasks (Procedural Noise, Greedy Meshing, and BFS Lighting) are compiled to raw LLVM machine code via Numba. By passing the `nogil=True` flag, these functions completely detach from the Python interpreter, allowing them to utilize 100% of all available physical CPU cores simultaneously without interrupting the Pygame render loop.
+1. **The ThreadPoolExecutor:** Background Python threads are used strictly for I/O operations (reading/writing to the SQLite database) and executing pre-compiled Numba functions.
+2. **Numba nogil=True:** The heaviest tasks (Procedural Noise, Greedy Meshing, and BFS Lighting) are compiled to raw LLVM machine code. By passing the `nogil=True` flag, these functions completely detach from the Python interpreter, allowing them to utilize 100% of all available physical CPU cores simultaneously without freezing the Pygame render loop.
+
+The Queue System
+----------------
+To manage the flow of asynchronous data back to the synchronous main thread (which is required for OpenGL calls), Pyrite uses a robust queue pipeline:
+
+* **load_queue:** Contains background futures fetching or generating raw voxel data. Once complete, the chunks are passed to the `build_queue`.
+* **build_queue:** A list of chunks awaiting greedy meshing. To prioritize player experience, this queue is dynamically re-sorted every frame so that chunks closest to the player are processed first.
+* **mesh_queue:** Contains the final step. The main thread safely pops from this queue to allocate OpenGL Vertex Buffer Objects (VBOs) and Vertex Array Objects (VAOs) without risking cross-thread OpenGL context crashes. To prevent memory leaks, Pyrite utilizes a **VBO Pool** that recycles released buffers for new meshes.
 
 World & Data Persistence
 ------------------------
-Pyrite handles infinite terrain through a chunk-based streaming system.
+Pyrite handles infinite terrain through a chunk-based streaming system. Each chunk is a 48x48x48 (`CHUNK_SIZE`) grid.
 
-To prevent RAM exhaustion, active chunks are stored in a centralized dictionary (`world.active_chunks`). As the player moves, a 2D grid distance check determines which chunks fall out of the configured `render_distance`.
+To prevent RAM exhaustion, active chunks are stored in a centralized dictionary (`world.active_chunks`). As the player moves, a 2D grid distance check determines which chunks fall out of the configured `render_distance`. Unloaded chunks are serialized and saved to disk.
 
-Unloaded chunks are dynamically serialized via `zlib` compression and written to a SQLite `.db` file using Write-Ahead Logging (WAL) for async-like high-performance disk writes. The engine caches three primary states:
+SQLite Write-Ahead Logging (WAL)
+--------------------------------
+Because Python's standard file handling can be slow for millions of blocks, Pyrite uses a local SQLite `.db` file configured with `PRAGMA journal_mode = WAL`. This provides async-like, high-performance disk writes.
 
-- **Voxel Data:** The 3D array of block IDs.
-- **Lightmap Data:** The pre-calculated BFS sunlight and blocklight values, completely skipping expensive recalculations upon returning to an area.
-- **World Meta:** The player's exact XYZ coordinates, camera angles, and full inventory states.
+The database caches three primary states:
+
+1. **The chunks Table:** 
+   Stores the absolute `x, y, z` chunk coordinates as the Primary Key. The chunk's 1D `uint8` Numpy arrays for Voxels and Lightmaps are compressed using `zlib.compress()` and stored as raw `BLOB` data.
+2. **The player_data Table:**
+   Stores a serialized JSON string containing the player's exact `[x, y, z]` coordinates, camera angles (Yaw, Pitch), survival stats (Health, Hunger, Oxygen), and the exact state of the 41-slot inventory arrays.
+3. **The world_meta Table:**
+   Stores high-level data like the Seed, World Name, Game Mode, and timestamps.
+
+Memory Management (1D vs 3D Arrays)
+-----------------------------------
+Instead of storing chunks as slow, nested Python lists (e.g., `chunk[x][y][z]`), Pyrite flattens all volumetric data into 1D Numpy arrays. 
+
+A block's specific index in the array is calculated using: 
+`index = x + z * CHUNK_SIZE + y * CHUNK_AREA`. 
+
+This guarantees contiguous memory alignment, ensuring maximum CPU Cache utilization during Numba JIT execution.
 
 ===== D:\Pyrite\docs\conf.py =====
 
@@ -144,28 +206,44 @@ This documentation breaks down the core systems of the engine, explaining how te
 Volumetric Lighting Engine
 ==========================
 
-Pyrite implements a dynamic, voxel-based lighting system using a Numba-optimized Breadth-First Search (BFS) algorithm. The light map holds two separate values packed into a single byte: Sunlight (0-15) and Blocklight (0-15).
+Pyrite implements a dynamic, voxel-based lighting engine capable of real-time shadow updates. It utilizes a Numba-optimized Breadth-First Search (BFS) algorithm that traverses chunk boundaries seamlessly. 
+
+Memory-Packed Lightmaps
+-----------------------
+To save memory, every chunk stores a 1D `uint8` array containing the light levels for all 110,592 blocks in the chunk. Because light levels only go from 0 to 15 (requiring only 4 bits), both Sunlight and Blocklight are packed into a single byte:
+
+`light_value = (sun_light << 4) | block_light`
 
 Bit-Packed Propagation Queues
 -----------------------------
-Because Python object queues are too slow, the lighting engine uses flat `uint64` Numpy arrays as C-style ring buffers. When a light updates, its X, Y, Z coordinates and light-level are bit-shifted and packed into a single 64-bit integer, preventing memory overhead and bounding-box overflow issues.
+Standard Python `collections.deque` objects are too slow for an engine making millions of iterations per second. Instead, the lighting engine pre-allocates massive, flat `uint64` Numpy arrays (`queue = np.empty(200000, dtype=np.uint64)`) to act as C-style ring buffers managed by a `head` and `tail` pointer.
+
+To fit a block's 3D coordinate and light-level into the queue without instantiating a Python Tuple, the data is bit-shifted into a single 64-bit integer:
+
+* **Adding Light:** `(x << 32) | (y << 16) | z`
+* **Removing Light:** `(x << 40) | (y << 24) | (z << 8) | light_level`
 
 Sunlight Propagation
 --------------------
-When a chunk generates, sunlight is cast straight down from the sky. If a ray of sunlight hits Air, Water, or Leaves, it populates the chunk's lightmap.
+When a chunk is first generated, sunlight is cast straight down from the top of the world. It maintains a power of 15 until it hits a solid block. Water and Leaves diminish the light by 2 levels per block, while opaque blocks block it entirely.
 
-To optimize vertical sunlight updates when a block is broken, the engine avoids 3D volumetric expansion. Instead, it performs an O(1) vertical linear raycast, dropping the light level down the newly created hole instantly until it hits a solid surface.
+**The O(1) Vertical Raycast Optimization:**
+If the player mines a block that is directly exposed to sunlight from above, the engine avoids an expensive 3D volumetric BFS expansion. Instead, it performs an `O(1)` vertical linear raycast downward, instantly flooding the newly created hole with level-15 light until it hits the next solid surface, before queueing horizontal expansion.
 
 Blocklight (Glowstone / Torches)
 --------------------------------
 Blocklight spreads spherically, diminishing by 1 level per block. When a light source is broken:
-1. The engine strips the existing light values from the immediate area, replacing them with zeroes and queuing the dark nodes.
-2. The BFS algorithm expands outward, finding any surviving neighbor lights that were previously overlapping.
-3. Those neighbors are then re-queued to flood light back into the area.
+
+1. **Removal Pass:** The engine recursively strips the existing light values from the area, pushing dark nodes outward as long as the neighbor's light level is lower than the current node's previous light level.
+2. **Refill Capture:** If the removal pass hits a light node that is *equal to or brighter* than what it expects, it means that light is coming from a completely different surviving light source. That bright node is captured and placed into a `refill_queue`.
+3. **Refill Pass:** The `refill_queue` is passed back into standard BFS propagation to flood light back into the newly darkened room.
 
 Shader Integration
 ------------------
-The Fragment Shader reads the interpolated sunlight and blocklight values. It applies a dynamic day/night ambient tinting to the sunlight channel, and applies a trigonometric flicker formula to the blocklight channel to simulate glowing light sources.
+The OpenGL Fragment Shader reads the interpolated sunlight and blocklight values. The final fragment color is derived by taking the `max()` of the two light channels.
+
+* **Day/Night Cycle:** The sunlight channel is multiplied by a trigonometric time uniform (`u_sun_direction.y`), naturally dimming the sun-lit areas as the world turns to night.
+* **Dynamic Flicker:** A trigonometric noise formula (`1.0 + 0.05 * sin(u_time * 10.0) * cos(u_time * 23.0)`) is applied exclusively to the blocklight channel to simulate the natural, organic flicker of torches and glowstone.
 
 ===== D:\Pyrite\docs\rendering.rst =====
 
@@ -176,31 +254,43 @@ Rendering millions of individual block faces in Python is impossible. Pyrite sol
 
 Greedy Meshing
 --------------
-Instead of rendering 6 faces for every block, Pyrite's mesher scans a chunk's voxel array and groups adjacent, identical faces into massive, single polygons. 
+Instead of rendering 6 faces for every block, Pyrite utilizes a Greedy Meshing algorithm. The Numba compiler scans the chunk 2D slice by 2D slice across the X, Y, and Z planes.
 
-A flat grassy plain that would normally require 4,096 separate quads is compressed into a single massive quad. This drastically reduces the number of vertices uploaded to the GPU via Vertex Buffer Objects (VBOs).
+It groups adjacent, coplanar block faces of the *exact same ID and Lighting Data* into massive, single polygons. A flat grassy plain that would normally require 4,096 separate quads is compressed into a single massive quad, drastically reducing the vertex payload sent to the GPU.
+
+**The 32-bit Vertex Payload:**
+To minimize GPU bandwidth, vertex data is heavily bit-packed into a single 32-bit integer:
+`x: 6-bit, y: 6-bit, z: 6-bit, voxel_id: 8-bit, face_id: 3-bit, ao_id: 2-bit, flip_id: 1-bit`
 
 Vectorized Frustum Culling
 --------------------------
-Before issuing draw calls, the engine checks if a chunk is actually within the camera's field of view.
-Instead of looping through chunks in Python (which is slow), Pyrite extracts all chunk center coordinates into a flat Numpy array and passes them to a Numba JIT-compiled function. This performs vector math (dot products against the camera's forward, right, and up vectors) to cull thousands of chunks in a fraction of a millisecond.
+Before issuing OpenGL draw calls, the engine filters out chunks that are behind the player or out of the camera's field of view.
+
+Instead of iterating through chunks in standard Python (which creates significant overhead), Pyrite extracts all active chunk centers into a single `Nx3` Numpy array. This array is passed to a parallelized Numba JIT function (`frustum_cull_fast`) which performs vectorized dot-product math against the camera's projection planes, culling thousands of chunks in a fraction of a millisecond.
 
 Hardware Occlusion Queries
 --------------------------
-If a chunk is behind a massive mountain, it shouldn't be rendered, even if it is inside the camera's frustum.
+If a chunk is hidden deep underground or behind a massive mountain, it shouldn't be rendered, even if it is technically inside the camera's viewing frustum.
 
-Pyrite leverages ModernGL's hardware Occlusion Queries. The engine renders a cheap "Bounding Box" around chunks. If the GPU reports that 0 pixels of that bounding box were drawn to the screen, the engine completely skips rendering the complex, greedy-meshed geometry for that chunk on the next frame.
+Pyrite leverages ModernGL's hardware Occlusion Queries. For invisible chunks, the engine submits a dirt-cheap wireframe Bounding Box to the GPU. If the GPU's depth-buffer reports that 0 pixels of the bounding box were visible on screen, the engine completely skips rendering the complex, high-poly greedy mesh for that chunk on the next frame.
 
 Multi-Pass Transparency
 -----------------------
-To render water correctly:
+To ensure that water and glass render correctly without depth-buffer sorting issues, the engine utilizes multi-pass rendering:
+
 1. The engine first renders all opaque geometry (Stone, Dirt, Wood).
 2. The Depth Buffer is preserved, but face-culling is adjusted.
 3. The engine performs a second pass, rendering transparent geometry (Water, Glass) over the existing terrain, applying a time-based UV distortion to simulate flowing waves.
 
 Texture Atlases
 ---------------
-To prevent expensive texture-binding swaps mid-frame, all block textures are combined into a single 2D Texture Array. Blocks are assigned a 1D uniform array mapping, allowing the Fragment Shader to instantly look up the correct texture layer based on the vertex's `voxel_id`.
+To prevent expensive texture-binding swaps mid-frame, all block textures are combined into a single `2D Texture Array` using `pygame.Surface`.
+
+In OpenGL, a global `TEXTURE_MAP` array translates the block's `voxel_id` into a specific Z-layer index in the Texture Array, allowing the Fragment Shader to instantly look up the correct texture layer dynamically.
+
+Ambient Occlusion
+-----------------
+Pyrite simulates soft shadows in the corners of blocks using Vertex-based Ambient Occlusion (AO). The engine checks the adjacent diagonal blocks of a face during meshing. Depending on how many blocks surround the corner, it assigns an `ao_id` (0 to 3). The shader interpolates this value across the face to create a smooth darkening effect.
 
 ===== D:\Pyrite\docs\survival.rst =====
 
@@ -211,41 +301,74 @@ Pyrite includes a fully functional collision and physics engine to support its s
 
 Player Physics & AABB Collisions
 --------------------------------
-The player is represented as an Axis-Aligned Bounding Box (AABB). Movement is separated into X, Y, and Z axis steps. After moving on an axis, the engine loops over the immediate surrounding voxel grid. If a solid voxel intersects with the player's AABB, the player's position is snapped exactly to the face of the voxel, resolving the collision and preventing clipping.
+The player is represented as an Axis-Aligned Bounding Box (AABB) parameterized by `PLAYER_WIDTH` and `PLAYER_HEIGHT`. 
 
-Fluids and swimming mechanics apply a heavy dampening multiplier to the player's velocity, simulating drag, and reverse the gravity vector slightly to allow for upward swimming.
+To ensure smooth wall-sliding and prevent corner-snagging, velocity movement is separated into distinct X, Y, and Z axis steps. After moving along a single axis, the engine loops over the immediate surrounding voxel grid using `glm.floor()`. If a solid block intersects with the player's AABB, the player's position is snapped perfectly flush to the face of the voxel, halting velocity on that axis while allowing movement on the others to continue smoothly.
+
+**Fluid Dynamics:**
+When the player enters a `WATER` block, a heavy dampening multiplier is applied to the velocity vectors to simulate liquid drag. The jump mechanics are overridden, allowing the player to swim upward, and a "dolphin leap" velocity boost is applied when breaking the surface of the water.
 
 Inventory & Crafting
 --------------------
-The UI handles a 41-slot inventory system (36 storage, 4 crafting grid, 1 output). Items are tracked via standard numerical arrays representing `voxel_id` and `stack_count`. 
+The UI handles a complete 41-slot inventory system:
+* **Slots 0-8:** Hotbar
+* **Slots 9-35:** Main Storage
+* **Slots 36-39:** 2x2 Crafting Grid
+* **Slot 40:** Crafting Output
 
-The 2x2 crafting grid matches the 4 target slots against a hardcoded dictionary tuple matrix. If a match is found, the output slot populates. When the item is extracted, 1 count is removed from all participating input slots.
+The entire UI allows for left-click stack swapping and right-click stack halving. 
+
+**Crafting Matrix:**
+The 2x2 crafting grid matches the four input slots against a hardcoded dictionary tuple matrix (e.g., `(WOOD, 0, 0, 0): (WOOD_PLANKS, 4)`). If a match is found, the output slot populates. When the player left-clicks to extract the crafted item, exactly 1 count is iteratively removed from all participating input slots.
+
+Tool Dependencies & Mining Hardness
+-----------------------------------
+Every block has a specific hardness mapped in `BLOCK_HARDNESS` (measured in milliseconds to break). The engine applies dynamic multipliers based on the item currently held in the player's hand. For example, attempting to mine `STONE` with bare hands applies a `5x` penalty multiplier, while holding a `WOODEN_PICKAXE` divides the base hardness by `5.0`.
 
 3D Item Entities
 ----------------
-When blocks are mined, they are spawned into the world as independent 3D entities with their own velocity and gravity vectors. To protect CPU physics threads and GPU draw limits, the `ItemManager` enforces a hard cap of 256 entities, automatically despawning the oldest dropped item if the queue overflows.
+When blocks are mined, they are spawned into the world as independent `Item` instances. These items possess their own isolated velocity and gravity vectors, allowing them to bounce and slide across the voxel terrain until they fall asleep.
+
+When the player walks within the `ITEM_PICKUP_RADIUS`, the items are destroyed and injected into the player's inventory array. To protect CPU physics threads and GPU draw limits from entity overflow, the `ItemManager` enforces a hard FIFO (First-In-First-Out) cap of 256 items. If the 257th item drops, the oldest item is instantly despawned.
 
 ===== D:\Pyrite\docs\terrain.rst =====
 
 Procedural Terrain Generation
 =============================
 
-Pyrite generates infinite, deterministic worlds using highly vectorized 3D Simplex noise. By utilizing MD5 string-hashing, custom seed strings are converted into numerical seeds, ensuring the exact same world generates every time.
+Pyrite generates infinite, deterministic worlds using highly parallelized OpenSimplex noise. By utilizing MD5 string-hashing, custom string seeds (e.g., "PyriteIsCool") are converted into numerical integer seeds. The Numba compiler locks this seed via `numpy.random.seed()`, ensuring the exact same terrain topology is generated every time.
 
 Biome & Topography System
 -------------------------
 The terrain generation heavily relies on independent, overlapping noise frequencies:
 
-- **Continentalness:** Determines the physical landform. Very low values carve deep oceans, mid values create sweeping plains, and high values force the terrain upward into extreme mountains or steep cliffs.
-- **Temperature & Moisture:** Evaluated via separate 2D noise maps to dictate the biome surface (e.g., Snow vs. Desert Sand vs. Grass).
+* **Continentalness:** Dictates the physical landform (evaluated across 4 layered octaves: `f1, f2, f4, f8`). Very low values carve deep oceans, mid values create sweeping plains, and high values linearly interpolate the terrain upward into extreme mountains or plateaus.
+* **Temperature & Moisture:** Evaluated via separate 2D noise maps to dictate the biome's block palette (e.g., Snow vs. Desert Sand vs. Grass).
 
-To prevent blocky biome borders, a subtle noise "dithering" offset is applied to the temperature and moisture values, allowing blocks from adjacent biomes to naturally mix at the edges.
+**Biome Dithering:**
+To prevent unnatural, blocky straight lines at biome borders, a subtle, high-frequency noise "dithering" offset is mathematically added to the temperature and moisture values. This creates a natural scatter effect, allowing blocks from adjacent biomes to organically mix at the edges.
 
 Cave Carving
 ------------
-Underground systems are carved dynamically. First, the engine determines the surface "crust" thickness. Below this layer, 3D Simplex noise is evaluated. If the 3D noise exceeds a specific threshold, the block is forced to become Air.
+Underground systems are carved dynamically using volumetric 3D noise (`noise3`). 
 
-To create natural entrances, the threshold is tapered near the surface using an `entrance_mask` noise map, forcing caves to narrow out before breaking through the grass.
+First, the engine determines a deterministic `crust` thickness. Below this safe top layer, 3D noise is evaluated for every single block coordinate. If the 3D noise exceeds a specific density threshold, the block is overridden and forced to become `AIR`.
+
+**Natural Entrances:**
+To create natural cave entrances rather than massive sinkholes, the cave threshold is dynamically tapered near the surface using a 2D `entrance_mask` noise map. This forces the 3D carving logic to narrow out and tighten before breaking through the grass layer.
+
+Tree & Flora Generation
+-----------------------
+Trees are placed procedurally during column generation based on the target Biome's moisture rating. 
+* High moisture yields a `4%` probability per column (Dense Forests).
+* Low moisture yields a `0.01%` probability (Sparse Plains).
+
+The tree structure is pre-defined using local relative coordinates. The engine enforces several environment constraints before spawning a tree:
+
+1. Trees cannot spawn underwater.
+2. Trees cannot spawn on Snow or Sand.
+3. Trees cannot spawn at extreme mountain altitudes (`wy > STONE_LVL`).
+4. A tree's bounding box cannot exceed the chunk's boundaries (preventing neighbor-chunk bleeding crashes).
 
 ===== D:\Pyrite\src\meshes\base_mesh.py =====
 
@@ -6679,13 +6802,13 @@ The environment lighting is propogating actross chunks, so while one has the rig
 The Day-Night cycle is moving wayy too fast !
 Fix the rotation of the Pickaxe model when it is held in hand by the player. perhaps scale it down a bit too.
 Move the stick model a bit upward for when the player is holding it in his hands. It's rotation and scale are all perfect !
-Update the Terrain Generation system. The current system generates wayy too weird terrain. we need nice look and predictable terrain at the time. "Nice Lookinb" being completely subjective here ! 
+Update the Terrain Generation system. The current system generates wayy too weird terrain. we need nice look and predictable terrain at the time. "Nice Looking" being completely subjective here ! 
 Update all the UI to reflect the same theme and coloring as the game's name and theme. the title of the game screen is a giood example of this, which we have already done !
 Move the options menu's UI a little upward.
 Add different colors/phases/states for all the buttons, such as the active, disabled, hovering, clicked. This would make the UI/UX even better.
 Add animations such as fade in and out, move up, down, left and right, pop in and out, etc etc... to the menus for greater UI/UX.
 Add more tests to the tests directory.
-Update the docs in the docs directory. Right now, it is wayy too vague and misses a lot of Key points and smaller facts, etc. The explainations of all the system are also wayy to high level and vagie, making it impossible for others to ready the docs and easily replicate or create their own versions of the same system, without reading and understand the source code itslef.
+Update the docs in the docs directory. Right now, it is wayy too vague and misses a lot of Key points and smaller facts, etc. The explainations of all the system are also wayy to high level and vagie, making it impossible for others to ready the docs and easily replicate or create their own versions of the same system, without reading and understand the source code itself. ( ! DONE ! )
 Add doc strings to all the classes, methods and functions in all the python files and modules. The main focus of these doc strings should be on explain, describing or atleast breifing on what that specific class, method or function does, rather than on type hinting and such, etc.
 Plan and add nice background to all the different menus in the main screen. perhaps of gorgeous looking terrain from our game ? or anything that may work and enhance the UX.
 Upgrade the scroll frame for the world buttons in the main menu screen to show kinda of a bar moving up and down when we are scrolling through it.
@@ -6694,7 +6817,47 @@ We also need to move the create new world button a little down from it's current
 We also need to update our return to main menu mechanics so instead of returning to the create new world menu screen when exiting out of a newly created world, or returning to the worlds menu screen from where we select the world to start playing, we always return to the MAIN main menu screen ! where the "play", "options" and "quit" buttons exists.
 We need to add actual shadows to our gamem, casted by the trees, enviroment, etc; upon each other. we should also make it toggle if possible and helpful in maintain smooth performence for the future.
 We also need to plan about how we are going to add the Async LOD generation and steaming to our existing world, without breaking anything that already exists, How it will work with the Greedy Mesher, AO, Lighting and the Textures.
-Update the conf.py in docs directory, so that the pages generated by sphinx don't have width less than that of the viewer's screen width. i am pretty sure it should be dynamic for that to happen, veen if it's not. need to check repos such as https://github.com/panda3d/panda3d-docs , https://numba.readthedocs.io/en/stable/user/jit.html , https://docs.panda3d.org/1.10/python , etc to see hoe they hadle such issues. And specially take a look at their conf.py files !
+Update the conf.py in docs directory, so that the pages generated by sphinx don't have width less than that of the viewer's screen width. i am pretty sure it should be dynamic for that to happen, veen if it's not. need to check repos such as https://github.com/panda3d/panda3d-docs , https://numba.readthedocs.io/en/stable/user/jit.html , https://docs.panda3d.org/1.10/python , etc to see hoe they hadle such issues. And specially take a look at their conf.py files ! ( ! FIXED ! )
+Plans for how visuals should be designed : 
+
+"  Since Pyrite is literally known as "Fool's Gold" and naturally grows in perfect cubic crystals (which is an incredible coincidence for a voxel game!), we have the absolute perfect theme. We can also subtly mix in the official Python colors (Blue and Yellow/Gold) to pay homage to the language.
+
+Here are highly detailed ideas for your branding assets:
+
+1. The App Icon (Pyrite.ico / Window Icon)
+This needs to be recognizable even when it is a tiny 16x16 pixel square on the Windows taskbar.
+
+The Shape: A single, perfect 3D isometric cube.
+The Material: A shiny, metallic brass/gold texture, but slightly fractured or layered (just like real raw pyrite).
+The Lighting: Strong, dramatic lighting coming from the top-left. Since your engine's biggest selling point is its custom lighting system, the icon should have a gleaming bright top face, a mid-tone left face, and a deeply shadowed right face.
+The Python Nod: To hint at Python without just slapping a snake on it, make the deep shadow cast by the cube a very subtle, dark Python Blue instead of pure black.
+2. The Main Logo (For the Main Menu & Readme)
+This is the title text combined with a visual mark.
+
+The Mark: Instead of a single cube, the mark next to the text should be a Pyrite Cluster—three interlocking metallic cubes of different sizes jutting out of a piece of dark gray stone.
+The Typography: A bold, heavy, slightly blocky font (like Impact, Bebas Neue, or a clean pixel font).
+The Colors:
+Make the "Py" a sleek, dark slate-blue.
+Make the "rite" a bright, metallic gold.
+This instantly connects "Python" and "Pyrite" visually. Give the text a sharp, dark drop-shadow to make it pop off the screen.
+3. The GitHub / Project Banner (1920x1080)
+This sits at the very top of your repository or project page. It should scream "Voxel Adventure" while showing off your engine's actual rendering capabilities.
+
+The Background: Take an incredible in-game screenshot. Find a massive procedural mountain dropping into a deep ocean. Wait for the in-game sun to drop low on the horizon so your engine casts long, beautiful shadows across the greedy-meshed terrain.
+The Centerpiece: The Pyrite logo perfectly centered in the sky.
+The Tagline: Just underneath the logo, in a clean, elegant sans-serif font: "A High-Performance Python Voxel Engine."
+The Details: Add a slight vignette (darkening the edges of the image) to draw the viewer's eye directly to the center logo.
+4. The Action Label (For Save Files or Itch.io cover)
+This is smaller than a banner and usually focuses on gameplay.
+
+The Scene: First-person perspective. You are standing in a dark stone cave. Placed on the wall is a glowing block (Glowstone/Torch) that casts that warm, yellowish block-light you programmed.
+The Action: In the bottom right corner, the player's 3D wooden pickaxe is raised, about to strike a block of shiny gold ore embedded in the stone.
+The Vibe: It promises exploration, mining, and cozy survival.
+How to actually make these?
+If you want to create these yourself:
+
+For the Icon: You can use a free voxel editor like MagicaVoxel or Blockbench. You can literally build a 16x16x16 pyrite cube, render it with shadows, and export it as a .png (which you can convert to .ico online).
+For the Banner/Labels: You can use tools like Figma, GIMP, or Photoshop. Just take a beautiful screenshot from your game by pressing your ESC menu (which you already programmed to save a thumbnail!) and overlay the text.  "
 
 ===== D:\Pyrite\pytest.ini =====
 
