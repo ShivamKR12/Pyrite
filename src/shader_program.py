@@ -98,7 +98,7 @@ class ShaderProgram:
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
         if 'u_time' in self.sky: self.sky['u_time'] = self.app.world_session_time
 
-        time_speed = 0.1 # Adjust this to make the day longer or shorter based on world_session_time
+        time_speed = 0.01 # Adjust this to make the day longer or shorter based on world_session_time
         sun_y = glm.cos(self.app.world_session_time * time_speed)
 
         is_underwater = getattr(self.player, 'head_in_water', False)
