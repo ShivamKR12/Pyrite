@@ -41,7 +41,7 @@ class Menu:
         self.btn_back_create = Button(app, 'Back', (0, -0.5), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
         
         # Select World (will be populated dynamically)
-        self.btn_new_world = Button(app, 'Create New World', (0, 0.32), (0.3, 0.07), lambda: self.set_state('CREATE_WORLD'))
+        self.btn_new_world = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.set_state('CREATE_WORLD'))
         self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.set_state('MAIN'))
 
     def open_options(self):
@@ -79,7 +79,7 @@ class Menu:
                        key=lambda x: os.path.getmtime(os.path.join('saves', x)), 
                        reverse=True)
         
-        y_offset = 0.05
+        y_offset = -0.05
         for save_file in saves: # Load all worlds dynamically
             save_name = save_file[:-3]
             display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
@@ -98,8 +98,12 @@ class Menu:
             except:
                 pass
             
+            def load_and_reset(sn=save_name):
+                self.app.init_game_session(sn)
+                self.set_state('MAIN')
+            
             btn = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
-                              (0, y_offset), (0.65, 0.12), lambda sn=save_name: self.app.init_game_session(sn))
+                              (0, y_offset), (0.65, 0.12), load_and_reset)
             self.world_buttons.append(btn)
             
             # Create a small red 'X' button positioned right next to the WorldButton
@@ -148,6 +152,7 @@ class Menu:
                 seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % (10**9)
                 
         self.app.init_game_session(save_name, seed, self.create_game_mode)
+        self.set_state('MAIN')
 
     def update(self):
         mouse_pos = pg.mouse.get_pos()
@@ -159,12 +164,12 @@ class Menu:
             self.btn_back_select.check_hover(mouse_pos)
             
             # Apply the scroll offset and disable hover interactions if the button goes out of bounds
-            base_y = 0.05
+            base_y = -0.05
             for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons)):
                 new_y = base_y - i * 0.26 + self.scroll_offset
                 btn.pos = (0, new_y)
                 del_btn.pos = (0.55, new_y)
-                if -0.45 < new_y < 0.12:
+                if -0.45 < new_y < 0.02:
                     btn.check_hover(mouse_pos)
                     del_btn.check_hover(mouse_pos)
                 else:
@@ -194,7 +199,7 @@ class Menu:
                         self.btn_back_select.action()
                     else:
                         for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                            if -0.45 < btn.pos[1] < 0.12:
+                            if -0.45 < btn.pos[1] < 0.02:
                                 if del_btn.is_hovered:
                                     del_btn.action()
                                     break
@@ -233,7 +238,7 @@ class Menu:
         elif self.state == 'SELECT_WORLD':
             self.btn_new_world.render()
             for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                if -0.45 < btn.pos[1] < 0.12:
+                if -0.45 < btn.pos[1] < 0.02:
                     btn.render()
                     del_btn.render()
             self.btn_back_select.render()
@@ -270,6 +275,7 @@ class PauseMenu:
 
     def quit_to_menu(self):
         self.app.game_state = 'MAIN_MENU'
+        self.app.menu.state = 'MAIN'
         if self.app.scene:
             self.app.scene.world.save()
             self.app.scene = None # Unload the world to free memory
@@ -314,14 +320,14 @@ class OptionsMenu:
         self.bg_mesh = UIColorMesh(app)
 
         self.sliders = [
-            Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
-            Slider(app, 'Sensitivity', (0, 0.0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
-            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
-            Slider(app, 'Render Distance', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
+            Slider(app, 'FOV', (0, 0.3), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
+            Slider(app, 'Sensitivity', (0, 0.1), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
+            Slider(app, 'Volume', (0, -0.1), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
+            Slider(app, 'Render Distance', (0, -0.3), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
         ]
         self.buttons = [
-            Button(app, '', (0, -0.6), (0.3, 0.05), self.toggle_tint),
-            Button(app, 'Back', (0, -0.8), (0.2, 0.07), self.go_back)
+            Button(app, '', (0, -0.5), (0.3, 0.05), self.toggle_tint),
+            Button(app, 'Back', (0, -0.7), (0.2, 0.07), self.go_back)
         ]
         self.previous_state = 'MAIN_MENU'
 
@@ -374,7 +380,7 @@ class OptionsMenu:
         scale_y = 0.08
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.title_mesh.program['u_offset'] = (0.0, 0.45)
+        self.title_mesh.program['u_offset'] = (0.0, 0.55)
         self.title_mesh.render()
 
         for slider in self.sliders:

@@ -22,11 +22,11 @@ class Textures:
         self.texture_stick.use(location=5)
         self.texture_pickaxe.use(location=6)
 
-    def load(self, file_name, is_tex_array=False, rotation=0):
+    def load(self, file_name, is_tex_array=False, rotation=0, flip_x=True, flip_y=False):
         texture = pg.image.load(get_path(f'assets/{file_name}'))
         if rotation != 0:
             texture = pg.transform.rotate(texture, rotation)
-        texture = pg.transform.flip(texture, flip_x=True, flip_y=False)
+        texture = pg.transform.flip(texture, flip_x=flip_x, flip_y=flip_y)
 
         if is_tex_array:
             num_layers = 3 * texture.get_height() // texture.get_width()  # 3 textures per layer

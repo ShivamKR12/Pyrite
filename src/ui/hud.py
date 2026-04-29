@@ -173,30 +173,39 @@ class HeldBlock:
         # Compute Model Matrix in World Space for perfectly accurate lighting
         m_model = glm.inverse(player.m_view)
         m_model = glm.translate(m_model, pos)
+        # Render the held block in static Camera Space instead of World Space
+        # m_model = glm.translate(glm.mat4(), pos)
 
         if voxel_id == STICK:
+            m_model = glm.translate(m_model, glm.vec3(0.0, 0.15, 0.0))
             m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
+            m_model = glm.rotate(m_model, glm.radians(90.0), glm.vec3(0, 0, 1))
             m_model = glm.scale(m_model, glm.vec3(0.5))
             mesh = self.stick_mesh
         elif voxel_id == WOODEN_PICKAXE:
-            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
-            m_model = glm.scale(m_model, glm.vec3(0.35))
+            m_model = glm.translate(m_model, glm.vec3(0.0, 0.15, 0.0))
+            m_model = glm.rotate(m_model, glm.radians(10.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(90.0), glm.vec3(0, 0, 1))
+            m_model = glm.scale(m_model, glm.vec3(0.2))
             mesh = self.pickaxe_mesh
         else:
-            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
+            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))
             m_model = glm.scale(m_model, glm.vec3(0.35))
             mesh = self.mesh
 
         mesh.program['m_proj'].write(player.m_proj)
         mesh.program['m_view'].write(player.m_view) 
+        # mesh.program['m_view'].write(glm.mat4()) # Lock view matrix!
         mesh.program['m_model'].write(m_model)
         if 'voxel_id' in mesh.program:
             mesh.program['voxel_id'] = voxel_id
+
+        # # Override lighting & fog specifically for the held item so it stays fully bright and visible
+        # if 'u_sun_direction' in mesh.program:
+        #     mesh.program['u_sun_direction'].write(glm.normalize(glm.vec3(0.3, 1.0, 0.3)))
+        # if 'u_fog_density' in mesh.program:
+        #     mesh.program['u_fog_density'] = 0.0
 
         self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
         self.app.ctx.enable(mgl.CULL_FACE)   # Toggle this to enable/disable backfaces!

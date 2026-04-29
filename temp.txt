@@ -2322,30 +2322,39 @@ class HeldBlock:
         # Compute Model Matrix in World Space for perfectly accurate lighting
         m_model = glm.inverse(player.m_view)
         m_model = glm.translate(m_model, pos)
+        # Render the held block in static Camera Space instead of World Space
+        # m_model = glm.translate(glm.mat4(), pos)
 
         if voxel_id == STICK:
+            m_model = glm.translate(m_model, glm.vec3(0.0, 0.15, 0.0))
             m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
+            m_model = glm.rotate(m_model, glm.radians(90.0), glm.vec3(0, 0, 1))
             m_model = glm.scale(m_model, glm.vec3(0.5))
             mesh = self.stick_mesh
         elif voxel_id == WOODEN_PICKAXE:
-            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(10.0), glm.vec3(0, 1, 0))
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 0, 1)) # Tilt it up like a wand!
-            m_model = glm.scale(m_model, glm.vec3(0.35))
+            m_model = glm.translate(m_model, glm.vec3(0.0, 0.15, 0.0))
+            m_model = glm.rotate(m_model, glm.radians(10.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(90.0), glm.vec3(0, 0, 1))
+            m_model = glm.scale(m_model, glm.vec3(0.2))
             mesh = self.pickaxe_mesh
         else:
-            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0)) # Tilt slightly down
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))                # Rotate to show faces
+            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))
             m_model = glm.scale(m_model, glm.vec3(0.35))
             mesh = self.mesh
 
         mesh.program['m_proj'].write(player.m_proj)
         mesh.program['m_view'].write(player.m_view) 
+        # mesh.program['m_view'].write(glm.mat4()) # Lock view matrix!
         mesh.program['m_model'].write(m_model)
         if 'voxel_id' in mesh.program:
             mesh.program['voxel_id'] = voxel_id
+
+        # # Override lighting & fog specifically for the held item so it stays fully bright and visible
+        # if 'u_sun_direction' in mesh.program:
+        #     mesh.program['u_sun_direction'].write(glm.normalize(glm.vec3(0.3, 1.0, 0.3)))
+        # if 'u_fog_density' in mesh.program:
+        #     mesh.program['u_fog_density'] = 0.0
 
         self.app.ctx.disable(mgl.DEPTH_TEST) # Draw on top of the world without depth clearing
         self.app.ctx.enable(mgl.CULL_FACE)   # Toggle this to enable/disable backfaces!
@@ -2789,7 +2798,7 @@ class Menu:
         self.btn_back_create = Button(app, 'Back', (0, -0.5), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
         
         # Select World (will be populated dynamically)
-        self.btn_new_world = Button(app, 'Create New World', (0, 0.32), (0.3, 0.07), lambda: self.set_state('CREATE_WORLD'))
+        self.btn_new_world = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.set_state('CREATE_WORLD'))
         self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.set_state('MAIN'))
 
     def open_options(self):
@@ -2827,7 +2836,7 @@ class Menu:
                        key=lambda x: os.path.getmtime(os.path.join('saves', x)), 
                        reverse=True)
         
-        y_offset = 0.05
+        y_offset = -0.05
         for save_file in saves: # Load all worlds dynamically
             save_name = save_file[:-3]
             display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
@@ -2846,8 +2855,12 @@ class Menu:
             except:
                 pass
             
+            def load_and_reset(sn=save_name):
+                self.app.init_game_session(sn)
+                self.set_state('MAIN')
+            
             btn = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
-                              (0, y_offset), (0.65, 0.12), lambda sn=save_name: self.app.init_game_session(sn))
+                              (0, y_offset), (0.65, 0.12), load_and_reset)
             self.world_buttons.append(btn)
             
             # Create a small red 'X' button positioned right next to the WorldButton
@@ -2896,6 +2909,7 @@ class Menu:
                 seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % (10**9)
                 
         self.app.init_game_session(save_name, seed, self.create_game_mode)
+        self.set_state('MAIN')
 
     def update(self):
         mouse_pos = pg.mouse.get_pos()
@@ -2907,12 +2921,12 @@ class Menu:
             self.btn_back_select.check_hover(mouse_pos)
             
             # Apply the scroll offset and disable hover interactions if the button goes out of bounds
-            base_y = 0.05
+            base_y = -0.05
             for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons)):
                 new_y = base_y - i * 0.26 + self.scroll_offset
                 btn.pos = (0, new_y)
                 del_btn.pos = (0.55, new_y)
-                if -0.45 < new_y < 0.12:
+                if -0.45 < new_y < 0.02:
                     btn.check_hover(mouse_pos)
                     del_btn.check_hover(mouse_pos)
                 else:
@@ -2942,7 +2956,7 @@ class Menu:
                         self.btn_back_select.action()
                     else:
                         for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                            if -0.45 < btn.pos[1] < 0.12:
+                            if -0.45 < btn.pos[1] < 0.02:
                                 if del_btn.is_hovered:
                                     del_btn.action()
                                     break
@@ -2981,7 +2995,7 @@ class Menu:
         elif self.state == 'SELECT_WORLD':
             self.btn_new_world.render()
             for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                if -0.45 < btn.pos[1] < 0.12:
+                if -0.45 < btn.pos[1] < 0.02:
                     btn.render()
                     del_btn.render()
             self.btn_back_select.render()
@@ -3018,6 +3032,7 @@ class PauseMenu:
 
     def quit_to_menu(self):
         self.app.game_state = 'MAIN_MENU'
+        self.app.menu.state = 'MAIN'
         if self.app.scene:
             self.app.scene.world.save()
             self.app.scene = None # Unload the world to free memory
@@ -3062,14 +3077,14 @@ class OptionsMenu:
         self.bg_mesh = UIColorMesh(app)
 
         self.sliders = [
-            Slider(app, 'FOV', (0, 0.2), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
-            Slider(app, 'Sensitivity', (0, 0.0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
-            Slider(app, 'Volume', (0, -0.2), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
-            Slider(app, 'Render Distance', (0, -0.4), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
+            Slider(app, 'FOV', (0, 0.3), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
+            Slider(app, 'Sensitivity', (0, 0.1), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
+            Slider(app, 'Volume', (0, -0.1), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
+            Slider(app, 'Render Distance', (0, -0.3), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
         ]
         self.buttons = [
-            Button(app, '', (0, -0.6), (0.3, 0.05), self.toggle_tint),
-            Button(app, 'Back', (0, -0.8), (0.2, 0.07), self.go_back)
+            Button(app, '', (0, -0.5), (0.3, 0.05), self.toggle_tint),
+            Button(app, 'Back', (0, -0.7), (0.2, 0.07), self.go_back)
         ]
         self.previous_state = 'MAIN_MENU'
 
@@ -3122,7 +3137,7 @@ class OptionsMenu:
         scale_y = 0.08
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.title_mesh.program['u_offset'] = (0.0, 0.45)
+        self.title_mesh.program['u_offset'] = (0.0, 0.55)
         self.title_mesh.render()
 
         for slider in self.sliders:
@@ -3413,7 +3428,7 @@ class ItemManager:
         self.app = app
         self.items = []
         self.mesh = ItemMesh(app)
-        self.stick_mesh = ObjMesh(app, get_path('assets/stick/stick.obj'), tex_id=5)
+        self.stick_mesh = ObjMesh(app, get_path('assets/stick/stick.obj'))
         self.pickaxe_mesh = ObjMesh(app, get_path('assets/wooden_pickaxe/wooden_pickaxe.obj'))
 
     def add_item(self, position, voxel_id):
@@ -4895,7 +4910,7 @@ MOUSE_SENSITIVITY = 0.002
 # colors
 BG_COLOR = glm.vec3(0.58, 0.83, 0.99)
 
-# textures
+# UIDs for blocks and items
 AIR = 0
 SAND = 1
 GRASS = 2
@@ -4992,7 +5007,7 @@ PLAYER_HALF_W = PLAYER_WIDTH / 2
 PLAYER_EYE_HEIGHT = 1.6
 
 GRAVITY = -0.000025
-JUMP_VELOCITY = 0.0075
+JUMP_VELOCITY = 0.0095
 
 # survival mechanics
 MAX_HEALTH = 20
@@ -5885,11 +5900,11 @@ class Textures:
         self.texture_stick.use(location=5)
         self.texture_pickaxe.use(location=6)
 
-    def load(self, file_name, is_tex_array=False, rotation=0):
+    def load(self, file_name, is_tex_array=False, rotation=0, flip_x=True, flip_y=False):
         texture = pg.image.load(get_path(f'assets/{file_name}'))
         if rotation != 0:
             texture = pg.transform.rotate(texture, rotation)
-        texture = pg.transform.flip(texture, flip_x=True, flip_y=False)
+        texture = pg.transform.flip(texture, flip_x=flip_x, flip_y=flip_y)
 
         if is_tex_array:
             num_layers = 3 * texture.get_height() // texture.get_width()  # 3 textures per layer
@@ -6807,14 +6822,14 @@ coll = COLLECT(
 ===== D:\Pyrite\ISSUES.MD =====
 
 The stick model is missing it's textures. ( ! FIXED ! )
-The jump height is too low, so it's impossible to jump up a block and move forward, if the jump action happens first and then the walk forward action.
+The jump height is too low, so it's impossible to jump up a block and move forward, if the jump action happens first and then the walk forward action. ( ! DONE ! )
 The environment lighting is propogating actross chunks, so while one has the right lighting, the other adjucent chunk has the incorrect lighting at it's chunk borders.
-The Day-Night cycle is moving wayy too fast !
-Fix the rotation of the Pickaxe model when it is held in hand by the player. perhaps scale it down a bit too.
-Move the stick model a bit upward for when the player is holding it in his hands. It's rotation and scale are all perfect !
+The Day-Night cycle is moving wayy too fast ! ( ! DONE ! )
+Fix the rotation of the Pickaxe model when it is held in hand by the player. perhaps scale it down a bit too. ( ! DONE ! )
+Move the stick model a bit upward for when the player is holding it in his hands. It's rotation and scale are all perfect ! ( ! DONE ! )
 Update the Terrain Generation system. The current system generates wayy too weird terrain. we need nice look and predictable terrain at the time. "Nice Looking" being completely subjective here ! 
 Update all the UI to reflect the same theme and coloring as the game's name and theme. the title of the game screen is a giood example of this, which we have already done !
-Move the options menu's UI a little upward.
+Move the options menu's UI a little upward. ( ! DONE ! )
 Add different colors/phases/states for all the buttons, such as the active, disabled, hovering, clicked. This would make the UI/UX even better.
 Add animations such as fade in and out, move up, down, left and right, pop in and out, etc etc... to the menus for greater UI/UX.
 Add more tests to the tests directory.
@@ -6823,8 +6838,8 @@ Add doc strings to all the classes, methods and functions in all the python file
 Plan and add nice background to all the different menus in the main screen. perhaps of gorgeous looking terrain from our game ? or anything that may work and enhance the UX.
 Upgrade the scroll frame for the world buttons in the main menu screen to show kinda of a bar moving up and down when we are scrolling through it.
 Add Damage to player when the hunger reaches zero. Also, decrease the player's movement speed when in survival mode and the hunger is less than or equal to 30. For now, to recorver the hunger, the player has simply be standing in a place for maybe 3 sec ? befor the hunger starts to recover own it's own. The health of the player should also only be recovering when the player's hunger is full. this would create kinda of a cycle where a player would just be standing doing nothing for minutes if his health is very low and his hunger is also down as well. this means, when the player's hunger reaches full, his health would start to recover. should we make it so that when the player's health increases, his hunger decreases ? putting him in a visius cycle to health increasing hunger bar deceasing, then hunger bar increasing again, and due to which the health increasing and the hunger bar deceasing again ! is this actually a good idea for gameplay or UX ? is this whole idea even good for our game's survival mechanics or gameplay or UX ?
-We also need to move the create new world button a little down from it's current position, as it is touching thr bottom of the Pyrite game title image on the main screen.
-We also need to update our return to main menu mechanics so instead of returning to the create new world menu screen when exiting out of a newly created world, or returning to the worlds menu screen from where we select the world to start playing, we always return to the MAIN main menu screen ! where the "play", "options" and "quit" buttons exists.
+We also need to move the create new world button a little down from it's current position, as it is touching thr bottom of the Pyrite game title image on the main screen. ( ! DONE ! )
+We also need to update our return to main menu mechanics so instead of returning to the create new world menu screen when exiting out of a newly created world, or returning to the worlds menu screen from where we select the world to start playing, we always return to the MAIN main menu screen ! where the "play", "options" and "quit" buttons exists. ( ! DONE ! )
 We need to add actual shadows to our gamem, casted by the trees, enviroment, etc; upon each other. we should also make it toggle if possible and helpful in maintain smooth performence for the future.
 We also need to plan about how we are going to add the Async LOD generation and steaming to our existing world, without breaking anything that already exists, How it will work with the Greedy Mesher, AO, Lighting and the Textures.
 Update the conf.py in docs directory, so that the pages generated by sphinx don't have width less than that of the viewer's screen width. i am pretty sure it should be dynamic for that to happen, veen if it's not. need to check repos such as https://github.com/panda3d/panda3d-docs , https://numba.readthedocs.io/en/stable/user/jit.html , https://docs.panda3d.org/1.10/python , etc to see hoe they hadle such issues. And specially take a look at their conf.py files ! ( ! FIXED ! )
@@ -7017,4 +7032,4 @@ def analyze_obj(filepath):
     print(f"N-Gons: {n_gons}")
 
 if __name__ == '__main__':
-    analyze_obj('assets/stick.obj')
+    analyze_obj('assets/stick/stick.obj')

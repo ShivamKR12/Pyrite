@@ -51,7 +51,7 @@ class ItemManager:
         self.app = app
         self.items = []
         self.mesh = ItemMesh(app)
-        self.stick_mesh = ObjMesh(app, get_path('assets/stick/stick.obj'), tex_id=5)
+        self.stick_mesh = ObjMesh(app, get_path('assets/stick/stick.obj'))
         self.pickaxe_mesh = ObjMesh(app, get_path('assets/wooden_pickaxe/wooden_pickaxe.obj'))
 
     def add_item(self, position, voxel_id):

@@ -69,7 +69,7 @@ MOUSE_SENSITIVITY = 0.002
 # colors
 BG_COLOR = glm.vec3(0.58, 0.83, 0.99)
 
-# textures
+# UIDs for blocks and items
 AIR = 0
 SAND = 1
 GRASS = 2
@@ -166,7 +166,7 @@ PLAYER_HALF_W = PLAYER_WIDTH / 2
 PLAYER_EYE_HEIGHT = 1.6
 
 GRAVITY = -0.000025
-JUMP_VELOCITY = 0.0075
+JUMP_VELOCITY = 0.0095
 
 # survival mechanics
 MAX_HEALTH = 20
