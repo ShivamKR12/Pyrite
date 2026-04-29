@@ -40,11 +40,23 @@ class Button:
                           btn_y - btn_h < mouse_y < btn_y + btn_h
         return self.is_hovered
 
-    def render(self):
-        # 1. Render background
-        color = self.hover_color if self.is_hovered else self.base_color
-        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = self.pos
+    def render(self, offset=(0, 0), alpha=1.0):
+        # 1. Render background with state-based scale and color
+        scale_mult = 1.0
+        c = self.base_color
+        if self.is_hovered:
+            if pg.mouse.get_pressed()[0]: # Clicked state
+                c = (self.hover_color[0]*0.8, self.hover_color[1]*0.8, self.hover_color[2]*0.8, self.hover_color[3])
+                scale_mult = 0.95
+            else: # Hover state
+                c = self.hover_color
+                scale_mult = 1.05
+
+        color = (c[0], c[1], c[2], c[3] * alpha)
+        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+
+        self.color_mesh.program['u_scale'] = (self.size[0] * scale_mult, self.size[1] * scale_mult)
+        self.color_mesh.program['u_offset'] = render_pos
         self.color_mesh.program['u_color'] = color
         self.color_mesh.render()
 
@@ -52,11 +64,13 @@ class Button:
         tex = self.text_renderer.get_texture(self.text)
         tex.use(location=4)
         tex_w, tex_h = tex.size
-        scale_y = self.size[1] * 0.5
+        scale_y = self.size[1] * 0.5 * scale_mult
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.program['u_offset'] = render_pos
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
         self.text_mesh.render()
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
 
 
 class WorldButton:
@@ -105,19 +119,32 @@ class WorldButton:
                           btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
         return self.is_hovered
 
-    def render(self):
-        color = self.hover_color if self.is_hovered else self.base_color
-        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = self.pos
+    def render(self, offset=(0, 0), alpha=1.0):
+        scale_mult = 1.0
+        c = self.base_color
+        if self.is_hovered:
+            if pg.mouse.get_pressed()[0]:
+                c = (self.hover_color[0]*0.8, self.hover_color[1]*0.8, self.hover_color[2]*0.8, self.hover_color[3])
+                scale_mult = 0.98 # Less extreme scale down for big buttons
+            else:
+                c = self.hover_color
+                scale_mult = 1.02
+
+        color = (c[0], c[1], c[2], c[3] * alpha)
+        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+
+        self.color_mesh.program['u_scale'] = (self.size[0] * scale_mult, self.size[1] * scale_mult)
+        self.color_mesh.program['u_offset'] = render_pos
         self.color_mesh.program['u_color'] = color
         self.color_mesh.render()
 
         self.thumb_tex.use(location=4)
-        thumb_h = self.size[1] * 0.8
+        thumb_h = self.size[1] * 0.8 * scale_mult
         thumb_w = thumb_h * (self.thumb_tex.width / self.thumb_tex.height) / ASPECT_RATIO
-        thumb_x = self.pos[0] - self.size[0] + 0.02 + thumb_w
+        thumb_x = render_pos[0] - (self.size[0] * scale_mult) + 0.02 + thumb_w
         self.text_mesh.program['u_scale'] = (thumb_w, thumb_h)
-        self.text_mesh.program['u_offset'] = (thumb_x, self.pos[1])
+        self.text_mesh.program['u_offset'] = (thumb_x, render_pos[1])
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
         self.text_mesh.render()
         
         text_x = thumb_x + thumb_w + 0.02
@@ -125,16 +152,18 @@ class WorldButton:
         def render_text(text, offset_y, scale_h):
             tex = self.text_renderer.get_dynamic_texture(text)
             tex.use(location=4)
-            scale_y = self.size[1] * scale_h
+            scale_y = self.size[1] * scale_h * scale_mult
             scale_x = scale_y * (tex.width / tex.height) / ASPECT_RATIO
             self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-            self.text_mesh.program['u_offset'] = (text_x + scale_x, self.pos[1] + self.size[1] * offset_y)
+            self.text_mesh.program['u_offset'] = (text_x + scale_x, render_pos[1] + (self.size[1] * scale_mult) * offset_y)
+            if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
             self.text_mesh.render()
             tex.release()
 
         render_text(self.display_name, 0.4, 0.25)
         render_text(f"{self.game_mode} Mode  |  Seed: {self.seed}", -0.05, 0.15)
         render_text(f"Created: {self.creation_date}  |  Last Played: {self.last_played}", -0.4, 0.12)
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
 
 
 class TextInput:
@@ -173,10 +202,12 @@ class TextInput:
                 if len(self.text) < 20 and event.unicode.isprintable():
                     self.text += event.unicode
 
-    def render(self):
-        color = (0.2, 0.2, 0.2, 0.9) if self.is_active else (0.1, 0.1, 0.1, 0.7)
+    def render(self, offset=(0, 0), alpha=1.0):
+        c = (0.2, 0.25, 0.3, 0.9) if self.is_active else (0.1, 0.12, 0.15, 0.7)
+        color = (c[0], c[1], c[2], c[3] * alpha)
+        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
         self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = self.pos
+        self.color_mesh.program['u_offset'] = render_pos
         self.color_mesh.program['u_color'] = color
         self.color_mesh.render()
 
@@ -191,8 +222,10 @@ class TextInput:
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.program['u_offset'] = render_pos
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
         self.text_mesh.render()
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
         tex.release() # Release dynamic memory instantly to prevent VRAM leaking
 
 
@@ -216,8 +249,9 @@ class Slider:
         self.is_hovered = False
         self.is_dragging = False
 
-    def update(self):
-        mouse_pos = pg.mouse.get_pos()
+    def update(self, mouse_pos=None):
+        if mouse_pos is None:
+            mouse_pos = pg.mouse.get_pos()
         x, y = self.pos
         w, h = self.size
         win_w, win_h = WIN_RES
@@ -253,21 +287,22 @@ class Slider:
             if self.is_hovered:
                 self.is_dragging = True
 
-    def render(self):
+    def render(self, offset=(0, 0), alpha=1.0):
+        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
         self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = self.pos
-        self.color_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8)
+        self.color_mesh.program['u_offset'] = render_pos
+        self.color_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8 * alpha)
         self.color_mesh.render()
         
         val = self.app.config[self.config_key]
         progress = (val - self.min_val) / (self.max_val - self.min_val)
         
         fill_w = self.size[0] * progress
-        fill_x = self.pos[0] - self.size[0] + fill_w
+        fill_x = render_pos[0] - self.size[0] + fill_w
         
         self.color_mesh.program['u_scale'] = (fill_w, self.size[1])
-        self.color_mesh.program['u_offset'] = (fill_x, self.pos[1])
-        self.color_mesh.program['u_color'] = (0.2, 0.6, 0.3, 0.8)
+        self.color_mesh.program['u_offset'] = (fill_x, render_pos[1])
+        self.color_mesh.program['u_color'] = (UI_HOVER_COLOR[0], UI_HOVER_COLOR[1], UI_HOVER_COLOR[2], UI_HOVER_COLOR[3] * alpha)
         self.color_mesh.render()
 
         if self.is_int or self.config_key == 'fov':
@@ -282,6 +317,8 @@ class Slider:
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = self.pos
+        self.text_mesh.program['u_offset'] = render_pos
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
         self.text_mesh.render()
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
         tex.release()

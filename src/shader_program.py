@@ -64,6 +64,7 @@ class ShaderProgram:
         
         # ui text
         self.ui_text['u_texture_0'] = 4
+        if 'u_alpha' in self.ui_text: self.ui_text['u_alpha'] = 1.0
         
         # item
         self.item['m_proj'].write(self.player.m_proj)

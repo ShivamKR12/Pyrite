@@ -22,31 +22,53 @@ class Menu:
         except Exception:
             self.title_tex = self.title_renderer.get_texture("Pyrite")
 
+        try:
+            bg_img = pg.image.load(get_path('assets/background.jpg')).convert_alpha()
+            self.bg_tex = self.app.ctx.texture(bg_img.get_size(), 4, pg.image.tobytes(bg_img, 'RGBA', True))
+            self.bg_tex.filter = (mgl.LINEAR, mgl.LINEAR)
+            self.bg_tex_mesh = UITextMesh(app)
+        except Exception as e:
+            print(f"Failed to load background: {e}")
+            self.bg_tex = None
+
         self.state = 'MAIN'
+        self.transition_state = 'IN' # 'IN', 'OUT', 'IDLE'
+        self.transition_progress = 0.0
+        self.pending_action = None
+        self.anim_dir = 1
         self.world_buttons = []
         self.delete_buttons = []
         self.scroll_offset = 0.0
 
         # Main Menu
-        self.btn_play = Button(app, 'Play', (0, 0.15), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
-        self.btn_options = Button(app, 'Options', (0, 0.0), (0.2, 0.07), self.open_options)
-        self.btn_quit = Button(app, 'Quit', (0, -0.15), (0.2, 0.07), self.app.quit_game)
+        self.btn_play = Button(app, 'Play', (0, 0.15), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), -1))
+        self.btn_options = Button(app, 'Options', (0, 0.0), (0.2, 0.07), lambda: self.trigger_action(self.open_options, 1))
+        self.btn_quit = Button(app, 'Quit', (0, -0.15), (0.2, 0.07), lambda: self.trigger_action(self.app.quit_game, 1))
 
         # Create World
         self.input_name = TextInput(app, (0, 0.15), (0.3, 0.05), "World Name")
         self.input_seed = TextInput(app, (0, 0.0), (0.3, 0.05), "Seed (Leave blank for random)")
         self.create_game_mode = 1 # 1 is SURVIVAL
         self.btn_game_mode = Button(app, 'Game Mode: Survival', (0, -0.15), (0.3, 0.05), self.toggle_game_mode)
-        self.btn_create = Button(app, 'Create New World', (0, -0.3), (0.3, 0.07), self.create_world)
-        self.btn_back_create = Button(app, 'Back', (0, -0.5), (0.2, 0.07), lambda: self.set_state('SELECT_WORLD'))
+        self.btn_create = Button(app, 'Create New World', (0, -0.3), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1))
+        self.btn_back_create = Button(app, 'Back', (0, -0.5), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1))
         
         # Select World (will be populated dynamically)
-        self.btn_new_world = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.set_state('CREATE_WORLD'))
-        self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.set_state('MAIN'))
+        self.btn_new_world = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.trigger_action(lambda: self.set_state('CREATE_WORLD'), -1))
+        self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('MAIN'), 1))
+
+    def trigger_action(self, action, anim_dir=1):
+        if self.transition_state in ('IDLE', 'IN'):
+            self.pending_action = action
+            self.transition_state = 'OUT'
+            self.transition_progress = 0.0
+            self.anim_dir = anim_dir
 
     def open_options(self):
         self.app.options_menu.previous_state = 'MAIN_MENU'
         self.app.game_state = 'OPTIONS'
+        self.app.options_menu.transition_state = 'IN'
+        self.app.options_menu.transition_progress = 0.0
 
     def toggle_game_mode(self):
         self.create_game_mode = 0 if self.create_game_mode == 1 else 1
@@ -63,6 +85,8 @@ class Menu:
             self.input_name.is_active = True
             self.create_game_mode = 1
             self.btn_game_mode.text = 'Game Mode: Survival'
+        self.transition_state = 'IN'
+        self.transition_progress = 0.0
 
     def load_world_list(self):
         import os
@@ -103,7 +127,7 @@ class Menu:
                 self.set_state('MAIN')
             
             btn = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
-                              (0, y_offset), (0.65, 0.12), load_and_reset)
+                              (0, y_offset), (0.65, 0.12), lambda sn=save_name: self.trigger_action(lambda: load_and_reset(sn), -1))
             self.world_buttons.append(btn)
             
             # Create a small red 'X' button positioned right next to the WorldButton
@@ -155,7 +179,25 @@ class Menu:
         self.set_state('MAIN')
 
     def update(self):
-        mouse_pos = pg.mouse.get_pos()
+        if self.transition_state != 'IDLE':
+            self.transition_progress += self.app.delta_time * 0.005 # ~200ms transitions
+            if self.transition_progress >= 1.0:
+                self.transition_progress = 1.0
+                if self.transition_state == 'OUT':
+                    if self.pending_action:
+                        action = self.pending_action
+                        self.pending_action = None
+                        action()
+                    else:
+                        self.transition_state = 'IDLE'
+                elif self.transition_state == 'IN':
+                    self.transition_state = 'IDLE'
+
+        if self.transition_state != 'IDLE':
+            mouse_pos = (-999, -999) # Lock interactions during animations
+        else:
+            mouse_pos = pg.mouse.get_pos()
+            
         if self.state == 'MAIN':
             for btn in [self.btn_play, self.btn_options, self.btn_quit]:
                 btn.check_hover(mouse_pos)
@@ -181,6 +223,9 @@ class Menu:
             self.btn_back_create.check_hover(mouse_pos)
 
     def handle_event(self, event):
+        if self.transition_state != 'IDLE':
+            return # Ignore inputs during transitions
+            
         if self.state == 'CREATE_WORLD':
             self.input_name.handle_event(event)
             self.input_seed.handle_event(event)
@@ -220,7 +265,36 @@ class Menu:
                     max_scroll = max(0.0, (len(self.world_buttons) - 2) * 0.26)
                     self.scroll_offset = min(max_scroll, self.scroll_offset + 0.26)
 
+    def render_bg(self):
+        if hasattr(self, 'bg_tex') and self.bg_tex:
+            self.bg_tex.use(location=4)
+            img_aspect = self.bg_tex.width / self.bg_tex.height
+            if img_aspect > ASPECT_RATIO:
+                scale_x, scale_y = img_aspect / ASPECT_RATIO, 1.0
+            else:
+                scale_x, scale_y = 1.0, ASPECT_RATIO / img_aspect
+            self.bg_tex_mesh.program['u_scale'] = (scale_x, scale_y)
+            self.bg_tex_mesh.program['u_offset'] = (0.0, 0.0)
+            if 'u_alpha' in self.bg_tex_mesh.program: self.bg_tex_mesh.program['u_alpha'] = 1.0
+            self.bg_tex_mesh.render()
+
     def render(self):
+        t = self.transition_progress
+        ease = 1.0 - (1.0 - t) ** 3
+        offset_y = 0.0
+        alpha = 1.0
+        
+        if self.transition_state == 'IN':
+            offset_y = (1.0 - ease) * -0.5 * self.anim_dir
+            alpha = ease
+        elif self.transition_state == 'OUT':
+            offset_y = ease * 0.5 * self.anim_dir
+            alpha = 1.0 - ease
+            
+        offset = (0.0, offset_y)
+        
+        self.render_bg()
+
         # Render title
         self.title_tex.use(location=4)
         
@@ -229,25 +303,27 @@ class Menu:
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.title_mesh.program['u_offset'] = (0.0, 0.5)
+        self.title_mesh.program['u_offset'] = (0.0, 0.5 + offset_y * 0.5) # Parallax!
+        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = alpha
         self.title_mesh.render()
+        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
 
         if self.state == 'MAIN':
             for btn in [self.btn_play, self.btn_options, self.btn_quit]:
-                btn.render()
+                btn.render(offset, alpha)
         elif self.state == 'SELECT_WORLD':
-            self.btn_new_world.render()
+            self.btn_new_world.render(offset, alpha)
             for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
                 if -0.45 < btn.pos[1] < 0.02:
-                    btn.render()
-                    del_btn.render()
-            self.btn_back_select.render()
+                    btn.render(offset, alpha)
+                    del_btn.render(offset, alpha)
+            self.btn_back_select.render(offset, alpha)
         elif self.state == 'CREATE_WORLD':
-            self.input_name.render()
-            self.input_seed.render()
-            self.btn_game_mode.render()
-            self.btn_create.render()
-            self.btn_back_create.render()
+            self.input_name.render(offset, alpha)
+            self.input_seed.render(offset, alpha)
+            self.btn_game_mode.render(offset, alpha)
+            self.btn_create.render(offset, alpha)
+            self.btn_back_create.render(offset, alpha)
 
 
 class PauseMenu:
@@ -258,15 +334,29 @@ class PauseMenu:
         self.title_mesh = UITextMesh(app)
         self.bg_mesh = UIColorMesh(app)
 
+        self.transition_state = 'IN'
+        self.transition_progress = 0.0
+        self.pending_action = None
+        self.anim_dir = 1
+
         self.buttons = [
-            Button(app, 'Resume', (0, 0.15), (0.3, 0.07), self.resume_game),
-            Button(app, 'Options', (0, 0.0), (0.3, 0.07), self.open_options),
-            Button(app, 'Quit to Menu', (0, -0.15), (0.3, 0.07), self.quit_to_menu)
+            Button(app, 'Resume', (0, 0.15), (0.3, 0.07), lambda: self.trigger_action(self.resume_game, -1)),
+            Button(app, 'Options', (0, 0.0), (0.3, 0.07), lambda: self.trigger_action(self.open_options, 1)),
+            Button(app, 'Quit to Menu', (0, -0.15), (0.3, 0.07), lambda: self.trigger_action(self.quit_to_menu, 1))
         ]
+
+    def trigger_action(self, action, anim_dir=1):
+        if self.transition_state in ('IDLE', 'IN'):
+            self.pending_action = action
+            self.transition_state = 'OUT'
+            self.transition_progress = 0.0
+            self.anim_dir = anim_dir
 
     def open_options(self):
         self.app.options_menu.previous_state = 'PAUSED'
         self.app.game_state = 'OPTIONS'
+        self.app.options_menu.transition_state = 'IN'
+        self.app.options_menu.transition_progress = 0.0
 
     def resume_game(self):
         self.app.game_state = 'IN_GAME'
@@ -281,11 +371,30 @@ class PauseMenu:
             self.app.scene = None # Unload the world to free memory
 
     def update(self):
-        mouse_pos = pg.mouse.get_pos()
+        if self.transition_state != 'IDLE':
+            self.transition_progress += self.app.delta_time * 0.005
+            if self.transition_progress >= 1.0:
+                self.transition_progress = 1.0
+                if self.transition_state == 'OUT':
+                    if self.pending_action:
+                        action = self.pending_action
+                        self.pending_action = None
+                        action()
+                    else:
+                        self.transition_state = 'IDLE'
+                elif self.transition_state == 'IN':
+                    self.transition_state = 'IDLE'
+                    
+        if self.transition_state != 'IDLE':
+            mouse_pos = (-999, -999)
+        else:
+            mouse_pos = pg.mouse.get_pos()
+            
         for button in self.buttons:
             button.check_hover(mouse_pos)
 
     def handle_event(self, event):
+        if self.transition_state != 'IDLE': return
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             for button in self.buttons:
                 if button.is_hovered:
@@ -293,9 +402,24 @@ class PauseMenu:
                     break
 
     def render(self):
+        t = self.transition_progress
+        ease = 1.0 - (1.0 - t) ** 3
+        offset_y = 0.0
+        alpha = 1.0
+        
+        if self.transition_state == 'IN':
+            offset_y = (1.0 - ease) * -0.5 * self.anim_dir
+            alpha = ease
+        elif self.transition_state == 'OUT':
+            offset_y = ease * 0.5 * self.anim_dir
+            alpha = 1.0 - ease
+            
+        offset = (0.0, offset_y)
+        bg_alpha = alpha if self.transition_state != 'IDLE' else 1.0
+        
         self.bg_mesh.program['u_scale'] = (1.0, 1.0)
         self.bg_mesh.program['u_offset'] = (0.0, 0.0)
-        self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6)
+        self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6 * bg_alpha)
         self.bg_mesh.render()
 
         tex = self.title_renderer.get_texture("Game Paused")
@@ -304,11 +428,13 @@ class PauseMenu:
         scale_y = 0.08
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.title_mesh.program['u_offset'] = (0.0, 0.4)
+        self.title_mesh.program['u_offset'] = (0.0, 0.4 + offset_y * 0.5)
+        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = alpha
         self.title_mesh.render()
+        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
 
         for button in self.buttons:
-            button.render()
+            button.render(offset, alpha)
 
 
 class OptionsMenu:
@@ -319,6 +445,11 @@ class OptionsMenu:
         self.title_mesh = UITextMesh(app)
         self.bg_mesh = UIColorMesh(app)
 
+        self.transition_state = 'IN'
+        self.transition_progress = 0.0
+        self.pending_action = None
+        self.anim_dir = 1
+
         self.sliders = [
             Slider(app, 'FOV', (0, 0.3), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
             Slider(app, 'Sensitivity', (0, 0.1), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
@@ -327,9 +458,16 @@ class OptionsMenu:
         ]
         self.buttons = [
             Button(app, '', (0, -0.5), (0.3, 0.05), self.toggle_tint),
-            Button(app, 'Back', (0, -0.7), (0.2, 0.07), self.go_back)
+            Button(app, 'Back', (0, -0.7), (0.2, 0.07), lambda: self.trigger_action(self.go_back, 1))
         ]
         self.previous_state = 'MAIN_MENU'
+
+    def trigger_action(self, action, anim_dir=1):
+        if self.transition_state in ('IDLE', 'IN'):
+            self.pending_action = action
+            self.transition_state = 'OUT'
+            self.transition_progress = 0.0
+            self.anim_dir = anim_dir
 
     def update_fov(self, val):
         if self.app.scene:
@@ -346,19 +484,44 @@ class OptionsMenu:
     def go_back(self):
         self.app.save_config()
         self.app.game_state = self.previous_state
+        if self.previous_state == 'MAIN_MENU':
+            self.app.menu.transition_state = 'IN'
+            self.app.menu.transition_progress = 0.0
+        elif self.previous_state == 'PAUSED':
+            self.app.pause_menu.transition_state = 'IN'
+            self.app.pause_menu.transition_progress = 0.0
 
     def update(self):
+        if self.transition_state != 'IDLE':
+            self.transition_progress += self.app.delta_time * 0.005
+            if self.transition_progress >= 1.0:
+                self.transition_progress = 1.0
+                if self.transition_state == 'OUT':
+                    if self.pending_action:
+                        action = self.pending_action
+                        self.pending_action = None
+                        action()
+                    else:
+                        self.transition_state = 'IDLE'
+                elif self.transition_state == 'IN':
+                    self.transition_state = 'IDLE'
+                    
+        if self.transition_state != 'IDLE':
+            mouse_pos = (-999, -999)
+        else:
+            mouse_pos = pg.mouse.get_pos()
+            
         for slider in self.sliders:
-            slider.update()
+            slider.update(mouse_pos)
 
         tint_on = self.app.config.get('underwater_tint', False)
         self.buttons[0].text = f"Underwater Tint: {'On' if tint_on else 'Off'}"
 
-        mouse_pos = pg.mouse.get_pos()
         for button in self.buttons:
             button.check_hover(mouse_pos)
 
     def handle_event(self, event):
+        if self.transition_state != 'IDLE': return
         for slider in self.sliders:
             slider.handle_event(event)
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
@@ -368,10 +531,25 @@ class OptionsMenu:
                     break
 
     def render(self):
+        t = self.transition_progress
+        ease = 1.0 - (1.0 - t) ** 3
+        offset_y = 0.0
+        alpha = 1.0
+        
+        if self.transition_state == 'IN':
+            offset_y = (1.0 - ease) * -0.5 * self.anim_dir
+            alpha = ease
+        elif self.transition_state == 'OUT':
+            offset_y = ease * 0.5 * self.anim_dir
+            alpha = 1.0 - ease
+            
+        offset = (0.0, offset_y)
+        bg_alpha = alpha if self.transition_state != 'IDLE' else 1.0
+        
         if self.previous_state == 'PAUSED':
             self.bg_mesh.program['u_scale'] = (1.0, 1.0)
             self.bg_mesh.program['u_offset'] = (0.0, 0.0)
-            self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8)
+            self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8 * bg_alpha)
             self.bg_mesh.render()
 
         tex = self.title_renderer.get_texture("Options")
@@ -380,10 +558,12 @@ class OptionsMenu:
         scale_y = 0.08
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.title_mesh.program['u_offset'] = (0.0, 0.55)
+        self.title_mesh.program['u_offset'] = (0.0, 0.55 + offset_y * 0.5)
+        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = alpha
         self.title_mesh.render()
+        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
 
         for slider in self.sliders:
-            slider.render()
+            slider.render(offset, alpha)
         for button in self.buttons:
-            button.render()
+            button.render(offset, alpha)

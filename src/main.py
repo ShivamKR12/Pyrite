@@ -221,6 +221,9 @@ class Pyrite:
         elif self.game_state == 'OPTIONS':
             if self.options_menu.previous_state == 'PAUSED' and self.scene:
                 self.scene.render()
+            elif self.options_menu.previous_state == 'MAIN_MENU':
+                self.ctx.disable(mgl.DEPTH_TEST)
+                self.menu.render_bg()
             self.ctx.disable(mgl.DEPTH_TEST)
             self.options_menu.render()
             self.ctx.enable(mgl.DEPTH_TEST)
@@ -248,6 +251,8 @@ class Pyrite:
                     except Exception as e:
                         print(f"Failed to save thumbnail: {e}")
                     self.game_state = 'PAUSED'
+                    self.pause_menu.transition_state = 'IN'
+                    self.pause_menu.transition_progress = 0.0
                     pg.event.set_grab(False)
                     pg.mouse.set_visible(True)
                 elif self.game_state == 'INVENTORY':
@@ -256,11 +261,11 @@ class Pyrite:
                     pg.event.set_grab(True)
                     pg.mouse.set_visible(False)
                 elif self.game_state == 'PAUSED':
-                    self.pause_menu.resume_game()
+                    self.pause_menu.trigger_action(self.pause_menu.resume_game, 1)
                 elif self.game_state == 'OPTIONS':
-                    self.options_menu.go_back()
+                    self.options_menu.trigger_action(self.options_menu.go_back, 1)
                 else: # Esc inside Main Menu quits the game
-                    self.quit_game()
+                    self.menu.trigger_action(self.quit_game, 1)
             elif event.type == pg.KEYDOWN and event.key == pg.K_F3:
                 self.show_debug = not self.show_debug
             elif event.type == pg.KEYDOWN and event.key == pg.K_e:
