@@ -45,17 +45,11 @@ void main() {
     vec3 tex_col = tex_sample.rgb;
     tex_col = pow(tex_col, gamma);
     
-    // Dynamic Block Light Flicker
-    float flicker = 1.0;
-    if (block_light > 0.5) {
-        flicker = 1.0 + 0.05 * sin(u_time * 10.0) * cos(u_time * 23.0);
-    }
-    
     // Apply Day/Night cycle to sunlight
     float day_light = max(0.05, u_sun_direction.y + 0.2); 
     
     // Final combined light
-    float final_light = max(sun_light * day_light, block_light * flicker);
+    float final_light = max(sun_light * day_light, block_light);
     final_light = max(0.02, pow(final_light, 1.5)); // Gamma curve for natural darkness
 
     tex_col *= shading * final_light;

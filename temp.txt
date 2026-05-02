@@ -1254,17 +1254,11 @@ void main() {
     vec3 tex_col = tex_sample.rgb;
     tex_col = pow(tex_col, gamma);
     
-    // Dynamic Block Light Flicker
-    float flicker = 1.0;
-    if (block_light > 0.5) {
-        flicker = 1.0 + 0.05 * sin(u_time * 10.0) * cos(u_time * 23.0);
-    }
-    
     // Apply Day/Night cycle to sunlight
     float day_light = max(0.05, u_sun_direction.y + 0.2); 
     
     // Final combined light
-    float final_light = max(sun_light * day_light, block_light * flicker);
+    float final_light = max(sun_light * day_light, block_light);
     final_light = max(0.02, pow(final_light, 1.5)); // Gamma curve for natural darkness
 
     tex_col *= shading * final_light;
@@ -2737,7 +2731,7 @@ class DebugOverlay:
             fps = self.app.clock.get_fps()
             x, y, z = player.position
             cx, cy, cz = int(x // CHUNK_SIZE), int(y // CHUNK_SIZE), int(z // CHUNK_SIZE)
-            yaw, pitch = glm.degrees(player.yaw), glm.degrees(player.pitch)
+            yaw, pitch = glm.degrees(player.yaw) % 360, glm.degrees(player.pitch)
             
             target = "Air"
             if handler.voxel_id:
@@ -5176,6 +5170,66 @@ TEXTURE_MAP = {
     STONE_BRICKS: 15
 }
 
+# UID and Texture Array Mapping For the new textture array called texture_atlas.png
+# # UIDs for blocks and items
+# AIR = 0
+# GRASS = 1
+# DIRT = 2
+# OAK_LOG = 3
+# OAK_PLANKS = 4
+# OAK_LEAVES = 5
+# SAND = 6
+# SANDSTONE = 7
+# CACTUS = 8
+# SNOWY_GRASS = 9
+# SNOW_BLOCK = 10
+# ICE = 11
+# WATER = 12
+# CLAY = 13
+# GRAVEL = 14
+# STONE = 15
+# COBBLESTONE = 16
+# COAL_ORE = 17
+# IRON_ORE = 18
+# GOLD_ORE = 19
+# BEDROCK = 20
+# NETHERRACK = 21
+# LAVA = 22
+# OBSIDIAN = 23
+
+# # 24-32 are reserved for other future blocks, 33+ are items
+# STICK = 33
+# WOODEN_PICKAXE = 34
+
+# NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
+
+# # Texture Array Mapping (Global UID -> Row in texture_atlas.png)
+# TEXTURE_MAP = {
+#     GRASS: 1,
+#     DIRT: 2,
+#     OAK_LOG: 3,
+#     OAK_PLANKS: 4,
+#     OAK_LEAVES: 5,
+#     SAND: 6,
+#     SANDSTONE: 7,
+#     CACTUS: 8,
+#     SNOWY_GRASS: 9,
+#     SNOW_BLOCK: 10,
+#     ICE: 11,
+#     WATER: 12,
+#     CLAY: 13,
+#     GRAVEL: 14,
+#     STONE: 15,
+#     COBBLESTONE: 16,
+#     COAL_ORE: 17,
+#     IRON_ORE: 18,
+#     GOLD_ORE: 19,
+#     BEDROCK: 20,
+#     NETHERRACK: 21,
+#     LAVA: 22,
+#     OBSIDIAN: 23
+# }
+
 # terrain levels
 SNOW_LVL = 54
 STONE_LVL = 49
@@ -6926,6 +6980,8 @@ ui.py
 config.json
 plans.txt
 crash_log.txt
+create_texture_array.py
+texture_array.png
 
 ===== D:\Pyrite\append_texture.py =====
 
@@ -7050,8 +7106,125 @@ coll = COLLECT(
     name='Pyrite',
 )
 
+===== D:\Pyrite\create_texture_array.py =====
+
+import pygame as pg
+import os
+import sys
+
+# Define the block configuration (Name, Top, Side, Bottom)
+# Using the exact filenames from your PowerShell output
+# Define the block configuration (Name, Top, Side, Bottom)
+BLOCKS = [
+    # Plains / Forest
+    ("Grass", "Grass_Block_(top_texture)_JE4_BE2.png", "Grass_Block_(side_texture)_JE2_BE2.png", "Dirt_(texture)_JE2_BE2.png"),
+    ("Dirt", "Dirt_(texture)_JE2_BE2.png", "Dirt_(texture)_JE2_BE2.png", "Dirt_(texture)_JE2_BE2.png"),
+    ("Oak Log", "48px-Oak_Log_(top_texture)_JE5_BE2.png", "48px-Oak_Log_(texture)_JE4_BE2.png", "48px-Oak_Log_(top_texture)_JE5_BE2.png"),
+    ("Oak Planks", "Oak_Planks_(texture)_JE6_BE3.png", "Oak_Planks_(texture)_JE6_BE3.png", "Oak_Planks_(texture)_JE6_BE3.png"),
+    ("Oak Leaves", "48px-Oak_Leaves_(texture)_JE4_BE2.png", "48px-Oak_Leaves_(texture)_JE4_BE2.png", "48px-Oak_Leaves_(texture)_JE4_BE2.png"),
+    
+    # Desert
+    ("Sand", "Sand_(texture)_JE5_BE3.png", "Sand_(texture)_JE5_BE3.png", "Sand_(texture)_JE5_BE3.png"),
+    ("Sandstone", "Sandstone_(top_texture)_JE5_BE2.png", "Sandstone_(side_texture)_JE4_BE3.png", "Sandstone_(bottom_texture)_JE4_BE2.png"),
+    ("Cactus", "48px-Cactus_(top_texture)_JE4_BE4.png", "48px-Cactus_(side_texture)_JE4_BE2.png", "48px-Cactus_(bottom_texture)_JE3.png"),
+
+    # Snow / Tundra
+    ("Snowy Grass", "Snow_(texture)_JE2_BE2.png", "Snowy_Grass_Block_(side_texture)_JE2_BE2.png", "Dirt_(texture)_JE2_BE2.png"),
+    ("Snow Block", "Snow_(texture)_JE2_BE2.png", "Snow_(texture)_JE2_BE2.png", "Snow_(texture)_JE2_BE2.png"),
+    ("Ice", "Ice_(texture)_JE2_BE6.png", "Ice_(texture)_JE2_BE6.png", "Ice_(texture)_JE2_BE6.png"),
+
+    # Ocean / River
+    ("Water", "6px-Water_(texture)_JE4.png", "6px-Water_(texture)_JE4.png", "6px-Water_(texture)_JE4.png"),
+    ("Clay", "Clay_(texture)_JE2_BE2.png", "Clay_(texture)_JE2_BE2.png", "Clay_(texture)_JE2_BE2.png"),
+    ("Gravel", "Gravel_(texture)_JE5_BE4.png", "Gravel_(texture)_JE5_BE4.png", "Gravel_(texture)_JE5_BE4.png"),
+
+    # Underground / Cave
+    ("Stone", "Stone_(texture)_JE5_BE3.png", "Stone_(texture)_JE5_BE3.png", "Stone_(texture)_JE5_BE3.png"),
+    ("Cobblestone", "Cobblestone_(texture)_JE5_BE3.png", "Cobblestone_(texture)_JE5_BE3.png", "Cobblestone_(texture)_JE5_BE3.png"),
+    ("Coal Ore", "48px-Coal_Ore_(texture)_JE5_BE4.png", "48px-Coal_Ore_(texture)_JE5_BE4.png", "48px-Coal_Ore_(texture)_JE5_BE4.png"),
+    ("Iron Ore", "48px-Iron_Ore_(texture)_JE6_BE4.png", "48px-Iron_Ore_(texture)_JE6_BE4.png", "48px-Iron_Ore_(texture)_JE6_BE4.png"),
+    ("Gold Ore", "48px-Gold_Ore_(texture)_JE7_BE4.png", "48px-Gold_Ore_(texture)_JE7_BE4.png", "48px-Gold_Ore_(texture)_JE7_BE4.png"),
+    ("Bedrock", "Bedrock_(texture)_JE2_BE2.png", "Bedrock_(texture)_JE2_BE2.png", "Bedrock_(texture)_JE2_BE2.png"),
+
+    # Nether
+    ("Netherrack", "Netherrack_(texture)_JE4_BE3.png", "Netherrack_(texture)_JE4_BE3.png", "Netherrack_(texture)_JE4_BE3.png"),
+    ("Lava", "9px-Lava_(texture)_JE5.png", "9px-Lava_(texture)_JE5.png", "9px-Lava_(texture)_JE5.png"),
+    ("Obsidian", "Obsidian_(texture)_JE3_BE2.png", "Obsidian_(texture)_JE3_BE2.png", "Obsidian_(texture)_JE3_BE2.png")
+]
+
+def process_texture(filepath, tile_size):
+    """Loads an image, handles animated vertical strips, and scales it uniformly."""
+    try:
+        img = pg.image.load(filepath).convert_alpha()
+    except FileNotFoundError:
+        print(f"WARNING: File not found, skipping: {filepath}")
+        # Return a magenta/black error placeholder if file is missing
+        err_surf = pg.Surface((tile_size, tile_size))
+        err_surf.fill((255, 0, 255))
+        pg.draw.rect(err_surf, (0, 0, 0), (0, 0, tile_size//2, tile_size//2))
+        pg.draw.rect(err_surf, (0, 0, 0), (tile_size//2, tile_size//2, tile_size//2, tile_size//2))
+        return err_surf
+
+    w, h = img.get_size()
+    
+    # Handle animated textures (vertical strips like Water/Lava)
+    # If the image is taller than it is wide, grab just the top frame
+    if h > w:
+        first_frame = pg.Surface((w, w), pg.SRCALPHA)
+        first_frame.blit(img, (0, 0), (0, 0, w, w))
+        img = first_frame
+        
+    # Scale to the consistent global tile size
+    return pg.transform.scale(img, (tile_size, tile_size))
+
+def build_atlas(base_dir, output_path, tile_size=128):
+    pg.init()
+    # Create a hidden display to allow image surface processing without a window
+    pg.display.set_mode((1, 1), pg.HIDDEN) 
+    
+    cols = 3
+    rows = len(BLOCKS) + 1  # +1 to reserve row 0 for Air
+    
+    atlas_w = cols * tile_size
+    atlas_h = rows * tile_size
+    
+    # Create the master canvas (starts entirely transparent for the air row)
+    atlas_surf = pg.Surface((atlas_w, atlas_h), pg.SRCALPHA)
+    
+    for row_idx, block_info in enumerate(BLOCKS):
+        name, top_file, side_file, bottom_file = block_info
+        
+        # Shift down by 1 because row 0 is reserved for Air
+        y_offset = (row_idx + 1) * tile_size
+        
+        top_surf = process_texture(os.path.join(base_dir, top_file), tile_size)
+        side_surf = process_texture(os.path.join(base_dir, side_file), tile_size)
+        bot_surf = process_texture(os.path.join(base_dir, bottom_file), tile_size)
+        
+        atlas_surf.blit(top_surf, (0, y_offset))
+        atlas_surf.blit(side_surf, (tile_size, y_offset))
+        atlas_surf.blit(bot_surf, (tile_size * 2, y_offset))
+        
+        print(f"Processed row {row_idx + 1}: {name}")
+        
+    pg.image.save(atlas_surf, output_path)
+    print(f"\nSuccessfully generated {output_path} ({atlas_w}x{atlas_h} pixels)")
+    pg.quit()
+
+if __name__ == '__main__':
+    # Path to the folder containing your downloaded images
+    TEXTURE_DIR = r"C:\\Users\\Shivam\\Downloads\\List_of_block_textures_Minecraft_Wiki_files"
+    OUTPUT_FILE = "texture_array.png"
+    
+    # You can change this to 16, 32, 64, or 128 depending on your rendering needs
+    TILE_RESOLUTION = 128 
+    
+    build_atlas(TEXTURE_DIR, OUTPUT_FILE, TILE_RESOLUTION)
+
 ===== D:\Pyrite\ISSUES.MD =====
 
+The yaw in the debug overlay panel does not resets after 360 degrees rotation. instead it continues to go up. the same is for both ways of rotation yaw. ( ! FIXED ! )
+remove the light flickering completely. it's annoying ! ( ! FIXED ! )
 The stick model is missing it's textures. ( ! FIXED ! )
 The jump height is too low, so it's impossible to jump up a block and move forward, if the jump action happens first and then the walk forward action. ( ! DONE ! )
 The environment lighting is propogating actross chunks, so while one has the right lighting, the other adjucent chunk has the incorrect lighting at it's chunk borders.
@@ -7069,7 +7242,7 @@ Add doc strings to all the classes, methods and functions in all the python file
 Plan and add nice background to all the different menus in the main screen. perhaps of gorgeous looking terrain from our game ? or anything that may work and enhance the UX. ( ! DONE ! )
 Upgrade the scroll frame for the world buttons in the main menu screen to show kinda of a bar moving up and down when we are scrolling through it.
 Add Damage to player when the hunger reaches zero. Also, decrease the player's movement speed when in survival mode and the hunger is less than or equal to 30. For now, to recorver the hunger, the player has simply be standing in a place for maybe 3 sec ? befor the hunger starts to recover own it's own. The health of the player should also only be recovering when the player's hunger is full. this would create kinda of a cycle where a player would just be standing doing nothing for minutes if his health is very low and his hunger is also down as well. this means, when the player's hunger reaches full, his health would start to recover. should we make it so that when the player's health increases, his hunger decreases ? putting him in a visius cycle to health increasing hunger bar deceasing, then hunger bar increasing again, and due to which the health increasing and the hunger bar deceasing again ! is this actually a good idea for gameplay or UX ? is this whole idea even good for our game's survival mechanics or gameplay or UX ?
-We also need to move the create new world button a little down from it's current position, as it is touching thr bottom of the Pyrite game title image on the main screen. ( ! DONE ! )
+We also need to move the create new world button a little down from it's current position, as it is touching the bottom of the Pyrite game title image on the main screen. ( ! DONE ! )
 We also need to update our return to main menu mechanics so instead of returning to the create new world menu screen when exiting out of a newly created world, or returning to the worlds menu screen from where we select the world to start playing, we always return to the MAIN main menu screen ! where the "play", "options" and "quit" buttons exists. ( ! DONE ! )
 We need to add actual shadows to our gamem, casted by the trees, enviroment, etc; upon each other. we should also make it toggle if possible and helpful in maintain smooth performence for the future.
 We also need to plan about how we are going to add the Async LOD generation and steaming to our existing world, without breaking anything that already exists, How it will work with the Greedy Mesher, AO, Lighting and the Textures.
