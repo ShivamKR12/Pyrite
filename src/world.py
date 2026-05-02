@@ -15,7 +15,7 @@ import moderngl as mgl
 from frustum import frustum_cull_fast
 import datetime
 from meshes.chunk_mesh_builder import build_chunk_mesh
-from lighting import init_chunk_lighting, update_light_place_block, update_light_remove_block, place_torch
+from lighting import init_chunk_lighting, stitch_chunk_lighting, update_light_place_block, update_light_remove_block, place_torch
 import noise
 
 
@@ -142,6 +142,7 @@ class World:
             dummy_lights = np.full(CHUNK_VOL, 255, dtype='uint8')
             Chunk.generate_terrain(dummy_voxels, dummy_lights, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed)
             init_chunk_lighting(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
+            stitch_chunk_lighting(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
             update_light_place_block(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
             update_light_remove_block(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
             place_torch(0, 0, 0, self.voxels, self.lightmaps, self.chunk_positions)
@@ -250,12 +251,14 @@ class World:
                     if needs_lighting:
                         init_chunk_lighting(x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
                     
+                    stitch_chunk_lighting(x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
+                    
                     chunk.build_mesh()
                     self.build_queue.append(chunk)
 
-                    # Force remesh of neighbors to clean up boundaries
-                    for dx, dz in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                        n_pos = (x + dx, y, z + dz)
+                    # Force remesh of all 6 chunk neighbors to ensure light spills render properly
+                    for dx, dy, dz in [(-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1)]:
+                        n_pos = (x + dx, y + dy, z + dz)
                         if n_pos in self.active_chunks:
                             n_chunk = self.active_chunks[n_pos]
                             if n_chunk.voxels is not None and n_chunk not in self.build_queue:

@@ -165,6 +165,62 @@ def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positio
 
 
 @njit(cache=True, nogil=True)
+def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
+    queue_sun = np.empty(200000, dtype=np.uint64)
+    tail_sun = 0
+    queue_block = np.empty(200000, dtype=np.uint64)
+    tail_block = 0
+
+    for dir_idx in range(6):
+        dx = DIRS[dir_idx][0]
+        dy = DIRS[dir_idx][1]
+        dz = DIRS[dir_idx][2]
+        
+        nx_c = cx + dx * CHUNK_SIZE
+        ny_c = cy + dy * CHUNK_SIZE
+        nz_c = cz + dz * CHUNK_SIZE
+        
+        if get_chunk_index((nx_c, ny_c, nz_c), chunk_positions) != -1:
+            for i in range(CHUNK_SIZE):
+                for j in range(CHUNK_SIZE):
+                    if dx != 0:
+                        wx_n = cx + (CHUNK_SIZE - 1 if dx == 1 else 0) + dx
+                        wy_n = cy + i
+                        wz_n = cz + j
+                        
+                        wx_c = cx + (CHUNK_SIZE - 1 if dx == 1 else 0)
+                        wy_c = cy + i
+                        wz_c = cz + j
+                    elif dy != 0:
+                        wx_n = cx + i
+                        wy_n = cy + (CHUNK_SIZE - 1 if dy == 1 else 0) + dy
+                        wz_n = cz + j
+                        
+                        wx_c = cx + i
+                        wy_c = cy + (CHUNK_SIZE - 1 if dy == 1 else 0)
+                        wz_c = cz + j
+                    else:
+                        wx_n = cx + i
+                        wy_n = cy + j
+                        wz_n = cz + (CHUNK_SIZE - 1 if dz == 1 else 0) + dz
+                        
+                        wx_c = cx + i
+                        wy_c = cy + j
+                        wz_c = cz + (CHUNK_SIZE - 1 if dz == 1 else 0)
+                        
+                    val_n = get_light_fast(wx_n, wy_n, wz_n, world_lightmaps, chunk_positions)
+                    if (val_n >> 4) > 0: queue_sun[tail_sun] = (np.uint64(wx_n) << 32) | (np.uint64(wy_n) << 16) | np.uint64(wz_n); tail_sun += 1
+                    if (val_n & 15) > 0: queue_block[tail_block] = (np.uint64(wx_n) << 32) | (np.uint64(wy_n) << 16) | np.uint64(wz_n); tail_block += 1
+                        
+                    val_c = get_light_fast(wx_c, wy_c, wz_c, world_lightmaps, chunk_positions)
+                    if (val_c >> 4) > 0: queue_sun[tail_sun] = (np.uint64(wx_c) << 32) | (np.uint64(wy_c) << 16) | np.uint64(wz_c); tail_sun += 1
+                    if (val_c & 15) > 0: queue_block[tail_block] = (np.uint64(wx_c) << 32) | (np.uint64(wy_c) << 16) | np.uint64(wz_c); tail_block += 1
+                        
+    propagate_light_queue(queue_sun, tail_sun, True, world_voxels, world_lightmaps, chunk_positions)
+    propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
+
+
+@njit(cache=True, nogil=True)
 def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill):
     queue = np.empty(200000, dtype=np.uint64)
     head = 0

@@ -2,7 +2,7 @@ The yaw in the debug overlay panel does not resets after 360 degrees rotation. i
 remove the light flickering completely. it's annoying ! ( ! FIXED ! )
 The stick model is missing it's textures. ( ! FIXED ! )
 The jump height is too low, so it's impossible to jump up a block and move forward, if the jump action happens first and then the walk forward action. ( ! DONE ! )
-The environment lighting is propogating actross chunks, so while one has the right lighting, the other adjucent chunk has the incorrect lighting at it's chunk borders.
+The environment lighting is propogating actross chunks, so while one has the right lighting, the other adjucent chunk has the incorrect lighting at it's chunk borders. ( ! FIXED ! )
 The Day-Night cycle is moving wayy too fast ! ( ! DONE ! )
 Fix the rotation of the Pickaxe model when it is held in hand by the player. perhaps scale it down a bit too. ( ! DONE ! )
 Move the stick model a bit upward for when the player is holding it in his hands. It's rotation and scale are all perfect ! ( ! DONE ! )
