@@ -111,6 +111,66 @@ TEXTURE_MAP = {
     STONE_BRICKS: 15
 }
 
+# UID and Texture Array Mapping For the new textture array called texture_atlas.png
+# # UIDs for blocks and items
+# AIR = 0
+# GRASS = 1
+# DIRT = 2
+# OAK_LOG = 3
+# OAK_PLANKS = 4
+# OAK_LEAVES = 5
+# SAND = 6
+# SANDSTONE = 7
+# CACTUS = 8
+# SNOWY_GRASS = 9
+# SNOW_BLOCK = 10
+# ICE = 11
+# WATER = 12
+# CLAY = 13
+# GRAVEL = 14
+# STONE = 15
+# COBBLESTONE = 16
+# COAL_ORE = 17
+# IRON_ORE = 18
+# GOLD_ORE = 19
+# BEDROCK = 20
+# NETHERRACK = 21
+# LAVA = 22
+# OBSIDIAN = 23
+
+# # 24-32 are reserved for other future blocks, 33+ are items
+# STICK = 33
+# WOODEN_PICKAXE = 34
+
+# NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
+
+# # Texture Array Mapping (Global UID -> Row in texture_atlas.png)
+# TEXTURE_MAP = {
+#     GRASS: 1,
+#     DIRT: 2,
+#     OAK_LOG: 3,
+#     OAK_PLANKS: 4,
+#     OAK_LEAVES: 5,
+#     SAND: 6,
+#     SANDSTONE: 7,
+#     CACTUS: 8,
+#     SNOWY_GRASS: 9,
+#     SNOW_BLOCK: 10,
+#     ICE: 11,
+#     WATER: 12,
+#     CLAY: 13,
+#     GRAVEL: 14,
+#     STONE: 15,
+#     COBBLESTONE: 16,
+#     COAL_ORE: 17,
+#     IRON_ORE: 18,
+#     GOLD_ORE: 19,
+#     BEDROCK: 20,
+#     NETHERRACK: 21,
+#     LAVA: 22,
+#     OBSIDIAN: 23
+# }
+
 # terrain levels
 SNOW_LVL = 54
 STONE_LVL = 49

@@ -549,7 +549,7 @@ class DebugOverlay:
             fps = self.app.clock.get_fps()
             x, y, z = player.position
             cx, cy, cz = int(x // CHUNK_SIZE), int(y // CHUNK_SIZE), int(z // CHUNK_SIZE)
-            yaw, pitch = glm.degrees(player.yaw), glm.degrees(player.pitch)
+            yaw, pitch = glm.degrees(player.yaw) % 360, glm.degrees(player.pitch)
             
             target = "Air"
             if handler.voxel_id:

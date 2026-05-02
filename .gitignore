@@ -19,3 +19,5 @@ ui.py
 config.json
 plans.txt
 crash_log.txt
+create_texture_array.py
+texture_array.png

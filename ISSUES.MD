@@ -1,3 +1,5 @@
+The yaw in the debug overlay panel does not resets after 360 degrees rotation. instead it continues to go up. the same is for both ways of rotation yaw. ( ! FIXED ! )
+remove the light flickering completely. it's annoying !
 The stick model is missing it's textures. ( ! FIXED ! )
 The jump height is too low, so it's impossible to jump up a block and move forward, if the jump action happens first and then the walk forward action. ( ! DONE ! )
 The environment lighting is propogating actross chunks, so while one has the right lighting, the other adjucent chunk has the incorrect lighting at it's chunk borders.
