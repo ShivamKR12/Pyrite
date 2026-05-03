@@ -146,29 +146,29 @@ class HeldBlock:
             return
 
         # 1. View bobbing
-        bob_offset_y = glm.sin(player.step_counter) * 0.03
-        bob_offset_x = glm.cos(player.step_counter * 0.5) * 0.02
+        bob_offset_y = glm.sin(player.step_counter) * HELD_ITEM_BOB_OFFSET_Y_MULT
+        bob_offset_x = glm.cos(player.step_counter * 0.5) * HELD_ITEM_BOB_OFFSET_X_MULT
 
         # 2. Swinging animation
         swing_offset_y = 0.0
         swing_offset_z = 0.0
-        swing_rot_x = 0.0
+        swing_rotation_x = 0.0
         
         if player.mining_time > 0.0:
             swing_val = max(0, glm.sin(player.mining_time * 0.03))
-            swing_offset_y = swing_val * 0.15
-            swing_offset_z = -swing_val * 0.1
-            swing_rot_x = swing_val * 0.4
+            swing_offset_y = swing_val * HELD_ITEM_SWING_OFFSET_Y
+            swing_offset_z = -swing_val * HELD_ITEM_SWING_OFFSET_Z
+            swing_rotation_x = swing_val * HELD_ITEM_SWING_ROT_X
         else:
             time_since_place = pg.time.get_ticks() - player.interaction_timer
             if time_since_place < player.interaction_delay:
                 progress = time_since_place / player.interaction_delay
                 swing_val = glm.sin(progress * glm.pi())
-                swing_offset_y = swing_val * 0.2
-                swing_rot_x = swing_val * 0.3
+                swing_offset_y = swing_val * HELD_ITEM_PLACE_SWING_OFFSET_Y
+                swing_rotation_x = swing_val * HELD_ITEM_PLACE_SWING_ROTATION_X
 
         # 3. Position the block in the bottom right (in local camera space)
-        pos = glm.vec3(0.5 + bob_offset_x, -0.4 + bob_offset_y - swing_offset_y, -1.0 + swing_offset_z)
+        pos = HELD_ITEM_POS + glm.vec3(bob_offset_x, bob_offset_y - swing_offset_y, swing_offset_z)
         
         # Compute Model Matrix in World Space for perfectly accurate lighting
         m_model = glm.inverse(player.m_view)
@@ -177,21 +177,21 @@ class HeldBlock:
         # m_model = glm.translate(glm.mat4(), pos)
 
         if voxel_id == STICK:
-            m_model = glm.translate(m_model, glm.vec3(0.0, 0.15, 0.0))
-            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(90.0), glm.vec3(0, 0, 1))
-            m_model = glm.scale(m_model, glm.vec3(0.5))
+            m_model = glm.translate(m_model, HELD_STICK_POS_OFFSET)
+            m_model = glm.rotate(m_model, HELD_STICK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, HELD_STICK_ROT_Z, glm.vec3(0, 0, 1))
+            m_model = glm.scale(m_model, HELD_STICK_SCALE)
             mesh = self.stick_mesh
         elif voxel_id == WOODEN_PICKAXE:
-            m_model = glm.translate(m_model, glm.vec3(0.0, 0.15, 0.0))
-            m_model = glm.rotate(m_model, glm.radians(10.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(90.0), glm.vec3(0, 0, 1))
-            m_model = glm.scale(m_model, glm.vec3(0.2))
+            m_model = glm.translate(m_model, HELD_PICKAXE_POS_OFFSET)
+            m_model = glm.rotate(m_model, HELD_PICKAXE_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, HELD_PICKAXE_ROT_Z, glm.vec3(0, 0, 1))
+            m_model = glm.scale(m_model, HELD_PICKAXE_SCALE)
             mesh = self.pickaxe_mesh
         else:
-            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))
-            m_model = glm.scale(m_model, glm.vec3(0.35))
+            m_model = glm.rotate(m_model, HELD_BLOCK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, HELD_BLOCK_ROT_Y, glm.vec3(0, 1, 0))
+            m_model = glm.scale(m_model, HELD_BLOCK_SCALE)
             mesh = self.mesh
 
         mesh.program['m_proj'].write(player.m_proj)

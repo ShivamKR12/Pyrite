@@ -2413,29 +2413,29 @@ class HeldBlock:
             return
 
         # 1. View bobbing
-        bob_offset_y = glm.sin(player.step_counter) * 0.03
-        bob_offset_x = glm.cos(player.step_counter * 0.5) * 0.02
+        bob_offset_y = glm.sin(player.step_counter) * HELD_ITEM_BOB_OFFSET_Y_MULT
+        bob_offset_x = glm.cos(player.step_counter * 0.5) * HELD_ITEM_BOB_OFFSET_X_MULT
 
         # 2. Swinging animation
         swing_offset_y = 0.0
         swing_offset_z = 0.0
-        swing_rot_x = 0.0
+        swing_rotation_x = 0.0
         
         if player.mining_time > 0.0:
             swing_val = max(0, glm.sin(player.mining_time * 0.03))
-            swing_offset_y = swing_val * 0.15
-            swing_offset_z = -swing_val * 0.1
-            swing_rot_x = swing_val * 0.4
+            swing_offset_y = swing_val * HELD_ITEM_SWING_OFFSET_Y
+            swing_offset_z = -swing_val * HELD_ITEM_SWING_OFFSET_Z
+            swing_rotation_x = swing_val * HELD_ITEM_SWING_ROT_X
         else:
             time_since_place = pg.time.get_ticks() - player.interaction_timer
             if time_since_place < player.interaction_delay:
                 progress = time_since_place / player.interaction_delay
                 swing_val = glm.sin(progress * glm.pi())
-                swing_offset_y = swing_val * 0.2
-                swing_rot_x = swing_val * 0.3
+                swing_offset_y = swing_val * HELD_ITEM_PLACE_SWING_OFFSET_Y
+                swing_rotation_x = swing_val * HELD_ITEM_PLACE_SWING_ROTATION_X
 
         # 3. Position the block in the bottom right (in local camera space)
-        pos = glm.vec3(0.5 + bob_offset_x, -0.4 + bob_offset_y - swing_offset_y, -1.0 + swing_offset_z)
+        pos = HELD_ITEM_POS + glm.vec3(bob_offset_x, bob_offset_y - swing_offset_y, swing_offset_z)
         
         # Compute Model Matrix in World Space for perfectly accurate lighting
         m_model = glm.inverse(player.m_view)
@@ -2444,21 +2444,21 @@ class HeldBlock:
         # m_model = glm.translate(glm.mat4(), pos)
 
         if voxel_id == STICK:
-            m_model = glm.translate(m_model, glm.vec3(0.0, 0.15, 0.0))
-            m_model = glm.rotate(m_model, glm.radians(-45.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(90.0), glm.vec3(0, 0, 1))
-            m_model = glm.scale(m_model, glm.vec3(0.5))
+            m_model = glm.translate(m_model, HELD_STICK_POS_OFFSET)
+            m_model = glm.rotate(m_model, HELD_STICK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, HELD_STICK_ROT_Z, glm.vec3(0, 0, 1))
+            m_model = glm.scale(m_model, HELD_STICK_SCALE)
             mesh = self.stick_mesh
         elif voxel_id == WOODEN_PICKAXE:
-            m_model = glm.translate(m_model, glm.vec3(0.0, 0.15, 0.0))
-            m_model = glm.rotate(m_model, glm.radians(10.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(90.0), glm.vec3(0, 0, 1))
-            m_model = glm.scale(m_model, glm.vec3(0.2))
+            m_model = glm.translate(m_model, HELD_PICKAXE_POS_OFFSET)
+            m_model = glm.rotate(m_model, HELD_PICKAXE_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, HELD_PICKAXE_ROT_Z, glm.vec3(0, 0, 1))
+            m_model = glm.scale(m_model, HELD_PICKAXE_SCALE)
             mesh = self.pickaxe_mesh
         else:
-            m_model = glm.rotate(m_model, glm.radians(-15.0) - swing_rot_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, glm.radians(45.0), glm.vec3(0, 1, 0))
-            m_model = glm.scale(m_model, glm.vec3(0.35))
+            m_model = glm.rotate(m_model, HELD_BLOCK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            m_model = glm.rotate(m_model, HELD_BLOCK_ROT_Y, glm.vec3(0, 1, 0))
+            m_model = glm.scale(m_model, HELD_BLOCK_SCALE)
             mesh = self.mesh
 
         mesh.program['m_proj'].write(player.m_proj)
@@ -3685,7 +3685,7 @@ class Item:
     def __init__(self, app, position, voxel_id):
         self.app = app
         self.position = glm.vec3(position) + 0.5 # Burst from the center of the block
-        self.velocity = glm.vec3((random.random() - 0.5) * 0.002, 0.005, (random.random() - 0.5) * 0.002)
+        self.velocity = glm.vec3((random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER, 0.005, (random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER)
         self.voxel_id = voxel_id
         self.rotation = 0.0
         self.scale = ITEM_SCALE
@@ -3731,8 +3731,7 @@ class ItemManager:
 
     def add_item(self, position, voxel_id):
         # Prevent entity overflow crashes if too many blocks break at once
-        if len(self.items) > 256:
-            self.items.pop(0) # Automatically despawn the oldest item
+        if len(self.items) > ITEM_ENTITY_CAP: self.items.pop(0) # Automatically despawn the oldest item
         self.items.append(Item(self.app, position, voxel_id))
 
     def update(self):
@@ -3745,19 +3744,14 @@ class ItemManager:
         player_pos = self.app.player.position
         for item in self.items:
             # Simple distance culling (don't render items further than 32 blocks away)
-            if glm.distance2(item.position, player_pos) > 1024.0:
-                continue
-                
-            if item.voxel_id == STICK:
-                mesh = self.stick_mesh
-            elif item.voxel_id == WOODEN_PICKAXE:
-                mesh = self.pickaxe_mesh
-            else:
-                mesh = self.mesh
-                
+            if glm.distance2(item.position, player_pos) > ITEM_RENDER_DISTANCE_SQUARED: continue
+             
+            if item.voxel_id == STICK: mesh = self.stick_mesh
+            elif item.voxel_id == WOODEN_PICKAXE: mesh = self.pickaxe_mesh
+            else: mesh = self.mesh
+             
             mesh.program['m_model'].write(item.get_model_matrix())
-            if 'voxel_id' in mesh.program:
-                mesh.program['voxel_id'] = item.voxel_id
+            if 'voxel_id' in mesh.program: mesh.program['voxel_id'] = item.voxel_id
             mesh.render()
 
 ===== D:\Pyrite\src\world_objects\sky.py =====
@@ -4027,7 +4021,7 @@ def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, ch
     cx_base, cy_base, cz_base = -1, -1, -1
 
     head = 0
-    while head < tail and tail < 199990:
+    while head < tail and tail < LIGHTING_QUEUE_SIZE - 10:
         packed = queue[head]
         head += 1
         x = int((packed >> 32) & 0xFFFF)
@@ -4093,9 +4087,9 @@ def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, ch
 
 @njit(cache=True, nogil=True)
 def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
-    queue_sun = np.empty(200000, dtype=np.uint64)
+    queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
-    queue_block = np.empty(200000, dtype=np.uint64)
+    queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_block = 0
 
     chunk_idx = get_chunk_index((cx, cy, cz), chunk_positions)
@@ -4152,9 +4146,9 @@ def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positio
 
 @njit(cache=True, nogil=True)
 def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
-    queue_sun = np.empty(200000, dtype=np.uint64)
+    queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
-    queue_block = np.empty(200000, dtype=np.uint64)
+    queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_block = 0
 
     for dir_idx in range(6):
@@ -4208,13 +4202,13 @@ def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_posit
 
 @njit(cache=True, nogil=True)
 def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill):
-    queue = np.empty(200000, dtype=np.uint64)
+    queue = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     head = 0
     tail = 0
     queue[tail] = (np.uint64(wx) << 40) | (np.uint64(wy) << 24) | (np.uint64(wz) << 8) | np.uint64(light_level)
     tail += 1
 
-    while head < tail and tail < 199990:
+    while head < tail and tail < LIGHTING_QUEUE_SIZE - 10:
         packed = queue[head]
         head += 1
         x = int((packed >> 40) & 0xFFFF)
@@ -4250,7 +4244,7 @@ def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_po
     sun, block = curr_val >> 4, curr_val & 15
     set_light_fast(wx, wy, wz, 0, world_lightmaps, chunk_positions)
     
-    refill_queue = np.empty(200000, dtype=np.uint64)
+    refill_queue = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     if sun > 0:
         tail_refill = remove_light_node(wx, wy, wz, sun, True, world_lightmaps, chunk_positions, refill_queue, 0)
         propagate_light_queue(refill_queue, tail_refill, True, world_voxels, world_lightmaps, chunk_positions)
@@ -4261,9 +4255,9 @@ def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_po
 
 @njit(cache=True, nogil=True)
 def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
-    queue_sun = np.empty(200000, dtype=np.uint64)
+    queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
-    queue_block = np.empty(200000, dtype=np.uint64)
+    queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_block = 0
     
     up_val = get_light_fast(wx, wy + 1, wz, world_lightmaps, chunk_positions)
@@ -4305,7 +4299,7 @@ def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)
     
-    queue = np.empty(200000, dtype=np.uint64)
+    queue = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     queue[0] = (np.uint64(wx) << 32) | (np.uint64(wy) << 16) | np.uint64(wz)
     propagate_light_queue(queue, 1, False, world_voxels, world_lightmaps, chunk_positions)
 
@@ -4712,7 +4706,7 @@ class Player(Camera):
         center_z = int(CENTER_XZ)
         
         # Expanding grid search for the closest solid block
-        for radius in range(0, 500):
+        for radius in range(0, SPAWN_SEARCH_RADIUS):
             for dx in range(-radius, radius + 1):
                 for dz in range(-radius, radius + 1):
                     # Check only the perimeter of the current radius to expand outward layer by layer
@@ -4803,8 +4797,8 @@ class Player(Camera):
             actual_move_dist = glm.length(glm.vec2(self.feet_pos.x - prev_feet_pos.x, self.feet_pos.z - prev_feet_pos.z))
             is_walking = self.on_ground and actual_move_dist > 0.0001
             if is_walking:
-                self.step_counter += actual_move_dist * 2.5
-                bob_offset = glm.sin(self.step_counter) * 0.05
+                self.step_counter += actual_move_dist * VIEW_BOBBING_STEP_FREQUENCY
+                bob_offset = glm.sin(self.step_counter) * VIEW_BOBBING_AMPLITUDE
                 
                 # Drain hunger
                 hunger_drain = (HUNGER_DRAIN_SPRINT if self.is_sprinting else HUNGER_DRAIN_WALK) * self.app.delta_time
@@ -4819,9 +4813,9 @@ class Player(Camera):
             base_fov = glm.radians(self.app.config['fov'])
             # Use horizontal movement instead of is_walking so FOV doesn't snap when going up/down blocks
             is_moving_horizontally = actual_move_dist > 0.0001
-            target_fov = base_fov + glm.radians(10.0) if self.is_sprinting and is_moving_horizontally else base_fov
+            target_fov = base_fov + glm.radians(SPRINT_FOV_BOOST) if self.is_sprinting and is_moving_horizontally else base_fov
             # Cap the lerp factor to 1.0 to prevent mathematical overshoot/camera shaking on lower framerates!
-            self.fov += (target_fov - self.fov) * min(1.0, 0.01 * self.app.delta_time)
+            self.fov += (target_fov - self.fov) * min(1.0, SPRINT_FOV_LERP_SPEED * self.app.delta_time)
             self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
             h_fov = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
             self.frustum.update_factors(self.fov, h_fov)
@@ -4847,8 +4841,8 @@ class Player(Camera):
 
             # Void Fall Damage
             if self.position.y < VOID_DEATH_Y:
-                if current_time - self.last_damage_time > 500: # Take damage every half second
-                    self.take_damage(4)
+                if current_time - self.last_damage_time > VOID_DAMAGE_INTERVAL: # Take damage every half second
+                    self.take_damage(VOID_DAMAGE)
                     self.last_damage_time = current_time
         super().update()
 
@@ -4912,9 +4906,9 @@ class Player(Camera):
                 
                 if voxel_handler.voxel_id in (STONE, COBBELSTONE):
                     if held_id == WOODEN_PICKAXE:
-                        hardness /= 5.0 # 5x faster WITH a pickaxe!
+                        hardness /= PICKAXE_MINING_MULTIPLIER # 5x faster WITH a pickaxe!
                     else:
-                        hardness *= 5.0 # 5x slower without a pickaxe!
+                        hardness *= BAREHAND_MINING_PENALTY # 5x slower without a pickaxe!
                         
                 self.mining_duration = 0.0 if self.game_mode == CREATIVE else hardness
                 self.app.sounds.play_breaking(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
@@ -4967,21 +4961,21 @@ class Player(Camera):
             if glm.length(move_dir):
                 move_dir = glm.normalize(move_dir)
             if keys[pg.K_LSHIFT]:
-                speed *= 1.5
+                speed *= PLAYER_SPRINT_MULTIPLIER
                 self.is_sprinting = True
             self.velocity.x = move_dir.x * speed
             self.velocity.z = move_dir.z * speed
             
             if self.in_water:
-                self.velocity.x *= 0.5 # Water drag
-                self.velocity.z *= 0.5
+                self.velocity.x *= PLAYER_WATER_DRAG_MULTIPLIER # Water drag
+                self.velocity.z *= PLAYER_WATER_DRAG_MULTIPLIER
                 if self.on_ground and keys[pg.K_SPACE]:
                     self.velocity.y = JUMP_VELOCITY
                     self.on_ground = False
                 elif keys[pg.K_SPACE]:
                     # Dolphin leap out of water if near the surface, otherwise normal swim!
                     if not getattr(self, 'head_in_water', False):
-                        self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * 1.05)
+                        self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * PLAYER_DOLPHIN_LEAP_MULTIPLIER)
                     else:
                         self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * 0.8) # Swim up
             else:
@@ -4991,8 +4985,8 @@ class Player(Camera):
 
     def apply_gravity(self):
         if self.in_water:
-            self.velocity.y += GRAVITY * 0.2 * self.app.delta_time
-            self.velocity.y *= max(0.0, 1.0 - 0.005 * self.app.delta_time) # vertical water drag
+            self.velocity.y += GRAVITY * PLAYER_UNDERWATER_GRAVITY_MULTIPLIER * self.app.delta_time
+            self.velocity.y *= max(0.0, 1.0 - PLAYER_VERTICAL_WATER_DRAG * self.app.delta_time) # vertical water drag
         else:
             self.velocity.y += GRAVITY * self.app.delta_time
 
@@ -5208,14 +5202,9 @@ import sys
 
 
 def get_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller."""
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except AttributeError:
-        # Not running as bundle, use project root (one folder up from src/)
-        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
+    """Get absolute path to resource"""
+    try: base_path = sys._MEIPASS
+    except AttributeError: base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     return os.path.join(base_path, relative_path)
 
 
@@ -5245,8 +5234,6 @@ WORLD_W, WORLD_H = 30, 5
 WORLD_D = WORLD_W
 WORLD_AREA = WORLD_W * WORLD_D
 WORLD_VOL = WORLD_AREA * WORLD_H
-
-# world center
 CENTER_XZ = WORLD_W * H_CHUNK_SIZE
 CENTER_Y = 48
 
@@ -5262,9 +5249,68 @@ PITCH_MAX = glm.radians(89)
 # player
 PLAYER_SPEED = 0.005
 PLAYER_ROT_SPEED = 0.003
-# PLAYER_POS = glm.vec3(CENTER_XZ, WORLD_H * CHUNK_SIZE, CENTER_XZ)
+PLAYER_SPRINT_MULTIPLIER = 1.5
+PLAYER_WATER_DRAG_MULTIPLIER = 0.5
+PLAYER_DOLPHIN_LEAP_MULTIPLIER = 1.05
+PLAYER_UNDERWATER_GRAVITY_MULTIPLIER = 0.2
+PLAYER_VERTICAL_WATER_DRAG = 0.005
 PLAYER_POS = glm.vec3(CENTER_XZ, CHUNK_SIZE, CENTER_XZ)
 MOUSE_SENSITIVITY = 0.002
+SPAWN_SEARCH_RADIUS = 500
+
+# View Bobbing
+VIEW_BOBBING_STEP_FREQUENCY = 2.5
+VIEW_BOBBING_AMPLITUDE = 0.05
+SPRINT_FOV_BOOST = 10.0  # degrees
+SPRINT_FOV_LERP_SPEED = 0.01
+
+# Mining
+PICKAXE_MINING_MULTIPLIER = 5.0
+BAREHAND_MINING_PENALTY = 5.0
+
+# Queue Processing
+MESH_BUILD_LIMIT_INGAME = 4
+MESH_BUILD_LIMIT_LOADING = 64
+MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME = 2
+MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING = 10
+MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME = 1
+MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING = 10
+
+# Memory Caps
+VBO_POOL_CAP = 150
+LIGHTING_QUEUE_SIZE = 200000
+ITEM_ENTITY_CAP = 256
+
+# RENDERING & ENVIRONMENT
+DAY_NIGHT_SPEED = 0.01
+FOG_DENSITY_BASE = 0.002
+CLOUD_FOG_DENSITY_BASE = 0.000036
+UNDERWATER_FOG_COLOR = glm.vec3(0.0, 0.1, 0.4)
+UNDERWATER_FOG_DENSITY = 0.0015
+UNDERWATER_FOG_MAX_OPACITY = 0.85
+ITEM_RENDER_DISTANCE_SQUARED = 1024.0  # 32 * 32
+ITEM_SPAWN_VELOCITY_MULTIPLIER = 0.002
+
+# Held Item / Viewmodel
+HELD_ITEM_POS = glm.vec3(0.5, -0.4, -1.0)
+HELD_ITEM_BOB_OFFSET_Y_MULT = 0.03
+HELD_ITEM_BOB_OFFSET_X_MULT = 0.02
+HELD_ITEM_SWING_ROT_X = 0.4
+HELD_ITEM_SWING_OFFSET_Y = 0.15
+HELD_ITEM_SWING_OFFSET_Z = -0.1
+HELD_ITEM_PLACE_SWING_ROTATION_X = 0.3
+HELD_ITEM_PLACE_SWING_OFFSET_Y = 0.2
+HELD_STICK_POS_OFFSET = glm.vec3(0.0, 0.15, 0.0)
+HELD_STICK_ROT_X = glm.radians(-45.0)
+HELD_STICK_ROT_Z = glm.radians(90.0)
+HELD_STICK_SCALE = glm.vec3(0.5)
+HELD_PICKAXE_POS_OFFSET = glm.vec3(0.0, 0.15, 0.0)
+HELD_PICKAXE_ROT_X = glm.radians(10.0)
+HELD_PICKAXE_ROT_Z = glm.radians(90.0)
+HELD_PICKAXE_SCALE = glm.vec3(0.2)
+HELD_BLOCK_ROT_X = glm.radians(-15.0)
+HELD_BLOCK_ROT_Y = glm.radians(45.0)
+HELD_BLOCK_SCALE = glm.vec3(0.35)
 
 # colors
 BG_COLOR = glm.vec3(0.58, 0.83, 0.99)
@@ -5310,66 +5356,6 @@ TEXTURE_MAP = {
     CACTUS: 14,
     STONE_BRICKS: 15
 }
-
-# UID and Texture Array Mapping For the new textture array called texture_atlas.png
-# # UIDs for blocks and items
-# AIR = 0
-# GRASS = 1
-# DIRT = 2
-# OAK_LOG = 3
-# OAK_PLANKS = 4
-# OAK_LEAVES = 5
-# SAND = 6
-# SANDSTONE = 7
-# CACTUS = 8
-# SNOWY_GRASS = 9
-# SNOW_BLOCK = 10
-# ICE = 11
-# WATER = 12
-# CLAY = 13
-# GRAVEL = 14
-# STONE = 15
-# COBBLESTONE = 16
-# COAL_ORE = 17
-# IRON_ORE = 18
-# GOLD_ORE = 19
-# BEDROCK = 20
-# NETHERRACK = 21
-# LAVA = 22
-# OBSIDIAN = 23
-
-# # 24-32 are reserved for other future blocks, 33+ are items
-# STICK = 33
-# WOODEN_PICKAXE = 34
-
-# NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
-
-# # Texture Array Mapping (Global UID -> Row in texture_atlas.png)
-# TEXTURE_MAP = {
-#     GRASS: 1,
-#     DIRT: 2,
-#     OAK_LOG: 3,
-#     OAK_PLANKS: 4,
-#     OAK_LEAVES: 5,
-#     SAND: 6,
-#     SANDSTONE: 7,
-#     CACTUS: 8,
-#     SNOWY_GRASS: 9,
-#     SNOW_BLOCK: 10,
-#     ICE: 11,
-#     WATER: 12,
-#     CLAY: 13,
-#     GRAVEL: 14,
-#     STONE: 15,
-#     COBBLESTONE: 16,
-#     COAL_ORE: 17,
-#     IRON_ORE: 18,
-#     GOLD_ORE: 19,
-#     BEDROCK: 20,
-#     NETHERRACK: 21,
-#     LAVA: 22,
-#     OBSIDIAN: 23
-# }
 
 # terrain levels
 SNOW_LVL = 54
@@ -5434,6 +5420,8 @@ MAX_HUNGER = 20
 MAX_OXYGEN = 20
 FALL_DAMAGE_THRESHOLD = 3.0
 VOID_DEATH_Y = -20
+VOID_DAMAGE = 4
+VOID_DAMAGE_INTERVAL = 500
 HUNGER_DRAIN_SPRINT = 0.002
 HUNGER_DRAIN_WALK = 0.0005
 OXYGEN_LOSE_TIMER = 1000
@@ -5473,6 +5461,66 @@ UI_SLOT_SELECTED_BG_COLOR = (0.5, 0.5, 0.5, 0.7)
 UI_TEXT_COLOR = (245, 245, 245)
 UI_SHADOW_COLOR = (15, 20, 25)
 
+# UID and Texture Array Mapping For the new textture array called texture_atlas.png
+# # UIDs for blocks and items
+# AIR = 0
+# GRASS = 1
+# DIRT = 2
+# OAK_LOG = 3
+# OAK_PLANKS = 4
+# OAK_LEAVES = 5
+# SAND = 6
+# SANDSTONE = 7
+# CACTUS = 8
+# SNOWY_GRASS = 9
+# SNOW_BLOCK = 10
+# ICE = 11
+# WATER = 12
+# CLAY = 13
+# GRAVEL = 14
+# STONE = 15
+# COBBLESTONE = 16
+# COAL_ORE = 17
+# IRON_ORE = 18
+# GOLD_ORE = 19
+# BEDROCK = 20
+# NETHERRACK = 21
+# LAVA = 22
+# OBSIDIAN = 23
+
+# # 24-32 are reserved for other future blocks, 33+ are items
+# STICK = 33
+# WOODEN_PICKAXE = 34
+
+# NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
+
+# # Texture Array Mapping (Global UID -> Row in texture_atlas.png)
+# TEXTURE_MAP = {
+#     GRASS: 1,
+#     DIRT: 2,
+#     OAK_LOG: 3,
+#     OAK_PLANKS: 4,
+#     OAK_LEAVES: 5,
+#     SAND: 6,
+#     SANDSTONE: 7,
+#     CACTUS: 8,
+#     SNOWY_GRASS: 9,
+#     SNOW_BLOCK: 10,
+#     ICE: 11,
+#     WATER: 12,
+#     CLAY: 13,
+#     GRAVEL: 14,
+#     STONE: 15,
+#     COBBLESTONE: 16,
+#     COAL_ORE: 17,
+#     IRON_ORE: 18,
+#     GOLD_ORE: 19,
+#     BEDROCK: 20,
+#     NETHERRACK: 21,
+#     LAVA: 22,
+#     OBSIDIAN: 23
+# }
+
 ===== D:\Pyrite\src\shader_program.py =====
 
 from settings import *
@@ -5500,8 +5548,7 @@ class ShaderProgram:
     def set_uniforms_on_init(self):
         # Build the fast lookup array for the shaders
         tex_map = np.zeros(256, dtype='int32')
-        for uid, tex_id in TEXTURE_MAP.items():
-            tex_map[uid] = tex_id
+        for uid, tex_id in TEXTURE_MAP.items(): tex_map[uid] = tex_id
         tex_map_bytes = tex_map.tobytes()
 
         # chunk
@@ -5558,8 +5605,7 @@ class ShaderProgram:
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
-        if 'u_time' in self.chunk: # Make sure the shader actually has the uniform before writing
-            self.chunk['u_time'] = self.app.world_session_time
+        if 'u_time' in self.chunk: self.chunk['u_time'] = self.app.world_session_time # Make sure the shader actually has the uniform before writing
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
         self.clouds['player_pos'].write(self.player.position)
@@ -5576,22 +5622,22 @@ class ShaderProgram:
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
         if 'u_time' in self.sky: self.sky['u_time'] = self.app.world_session_time
 
-        time_speed = 0.01 # Adjust this to make the day longer or shorter based on world_session_time
+        time_speed = DAY_NIGHT_SPEED # Adjust this to make the day longer or shorter based on world_session_time
         sun_y = glm.cos(self.app.world_session_time * time_speed)
 
         is_underwater = getattr(self.player, 'head_in_water', False)
         
         if is_underwater:
             # Underwater fog!
-            bg_color = glm.vec3(0.0, 0.1, 0.4)
-            fog_density = 0.0015
-            cloud_fog_density = 0.0002
-            fog_max_opacity = 0.85 # Cap underwater fog so distant terrain remains visible
+            bg_color = UNDERWATER_FOG_COLOR
+            fog_density = UNDERWATER_FOG_DENSITY
+            cloud_fog_density = FOG_DENSITY_BASE / 10.0 # Make clouds just barely visible underwater
+            fog_max_opacity = UNDERWATER_FOG_MAX_OPACITY # Cap underwater fog so distant terrain remains visible
         else:
             bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
             render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
-            fog_density = 0.002 / (render_dist ** 2)
-            cloud_fog_density = 0.000036 / (render_dist ** 2)
+            fog_density = FOG_DENSITY_BASE / (render_dist ** 2)
+            cloud_fog_density = CLOUD_FOG_DENSITY_BASE / (render_dist ** 2)
             fog_max_opacity = 1.0  # Fully hide chunk boundaries above water
             
         if 'u_fog_density' in self.chunk:
@@ -5616,16 +5662,11 @@ class ShaderProgram:
         sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.world_session_time * time_speed)))
         
         # Safely write sun direction only if the shader currently supports it
-        if 'u_sun_direction' in self.chunk:
-            self.chunk['u_sun_direction'].write(sun_dir)
-        if 'u_sun_direction' in self.item:
-            self.item['u_sun_direction'].write(sun_dir)
-        if 'u_sun_direction' in self.obj:
-            self.obj['u_sun_direction'].write(sun_dir)
-        if 'u_sun_direction' in self.sky:
-            self.sky['u_sun_direction'].write(sun_dir)
-        if 'u_sun_direction' in self.clouds:
-            self.clouds['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.chunk: self.chunk['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.item: self.item['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.obj: self.obj['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.sky: self.sky['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.clouds: self.clouds['u_sun_direction'].write(sun_dir)
         
         self.app.bg_color = bg_color
         self.chunk['bg_color'].write(bg_color)
@@ -5635,12 +5676,8 @@ class ShaderProgram:
         self.sky['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
-        with open(get_path(f'src/shaders/{shader_name}.vert')) as file:
-            vertex_shader = file.read()
-
-        with open(get_path(f'src/shaders/{shader_name}.frag')) as file:
-            fragment_shader = file.read()
-
+        with open(get_path(f'src/shaders/{shader_name}.vert')) as file: vertex_shader = file.read()
+        with open(get_path(f'src/shaders/{shader_name}.frag')) as file: fragment_shader = file.read()
         program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
         return program
 
@@ -6746,7 +6783,7 @@ class World:
                 self._last_queue_len = len(self.build_queue)
 
         # Submit tasks gradually to prevent ThreadPool starvation and startup lag
-        mesh_limit = 4 if self.app.game_state != 'LOADING' else 64
+        mesh_limit = MESH_BUILD_LIMIT_INGAME if self.app.game_state != 'LOADING' else MESH_BUILD_LIMIT_LOADING
         while self.build_queue and len(self.mesh_queue) < mesh_limit:
             chunk = self.build_queue.pop()
             future = self.executor.submit(chunk.mesh.get_vertex_data)
@@ -6768,7 +6805,7 @@ class World:
                 # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
-                    while len(self.vbo_pool) > 150:
+                    while len(self.vbo_pool) > VBO_POOL_CAP:
                         p_vbo, p_vao = self.vbo_pool.pop(0)
                         p_vbo.release()
                         p_vao.release()
@@ -6776,7 +6813,7 @@ class World:
                 chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
                 ready_count += 1
-                limit = 10 if self.app.game_state == 'LOADING' else 2
+                limit = MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING if self.app.game_state == 'LOADING' else MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME
                 if ready_count >= limit:  # Limit processing to prevent frame drops
                     break
 
@@ -6826,7 +6863,7 @@ class World:
                 processed += 1
                 
                 # Limit chunks processed per frame to prevent FPS drops and Main Thread freezing!
-                limit = 10 if self.app.game_state == 'LOADING' else 1
+                limit = MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING if self.app.game_state == 'LOADING' else MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME
                 if processed >= limit:
                     break
 
@@ -6927,7 +6964,7 @@ class World:
             if chunk.mesh:
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
-                    while len(self.vbo_pool) > 150:
+                    while len(self.vbo_pool) > VBO_POOL_CAP:
                         p_vbo, p_vao = self.vbo_pool.pop(0)
                         p_vbo.release()
                         p_vao.release()

@@ -10,7 +10,7 @@ class Item:
     def __init__(self, app, position, voxel_id):
         self.app = app
         self.position = glm.vec3(position) + 0.5 # Burst from the center of the block
-        self.velocity = glm.vec3((random.random() - 0.5) * 0.002, 0.005, (random.random() - 0.5) * 0.002)
+        self.velocity = glm.vec3((random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER, 0.005, (random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER)
         self.voxel_id = voxel_id
         self.rotation = 0.0
         self.scale = ITEM_SCALE
@@ -56,8 +56,7 @@ class ItemManager:
 
     def add_item(self, position, voxel_id):
         # Prevent entity overflow crashes if too many blocks break at once
-        if len(self.items) > 256:
-            self.items.pop(0) # Automatically despawn the oldest item
+        if len(self.items) > ITEM_ENTITY_CAP: self.items.pop(0) # Automatically despawn the oldest item
         self.items.append(Item(self.app, position, voxel_id))
 
     def update(self):
@@ -70,17 +69,12 @@ class ItemManager:
         player_pos = self.app.player.position
         for item in self.items:
             # Simple distance culling (don't render items further than 32 blocks away)
-            if glm.distance2(item.position, player_pos) > 1024.0:
-                continue
-                
-            if item.voxel_id == STICK:
-                mesh = self.stick_mesh
-            elif item.voxel_id == WOODEN_PICKAXE:
-                mesh = self.pickaxe_mesh
-            else:
-                mesh = self.mesh
-                
+            if glm.distance2(item.position, player_pos) > ITEM_RENDER_DISTANCE_SQUARED: continue
+             
+            if item.voxel_id == STICK: mesh = self.stick_mesh
+            elif item.voxel_id == WOODEN_PICKAXE: mesh = self.pickaxe_mesh
+            else: mesh = self.mesh
+             
             mesh.program['m_model'].write(item.get_model_matrix())
-            if 'voxel_id' in mesh.program:
-                mesh.program['voxel_id'] = item.voxel_id
+            if 'voxel_id' in mesh.program: mesh.program['voxel_id'] = item.voxel_id
             mesh.render()

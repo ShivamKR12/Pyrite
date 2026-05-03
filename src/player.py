@@ -53,7 +53,7 @@ class Player(Camera):
         center_z = int(CENTER_XZ)
         
         # Expanding grid search for the closest solid block
-        for radius in range(0, 500):
+        for radius in range(0, SPAWN_SEARCH_RADIUS):
             for dx in range(-radius, radius + 1):
                 for dz in range(-radius, radius + 1):
                     # Check only the perimeter of the current radius to expand outward layer by layer
@@ -144,8 +144,8 @@ class Player(Camera):
             actual_move_dist = glm.length(glm.vec2(self.feet_pos.x - prev_feet_pos.x, self.feet_pos.z - prev_feet_pos.z))
             is_walking = self.on_ground and actual_move_dist > 0.0001
             if is_walking:
-                self.step_counter += actual_move_dist * 2.5
-                bob_offset = glm.sin(self.step_counter) * 0.05
+                self.step_counter += actual_move_dist * VIEW_BOBBING_STEP_FREQUENCY
+                bob_offset = glm.sin(self.step_counter) * VIEW_BOBBING_AMPLITUDE
                 
                 # Drain hunger
                 hunger_drain = (HUNGER_DRAIN_SPRINT if self.is_sprinting else HUNGER_DRAIN_WALK) * self.app.delta_time
@@ -160,9 +160,9 @@ class Player(Camera):
             base_fov = glm.radians(self.app.config['fov'])
             # Use horizontal movement instead of is_walking so FOV doesn't snap when going up/down blocks
             is_moving_horizontally = actual_move_dist > 0.0001
-            target_fov = base_fov + glm.radians(10.0) if self.is_sprinting and is_moving_horizontally else base_fov
+            target_fov = base_fov + glm.radians(SPRINT_FOV_BOOST) if self.is_sprinting and is_moving_horizontally else base_fov
             # Cap the lerp factor to 1.0 to prevent mathematical overshoot/camera shaking on lower framerates!
-            self.fov += (target_fov - self.fov) * min(1.0, 0.01 * self.app.delta_time)
+            self.fov += (target_fov - self.fov) * min(1.0, SPRINT_FOV_LERP_SPEED * self.app.delta_time)
             self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
             h_fov = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
             self.frustum.update_factors(self.fov, h_fov)
@@ -188,8 +188,8 @@ class Player(Camera):
 
             # Void Fall Damage
             if self.position.y < VOID_DEATH_Y:
-                if current_time - self.last_damage_time > 500: # Take damage every half second
-                    self.take_damage(4)
+                if current_time - self.last_damage_time > VOID_DAMAGE_INTERVAL: # Take damage every half second
+                    self.take_damage(VOID_DAMAGE)
                     self.last_damage_time = current_time
         super().update()
 
@@ -253,9 +253,9 @@ class Player(Camera):
                 
                 if voxel_handler.voxel_id in (STONE, COBBELSTONE):
                     if held_id == WOODEN_PICKAXE:
-                        hardness /= 5.0 # 5x faster WITH a pickaxe!
+                        hardness /= PICKAXE_MINING_MULTIPLIER # 5x faster WITH a pickaxe!
                     else:
-                        hardness *= 5.0 # 5x slower without a pickaxe!
+                        hardness *= BAREHAND_MINING_PENALTY # 5x slower without a pickaxe!
                         
                 self.mining_duration = 0.0 if self.game_mode == CREATIVE else hardness
                 self.app.sounds.play_breaking(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
@@ -308,21 +308,21 @@ class Player(Camera):
             if glm.length(move_dir):
                 move_dir = glm.normalize(move_dir)
             if keys[pg.K_LSHIFT]:
-                speed *= 1.5
+                speed *= PLAYER_SPRINT_MULTIPLIER
                 self.is_sprinting = True
             self.velocity.x = move_dir.x * speed
             self.velocity.z = move_dir.z * speed
             
             if self.in_water:
-                self.velocity.x *= 0.5 # Water drag
-                self.velocity.z *= 0.5
+                self.velocity.x *= PLAYER_WATER_DRAG_MULTIPLIER # Water drag
+                self.velocity.z *= PLAYER_WATER_DRAG_MULTIPLIER
                 if self.on_ground and keys[pg.K_SPACE]:
                     self.velocity.y = JUMP_VELOCITY
                     self.on_ground = False
                 elif keys[pg.K_SPACE]:
                     # Dolphin leap out of water if near the surface, otherwise normal swim!
                     if not getattr(self, 'head_in_water', False):
-                        self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * 1.05)
+                        self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * PLAYER_DOLPHIN_LEAP_MULTIPLIER)
                     else:
                         self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * 0.8) # Swim up
             else:
@@ -332,8 +332,8 @@ class Player(Camera):
 
     def apply_gravity(self):
         if self.in_water:
-            self.velocity.y += GRAVITY * 0.2 * self.app.delta_time
-            self.velocity.y *= max(0.0, 1.0 - 0.005 * self.app.delta_time) # vertical water drag
+            self.velocity.y += GRAVITY * PLAYER_UNDERWATER_GRAVITY_MULTIPLIER * self.app.delta_time
+            self.velocity.y *= max(0.0, 1.0 - PLAYER_VERTICAL_WATER_DRAG * self.app.delta_time) # vertical water drag
         else:
             self.velocity.y += GRAVITY * self.app.delta_time
 

@@ -188,7 +188,7 @@ class World:
                 self._last_queue_len = len(self.build_queue)
 
         # Submit tasks gradually to prevent ThreadPool starvation and startup lag
-        mesh_limit = 4 if self.app.game_state != 'LOADING' else 64
+        mesh_limit = MESH_BUILD_LIMIT_INGAME if self.app.game_state != 'LOADING' else MESH_BUILD_LIMIT_LOADING
         while self.build_queue and len(self.mesh_queue) < mesh_limit:
             chunk = self.build_queue.pop()
             future = self.executor.submit(chunk.mesh.get_vertex_data)
@@ -210,7 +210,7 @@ class World:
                 # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
-                    while len(self.vbo_pool) > 150:
+                    while len(self.vbo_pool) > VBO_POOL_CAP:
                         p_vbo, p_vao = self.vbo_pool.pop(0)
                         p_vbo.release()
                         p_vao.release()
@@ -218,7 +218,7 @@ class World:
                 chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
                 ready_count += 1
-                limit = 10 if self.app.game_state == 'LOADING' else 2
+                limit = MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING if self.app.game_state == 'LOADING' else MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME
                 if ready_count >= limit:  # Limit processing to prevent frame drops
                     break
 
@@ -268,7 +268,7 @@ class World:
                 processed += 1
                 
                 # Limit chunks processed per frame to prevent FPS drops and Main Thread freezing!
-                limit = 10 if self.app.game_state == 'LOADING' else 1
+                limit = MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING if self.app.game_state == 'LOADING' else MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME
                 if processed >= limit:
                     break
 
@@ -369,7 +369,7 @@ class World:
             if chunk.mesh:
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
-                    while len(self.vbo_pool) > 150:
+                    while len(self.vbo_pool) > VBO_POOL_CAP:
                         p_vbo, p_vao = self.vbo_pool.pop(0)
                         p_vbo.release()
                         p_vao.release()

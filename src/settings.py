@@ -8,14 +8,9 @@ import sys
 
 
 def get_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller."""
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except AttributeError:
-        # Not running as bundle, use project root (one folder up from src/)
-        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
+    """Get absolute path to resource"""
+    try: base_path = sys._MEIPASS
+    except AttributeError: base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     return os.path.join(base_path, relative_path)
 
 
@@ -45,8 +40,6 @@ WORLD_W, WORLD_H = 30, 5
 WORLD_D = WORLD_W
 WORLD_AREA = WORLD_W * WORLD_D
 WORLD_VOL = WORLD_AREA * WORLD_H
-
-# world center
 CENTER_XZ = WORLD_W * H_CHUNK_SIZE
 CENTER_Y = 48
 
@@ -62,9 +55,68 @@ PITCH_MAX = glm.radians(89)
 # player
 PLAYER_SPEED = 0.005
 PLAYER_ROT_SPEED = 0.003
-# PLAYER_POS = glm.vec3(CENTER_XZ, WORLD_H * CHUNK_SIZE, CENTER_XZ)
+PLAYER_SPRINT_MULTIPLIER = 1.5
+PLAYER_WATER_DRAG_MULTIPLIER = 0.5
+PLAYER_DOLPHIN_LEAP_MULTIPLIER = 1.05
+PLAYER_UNDERWATER_GRAVITY_MULTIPLIER = 0.2
+PLAYER_VERTICAL_WATER_DRAG = 0.005
 PLAYER_POS = glm.vec3(CENTER_XZ, CHUNK_SIZE, CENTER_XZ)
 MOUSE_SENSITIVITY = 0.002
+SPAWN_SEARCH_RADIUS = 500
+
+# View Bobbing
+VIEW_BOBBING_STEP_FREQUENCY = 2.5
+VIEW_BOBBING_AMPLITUDE = 0.05
+SPRINT_FOV_BOOST = 10.0  # degrees
+SPRINT_FOV_LERP_SPEED = 0.01
+
+# Mining
+PICKAXE_MINING_MULTIPLIER = 5.0
+BAREHAND_MINING_PENALTY = 5.0
+
+# Queue Processing
+MESH_BUILD_LIMIT_INGAME = 4
+MESH_BUILD_LIMIT_LOADING = 64
+MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME = 2
+MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING = 10
+MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME = 1
+MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING = 10
+
+# Memory Caps
+VBO_POOL_CAP = 150
+LIGHTING_QUEUE_SIZE = 200000
+ITEM_ENTITY_CAP = 256
+
+# RENDERING & ENVIRONMENT
+DAY_NIGHT_SPEED = 0.01
+FOG_DENSITY_BASE = 0.002
+CLOUD_FOG_DENSITY_BASE = 0.000036
+UNDERWATER_FOG_COLOR = glm.vec3(0.0, 0.1, 0.4)
+UNDERWATER_FOG_DENSITY = 0.0015
+UNDERWATER_FOG_MAX_OPACITY = 0.85
+ITEM_RENDER_DISTANCE_SQUARED = 1024.0  # 32 * 32
+ITEM_SPAWN_VELOCITY_MULTIPLIER = 0.002
+
+# Held Item / Viewmodel
+HELD_ITEM_POS = glm.vec3(0.5, -0.4, -1.0)
+HELD_ITEM_BOB_OFFSET_Y_MULT = 0.03
+HELD_ITEM_BOB_OFFSET_X_MULT = 0.02
+HELD_ITEM_SWING_ROT_X = 0.4
+HELD_ITEM_SWING_OFFSET_Y = 0.15
+HELD_ITEM_SWING_OFFSET_Z = -0.1
+HELD_ITEM_PLACE_SWING_ROTATION_X = 0.3
+HELD_ITEM_PLACE_SWING_OFFSET_Y = 0.2
+HELD_STICK_POS_OFFSET = glm.vec3(0.0, 0.15, 0.0)
+HELD_STICK_ROT_X = glm.radians(-45.0)
+HELD_STICK_ROT_Z = glm.radians(90.0)
+HELD_STICK_SCALE = glm.vec3(0.5)
+HELD_PICKAXE_POS_OFFSET = glm.vec3(0.0, 0.15, 0.0)
+HELD_PICKAXE_ROT_X = glm.radians(10.0)
+HELD_PICKAXE_ROT_Z = glm.radians(90.0)
+HELD_PICKAXE_SCALE = glm.vec3(0.2)
+HELD_BLOCK_ROT_X = glm.radians(-15.0)
+HELD_BLOCK_ROT_Y = glm.radians(45.0)
+HELD_BLOCK_SCALE = glm.vec3(0.35)
 
 # colors
 BG_COLOR = glm.vec3(0.58, 0.83, 0.99)
@@ -110,66 +162,6 @@ TEXTURE_MAP = {
     CACTUS: 14,
     STONE_BRICKS: 15
 }
-
-# UID and Texture Array Mapping For the new textture array called texture_atlas.png
-# # UIDs for blocks and items
-# AIR = 0
-# GRASS = 1
-# DIRT = 2
-# OAK_LOG = 3
-# OAK_PLANKS = 4
-# OAK_LEAVES = 5
-# SAND = 6
-# SANDSTONE = 7
-# CACTUS = 8
-# SNOWY_GRASS = 9
-# SNOW_BLOCK = 10
-# ICE = 11
-# WATER = 12
-# CLAY = 13
-# GRAVEL = 14
-# STONE = 15
-# COBBLESTONE = 16
-# COAL_ORE = 17
-# IRON_ORE = 18
-# GOLD_ORE = 19
-# BEDROCK = 20
-# NETHERRACK = 21
-# LAVA = 22
-# OBSIDIAN = 23
-
-# # 24-32 are reserved for other future blocks, 33+ are items
-# STICK = 33
-# WOODEN_PICKAXE = 34
-
-# NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
-
-# # Texture Array Mapping (Global UID -> Row in texture_atlas.png)
-# TEXTURE_MAP = {
-#     GRASS: 1,
-#     DIRT: 2,
-#     OAK_LOG: 3,
-#     OAK_PLANKS: 4,
-#     OAK_LEAVES: 5,
-#     SAND: 6,
-#     SANDSTONE: 7,
-#     CACTUS: 8,
-#     SNOWY_GRASS: 9,
-#     SNOW_BLOCK: 10,
-#     ICE: 11,
-#     WATER: 12,
-#     CLAY: 13,
-#     GRAVEL: 14,
-#     STONE: 15,
-#     COBBLESTONE: 16,
-#     COAL_ORE: 17,
-#     IRON_ORE: 18,
-#     GOLD_ORE: 19,
-#     BEDROCK: 20,
-#     NETHERRACK: 21,
-#     LAVA: 22,
-#     OBSIDIAN: 23
-# }
 
 # terrain levels
 SNOW_LVL = 54
@@ -234,6 +226,8 @@ MAX_HUNGER = 20
 MAX_OXYGEN = 20
 FALL_DAMAGE_THRESHOLD = 3.0
 VOID_DEATH_Y = -20
+VOID_DAMAGE = 4
+VOID_DAMAGE_INTERVAL = 500
 HUNGER_DRAIN_SPRINT = 0.002
 HUNGER_DRAIN_WALK = 0.0005
 OXYGEN_LOSE_TIMER = 1000
@@ -272,3 +266,63 @@ UI_SLOT_SELECTED_BG_COLOR = (0.5, 0.5, 0.5, 0.7)
 # UI_SLOT_SELECTED_BG_COLOR = (0.15, 0.20, 0.25, 0.8)
 UI_TEXT_COLOR = (245, 245, 245)
 UI_SHADOW_COLOR = (15, 20, 25)
+
+# UID and Texture Array Mapping For the new textture array called texture_atlas.png
+# # UIDs for blocks and items
+# AIR = 0
+# GRASS = 1
+# DIRT = 2
+# OAK_LOG = 3
+# OAK_PLANKS = 4
+# OAK_LEAVES = 5
+# SAND = 6
+# SANDSTONE = 7
+# CACTUS = 8
+# SNOWY_GRASS = 9
+# SNOW_BLOCK = 10
+# ICE = 11
+# WATER = 12
+# CLAY = 13
+# GRAVEL = 14
+# STONE = 15
+# COBBLESTONE = 16
+# COAL_ORE = 17
+# IRON_ORE = 18
+# GOLD_ORE = 19
+# BEDROCK = 20
+# NETHERRACK = 21
+# LAVA = 22
+# OBSIDIAN = 23
+
+# # 24-32 are reserved for other future blocks, 33+ are items
+# STICK = 33
+# WOODEN_PICKAXE = 34
+
+# NON_PLACEABLE = {STICK, WOODEN_PICKAXE}
+
+# # Texture Array Mapping (Global UID -> Row in texture_atlas.png)
+# TEXTURE_MAP = {
+#     GRASS: 1,
+#     DIRT: 2,
+#     OAK_LOG: 3,
+#     OAK_PLANKS: 4,
+#     OAK_LEAVES: 5,
+#     SAND: 6,
+#     SANDSTONE: 7,
+#     CACTUS: 8,
+#     SNOWY_GRASS: 9,
+#     SNOW_BLOCK: 10,
+#     ICE: 11,
+#     WATER: 12,
+#     CLAY: 13,
+#     GRAVEL: 14,
+#     STONE: 15,
+#     COBBLESTONE: 16,
+#     COAL_ORE: 17,
+#     IRON_ORE: 18,
+#     GOLD_ORE: 19,
+#     BEDROCK: 20,
+#     NETHERRACK: 21,
+#     LAVA: 22,
+#     OBSIDIAN: 23
+# }
