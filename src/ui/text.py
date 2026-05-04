@@ -4,7 +4,15 @@ import pygame as pg
 
 
 class TextRenderer:
+    """
+    Handles the rendering of text strings into OpenGL textures.
+    Provides methods for caching static text and generating single-frame dynamic text.
+    """
     def __init__(self, app):
+        """
+        Initializes the text renderer, setting up the default font and preparing
+        the texture cache.
+        """
         self.app = app
         self.ctx = app.ctx
         pg.font.init()
@@ -12,6 +20,11 @@ class TextRenderer:
         self.textures = {}
 
     def get_texture(self, text):
+        """
+        Generates and returns an OpenGL texture for the specified text string.
+        Caches the generated texture so subsequent requests for the same text
+        are returned instantly without re-rendering.
+        """
         if text in self.textures:
             return self.textures[text]
         surf = self.font.render(text, True, UI_TEXT_COLOR)
@@ -27,6 +40,11 @@ class TextRenderer:
         return texture
 
     def get_dynamic_texture(self, text):
+        """
+        Generates and returns an OpenGL texture for text that changes frequently.
+        Does not cache the texture or build mipmaps, saving memory and processing
+        time for single-frame usage.
+        """
         surf = self.font.render(text, True, UI_TEXT_COLOR)
         shadow_offset = max(2, self.font.get_height() // 15)
         bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)

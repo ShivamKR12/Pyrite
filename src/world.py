@@ -20,7 +20,16 @@ import noise
 
 
 class World:
+    """
+    Manages the global 3D voxel environment.
+    Responsible for chunk streaming, multithreaded terrain generation, mesh 
+    building queues, and persistent background SQLite disk storage.
+    """
     def __init__(self, app, save_name, world_seed):
+        """
+        Initializes the world arrays, establishes an async-like SQLite database 
+        connection, restores player data, and warms up the Numba compiler.
+        """
         self.world_seed = world_seed
         self.app = app
         self.app.render_loading_screen("ALLOCATING MEMORY...")
@@ -48,7 +57,7 @@ class World:
         os.makedirs('saves', exist_ok=True)
         self.save_path = f'saves/{self.save_name}.db'
         self.db_lock = threading.Lock()
-        self.conn = sqlite3.connect(self.save_path, check_same_thread=False)
+        self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
         self.cursor = self.conn.cursor()
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS chunks (
                                 x INTEGER, y INTEGER, z INTEGER, 
@@ -166,6 +175,10 @@ class World:
         self.app.render_loading_screen("NUMBA COMPILATION SUCCESSFUL!")
 
     def update(self):
+        """
+        Tick loop that handles continuous background data processing. Steps through
+        loading chunks, dispatching thread-pool mesh tasks, and streaming logic.
+        """
         self.db_load_time = 0.0
         self.terrain_gen_time = 0.0
 
@@ -197,6 +210,11 @@ class World:
         self.process_mesh_queue()
 
     def process_mesh_queue(self):
+        """
+        Pulls completed mesh data from background threads and safely initializes 
+        OpenGL Vertex Array Objects (VAOs) on the main thread, utilizing a 
+        recycling VBO pool to prevent VRAM memory leaks.
+        """
         # Safely create OpenGL VAOs on the main thread
         ready_count = 0
         for item in list(self.mesh_queue):
@@ -223,6 +241,11 @@ class World:
                     break
 
     def process_load_queue(self):
+        """
+        Consumes asynchronously loaded/generated chunk data, registers it into 
+        the active world arrays, applies volumetric lighting (BFS), and schedules 
+        the chunk and its neighbors for mesh building.
+        """
         processed = 0
         for item in list(self.load_queue):
             chunk, future = item
@@ -273,6 +296,11 @@ class World:
                     break
 
     def _fetch_or_generate_voxels(self, x, y, z):
+        """
+        Background worker function that attempts to retrieve compressed chunk data
+        from the SQLite database. If the chunk has never been visited, generates 
+        brand new procedural terrain using Numba logic instead.
+        """
         t0 = time.perf_counter()
         cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
         with self.db_lock:
@@ -300,6 +328,11 @@ class World:
             return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
     def stream_chunks(self):
+        """
+        Checks the player's position against the render distance to determine 
+        which distant chunks to unload, and which new surrounding chunks to queue 
+        for background loading.
+        """
         render_dist = int(self.app.config.get('render_distance', 4))
         player_cx = int(self.app.player.position.x // CHUNK_SIZE)
         player_cz = int(self.app.player.position.z // CHUNK_SIZE)
@@ -335,6 +368,10 @@ class World:
             self.load_chunk(*pos)
                         
     def load_chunk(self, x, y, z):
+        """
+        Initializes a Chunk instance at the given coordinates and dispatches 
+        an asynchronous task to fetch or generate its actual voxel data.
+        """
         chunk_index = (x % WORLD_W) + WORLD_W * (z % WORLD_D) + WORLD_AREA * (y % WORLD_H)
         
         old_chunk = self.chunks[chunk_index]
@@ -350,6 +387,10 @@ class World:
         self.load_queue.append((chunk, future))
 
     def save_chunk_to_db(self, x, y, z, voxels, lightmap):
+        """
+        Compresses a chunk's massive 1D voxel and lighting arrays using zlib, 
+        and executes a thread-safe write to the SQLite database.
+        """
         data = zlib.compress(voxels.tobytes())
         l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
         with self.db_lock:
@@ -357,6 +398,10 @@ class World:
             self.conn.commit()
 
     def unload_chunk(self, pos):
+        """
+        Removes a chunk from the active world space, triggers an asynchronous 
+        disk save, purges it from any pending queues, and recycles its VRAM.
+        """
         if pos in self.active_chunks:
             chunk = self.active_chunks.pop(pos)
 
@@ -386,6 +431,11 @@ class World:
                     break
 
     def render(self):
+        """
+        Performs dynamic vectorized frustum culling and hardware occlusion 
+        queries to identify visible chunks, then safely dispatches rendering 
+        calls to the GPU.
+        """
         player = self.app.player
         player_pos = player.position
         player_chunk_pos = (int(player_pos.x // CHUNK_SIZE), int(player_pos.z // CHUNK_SIZE))
@@ -477,6 +527,10 @@ class World:
             ctx.enable(mgl.CULL_FACE)
             
     def render_water(self):
+        """
+        A secondary rendering pass explicitly designed to draw transparent water 
+        meshes properly blended over the previously drawn opaque terrain.
+        """
         # We assume visibility is already calculated by the primary render() pass!
         freeze = getattr(self.app, 'freeze_culling', False)
         for chunk in self.sorted_chunks:
@@ -484,6 +538,10 @@ class World:
                 chunk.render_water()
             
     def save(self):
+        """
+        Synchronously dumps all currently active chunks, inventory contents, 
+        player coordinates, and world metadata safely to the SQLite disk on exit.
+        """
         # Save all currently active chunks synchronously
         for chunk in self.active_chunks.values():
             if not chunk.is_empty and chunk.voxels is not None:

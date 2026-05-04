@@ -7,7 +7,15 @@ from meshes.obj_mesh import ObjMesh
 
 
 class Item:
+    """
+    Represents a physical, dropped 3D item entity in the world.
+    Handles gravity, sliding friction, bouncing, and player pickup detection.
+    """
     def __init__(self, app, position, voxel_id):
+        """
+        Spawns an item bursting out of the specified position with a randomized velocity,
+        and applies a short pickup delay to prevent instant re-collection.
+        """
         self.app = app
         self.position = glm.vec3(position) + 0.5 # Burst from the center of the block
         self.velocity = glm.vec3((random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER, 0.005, (random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER)
@@ -18,6 +26,10 @@ class Item:
         self.pickup_delay = pg.time.get_ticks() + ITEM_PICKUP_DELAY
 
     def update(self):
+        """
+        Applies continuous gravity and velocity updates, handles simple ground collisions,
+        and destroys the item if it falls into the void or is collected by the player.
+        """
         self.velocity.y += GRAVITY * self.app.delta_time
         self.position += self.velocity * self.app.delta_time
         
@@ -41,13 +53,25 @@ class Item:
                     self.app.sounds.play_place_block() # Pop sound!
 
     def get_model_matrix(self):
+        """
+        Returns the transformation matrix required to position, rotate, and scale 
+        the 3D item for rendering.
+        """
         m_model = glm.translate(glm.mat4(), self.position)
         m_model = glm.rotate(m_model, self.rotation, glm.vec3(0, 1, 0))
         return glm.scale(m_model, glm.vec3(self.scale))
 
 
 class ItemManager:
+    """
+    Manages all active Item entities in the scene.
+    Handles updating physics, rendering, and enforcing an entity cap to prevent lag.
+    """
     def __init__(self, app):
+        """
+        Initializes the item list and pre-loads the meshes required to render 
+        blocks and 3D models like pickaxes or sticks.
+        """
         self.app = app
         self.items = []
         self.mesh = ItemMesh(app)
@@ -55,15 +79,25 @@ class ItemManager:
         self.pickaxe_mesh = ObjMesh(app, get_path('assets/wooden_pickaxe/wooden_pickaxe.obj'))
 
     def add_item(self, position, voxel_id):
+        """
+        Spawns a new item entity into the world. Enforces a First-In-First-Out (FIFO) 
+        limit to automatically despawn old items if too many are active at once.
+        """
         # Prevent entity overflow crashes if too many blocks break at once
         if len(self.items) > ITEM_ENTITY_CAP: self.items.pop(0) # Automatically despawn the oldest item
         self.items.append(Item(self.app, position, voxel_id))
 
     def update(self):
+        """
+        Updates physics for all active items and removes ones marked as dead.
+        """
         for item in self.items: item.update()
         self.items = [item for item in self.items if not item.is_dead]
 
     def render(self):
+        """
+        Renders all items that fall within the specific item render distance.
+        """
         self.app.ctx.disable(self.app.ctx.CULL_FACE) # Don't cull rotating cubes
         
         player_pos = self.app.player.position

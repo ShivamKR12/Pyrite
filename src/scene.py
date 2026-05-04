@@ -13,7 +13,16 @@ from world_objects.item import ItemManager
 
 
 class Scene:
+    """
+    Acts as the primary game session container.
+    Instantiates and manages the world environment, 3D items, UI components,
+    and handles the overarching rendering pipeline for the in-game state.
+    """
     def __init__(self, app, save_name, seed):
+        """
+        Initializes the scene components, including the terrain world,
+        environment decorations (clouds/sky), 3D item entities, and HUD interfaces.
+        """
         self.app = app
         self.world = World(self.app, save_name, seed)
         self.app.render_loading_screen("INITIALIZING MARKERS...")
@@ -30,12 +39,20 @@ class Scene:
         self.debug_overlay = DebugOverlay(app)
 
     def update(self):
+        """
+        Ticks the overarching logic of the scene, progressing the world state,
+        updating environmental visuals, and tracking physics for active items.
+        """
         self.world.update()
         self.voxel_marker.update()
         self.clouds.update()
         self.item_manager.update()
 
     def render(self):
+        """
+        Executes the multi-pass rendering pipeline.
+        Draws the skybox, opaque chunks, entities, transparent layers (water/clouds), and UI.
+        """
         if self.app.wireframe:
             self.app.ctx.wireframe = True
         

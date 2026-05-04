@@ -4,7 +4,15 @@ from settings import get_path
 
 
 class Textures:
+    """
+    Loads, configures, and binds OpenGL textures and texture arrays.
+    Handles mipmapping, anisotropic filtering, and texture units for crisp rendering.
+    """
     def __init__(self, app):
+        """
+        Instantiates and assigns the various textures to their respective OpenGL 
+        texture locations so shaders can access them simultaneously.
+        """
         self.app = app
         self.ctx = app.ctx
 
@@ -23,6 +31,11 @@ class Textures:
         self.texture_pickaxe.use(location=6)
 
     def load(self, file_name, is_tex_array=False, rotation=0, flip_x=True, flip_y=False):
+        """
+        Reads an image file and converts it into an OpenGL Texture or TextureArray.
+        Applies requested rotations/flips and automatically calculates 3D texture array 
+        dimensions if the image contains vertical strips.
+        """
         texture = pg.image.load(get_path(f'assets/{file_name}'))
         if rotation != 0:
             texture = pg.transform.rotate(texture, rotation)

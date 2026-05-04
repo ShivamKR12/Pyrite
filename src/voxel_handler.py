@@ -3,6 +3,11 @@ from lighting import update_light_place_block, place_torch, update_light_remove_
 
 
 class VoxelHandler:
+    """
+    Performs raycasting from the player's camera to interact with the voxel world.
+    Handles calculating the targeted block, removing blocks (mining), and adding 
+    blocks (placing), while triggering necessary lighting and meshing updates.
+    """
     def __init__(self, world):
         self.app = world.app
         self.chunks = world.chunks
@@ -19,6 +24,11 @@ class VoxelHandler:
         self.interaction_mode = 0  
 
     def add_voxel(self):
+        """
+        Attempts to place the currently held block into the world at the targeted face.
+        Checks for player collision, updates lighting (e.g. for Glowstone), 
+        and queues adjacent chunks for remeshing.
+        """
         if self.voxel_id:
             current_id = self.app.player.inventory[self.app.player.hotbar_index]
             if current_id == 0 or current_id in NON_PLACEABLE:
@@ -62,6 +72,11 @@ class VoxelHandler:
                     chunk.is_empty = False
 
     def rebuild_adjacent_chunks(self, world_pos, is_light_update=True):
+        """
+        Automatically queues neighboring chunks for mesh regeneration if a block 
+        modification occurs near a chunk border, or if it creates a large lighting 
+        update requiring neighbors to recalculate their block/sunlight visuals.
+        """
         wx, wy, wz = int(world_pos.x), int(world_pos.y), int(world_pos.z)
         cx, cy, cz = wx // CHUNK_SIZE, wy // CHUNK_SIZE, wz // CHUNK_SIZE
 
@@ -90,6 +105,11 @@ class VoxelHandler:
                             self.app.scene.world.build_queue.append(chunk)
 
     def remove_voxel(self):
+        """
+        Breaks the targeted voxel, updates local block lighting (stripping or 
+        letting sunlight in), spawns a dropped item entity in Survival mode, 
+        and queues chunks for remeshing.
+        """
         if self.voxel_id:
             wx, wy, wz = self.voxel_world_pos
             if self.voxel_id == GLOWSTONE:
@@ -123,6 +143,11 @@ class VoxelHandler:
         self.ray_cast()
 
     def ray_cast(self):
+        """
+        Casts a ray forward from the camera's position through the voxel grid using 
+        a fast voxel traversal algorithm. Determines the exact targeted voxel and 
+        its normal face.
+        """
         # start point
         x1, y1, z1 = self.app.player.position
         # end point

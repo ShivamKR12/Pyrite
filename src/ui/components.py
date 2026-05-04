@@ -3,10 +3,18 @@ import moderngl as mgl
 import pygame as pg
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
+import os
 
 
 class Button:
+    """
+    Represents a clickable UI button with text, hover effects, and an assigned action.
+    """
     def __init__(self, app, text, pos, size, action):
+        """
+        Initializes the button with its text, position, size, and the callback function
+        to execute when clicked. Prepares necessary text and color meshes.
+        """
         self.app = app
         self.text = text
         self.pos = pos
@@ -23,6 +31,10 @@ class Button:
         self.hover_color = UI_HOVER_COLOR
 
     def check_hover(self, mouse_pos):
+        """
+        Checks if the given mouse position falls within the button's screen boundaries
+        and updates its hover state accordingly.
+        """
         x, y = self.pos
         w, h = self.size
         
@@ -41,6 +53,10 @@ class Button:
         return self.is_hovered
 
     def render(self, offset=(0, 0), alpha=1.0):
+        """
+        Renders the button's background and text, applying visual changes like scaling 
+        and color shifts depending on whether it is being hovered or clicked.
+        """
         # 1. Render background with state-based scale and color
         scale_mult = 1.0
         c = self.base_color
@@ -74,7 +90,15 @@ class Button:
 
 
 class WorldButton:
+    """
+    A specialized button used in the World Selection menu to display rich information 
+    about a saved game world, including its thumbnail, seed, and playtime data.
+    """
     def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action):
+        """
+        Initializes the world button with detailed metadata and loads its corresponding
+        saved thumbnail image from the disk.
+        """
         self.app = app
         self.save_name = save_name
         self.display_name = display_name
@@ -95,7 +119,6 @@ class WorldButton:
         self.base_color = UI_BUTTON_COLOR
         self.hover_color = UI_HOVER_COLOR
         
-        import os
         thumb_path = f'saves/{save_name}_thumb.png'
         if os.path.exists(thumb_path):
             img = pg.image.load(thumb_path).convert_alpha()
@@ -107,6 +130,10 @@ class WorldButton:
         self.thumb_tex.filter = (mgl.LINEAR, mgl.LINEAR)
 
     def check_hover(self, mouse_pos):
+        """
+        Calculates if the mouse cursor is currently over the button's bounding box
+        to trigger visual hover states.
+        """
         x, y = self.pos
         w, h = self.size
         win_w, win_h = WIN_RES
@@ -120,6 +147,10 @@ class WorldButton:
         return self.is_hovered
 
     def render(self, offset=(0, 0), alpha=1.0):
+        """
+        Draws the interactive button background, the world thumbnail image, and dynamically
+        generates the text layout for the world's metadata.
+        """
         scale_mult = 1.0
         c = self.base_color
         if self.is_hovered:
@@ -167,7 +198,15 @@ class WorldButton:
 
 
 class TextInput:
+    """
+    Provides a simple interactive text entry field for the UI.
+    Captures keyboard input and visually indicates when it is active.
+    """
     def __init__(self, app, pos, size, label=""):
+        """
+        Initializes the text input field with a placeholder label, screen position,
+        and sets up the required text rendering meshes.
+        """
         self.app = app
         self.pos = pos
         self.size = size
@@ -181,6 +220,10 @@ class TextInput:
         self.text_mesh = UITextMesh(app)
 
     def handle_event(self, event):
+        """
+        Processes mouse clicks to activate/deactivate the input field and captures
+        keyboard keystrokes to append or delete characters from the text string.
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pg.mouse.get_pos()
             x, y = self.pos
@@ -203,6 +246,10 @@ class TextInput:
                     self.text += event.unicode
 
     def render(self, offset=(0, 0), alpha=1.0):
+        """
+        Draws the input field's background and current text. Renders a blinking 
+        underscore cursor if the field is currently active.
+        """
         c = (0.2, 0.25, 0.3, 0.9) if self.is_active else (0.1, 0.12, 0.15, 0.7)
         color = (c[0], c[1], c[2], c[3] * alpha)
         render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
@@ -230,7 +277,15 @@ class TextInput:
 
 
 class Slider:
+    """
+    An interactive UI slider component used to adjust numerical settings 
+    between a predefined minimum and maximum value.
+    """
     def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None, is_int=False):
+        """
+        Initializes the slider, binding it to a specific configuration key, setting 
+        its value range, and preparing its visual meshes.
+        """
         self.app = app
         self.text = text
         self.pos = pos
@@ -250,6 +305,11 @@ class Slider:
         self.is_dragging = False
 
     def update(self, mouse_pos=None):
+        """
+        Updates the slider's hover state and dragging interaction. Modifies the 
+        associated configuration value based on the mouse's horizontal position 
+        along the slider track.
+        """
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
         x, y = self.pos
@@ -283,11 +343,19 @@ class Slider:
                     self.action(val)
 
     def handle_event(self, event):
+        """
+        Detects mouse down events to initiate the dragging state if the cursor 
+        is hovering over the slider.
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             if self.is_hovered:
                 self.is_dragging = True
 
     def render(self, offset=(0, 0), alpha=1.0):
+        """
+        Renders the dark background track, the highlighted fill bar representing 
+        the current progress, and the dynamic text showing the exact numerical value.
+        """
         render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
         self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
         self.color_mesh.program['u_offset'] = render_pos

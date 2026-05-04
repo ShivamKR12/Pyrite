@@ -5,6 +5,10 @@ from pyglm import glm
 
 
 class Frustum:
+    """
+    Calculates the camera's viewing frustum planes and boundaries dynamically 
+    based on the Field of View and Aspect Ratio.
+    """
     def __init__(self, camera):
         self.cam: Camera = camera # type: ignore
         self.update_factors(V_FOV, H_FOV)
@@ -42,6 +46,11 @@ class Frustum:
 
 @njit(cache=True, fastmath=True, parallel=True)
 def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
+    """
+    Numba-optimized vectorized frustum culling.
+    Rapidly tests an array of chunk centers against the camera's view frustum planes.
+    Returns a boolean array mask indicating which chunks are currently visible.
+    """
     n = len(chunk_centers)
     is_visible = np.empty(n, dtype=np.bool_)
 

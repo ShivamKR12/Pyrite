@@ -3,6 +3,11 @@ from settings import *
 
 @njit(cache=True, nogil=True)
 def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
+    """
+    Calculates the ambient occlusion (AO) value for a specific vertex on a block face.
+    It checks the surrounding blocks in the specified plane to determine how occluded
+    the corner is, returning a tuple of AO values for the four vertices of the face.
+    """
     x, y, z = local_pos
     wx, wy, wz = world_pos
 
@@ -42,6 +47,11 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
 
 @njit(cache=True, nogil=True)
 def get_vertex_light(world_vertex_pos, plane, world_lightmaps, chunk_positions):
+    """
+    Computes the smoothed lighting value for a specific vertex by sampling and averaging
+    the sunlight and blocklight from the four surrounding blocks that share the vertex
+    in the given plane.
+    """
     vx, vy, vz = world_vertex_pos
 
     if plane == 'Y':
@@ -72,6 +82,10 @@ def get_vertex_light(world_vertex_pos, plane, world_lightmaps, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
+    """
+    Packs multiple pieces of vertex data (coordinates, voxel ID, face ID, AO ID, flip ID)
+    into a single 32-bit unsigned integer to minimize memory usage and GPU bandwidth.
+    """
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
 
@@ -95,6 +109,10 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
 
 @njit(cache=True, nogil=True)
 def get_chunk_index(world_voxel_pos, chunk_positions):
+    """
+    Calculates the 1D index of a chunk in the global world arrays based on an absolute
+    world voxel coordinate. Returns -1 if the chunk is not currently loaded or out of bounds.
+    """
     wx, wy, wz = world_voxel_pos
     cx = wx // CHUNK_SIZE
     cy = wy // CHUNK_SIZE
@@ -110,6 +128,10 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+    """
+    Retrieves the voxel ID of a neighboring block given its local and world coordinates.
+    Safely handles cross-chunk boundaries by looking up the appropriate chunk in the world arrays.
+    """
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
         return 0
@@ -123,6 +145,10 @@ def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_
 
 @njit(cache=True, nogil=True)
 def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_positions):
+    """
+    Retrieves the packed lighting value (sunlight and blocklight) of a neighboring block
+    given its local and world coordinates, safely crossing chunk boundaries if needed.
+    """
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
         return 255
@@ -134,11 +160,19 @@ def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_
 
 @njit(cache=True, nogil=True)
 def is_transparent(voxel_id):
+    """
+    Checks if a given voxel ID corresponds to a transparent block (like air, water, glass, or leaves).
+    Transparent blocks do not cull adjacent faces and do not cast hard ambient occlusion shadows.
+    """
     return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
 
 
 @njit(cache=True, nogil=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+    """
+    Determines if a block at a given coordinate is empty or transparent, which is used
+    specifically during the ambient occlusion calculation to see if a corner is occluded.
+    """
     val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions)
     # Transparent blocks do not cast AO shadows!
     return is_transparent(val)
@@ -146,6 +180,10 @@ def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def add_data(vertex_data, index, *vertices):
+    """
+    Appends newly packed vertex data and its associated lighting value into the main
+    mesh arrays, advancing the current index counter.
+    """
     for vertex in vertices:
         vertex_data[index] = vertex[0]
         vertex_data[index + 1] = vertex[1]
@@ -155,6 +193,12 @@ def add_data(vertex_data, index, *vertices):
 
 @njit(cache=True, nogil=True)
 def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world_voxels, world_lightmaps, chunk_positions):
+    """
+    The core greedy meshing algorithm. It scans through a chunk's voxel data slice by slice
+    along the X, Y, and Z planes. It groups adjacent, identical, and coplanar block faces
+    into massive single polygons, calculating ambient occlusion and smoothed lighting
+    along the way. Returns the combined vertex data for both opaque and water meshes.
+    """
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0

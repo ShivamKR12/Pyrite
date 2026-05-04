@@ -3,7 +3,15 @@ from meshes.base_mesh import BaseMesh
 
 
 class ItemMesh(BaseMesh):
+    """
+    Generates the geometry for dropped 3D items and blocks in the world.
+    Builds a standard cube mesh formatted to support the global block texture atlas.
+    """
     def __init__(self, app):
+        """
+        Initializes the item mesh, binding it to the specialized item shader program
+        which handles dynamic lighting and texture mapping for dropped entities.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -13,6 +21,10 @@ class ItemMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Calculates and returns the complete set of vertices, texture coordinates, 
+        and face IDs required to construct a 3D block representation.
+        """
         # format: pos(3), uv(2), face_id(1)
         # face_ids: 0: top, 1: bottom, 2: right, 3: left, 4: back, 5: front
         vertices = [

@@ -419,7 +419,16 @@ import math
 
 
 class ChunkMesh(BaseMesh):
+    """
+    Manages the OpenGL geometry for a chunk, handling both opaque and transparent (water) meshes. 
+    It interfaces with the greedy meshing builder to generate vertex data and utilizes 
+    a VBO pool to manage GPU memory efficiently.
+    """
     def __init__(self, chunk):
+        """
+        Initializes the chunk mesh, linking it to its parent chunk and the appropriate shader program. 
+        Sets up the vertex buffer format and prepares attributes for rendering.
+        """
         super().__init__()
         self.app = chunk.app
         self.chunk = chunk
@@ -436,14 +445,27 @@ class ChunkMesh(BaseMesh):
         self.water_count = 0
 
     def render(self):
+        """
+        Issues the draw call for the opaque portion of the chunk's mesh, 
+        provided it has valid geometry to render.
+        """
         if self.vao and self.opaque_count > 0:
             self.vao.render(vertices=self.opaque_count)
 
     def render_water(self):
+        """
+        Issues the draw call for the transparent water portion of the chunk's mesh, 
+        starting from the end of the opaque vertex data.
+        """
         if self.vao and self.water_count > 0:
             self.vao.render(vertices=self.water_count, first=self.opaque_count)
 
     def get_vao(self):
+        """
+        Retrieves or builds the Vertex Array Object (VAO) for the chunk. It first generates 
+        the raw vertex data, then attempts to recycle an appropriately sized VBO from 
+        the global pool to prevent memory leaks, allocating a new one if necessary.
+        """
         if self.vertex_data is None:
             result = self.get_vertex_data()
             self.vertex_data = result[0]
@@ -483,6 +505,10 @@ class ChunkMesh(BaseMesh):
         return vao
 
     def get_vertex_data(self):
+        """
+        Triggers the greedy meshing algorithm to construct the optimized vertex payload 
+        (including ambient occlusion and lighting) from the chunk's 3D voxel array.
+        """
         mesh = build_chunk_mesh(
             chunk_voxels=self.chunk.voxels,
             chunk_lightmap=self.chunk.lightmap,
@@ -501,6 +527,11 @@ from settings import *
 
 @njit(cache=True, nogil=True)
 def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
+    """
+    Calculates the ambient occlusion (AO) value for a specific vertex on a block face.
+    It checks the surrounding blocks in the specified plane to determine how occluded
+    the corner is, returning a tuple of AO values for the four vertices of the face.
+    """
     x, y, z = local_pos
     wx, wy, wz = world_pos
 
@@ -540,6 +571,11 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
 
 @njit(cache=True, nogil=True)
 def get_vertex_light(world_vertex_pos, plane, world_lightmaps, chunk_positions):
+    """
+    Computes the smoothed lighting value for a specific vertex by sampling and averaging
+    the sunlight and blocklight from the four surrounding blocks that share the vertex
+    in the given plane.
+    """
     vx, vy, vz = world_vertex_pos
 
     if plane == 'Y':
@@ -570,6 +606,10 @@ def get_vertex_light(world_vertex_pos, plane, world_lightmaps, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
+    """
+    Packs multiple pieces of vertex data (coordinates, voxel ID, face ID, AO ID, flip ID)
+    into a single 32-bit unsigned integer to minimize memory usage and GPU bandwidth.
+    """
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
 
@@ -593,6 +633,10 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
 
 @njit(cache=True, nogil=True)
 def get_chunk_index(world_voxel_pos, chunk_positions):
+    """
+    Calculates the 1D index of a chunk in the global world arrays based on an absolute
+    world voxel coordinate. Returns -1 if the chunk is not currently loaded or out of bounds.
+    """
     wx, wy, wz = world_voxel_pos
     cx = wx // CHUNK_SIZE
     cy = wy // CHUNK_SIZE
@@ -608,6 +652,10 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+    """
+    Retrieves the voxel ID of a neighboring block given its local and world coordinates.
+    Safely handles cross-chunk boundaries by looking up the appropriate chunk in the world arrays.
+    """
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
         return 0
@@ -621,6 +669,10 @@ def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_
 
 @njit(cache=True, nogil=True)
 def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_positions):
+    """
+    Retrieves the packed lighting value (sunlight and blocklight) of a neighboring block
+    given its local and world coordinates, safely crossing chunk boundaries if needed.
+    """
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     if chunk_index == -1:
         return 255
@@ -632,11 +684,19 @@ def get_neighbor_light(local_voxel_pos, world_voxel_pos, world_lightmaps, chunk_
 
 @njit(cache=True, nogil=True)
 def is_transparent(voxel_id):
+    """
+    Checks if a given voxel ID corresponds to a transparent block (like air, water, glass, or leaves).
+    Transparent blocks do not cull adjacent faces and do not cast hard ambient occlusion shadows.
+    """
     return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
 
 
 @njit(cache=True, nogil=True)
 def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
+    """
+    Determines if a block at a given coordinate is empty or transparent, which is used
+    specifically during the ambient occlusion calculation to see if a corner is occluded.
+    """
     val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions)
     # Transparent blocks do not cast AO shadows!
     return is_transparent(val)
@@ -644,6 +704,10 @@ def is_void(local_voxel_pos, world_voxel_pos, world_voxels, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def add_data(vertex_data, index, *vertices):
+    """
+    Appends newly packed vertex data and its associated lighting value into the main
+    mesh arrays, advancing the current index counter.
+    """
     for vertex in vertices:
         vertex_data[index] = vertex[0]
         vertex_data[index + 1] = vertex[1]
@@ -653,6 +717,12 @@ def add_data(vertex_data, index, *vertices):
 
 @njit(cache=True, nogil=True)
 def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world_voxels, world_lightmaps, chunk_positions):
+    """
+    The core greedy meshing algorithm. It scans through a chunk's voxel data slice by slice
+    along the X, Y, and Z planes. It groups adjacent, identical, and coplanar block faces
+    into massive single polygons, calculating ambient occlusion and smoothed lighting
+    along the way. Returns the combined vertex data for both opaque and water meshes.
+    """
     vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
     index = 0
@@ -1008,7 +1078,16 @@ import noise
 
 
 class CloudMesh(BaseMesh):
+    """
+    Generates the geometry for the procedural 3D cloud layer.
+    Utilizes simplex noise to map cloud density and a 2D greedy meshing algorithm 
+    to create an optimized, low-polygon mesh of cloud blocks.
+    """
     def __init__(self, app):
+        """
+        Initializes the cloud mesh, setting up the shader program and vertex buffer 
+        configuration required to render the volumetric clouds.
+        """
         super().__init__()
         self.app = app
 
@@ -1019,6 +1098,10 @@ class CloudMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Coordinates the generation of the raw cloud density data and subsequently 
+        constructs the optimized 3D mesh vertex data required for rendering.
+        """
         cloud_data = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
         self.gen_clouds(cloud_data, noise.perm)
 
@@ -1027,6 +1110,10 @@ class CloudMesh(BaseMesh):
     @staticmethod
     @njit(cache=True, fastmath=True, parallel=True, nogil=True)
     def gen_clouds(cloud_data, perm_array):
+        """
+        Populates a 2D density grid using multi-octave simplex noise to procedurally 
+        determine the exact locations where clouds should form in the sky.
+        """
         for x in prange(WORLD_W * CHUNK_SIZE):
             for z in range(WORLD_D * CHUNK_SIZE):
 
@@ -1037,6 +1124,11 @@ class CloudMesh(BaseMesh):
     @staticmethod
     @njit(cache=True, fastmath=True, nogil=True)
     def build_mesh(cloud_data):
+        """
+        A specialized 2D greedy meshing algorithm that scans the generated cloud density grid. 
+        It mathematically combines adjacent, identical cloud blocks into massive single 
+        polygonal faces, drastically reducing the total number of vertices sent to the GPU.
+        """
         mesh = np.empty(WORLD_AREA * CHUNK_AREA * 6 * 3, dtype='uint16')
         index = 0
         width = WORLD_W * CHUNK_SIZE
@@ -1097,7 +1189,14 @@ from meshes.base_mesh import BaseMesh
 
 
 class CubeMesh(BaseMesh):
+    """
+    Generates the geometry for a standard 3D cube.
+    Used primarily for the wireframe voxel marker that highlights targeted blocks.
+    """
     def __init__(self, app):
+        """
+        Initializes the cube mesh, binding it to the voxel marker shader program.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -1109,10 +1208,18 @@ class CubeMesh(BaseMesh):
 
     @staticmethod
     def get_data(vertices, indices):
+        """
+        Flattens the structured lists of vertices and indices into a contiguous 
+        1D Numpy array required by OpenGL.
+        """
         data = [vertices[ind] for triangle in indices for ind in triangle]
         return np.array(data, dtype='float16')
 
     def get_vertex_data(self):
+        """
+        Defines the local 3D coordinates and 2D texture UVs for all six faces 
+        of the cube, and assembles them into the final vertex buffer payload.
+        """
         vertices = [
             (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1),
             (0, 1, 0), (0, 0, 0), (1, 0, 0), (1, 1, 0)
@@ -1147,7 +1254,15 @@ from meshes.base_mesh import BaseMesh
 
 
 class ItemMesh(BaseMesh):
+    """
+    Generates the geometry for dropped 3D items and blocks in the world.
+    Builds a standard cube mesh formatted to support the global block texture atlas.
+    """
     def __init__(self, app):
+        """
+        Initializes the item mesh, binding it to the specialized item shader program
+        which handles dynamic lighting and texture mapping for dropped entities.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -1157,6 +1272,10 @@ class ItemMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Calculates and returns the complete set of vertices, texture coordinates, 
+        and face IDs required to construct a 3D block representation.
+        """
         # format: pos(3), uv(2), face_id(1)
         # face_ids: 0: top, 1: bottom, 2: right, 3: left, 4: back, 5: front
         vertices = [
@@ -1189,7 +1308,16 @@ import os
 
 
 class ObjMesh(BaseMesh):
+    """
+    Generates rendering geometry by parsing and loading standard 3D Wavefront (.obj) files.
+    Supports parsing material files (.mtl) for vertex colors and automatically centers 
+    the imported geometry around the origin.
+    """
     def __init__(self, app, obj_path, tex_id=None):
+        """
+        Initializes the OBJ mesh, preparing its shader program, vertex attributes,
+        and loading the requested object file from the disk.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -1201,12 +1329,20 @@ class ObjMesh(BaseMesh):
         self.vao = self.get_vao()
         
     def render(self):
+        """
+        Issues the draw call to the GPU for this model. Optionally enables and binds 
+        an associated OpenGL texture if a texture ID was provided during initialization.
+        """
         self.program['u_use_texture'] = self.tex_id is not None
         if self.tex_id is not None:
             self.program['u_texture_0'] = self.tex_id
         self.vao.render()
 
     def parse_mtl(self, mtl_path):
+        """
+        Reads a Wavefront material (.mtl) file and extracts the diffuse color (Kd) 
+        values for each material, allowing the OBJ to render with its assigned base colors.
+        """
         materials = {}
         current_material = None
         try:
@@ -1222,6 +1358,11 @@ class ObjMesh(BaseMesh):
         return materials
 
     def get_vertex_data(self):
+        """
+        Parses the .obj file line by line to extract vertices, texture coordinates, 
+        and normals. Triangulates complex polygons using a triangle fan approach and 
+        mathematically centers the entire assembled geometry around the origin (0, 0, 0).
+        """
         vertices = []
         tex_coords = []
         normals = []
@@ -1943,10 +2084,18 @@ import moderngl as mgl
 import pygame as pg
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
+import os
 
 
 class Button:
+    """
+    Represents a clickable UI button with text, hover effects, and an assigned action.
+    """
     def __init__(self, app, text, pos, size, action):
+        """
+        Initializes the button with its text, position, size, and the callback function
+        to execute when clicked. Prepares necessary text and color meshes.
+        """
         self.app = app
         self.text = text
         self.pos = pos
@@ -1963,6 +2112,10 @@ class Button:
         self.hover_color = UI_HOVER_COLOR
 
     def check_hover(self, mouse_pos):
+        """
+        Checks if the given mouse position falls within the button's screen boundaries
+        and updates its hover state accordingly.
+        """
         x, y = self.pos
         w, h = self.size
         
@@ -1981,6 +2134,10 @@ class Button:
         return self.is_hovered
 
     def render(self, offset=(0, 0), alpha=1.0):
+        """
+        Renders the button's background and text, applying visual changes like scaling 
+        and color shifts depending on whether it is being hovered or clicked.
+        """
         # 1. Render background with state-based scale and color
         scale_mult = 1.0
         c = self.base_color
@@ -2014,7 +2171,15 @@ class Button:
 
 
 class WorldButton:
+    """
+    A specialized button used in the World Selection menu to display rich information 
+    about a saved game world, including its thumbnail, seed, and playtime data.
+    """
     def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action):
+        """
+        Initializes the world button with detailed metadata and loads its corresponding
+        saved thumbnail image from the disk.
+        """
         self.app = app
         self.save_name = save_name
         self.display_name = display_name
@@ -2035,7 +2200,6 @@ class WorldButton:
         self.base_color = UI_BUTTON_COLOR
         self.hover_color = UI_HOVER_COLOR
         
-        import os
         thumb_path = f'saves/{save_name}_thumb.png'
         if os.path.exists(thumb_path):
             img = pg.image.load(thumb_path).convert_alpha()
@@ -2047,6 +2211,10 @@ class WorldButton:
         self.thumb_tex.filter = (mgl.LINEAR, mgl.LINEAR)
 
     def check_hover(self, mouse_pos):
+        """
+        Calculates if the mouse cursor is currently over the button's bounding box
+        to trigger visual hover states.
+        """
         x, y = self.pos
         w, h = self.size
         win_w, win_h = WIN_RES
@@ -2060,6 +2228,10 @@ class WorldButton:
         return self.is_hovered
 
     def render(self, offset=(0, 0), alpha=1.0):
+        """
+        Draws the interactive button background, the world thumbnail image, and dynamically
+        generates the text layout for the world's metadata.
+        """
         scale_mult = 1.0
         c = self.base_color
         if self.is_hovered:
@@ -2107,7 +2279,15 @@ class WorldButton:
 
 
 class TextInput:
+    """
+    Provides a simple interactive text entry field for the UI.
+    Captures keyboard input and visually indicates when it is active.
+    """
     def __init__(self, app, pos, size, label=""):
+        """
+        Initializes the text input field with a placeholder label, screen position,
+        and sets up the required text rendering meshes.
+        """
         self.app = app
         self.pos = pos
         self.size = size
@@ -2121,6 +2301,10 @@ class TextInput:
         self.text_mesh = UITextMesh(app)
 
     def handle_event(self, event):
+        """
+        Processes mouse clicks to activate/deactivate the input field and captures
+        keyboard keystrokes to append or delete characters from the text string.
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pg.mouse.get_pos()
             x, y = self.pos
@@ -2143,6 +2327,10 @@ class TextInput:
                     self.text += event.unicode
 
     def render(self, offset=(0, 0), alpha=1.0):
+        """
+        Draws the input field's background and current text. Renders a blinking 
+        underscore cursor if the field is currently active.
+        """
         c = (0.2, 0.25, 0.3, 0.9) if self.is_active else (0.1, 0.12, 0.15, 0.7)
         color = (c[0], c[1], c[2], c[3] * alpha)
         render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
@@ -2170,7 +2358,15 @@ class TextInput:
 
 
 class Slider:
+    """
+    An interactive UI slider component used to adjust numerical settings 
+    between a predefined minimum and maximum value.
+    """
     def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None, is_int=False):
+        """
+        Initializes the slider, binding it to a specific configuration key, setting 
+        its value range, and preparing its visual meshes.
+        """
         self.app = app
         self.text = text
         self.pos = pos
@@ -2190,6 +2386,11 @@ class Slider:
         self.is_dragging = False
 
     def update(self, mouse_pos=None):
+        """
+        Updates the slider's hover state and dragging interaction. Modifies the 
+        associated configuration value based on the mouse's horizontal position 
+        along the slider track.
+        """
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
         x, y = self.pos
@@ -2223,11 +2424,19 @@ class Slider:
                     self.action(val)
 
     def handle_event(self, event):
+        """
+        Detects mouse down events to initiate the dragging state if the cursor 
+        is hovering over the slider.
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             if self.is_hovered:
                 self.is_dragging = True
 
     def render(self, offset=(0, 0), alpha=1.0):
+        """
+        Renders the dark background track, the highlighted fill bar representing 
+        the current progress, and the dynamic text showing the exact numerical value.
+        """
         render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
         self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
         self.color_mesh.program['u_offset'] = render_pos
@@ -2276,6 +2485,9 @@ from .text import TextRenderer
 
 
 class Crosshair:
+    """
+    Renders a simple fixed crosshair at the center of the screen.
+    """
     def __init__(self, app):
         self.app = app
         self.mesh = CrosshairMesh(app)
@@ -2285,6 +2497,10 @@ class Crosshair:
 
 
 class Hotbar:
+    """
+    Renders the bottom-screen hotbar, including the transparent slot backgrounds,
+    active selection frame, 3D block/item icons, stack counts, and survival status bars.
+    """
     def __init__(self, app):
         self.app = app
         self.block_mesh = BlockIconMesh(app)
@@ -2400,6 +2616,10 @@ class Hotbar:
 
 
 class HeldBlock:
+    """
+    Renders the 3D model of the currently equipped item or block in the player's hand.
+    Includes procedural view bobbing and swinging animations for mining/placing.
+    """
     def __init__(self, app):
         self.app = app
         self.mesh = ItemMesh(app)
@@ -2481,6 +2701,10 @@ class HeldBlock:
 
 
 class InventoryUI:
+    """
+    Manages the full player inventory and crafting grid interface.
+    Handles drag-and-drop item management, stack splitting, and crafting matrix evaluation.
+    """
     def __init__(self, app):
         self.app = app
         self.block_mesh = BlockIconMesh(app)
@@ -2798,6 +3022,10 @@ class InventoryUI:
 
 
 class DebugOverlay:
+    """
+    Displays an on-screen overlay with performance metrics, player coordinates,
+    targeted block info, and current game mode (F3 menu).
+    """
     def __init__(self, app):
         self.app = app
         self.font = pg.font.SysFont('arial', FONT_SIZE_DEBUG, bold=True)
@@ -2883,6 +3111,11 @@ from .text import TextRenderer
 
 
 class Menu:
+    """
+    Manages the Main Menu, World Selection, and World Creation screens.
+    Handles smooth state transitions, dynamic world list loading from the 
+    SQLite saves directory, and interaction events.
+    """
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
@@ -2983,8 +3216,8 @@ class Menu:
             save_name = save_file[:-3]
             display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
             try:
-                conn = sqlite3.connect(f'saves/{save_file}')
-                cursor = conn.cursor()
+                connection = sqlite3.connect(f'saves/{save_file}')
+                cursor = connection.cursor()
                 cursor.execute('SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1')
                 row = cursor.fetchone()
                 if row:
@@ -2993,7 +3226,7 @@ class Menu:
                     game_mode = row[2]
                     creation_date = row[3][:16].replace('T', ' ') if row[3] else "Unknown"
                     last_played = row[4][:16].replace('T', ' ') if row[4] else "Unknown"
-                conn.close()
+                connection.close()
             except:
                 pass
             
@@ -3202,6 +3435,10 @@ class Menu:
 
 
 class PauseMenu:
+    """
+    Provides the in-game pause screen overlay.
+    Allows the player to resume the game, open options, or quit back to the Main Menu.
+    """
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
@@ -3313,6 +3550,11 @@ class PauseMenu:
 
 
 class OptionsMenu:
+    """
+    Manages the game settings screen.
+    Provides sliders and toggles for FOV, Mouse Sensitivity, Volume, Render Distance, 
+    and Visual Tints. Handles serializing these settings to config.json.
+    """
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
@@ -3451,7 +3693,14 @@ import numpy as np
 
 
 class CrosshairMesh(BaseMesh):
+    """
+    Generates the geometry for the on-screen crosshair.
+    Draws a simple '+' sign directly in the center of the player's view.
+    """
     def __init__(self, app):
+        """
+        Initializes the crosshair mesh, binding it to the solid-color quad shader.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -3461,6 +3710,11 @@ class CrosshairMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Calculates the vertex coordinates and color data needed to form the 
+        horizontal and vertical lines of the crosshair, scaling it properly 
+        to match the window's aspect ratio.
+        """
         w = 0.015
         h = w * ASPECT_RATIO
         # Creates a perfect '+' sign in the center of the screen
@@ -3477,7 +3731,14 @@ class CrosshairMesh(BaseMesh):
 
 
 class BlockIconMesh(BaseMesh):
+    """
+    Handles the rendering geometry for 2D flat representations of 3D blocks.
+    Used extensively in the Hotbar and Inventory UI slots.
+    """
     def __init__(self, app):
+        """
+        Initializes the block icon mesh and connects it to the block UI shader.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -3487,6 +3748,10 @@ class BlockIconMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Returns the vertices and texture coordinates for a standard full-screen quad,
+        which is later scaled and positioned by the shader based on uniform offsets.
+        """
         # Standard normalized quad [-1, 1]
         vertices = [
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
@@ -3497,7 +3762,15 @@ class BlockIconMesh(BaseMesh):
 
 
 class UIColorMesh(BaseMesh):
+    """
+    Provides the geometry for rendering solid-color geometric elements 
+    in the UI, such as backgrounds, frames, selection highlights, and dimming overlays.
+    """
     def __init__(self, app):
+        """
+        Initializes the UI color mesh, attaching it to a simple shader that applies 
+        flat color uniforms instead of textures.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -3507,6 +3780,10 @@ class UIColorMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Returns the raw vertex positions for a 2D quad without texture coordinates, 
+        as the shape relies solely on color uniforms.
+        """
         vertices = [
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
@@ -3515,7 +3792,15 @@ class UIColorMesh(BaseMesh):
 
 
 class UITextMesh(BaseMesh):
+    """
+    Generates the geometry required to display text strings on the screen.
+    Used as a surface to map dynamically generated text textures onto.
+    """
     def __init__(self, app):
+        """
+        Initializes the UI text mesh, binding it to the text shader which handles 
+        transparency and alpha blending for clean font rendering.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -3525,6 +3810,10 @@ class UITextMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Returns the standard set of vertices and UV coordinates mapping a full 
+        texture onto a simple 2D rectangular quad.
+        """
         vertices = [
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
@@ -3540,7 +3829,15 @@ import pygame as pg
 
 
 class TextRenderer:
+    """
+    Handles the rendering of text strings into OpenGL textures.
+    Provides methods for caching static text and generating single-frame dynamic text.
+    """
     def __init__(self, app):
+        """
+        Initializes the text renderer, setting up the default font and preparing
+        the texture cache.
+        """
         self.app = app
         self.ctx = app.ctx
         pg.font.init()
@@ -3548,6 +3845,11 @@ class TextRenderer:
         self.textures = {}
 
     def get_texture(self, text):
+        """
+        Generates and returns an OpenGL texture for the specified text string.
+        Caches the generated texture so subsequent requests for the same text
+        are returned instantly without re-rendering.
+        """
         if text in self.textures:
             return self.textures[text]
         surf = self.font.render(text, True, UI_TEXT_COLOR)
@@ -3563,6 +3865,11 @@ class TextRenderer:
         return texture
 
     def get_dynamic_texture(self, text):
+        """
+        Generates and returns an OpenGL texture for text that changes frequently.
+        Does not cache the texture or build mipmaps, saving memory and processing
+        time for single-frame usage.
+        """
         surf = self.font.render(text, True, UI_TEXT_COLOR)
         shadow_offset = max(2, self.font.get_height() // 15)
         bg_surf = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
@@ -3592,7 +3899,15 @@ import random
 
 
 class Chunk:
+    """
+    Represents a 3D volumetric section of the world (e.g., 48x48x48 blocks).
+    Stores the voxel array, lightmap, and coordinates, and handles issuing draw calls 
+    for its corresponding ChunkMesh.
+    """
     def __init__(self, world, position):
+        """
+        Initializes a chunk, preparing its occlusion queries and position boundaries.
+        """
         self.app = world.app
         self.world = world
         self.position = position
@@ -3610,26 +3925,45 @@ class Chunk:
         self.is_on_frustum = self.app.player.frustum.is_on_frustum
 
     def get_model_matrix(self):
+        """
+        Calculates the transformation matrix required to position this chunk 
+        correctly within the global 3D world space.
+        """
         m_model = glm.translate(glm.mat4(), glm.vec3(self.position) * CHUNK_SIZE)
         return m_model
 
     def set_uniform(self):
+        """
+        Writes this chunk's model matrix to the active shader.
+        """
         self.mesh.program['m_model'].write(self.m_model)
 
     def build_mesh(self):
+        """
+        Instantiates a ChunkMesh object to begin the greedy meshing process.
+        """
         self.mesh = ChunkMesh(self)
 
     def render(self):
+        """
+        Issues the draw call for the opaque geometry (stone, dirt, grass) of this chunk.
+        """
         if not self.is_empty and self.mesh and self.mesh.vao:
             self.set_uniform()
             self.mesh.render()
 
     def render_water(self):
+        """
+        Issues the draw call for the transparent geometry (water) of this chunk.
+        """
         if not self.is_empty and self.mesh and self.mesh.vao:
             self.set_uniform()
             self.mesh.render_water()
 
     def build_voxels(self):
+        """
+        Helper function to allocate an empty array and immediately invoke the terrain generator.
+        """
         voxels = np.zeros(CHUNK_VOL, dtype='uint8')
 
         cx, cy, cz = glm.ivec3(self.position) * CHUNK_SIZE
@@ -3642,6 +3976,10 @@ class Chunk:
     @staticmethod
     @njit(cache=True)
     def generate_terrain(voxels, lightmap, cx, cy, cz, perm_array, perm_grad_array, seed):
+        """
+        A highly parallelized Numba wrapper that populates a chunk's voxel and lighting arrays 
+        deterministically based on the world seed.
+        """
         np.random.seed(seed ^ cx ^ cy ^ cz)
         random.seed(seed ^ cx ^ cy ^ cz)
         for x in range(CHUNK_SIZE):
@@ -3652,6 +3990,10 @@ class Chunk:
     @staticmethod
     @njit(cache=True)
     def fill_initial_sunlight_only(voxels, lightmap, cx, cy, cz, perm_array):
+        """
+        A Numba-optimized function to fill sunlight in a chunk's lightmap without modifying the voxel data.
+        Used during world loading to quickly restore lighting without regenerating terrain.
+        """
         fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
 
 ===== D:\Pyrite\src\world_objects\clouds.py =====
@@ -3661,14 +4003,27 @@ from meshes.cloud_mesh import CloudMesh
 
 
 class Clouds:
+    """
+    Manages the procedural 3D cloud layer in the sky.
+    Handles updating the time for cloud movement and rendering the cloud mesh.
+    """
     def __init__(self, app):
+        """
+        Initializes the clouds object and generates its associated procedural mesh.
+        """
         self.app = app
         self.mesh = CloudMesh(app)
 
     def update(self):
+        """
+        Updates the 'u_time' uniform in the cloud shader to animate their movement.
+        """
         self.mesh.program['u_time'] = self.app.world_session_time
 
     def render(self):
+        """
+        Issues the draw call to render the 3D clouds.
+        """
         self.mesh.render()
 
 ===== D:\Pyrite\src\world_objects\item.py =====
@@ -3682,7 +4037,15 @@ from meshes.obj_mesh import ObjMesh
 
 
 class Item:
+    """
+    Represents a physical, dropped 3D item entity in the world.
+    Handles gravity, sliding friction, bouncing, and player pickup detection.
+    """
     def __init__(self, app, position, voxel_id):
+        """
+        Spawns an item bursting out of the specified position with a randomized velocity,
+        and applies a short pickup delay to prevent instant re-collection.
+        """
         self.app = app
         self.position = glm.vec3(position) + 0.5 # Burst from the center of the block
         self.velocity = glm.vec3((random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER, 0.005, (random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER)
@@ -3693,6 +4056,10 @@ class Item:
         self.pickup_delay = pg.time.get_ticks() + ITEM_PICKUP_DELAY
 
     def update(self):
+        """
+        Applies continuous gravity and velocity updates, handles simple ground collisions,
+        and destroys the item if it falls into the void or is collected by the player.
+        """
         self.velocity.y += GRAVITY * self.app.delta_time
         self.position += self.velocity * self.app.delta_time
         
@@ -3716,13 +4083,25 @@ class Item:
                     self.app.sounds.play_place_block() # Pop sound!
 
     def get_model_matrix(self):
+        """
+        Returns the transformation matrix required to position, rotate, and scale 
+        the 3D item for rendering.
+        """
         m_model = glm.translate(glm.mat4(), self.position)
         m_model = glm.rotate(m_model, self.rotation, glm.vec3(0, 1, 0))
         return glm.scale(m_model, glm.vec3(self.scale))
 
 
 class ItemManager:
+    """
+    Manages all active Item entities in the scene.
+    Handles updating physics, rendering, and enforcing an entity cap to prevent lag.
+    """
     def __init__(self, app):
+        """
+        Initializes the item list and pre-loads the meshes required to render 
+        blocks and 3D models like pickaxes or sticks.
+        """
         self.app = app
         self.items = []
         self.mesh = ItemMesh(app)
@@ -3730,15 +4109,25 @@ class ItemManager:
         self.pickaxe_mesh = ObjMesh(app, get_path('assets/wooden_pickaxe/wooden_pickaxe.obj'))
 
     def add_item(self, position, voxel_id):
+        """
+        Spawns a new item entity into the world. Enforces a First-In-First-Out (FIFO) 
+        limit to automatically despawn old items if too many are active at once.
+        """
         # Prevent entity overflow crashes if too many blocks break at once
         if len(self.items) > ITEM_ENTITY_CAP: self.items.pop(0) # Automatically despawn the oldest item
         self.items.append(Item(self.app, position, voxel_id))
 
     def update(self):
+        """
+        Updates physics for all active items and removes ones marked as dead.
+        """
         for item in self.items: item.update()
         self.items = [item for item in self.items if not item.is_dead]
 
     def render(self):
+        """
+        Renders all items that fall within the specific item render distance.
+        """
         self.app.ctx.disable(self.app.ctx.CULL_FACE) # Don't cull rotating cubes
         
         player_pos = self.app.player.position
@@ -3762,7 +4151,14 @@ from meshes.base_mesh import BaseMesh
 
 
 class SkyMesh(BaseMesh):
+    """
+    Generates the geometry for the skybox, represented as a full-screen 2D quad.
+    """
     def __init__(self, app):
+        """
+        Initializes the sky mesh, binding it to the shader program responsible 
+        for rendering the atmosphere, sun, moon, and stars.
+        """
         super().__init__()
         self.app = app
         self.ctx = app.ctx
@@ -3772,18 +4168,34 @@ class SkyMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Returns the vertex coordinates for a full-screen quad spanning 
+        normalized device coordinates.
+        """
         # Full screen quad spanning normalized device coordinates [-1, 1]
         return np.array([
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
         ], dtype='float32')
 
+
 class Sky:
+    """
+    Manages the skybox object, handling the rendering of the atmospheric 
+    background and celestial bodies.
+    """
     def __init__(self, app):
+        """
+        Initializes the sky object and creates its associated full-screen quad mesh.
+        """
         self.app = app
         self.mesh = SkyMesh(app)
 
     def render(self):
+        """
+        Issues the draw call for the skybox. Temporarily disables depth testing 
+        to ensure the sky is drawn strictly behind all other 3D geometry.
+        """
         self.app.ctx.disable(mgl.DEPTH_TEST)
         self.mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
@@ -3795,7 +4207,15 @@ from meshes.cube_mesh import CubeMesh
 
 
 class VoxelMarker:
+    """
+    Renders a 3D wireframe highlight around the voxel currently targeted by the player.
+    It tracks the voxel handler's targeted position and visually outlines it.
+    """
     def __init__(self, voxel_handler):
+        """
+        Initializes the voxel marker, binding it to the world's voxel handler
+        and preparing its wireframe cube mesh.
+        """
         self.app = voxel_handler.app
         self.handler = voxel_handler
         self.position = glm.vec3(0)
@@ -3803,6 +4223,10 @@ class VoxelMarker:
         self.mesh = CubeMesh(self.app)
 
     def update(self):
+        """
+        Updates the marker's 3D position to match the currently targeted voxel.
+        Adjusts position based on whether the player is aiming to break or place a block.
+        """
         if self.handler.voxel_id:
             if self.handler.interaction_mode:
                 self.position = self.handler.voxel_world_pos + self.handler.voxel_normal
@@ -3810,14 +4234,26 @@ class VoxelMarker:
                 self.position = self.handler.voxel_world_pos
 
     def set_uniform(self):
+        """
+        Sends the interaction mode and the calculated model transformation matrix
+        to the voxel marker's shader program.
+        """
         self.mesh.program['mode_id'] = self.handler.interaction_mode
         self.mesh.program['m_model'].write(self.get_model_matrix())
 
     def get_model_matrix(self):
+        """
+        Calculates the transformation matrix required to position the wireframe
+        marker correctly at the targeted voxel's world space coordinates.
+        """
         m_model = glm.translate(glm.mat4(), glm.vec3(self.position))
         return m_model
 
     def render(self):
+        """
+        Issues the draw call for the wireframe cube if the player is actively
+        targeting a valid block in the world.
+        """
         if self.handler.voxel_id:
             self.set_uniform()
             self.mesh.render()
@@ -3832,7 +4268,16 @@ from frustum import Frustum
 
 
 class Camera:
+    """
+    Represents a 3D camera in the world.
+    Handles position, orientation (yaw/pitch), view matrix calculation,
+    and movement direction vectors.
+    """
     def __init__(self, position, yaw, pitch):
+        """
+        Initializes the camera at a given position and orientation, and creates 
+        the perspective projection matrix and viewing frustum.
+        """
         self.position = glm.vec3(position)
         self.yaw = glm.radians(yaw)
         self.pitch = glm.radians(pitch)
@@ -3847,13 +4292,23 @@ class Camera:
         self.frustum = Frustum(self)
 
     def update(self):
+        """
+        Updates the camera's directional vectors and view matrix for the current frame.
+        """
         self.update_vectors()
         self.update_view_matrix()
 
     def update_view_matrix(self):
+        """
+        Calculates the OpenGL lookAt view matrix based on the camera's position and forward vector.
+        """
         self.m_view = glm.lookAt(self.position, self.position + self.forward, self.up)
 
     def update_vectors(self):
+        """
+        Recalculates the forward, right, and up vectors using spherical coordinates
+        derived from the current yaw and pitch.
+        """
         self.forward.x = glm.cos(self.yaw) * glm.cos(self.pitch)
         self.forward.y = glm.sin(self.pitch)
         self.forward.z = glm.sin(self.yaw) * glm.cos(self.pitch)
@@ -3863,28 +4318,52 @@ class Camera:
         self.up = glm.normalize(glm.cross(self.right, self.forward))
 
     def rotate_pitch(self, delta_y):
+        """
+        Adjusts the camera's pitch (up/down rotation), clamping it to prevent flipping over.
+        """
         self.pitch -= delta_y
         self.pitch = glm.clamp(self.pitch, -PITCH_MAX, PITCH_MAX)
 
     def rotate_yaw(self, delta_x):
+        """
+        Adjusts the camera's yaw (left/right rotation).
+        """
         self.yaw += delta_x
 
     def move_left(self, velocity):
+        """
+        Translates the camera leftward along its right vector.
+        """
         self.position -= self.right * velocity
 
     def move_right(self, velocity):
+        """
+        Translates the camera rightward along its right vector.
+        """
         self.position += self.right * velocity
 
     def move_up(self, velocity):
+        """
+        Translates the camera upward along its up vector.
+        """
         self.position += self.up * velocity
 
     def move_down(self, velocity):
+        """
+        Translates the camera downward along its up vector.
+        """
         self.position -= self.up * velocity
 
     def move_forward(self, velocity):
+        """
+        Translates the camera forward along its forward vector.
+        """
         self.position += self.forward * velocity
 
     def move_back(self, velocity):
+        """
+        Translates the camera backward along its forward vector.
+        """
         self.position -= self.forward * velocity
 
 ===== D:\Pyrite\src\frustum.py =====
@@ -3896,6 +4375,10 @@ from pyglm import glm
 
 
 class Frustum:
+    """
+    Calculates the camera's viewing frustum planes and boundaries dynamically 
+    based on the Field of View and Aspect Ratio.
+    """
     def __init__(self, camera):
         self.cam: Camera = camera # type: ignore
         self.update_factors(V_FOV, H_FOV)
@@ -3933,6 +4416,11 @@ class Frustum:
 
 @njit(cache=True, fastmath=True, parallel=True)
 def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
+    """
+    Numba-optimized vectorized frustum culling.
+    Rapidly tests an array of chunk centers against the camera's view frustum planes.
+    Returns a boolean array mask indicating which chunks are currently visible.
+    """
     n = len(chunk_centers)
     is_visible = np.empty(n, dtype=np.bool_)
 
@@ -3991,6 +4479,11 @@ DIRS = np.array([
 
 @njit(cache=True, nogil=True)
 def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
+    """
+    Numba-optimized helper to quickly retrieve a voxel ID from the global 
+    world arrays using absolute world coordinates. Returns a solid block (1) 
+    if the queried chunk is unloaded or out of bounds.
+    """
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx == -1: return 1
     lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
@@ -3999,6 +4492,10 @@ def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
+    """
+    Numba-optimized helper to rapidly read the packed light level (Sunlight and Blocklight) 
+    for a specific absolute world coordinate. Returns completely dark (0) if out of bounds.
+    """
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx == -1: return 0
     lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
@@ -4007,6 +4504,10 @@ def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
+    """
+    Numba-optimized helper to directly write a packed light value into the global 
+    lightmap arrays at the specified absolute world coordinate.
+    """
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx != -1:
         lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
@@ -4015,6 +4516,11 @@ def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Numba-optimized Breadth-First Search (BFS) light propagation algorithm.
+    Consumes a queue of light nodes and spreads their brightness outward into adjacent 
+    transparent blocks (air, water, glass) while respecting bounds and diminishing intensity.
+    """
     # Initialize with dummy arrays to satisfy Numba's strict type inference
     local_voxels = world_voxels[0] 
     local_lightmaps = world_lightmaps[0]
@@ -4087,6 +4593,11 @@ def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, ch
 
 @njit(cache=True, nogil=True)
 def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Scans a newly loaded/generated chunk for sunlight blocks (level 15) and light-emitting 
+    blocks (glowstone). Adds these blocks to a queue and triggers their initial internal 
+    BFS propagation to light up the chunk.
+    """
     queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
     queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
@@ -4146,6 +4657,10 @@ def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positio
 
 @njit(cache=True, nogil=True)
 def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Cross-chunk boundary light bleeding. Evaluates the outer borders of a given chunk against 
+    its neighboring chunks to allow light to properly spill in or out seamlessly.
+    """
     queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
     queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
@@ -4202,6 +4717,11 @@ def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_posit
 
 @njit(cache=True, nogil=True)
 def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill):
+    """
+    Strips out lighting dynamically when a light source (or opening) is blocked/destroyed.
+    Removes any light dependent on the broken node, but captures any overlapping brighter light 
+    nodes into a `refill_queue` so the space can be re-illuminated by surviving light sources.
+    """
     queue = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     head = 0
     tail = 0
@@ -4240,6 +4760,10 @@ def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_po
 
 @njit(cache=True, nogil=True)
 def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Executed when a player places a solid block. Strips existing light from the space
+    and propogates a refill sequence for neighbouring light source to compensate.
+    """
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     sun, block = curr_val >> 4, curr_val & 15
     set_light_fast(wx, wy, wz, 0, world_lightmaps, chunk_positions)
@@ -4255,6 +4779,11 @@ def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_po
 
 @njit(cache=True, nogil=True)
 def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Executed when a player destroys a block. Allows surrounding light to flood into the
+    newly opened space. Implements an O(1) verticle linear raycast optimization if the
+    block broken was covering directly top-down sunlight.
+    """
     queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
     queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
@@ -4296,6 +4825,10 @@ def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_p
 
 @njit(cache=True, nogil=True)
 def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Hardcodes a block light value of 14 into the grid and triggers a blocklight BFS
+    propogation. Used exclusively for placing items like Glowstone.
+    """
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)
     
@@ -4323,7 +4856,16 @@ from ui import TextRenderer, UITextMesh, Menu, PauseMenu, OptionsMenu
 
 
 class Pyrite:
+    """
+    The core engine application class. 
+    Manages the Pygame window, ModernGL context, main game loop, and dispatches 
+    rendering and logic to the active game state (e.g., Menus vs In-Game).
+    """
     def __init__(self):
+        """
+        Initializes Pygame, the OpenGL context, window settings, and prepares 
+        global game state variables and configurations.
+        """
         pg.init()
         try:
             icon_img = pg.image.load(get_path('assets/icon-nobg.png'))
@@ -4370,6 +4912,9 @@ class Pyrite:
         self.on_init()
 
     def load_config(self):
+        """
+        Reads and applies engine settings from a local JSON configuration file.
+        """
         if os.path.exists('config.json'):
             with open('config.json', 'r') as f:
                 try:
@@ -4378,10 +4923,17 @@ class Pyrite:
                     pass
 
     def save_config(self):
+        """
+        Serializes and saves the active engine configuration to disk.
+        """
         with open('config.json', 'w') as f:
             json.dump(self.config, f)
 
     def on_init(self):
+        """
+        Instantiates critical subsystems including UI menus, Shader programs, 
+        Sound mixers, Textures, and the Player entity.
+        """
         self.textures = Textures(self)
         self.player = Player(self)
         self.sounds = Sounds(self)
@@ -4391,25 +4943,29 @@ class Pyrite:
         self.options_menu = OptionsMenu(self)
 
     def init_game_session(self, save_name="Default_World", force_seed=None, game_mode=None):
+        """
+        Initializes a designated world session, seeding the procedural generator
+        and executing a blocking load loop until the initial area is fully generated 
+        and prepared for rendering.
+        """
         self.game_state = 'LOADING'
         
         if game_mode is not None:
             self.player.game_mode = game_mode
 
-        # --- SEED DETERMINATION ---
         # Determine the seed BEFORE any world objects are created to prevent premature Numba compilation.
         save_path = f'saves/{save_name}.db'
         seed = 0
         
         if os.path.exists(save_path):
             try:
-                conn = sqlite3.connect(save_path)
-                cursor = conn.cursor()
+                connection = sqlite3.connect(save_path)
+                cursor = connection.cursor()
                 cursor.execute('SELECT seed FROM world_meta WHERE id=1')
                 row = cursor.fetchone()
                 if row:
                     seed = row[0]
-                conn.close()
+                connection.close()
             except Exception as e:
                 print(f"[SYSTEM] Could not read seed from existing save file: {e}")
                 seed = random.randint(100000, 999999999)
@@ -4448,6 +5004,11 @@ class Pyrite:
         self.game_state = 'IN_GAME'
 
     def render_loading_screen(self, text="INITIALIZING..."):
+        """
+        Renders a minimal UI overlay during heavily blocking load operations, 
+        ensuring Pygame's event queue is flushed so the operating system doesn't 
+        flag the application as "Not Responding".
+        """
         # Discard pending events to prevent OS freezing and buffered inputs
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -4490,6 +5051,10 @@ class Pyrite:
         pg.display.flip()
 
     def update(self):
+        """
+        Advances the central engine logic. Delegates to the active game state 
+        (e.g., ticking the world simulation, evaluating UI animations).
+        """
         if self.game_state == 'MAIN_MENU':
             self.menu.update()
         elif self.game_state in ('IN_GAME', 'INVENTORY'):
@@ -4512,6 +5077,10 @@ class Pyrite:
             pg.display.set_caption('Pyrite')
 
     def render(self):
+        """
+        Clears the OpenGL framebuffer and issues draw instructions corresponding 
+        to the active state, layering menus over 3D scenes when appropriate.
+        """
         self.ctx.clear(color=self.bg_color)
         if self.game_state == 'MAIN_MENU':
             self.ctx.disable(mgl.DEPTH_TEST)
@@ -4538,6 +5107,11 @@ class Pyrite:
         pg.display.flip()
 
     def handle_events(self):
+        """
+        Polls raw input events from the operating system and routes them 
+        to the respective handlers (e.g., player movement, UI button clicks, 
+        or screen toggles).
+        """
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.quit_game()
@@ -4598,9 +5172,16 @@ class Pyrite:
                 self.options_menu.handle_event(event)
 
     def quit_game(self):
+        """
+        Interrupts the primary application execution loop to safely shut down.
+        """
         self.is_running = False
 
     def run(self):
+        """
+        The primary execution loop tracking logic updates, event polling, 
+        and frame rendering until the application halts.
+        """
         while self.is_running:
             self.handle_events()
             self.update()
@@ -4630,11 +5211,18 @@ perm, perm_grad_index3 = _init(seed=0)
 
 @njit
 def _seed_numba(new_seed):
+    """
+    Internal helper to seed Numba's random number generator and standard Python random.
+    """
     np.random.seed(new_seed)
     random.seed(new_seed)
 
 
 def set_seed(new_seed):
+    """
+    Updates the global OpenSimplex permutation arrays with a deterministic seed,
+    ensuring identical noise generation for a given world seed.
+    """
     global perm, perm_grad_index3
     perm, perm_grad_index3 = _init(seed=new_seed)
     _seed_numba(new_seed)
@@ -4642,11 +5230,17 @@ def set_seed(new_seed):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def noise2(x, y, perm_array):
+    """
+    Evaluates 2D Simplex Noise using the pre-compiled permutation array.
+    """
     return _noise2(x, y, perm_array)
 
 
 @njit(cache=True, fastmath=True, nogil=True)
 def noise3(x, y, z, perm_array, perm_grad_array):
+    """
+    Evaluates 3D Simplex Noise using the pre-compiled permutation arrays.
+    """
     return _noise3(x, y, z, perm_array, perm_grad_array)
 
 ===== D:\Pyrite\src\player.py =====
@@ -4661,7 +5255,16 @@ import noise
 
 
 class Player(Camera):
+    """
+    Represents the player entity in the world.
+    Handles movement physics, collision detection, block interaction,
+    inventory management, and survival statistics like health and hunger.
+    """
     def __init__(self, app, position=None, yaw=-90, pitch=0):
+        """
+        Initializes the player's attributes, camera orientation, physics state,
+        inventory system, and survival stats.
+        """
         self.app = app
         if position is None:
             position = self.find_spawn_position()
@@ -4702,6 +5305,10 @@ class Player(Camera):
         self.spawn_immunity = True
 
     def find_spawn_position(self):        
+        """
+        Locates a valid surface spawn position near the center of the world
+        by scanning outward iteratively until a solid block above water is found.
+        """
         center_x = int(CENTER_XZ)
         center_z = int(CENTER_XZ)
         
@@ -4722,6 +5329,10 @@ class Player(Camera):
         return glm.vec3(PLAYER_POS)
 
     def update(self):
+        """
+        Called every frame. Updates player inputs, physics logic, view bobbing,
+        dynamic FOV for sprinting, fluid dynamics, and core survival metric drains.
+        """
         if self.app.game_state == 'IN_GAME':
             self.mouse_control()
             
@@ -4847,6 +5458,10 @@ class Player(Camera):
         super().update()
 
     def handle_event(self, event):
+        """
+        Processes discrete user inputs such as key presses (mode toggling, hotbar selection)
+        and mouse clicks (block mining and placing).
+        """
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_f:
                 self.game_mode = SURVIVAL if self.game_mode == CREATIVE else CREATIVE
@@ -4876,6 +5491,10 @@ class Player(Camera):
                 self.hotbar_index = (self.hotbar_index + 1) % HOTBAR_SIZE
 
     def mouse_control(self):
+        """
+        Retrieves relative mouse movement and adjusts the camera's yaw and pitch
+        based on the configured sensitivity.
+        """
         mouse_dx, mouse_dy = pg.mouse.get_rel()
         sens = self.app.config['sensitivity']
         if mouse_dx:
@@ -4884,6 +5503,10 @@ class Player(Camera):
             self.rotate_pitch(delta_y=mouse_dy * sens)
 
     def handle_interaction(self):
+        """
+        Processes continuous block interactions (mining and placing). 
+        Factoring in tool requirements, block hardness, and interaction delays.
+        """
         mouse_pressed = pg.mouse.get_pressed()
         voxel_handler = self.app.scene.world.voxel_handler
         
@@ -4927,6 +5550,10 @@ class Player(Camera):
                 self.interaction_timer = current_time
 
     def keyboard_control(self):
+        """
+        Calculates movement vectors based on keyboard input. Adapts movement
+        physics depending on whether the player is in Creative or Survival mode.
+        """
         if self.game_mode == CREATIVE:
             key_state = pg.key.get_pressed()
             vel = PLAYER_SPEED * 5 * self.app.delta_time
@@ -4984,6 +5611,10 @@ class Player(Camera):
                     self.on_ground = False
 
     def apply_gravity(self):
+        """
+        Applies downward gravitational acceleration to the player's vertical velocity,
+        accounting for drag if the player is swimming in water.
+        """
         if self.in_water:
             self.velocity.y += GRAVITY * PLAYER_UNDERWATER_GRAVITY_MULTIPLIER * self.app.delta_time
             self.velocity.y *= max(0.0, 1.0 - PLAYER_VERTICAL_WATER_DRAG * self.app.delta_time) # vertical water drag
@@ -4991,6 +5622,10 @@ class Player(Camera):
             self.velocity.y += GRAVITY * self.app.delta_time
 
     def move_and_collide(self):
+        """
+        Moves the player incrementally along the X, Y, and Z axes,
+        resolving collision clipping individually for each axis.
+        """
         # X axis
         # self.position.x += self.velocity.x
         self.feet_pos.x += self.velocity.x * self.app.delta_time
@@ -5005,6 +5640,11 @@ class Player(Camera):
         self.resolve_axis('z')
 
     def resolve_axis(self, axis):
+        """
+        Checks for intersection between the player's AABB and the surrounding 
+        solid voxels. Stops the player's velocity along the tested axis if 
+        a collision is detected to prevent clipping.
+        """
         aabb_min, aabb_max = self.get_aabb()
         min_x = int(glm.floor(aabb_min.x))
         max_x = int(glm.floor(aabb_max.x))
@@ -5050,6 +5690,10 @@ class Player(Camera):
                         aabb_min, aabb_max = self.get_aabb()
 
     def get_aabb(self):
+        """
+        Calculates and returns the minimum and maximum boundaries of the 
+        Axis-Aligned Bounding Box representing the player's physical volume.
+        """
         min_v = glm.vec3(
             # self.position.x - PLAYER_HALF_W,
             self.feet_pos.x - PLAYER_HALF_W,
@@ -5070,6 +5714,10 @@ class Player(Camera):
 
     @staticmethod
     def aabb_intersect(a_min, a_max, b_min, b_max):
+        """
+        Static helper that determines if two given 3D Axis-Aligned Bounding 
+        Boxes overlap with each other.
+        """
         return (
             a_min.x < b_max.x and a_max.x > b_min.x and
             a_min.y < b_max.y and a_max.y > b_min.y and
@@ -5077,6 +5725,10 @@ class Player(Camera):
         )
 
     def add_item(self, voxel_id):
+        """
+        Attempts to add an item to the player's inventory by stacking onto 
+        existing slots or finding an empty one. Returns True if successful.
+        """
         # Check if we already have a stack of this item
         for i in range(36): # Only check the main 36 storage slots
             if self.inventory[i] == voxel_id and self.inventory_counts[i] < 64:
@@ -5091,6 +5743,10 @@ class Player(Camera):
         return False # Inventory is full!
 
     def take_damage(self, amount):
+        """
+        Reduces player health by the specified amount (if in Survival mode),
+        triggering a respawn sequence if health is completely depleted.
+        """
         if self.game_mode == CREATIVE:
             return
         self.health -= amount
@@ -5099,6 +5755,10 @@ class Player(Camera):
             self.respawn()
 
     def respawn(self):
+        """
+        Resets survival statistics and teleports the player back to a 
+        safe, auto-calculated spawn position on the surface.
+        """
         self.health = self.max_health
         self.hunger = self.max_hunger
         self.oxygen = self.max_oxygen
@@ -5126,7 +5786,16 @@ from world_objects.item import ItemManager
 
 
 class Scene:
+    """
+    Acts as the primary game session container.
+    Instantiates and manages the world environment, 3D items, UI components,
+    and handles the overarching rendering pipeline for the in-game state.
+    """
     def __init__(self, app, save_name, seed):
+        """
+        Initializes the scene components, including the terrain world,
+        environment decorations (clouds/sky), 3D item entities, and HUD interfaces.
+        """
         self.app = app
         self.world = World(self.app, save_name, seed)
         self.app.render_loading_screen("INITIALIZING MARKERS...")
@@ -5143,12 +5812,20 @@ class Scene:
         self.debug_overlay = DebugOverlay(app)
 
     def update(self):
+        """
+        Ticks the overarching logic of the scene, progressing the world state,
+        updating environmental visuals, and tracking physics for active items.
+        """
         self.world.update()
         self.voxel_marker.update()
         self.clouds.update()
         self.item_manager.update()
 
     def render(self):
+        """
+        Executes the multi-pass rendering pipeline.
+        Draws the skybox, opaque chunks, entities, transparent layers (water/clouds), and UI.
+        """
         if self.app.wireframe:
             self.app.ctx.wireframe = True
         
@@ -5527,7 +6204,15 @@ from settings import *
 
 
 class ShaderProgram:
+    """
+    Compiles, links, and manages all GLSL shader programs used by the engine.
+    Handles sending static and dynamic uniform data (view matrices, lighting, fog) to the GPU.
+    """
     def __init__(self, app):
+        """
+        Retrieves the GLSL source code for chunks, markers, UI elements, and environments,
+        then registers them into ModernGL programs.
+        """
         self.app = app
         self.ctx = app.ctx
         self.player = app.player
@@ -5546,6 +6231,10 @@ class ShaderProgram:
         self.set_uniforms_on_init()
 
     def set_uniforms_on_init(self):
+        """
+        Initializes static shader uniforms (like texture assignments, texture mapping arrays,
+        and basic projection matrices) that only need to be uploaded once.
+        """
         # Build the fast lookup array for the shaders
         tex_map = np.zeros(256, dtype='int32')
         for uid, tex_id in TEXTURE_MAP.items(): tex_map[uid] = tex_id
@@ -5604,6 +6293,11 @@ class ShaderProgram:
         self.obj['bg_color'].write(BG_COLOR)
 
     def update(self):
+        """
+        Updates dynamic uniforms every frame. Sends the camera's view matrix, 
+        calculates dynamic sun direction/fog density based on the day-night cycle,
+        and syncs UI animations (like mining progress).
+        """
         self.chunk['m_view'].write(self.player.m_view)
         if 'u_time' in self.chunk: self.chunk['u_time'] = self.app.world_session_time # Make sure the shader actually has the uniform before writing
         self.voxel_marker['m_view'].write(self.player.m_view)
@@ -5676,6 +6370,9 @@ class ShaderProgram:
         self.sky['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
+        """
+        Helper function to load and compile a matching pair of .vert and .frag shader files from disk.
+        """
         with open(get_path(f'src/shaders/{shader_name}.vert')) as file: vertex_shader = file.read()
         with open(get_path(f'src/shaders/{shader_name}.frag')) as file: fragment_shader = file.read()
         program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
@@ -5689,7 +6386,15 @@ from settings import *
 
 
 class Sounds:
+    """
+    Manages all audio assets, sound effects, and background music.
+    Handles loading sounds, randomizing playback for variety, and mapping specific
+    blocks to their respective material sound effects.
+    """
     def __init__(self, app):
+        """
+        Initializes the Pygame mixer, loads all block sounds, and starts the background music loop.
+        """
         self.app = app
         pg.mixer.init()
         pg.mixer.set_num_channels(32)
@@ -5823,6 +6528,10 @@ class Sounds:
         pg.mixer.music.play(-1) # Loop forever in the background
 
     def play_walk(self, voxel_id):
+        """
+        Plays a walking footstep sound based on the material of the block the player is standing on.
+        Automatically cycles through the available footstep variations.
+        """
         current_time = pg.time.get_ticks()
         if current_time - self.last_hit_time > 500: # Reset to 1 if you stop walking
             self.hit_index = 0
@@ -5838,18 +6547,30 @@ class Sounds:
         self.last_hit_time = current_time
 
     def play_break(self, voxel_id):
+        """
+        Plays a hard breaking sound when a block is fully destroyed.
+        """
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['break']).play()
 
     def play_place(self, voxel_id):
+        """
+        Plays a block placement sound when adding a new block to the world.
+        """
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['place']).play()
 
     def play_jump(self, voxel_id):
+        """
+        Plays a jump sound when the player jumps.
+        """
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['jump']).play()
         
     def play_breaking(self, voxel_id, mining_time, mining_duration):
+        """
+        Plays a continuous sequence of hitting sounds mapped to the progress of mining a block.
+        """
         if mining_time == 0.0:
             self.mining_index = -1
             
@@ -5865,7 +6586,11 @@ class Sounds:
             mining_sounds[target_index].play()
             self.mining_index = target_index
 
-    def play_place_block(self): # Played when items pop into the player's inventory
+    def play_place_block(self):
+        """
+        Plays a pop sound effect when a dropped item entity is collected and added 
+        to the player's inventory.
+        """
         self.pop_sound.play()
 
 ===== D:\Pyrite\src\terrain_gen.py =====
@@ -5880,6 +6605,10 @@ from settings import *
 # Has Biome Dithering to create more natural transitions and less blocky borders.
 @njit(cache=True, fastmath=True, nogil=True)
 def get_biome(x, z, perm_array):
+    """
+    Evaluates Simplex noise to determine the overarching temperature and moisture
+    levels of a specific vertical column, shaping its respective biome.
+    """
     # Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)
     # Scaled down frequencies by 10x to create massive, sprawling biomes
     temp = noise2(x * 0.002, z * 0.002, perm_array)
@@ -5889,6 +6618,10 @@ def get_biome(x, z, perm_array):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def get_height(x, z, perm_array):
+    """
+    Calculates the absolute maximum surface elevation of the terrain at a specific
+    X,Z coordinate using fractional Brownian motion and continentalness modifiers.
+    """
     temp, moist = get_biome(x, z, perm_array)
 
     # Continentalness: Controls overall elevation independently from climate
@@ -5937,11 +6670,19 @@ def get_height(x, z, perm_array):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def get_index(x, y, z):
+    """
+    Translates a localized 3D chunk coordinate (x, y, z) into a flattened
+    1D array index for highly optimized, contiguous memory access.
+    """
     return x + CHUNK_SIZE * z + CHUNK_AREA * y
 
 
 @njit(cache=True, fastmath=True, nogil=True)
 def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
+    """
+    Procedurally generates a single vertical column of blocks within a chunk.
+    Applies complex biome mapping, depth stratification, and 3D cave carving logic.
+    """
     wx = x + cx
     wz = z + cz
     world_height = get_height(wx, wz, perm_array)
@@ -6045,6 +6786,10 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def place_tree(voxels, x, y, z, voxel_id, tree_prob):
+    """
+    Constructs a localized tree structure (wood trunk and spherical leaf crown)
+    within the chunk volume if probability and physical boundaries allow for it.
+    """
     rnd = random()
     if rnd > tree_prob:
         return None
@@ -6079,6 +6824,10 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array):
+    """
+    Initializes a newly generated chunk's lightmap by simulating direct,
+    overhead sunlight falling vertically onto the procedural terrain layout.
+    """
     for x in range(CHUNK_SIZE):
         for z in range(CHUNK_SIZE):
             wx = x + cx
@@ -6344,7 +7093,15 @@ from settings import get_path
 
 
 class Textures:
+    """
+    Loads, configures, and binds OpenGL textures and texture arrays.
+    Handles mipmapping, anisotropic filtering, and texture units for crisp rendering.
+    """
     def __init__(self, app):
+        """
+        Instantiates and assigns the various textures to their respective OpenGL 
+        texture locations so shaders can access them simultaneously.
+        """
         self.app = app
         self.ctx = app.ctx
 
@@ -6363,6 +7120,11 @@ class Textures:
         self.texture_pickaxe.use(location=6)
 
     def load(self, file_name, is_tex_array=False, rotation=0, flip_x=True, flip_y=False):
+        """
+        Reads an image file and converts it into an OpenGL Texture or TextureArray.
+        Applies requested rotations/flips and automatically calculates 3D texture array 
+        dimensions if the image contains vertical strips.
+        """
         texture = pg.image.load(get_path(f'assets/{file_name}'))
         if rotation != 0:
             texture = pg.transform.rotate(texture, rotation)
@@ -6393,6 +7155,11 @@ from lighting import update_light_place_block, place_torch, update_light_remove_
 
 
 class VoxelHandler:
+    """
+    Performs raycasting from the player's camera to interact with the voxel world.
+    Handles calculating the targeted block, removing blocks (mining), and adding 
+    blocks (placing), while triggering necessary lighting and meshing updates.
+    """
     def __init__(self, world):
         self.app = world.app
         self.chunks = world.chunks
@@ -6409,6 +7176,11 @@ class VoxelHandler:
         self.interaction_mode = 0  
 
     def add_voxel(self):
+        """
+        Attempts to place the currently held block into the world at the targeted face.
+        Checks for player collision, updates lighting (e.g. for Glowstone), 
+        and queues adjacent chunks for remeshing.
+        """
         if self.voxel_id:
             current_id = self.app.player.inventory[self.app.player.hotbar_index]
             if current_id == 0 or current_id in NON_PLACEABLE:
@@ -6452,6 +7224,11 @@ class VoxelHandler:
                     chunk.is_empty = False
 
     def rebuild_adjacent_chunks(self, world_pos, is_light_update=True):
+        """
+        Automatically queues neighboring chunks for mesh regeneration if a block 
+        modification occurs near a chunk border, or if it creates a large lighting 
+        update requiring neighbors to recalculate their block/sunlight visuals.
+        """
         wx, wy, wz = int(world_pos.x), int(world_pos.y), int(world_pos.z)
         cx, cy, cz = wx // CHUNK_SIZE, wy // CHUNK_SIZE, wz // CHUNK_SIZE
 
@@ -6480,6 +7257,11 @@ class VoxelHandler:
                             self.app.scene.world.build_queue.append(chunk)
 
     def remove_voxel(self):
+        """
+        Breaks the targeted voxel, updates local block lighting (stripping or 
+        letting sunlight in), spawns a dropped item entity in Survival mode, 
+        and queues chunks for remeshing.
+        """
         if self.voxel_id:
             wx, wy, wz = self.voxel_world_pos
             if self.voxel_id == GLOWSTONE:
@@ -6513,6 +7295,11 @@ class VoxelHandler:
         self.ray_cast()
 
     def ray_cast(self):
+        """
+        Casts a ray forward from the camera's position through the voxel grid using 
+        a fast voxel traversal algorithm. Determines the exact targeted voxel and 
+        its normal face.
+        """
         # start point
         x1, y1, z1 = self.app.player.position
         # end point
@@ -6615,7 +7402,16 @@ import noise
 
 
 class World:
+    """
+    Manages the global 3D voxel environment.
+    Responsible for chunk streaming, multithreaded terrain generation, mesh 
+    building queues, and persistent background SQLite disk storage.
+    """
     def __init__(self, app, save_name, world_seed):
+        """
+        Initializes the world arrays, establishes an async-like SQLite database 
+        connection, restores player data, and warms up the Numba compiler.
+        """
         self.world_seed = world_seed
         self.app = app
         self.app.render_loading_screen("ALLOCATING MEMORY...")
@@ -6643,7 +7439,7 @@ class World:
         os.makedirs('saves', exist_ok=True)
         self.save_path = f'saves/{self.save_name}.db'
         self.db_lock = threading.Lock()
-        self.conn = sqlite3.connect(self.save_path, check_same_thread=False)
+        self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
         self.cursor = self.conn.cursor()
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS chunks (
                                 x INTEGER, y INTEGER, z INTEGER, 
@@ -6761,6 +7557,10 @@ class World:
         self.app.render_loading_screen("NUMBA COMPILATION SUCCESSFUL!")
 
     def update(self):
+        """
+        Tick loop that handles continuous background data processing. Steps through
+        loading chunks, dispatching thread-pool mesh tasks, and streaming logic.
+        """
         self.db_load_time = 0.0
         self.terrain_gen_time = 0.0
 
@@ -6792,6 +7592,11 @@ class World:
         self.process_mesh_queue()
 
     def process_mesh_queue(self):
+        """
+        Pulls completed mesh data from background threads and safely initializes 
+        OpenGL Vertex Array Objects (VAOs) on the main thread, utilizing a 
+        recycling VBO pool to prevent VRAM memory leaks.
+        """
         # Safely create OpenGL VAOs on the main thread
         ready_count = 0
         for item in list(self.mesh_queue):
@@ -6818,6 +7623,11 @@ class World:
                     break
 
     def process_load_queue(self):
+        """
+        Consumes asynchronously loaded/generated chunk data, registers it into 
+        the active world arrays, applies volumetric lighting (BFS), and schedules 
+        the chunk and its neighbors for mesh building.
+        """
         processed = 0
         for item in list(self.load_queue):
             chunk, future = item
@@ -6868,6 +7678,11 @@ class World:
                     break
 
     def _fetch_or_generate_voxels(self, x, y, z):
+        """
+        Background worker function that attempts to retrieve compressed chunk data
+        from the SQLite database. If the chunk has never been visited, generates 
+        brand new procedural terrain using Numba logic instead.
+        """
         t0 = time.perf_counter()
         cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
         with self.db_lock:
@@ -6895,6 +7710,11 @@ class World:
             return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
     def stream_chunks(self):
+        """
+        Checks the player's position against the render distance to determine 
+        which distant chunks to unload, and which new surrounding chunks to queue 
+        for background loading.
+        """
         render_dist = int(self.app.config.get('render_distance', 4))
         player_cx = int(self.app.player.position.x // CHUNK_SIZE)
         player_cz = int(self.app.player.position.z // CHUNK_SIZE)
@@ -6930,6 +7750,10 @@ class World:
             self.load_chunk(*pos)
                         
     def load_chunk(self, x, y, z):
+        """
+        Initializes a Chunk instance at the given coordinates and dispatches 
+        an asynchronous task to fetch or generate its actual voxel data.
+        """
         chunk_index = (x % WORLD_W) + WORLD_W * (z % WORLD_D) + WORLD_AREA * (y % WORLD_H)
         
         old_chunk = self.chunks[chunk_index]
@@ -6945,6 +7769,10 @@ class World:
         self.load_queue.append((chunk, future))
 
     def save_chunk_to_db(self, x, y, z, voxels, lightmap):
+        """
+        Compresses a chunk's massive 1D voxel and lighting arrays using zlib, 
+        and executes a thread-safe write to the SQLite database.
+        """
         data = zlib.compress(voxels.tobytes())
         l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
         with self.db_lock:
@@ -6952,6 +7780,10 @@ class World:
             self.conn.commit()
 
     def unload_chunk(self, pos):
+        """
+        Removes a chunk from the active world space, triggers an asynchronous 
+        disk save, purges it from any pending queues, and recycles its VRAM.
+        """
         if pos in self.active_chunks:
             chunk = self.active_chunks.pop(pos)
 
@@ -6981,6 +7813,11 @@ class World:
                     break
 
     def render(self):
+        """
+        Performs dynamic vectorized frustum culling and hardware occlusion 
+        queries to identify visible chunks, then safely dispatches rendering 
+        calls to the GPU.
+        """
         player = self.app.player
         player_pos = player.position
         player_chunk_pos = (int(player_pos.x // CHUNK_SIZE), int(player_pos.z // CHUNK_SIZE))
@@ -7072,6 +7909,10 @@ class World:
             ctx.enable(mgl.CULL_FACE)
             
     def render_water(self):
+        """
+        A secondary rendering pass explicitly designed to draw transparent water 
+        meshes properly blended over the previously drawn opaque terrain.
+        """
         # We assume visibility is already calculated by the primary render() pass!
         freeze = getattr(self.app, 'freeze_culling', False)
         for chunk in self.sorted_chunks:
@@ -7079,6 +7920,10 @@ class World:
                 chunk.render_water()
             
     def save(self):
+        """
+        Synchronously dumps all currently active chunks, inventory contents, 
+        player coordinates, and world metadata safely to the SQLite disk on exit.
+        """
         # Save all currently active chunks synchronously
         for chunk in self.active_chunks.values():
             if not chunk.is_empty and chunk.voxels is not None:
@@ -7419,7 +8264,7 @@ Add different colors/phases/states for all the buttons, such as the active, disa
 Add animations such as fade in and out, move up, down, left and right, pop in and out, etc etc... to the menus for greater UI/UX. ( ! DONE ! )
 Add more tests to the tests directory.
 Update the docs in the docs directory. Right now, it is wayy too vague and misses a lot of Key points and smaller facts, etc. The explainations of all the system are also wayy to high level and vagie, making it impossible for others to ready the docs and easily replicate or create their own versions of the same system, without reading and understand the source code itself. ( ! DONE ! )
-Add doc strings to all the classes, methods and functions in all the python files and modules. The main focus of these doc strings should be on explain, describing or atleast breifing on what that specific class, method or function does, rather than on type hinting and such, etc.
+Add doc strings to all the classes, methods and functions in all the python files and modules. The main focus of these doc strings should be on explain, describing or atleast breifing on what that specific class, method or function does, rather than on type hinting and such, etc. ( ! DONE ! )
 Plan and add nice background to all the different menus in the main screen. perhaps of gorgeous looking terrain from our game ? or anything that may work and enhance the UX. ( ! DONE ! )
 Upgrade the scroll frame for the world buttons in the main menu screen to show kinda of a bar moving up and down when we are scrolling through it.
 Add Damage to player when the hunger reaches zero. Also, decrease the player's movement speed when in survival mode and the hunger is less than or equal to 30. For now, to recorver the hunger, the player has simply be standing in a place for maybe 3 sec ? befor the hunger starts to recover own it's own. The health of the player should also only be recovering when the player's hunger is full. this would create kinda of a cycle where a player would just be standing doing nothing for minutes if his health is very low and his hunger is also down as well. this means, when the player's hunger reaches full, his health would start to recover. should we make it so that when the player's health increases, his hunger decreases ? putting him in a visius cycle to health increasing hunger bar deceasing, then hunger bar increasing again, and due to which the health increasing and the hunger bar deceasing again ! is this actually a good idea for gameplay or UX ? is this whole idea even good for our game's survival mechanics or gameplay or UX ?

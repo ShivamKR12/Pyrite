@@ -2,7 +2,15 @@ from settings import *
 
 
 class ShaderProgram:
+    """
+    Compiles, links, and manages all GLSL shader programs used by the engine.
+    Handles sending static and dynamic uniform data (view matrices, lighting, fog) to the GPU.
+    """
     def __init__(self, app):
+        """
+        Retrieves the GLSL source code for chunks, markers, UI elements, and environments,
+        then registers them into ModernGL programs.
+        """
         self.app = app
         self.ctx = app.ctx
         self.player = app.player
@@ -21,6 +29,10 @@ class ShaderProgram:
         self.set_uniforms_on_init()
 
     def set_uniforms_on_init(self):
+        """
+        Initializes static shader uniforms (like texture assignments, texture mapping arrays,
+        and basic projection matrices) that only need to be uploaded once.
+        """
         # Build the fast lookup array for the shaders
         tex_map = np.zeros(256, dtype='int32')
         for uid, tex_id in TEXTURE_MAP.items(): tex_map[uid] = tex_id
@@ -79,6 +91,11 @@ class ShaderProgram:
         self.obj['bg_color'].write(BG_COLOR)
 
     def update(self):
+        """
+        Updates dynamic uniforms every frame. Sends the camera's view matrix, 
+        calculates dynamic sun direction/fog density based on the day-night cycle,
+        and syncs UI animations (like mining progress).
+        """
         self.chunk['m_view'].write(self.player.m_view)
         if 'u_time' in self.chunk: self.chunk['u_time'] = self.app.world_session_time # Make sure the shader actually has the uniform before writing
         self.voxel_marker['m_view'].write(self.player.m_view)
@@ -151,6 +168,9 @@ class ShaderProgram:
         self.sky['bg_color'].write(bg_color)
 
     def get_program(self, shader_name):
+        """
+        Helper function to load and compile a matching pair of .vert and .frag shader files from disk.
+        """
         with open(get_path(f'src/shaders/{shader_name}.vert')) as file: vertex_shader = file.read()
         with open(get_path(f'src/shaders/{shader_name}.frag')) as file: fragment_shader = file.read()
         program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)

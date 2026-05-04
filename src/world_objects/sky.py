@@ -4,7 +4,14 @@ from meshes.base_mesh import BaseMesh
 
 
 class SkyMesh(BaseMesh):
+    """
+    Generates the geometry for the skybox, represented as a full-screen 2D quad.
+    """
     def __init__(self, app):
+        """
+        Initializes the sky mesh, binding it to the shader program responsible 
+        for rendering the atmosphere, sun, moon, and stars.
+        """
         super().__init__()
         self.app = app
         self.ctx = app.ctx
@@ -14,18 +21,34 @@ class SkyMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Returns the vertex coordinates for a full-screen quad spanning 
+        normalized device coordinates.
+        """
         # Full screen quad spanning normalized device coordinates [-1, 1]
         return np.array([
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
         ], dtype='float32')
 
+
 class Sky:
+    """
+    Manages the skybox object, handling the rendering of the atmospheric 
+    background and celestial bodies.
+    """
     def __init__(self, app):
+        """
+        Initializes the sky object and creates its associated full-screen quad mesh.
+        """
         self.app = app
         self.mesh = SkyMesh(app)
 
     def render(self):
+        """
+        Issues the draw call for the skybox. Temporarily disables depth testing 
+        to ensure the sky is drawn strictly behind all other 3D geometry.
+        """
         self.app.ctx.disable(mgl.DEPTH_TEST)
         self.mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)

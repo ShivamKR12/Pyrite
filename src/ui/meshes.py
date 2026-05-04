@@ -4,7 +4,14 @@ import numpy as np
 
 
 class CrosshairMesh(BaseMesh):
+    """
+    Generates the geometry for the on-screen crosshair.
+    Draws a simple '+' sign directly in the center of the player's view.
+    """
     def __init__(self, app):
+        """
+        Initializes the crosshair mesh, binding it to the solid-color quad shader.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -14,6 +21,11 @@ class CrosshairMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Calculates the vertex coordinates and color data needed to form the 
+        horizontal and vertical lines of the crosshair, scaling it properly 
+        to match the window's aspect ratio.
+        """
         w = 0.015
         h = w * ASPECT_RATIO
         # Creates a perfect '+' sign in the center of the screen
@@ -30,7 +42,14 @@ class CrosshairMesh(BaseMesh):
 
 
 class BlockIconMesh(BaseMesh):
+    """
+    Handles the rendering geometry for 2D flat representations of 3D blocks.
+    Used extensively in the Hotbar and Inventory UI slots.
+    """
     def __init__(self, app):
+        """
+        Initializes the block icon mesh and connects it to the block UI shader.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -40,6 +59,10 @@ class BlockIconMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Returns the vertices and texture coordinates for a standard full-screen quad,
+        which is later scaled and positioned by the shader based on uniform offsets.
+        """
         # Standard normalized quad [-1, 1]
         vertices = [
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
@@ -50,7 +73,15 @@ class BlockIconMesh(BaseMesh):
 
 
 class UIColorMesh(BaseMesh):
+    """
+    Provides the geometry for rendering solid-color geometric elements 
+    in the UI, such as backgrounds, frames, selection highlights, and dimming overlays.
+    """
     def __init__(self, app):
+        """
+        Initializes the UI color mesh, attaching it to a simple shader that applies 
+        flat color uniforms instead of textures.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -60,6 +91,10 @@ class UIColorMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Returns the raw vertex positions for a 2D quad without texture coordinates, 
+        as the shape relies solely on color uniforms.
+        """
         vertices = [
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
@@ -68,7 +103,15 @@ class UIColorMesh(BaseMesh):
 
 
 class UITextMesh(BaseMesh):
+    """
+    Generates the geometry required to display text strings on the screen.
+    Used as a surface to map dynamically generated text textures onto.
+    """
     def __init__(self, app):
+        """
+        Initializes the UI text mesh, binding it to the text shader which handles 
+        transparency and alpha blending for clean font rendering.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -78,6 +121,10 @@ class UITextMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def get_vertex_data(self):
+        """
+        Returns the standard set of vertices and UV coordinates mapping a full 
+        texture onto a simple 2D rectangular quad.
+        """
         vertices = [
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)

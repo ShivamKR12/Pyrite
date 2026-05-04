@@ -16,7 +16,16 @@ from ui import TextRenderer, UITextMesh, Menu, PauseMenu, OptionsMenu
 
 
 class Pyrite:
+    """
+    The core engine application class. 
+    Manages the Pygame window, ModernGL context, main game loop, and dispatches 
+    rendering and logic to the active game state (e.g., Menus vs In-Game).
+    """
     def __init__(self):
+        """
+        Initializes Pygame, the OpenGL context, window settings, and prepares 
+        global game state variables and configurations.
+        """
         pg.init()
         try:
             icon_img = pg.image.load(get_path('assets/icon-nobg.png'))
@@ -63,6 +72,9 @@ class Pyrite:
         self.on_init()
 
     def load_config(self):
+        """
+        Reads and applies engine settings from a local JSON configuration file.
+        """
         if os.path.exists('config.json'):
             with open('config.json', 'r') as f:
                 try:
@@ -71,10 +83,17 @@ class Pyrite:
                     pass
 
     def save_config(self):
+        """
+        Serializes and saves the active engine configuration to disk.
+        """
         with open('config.json', 'w') as f:
             json.dump(self.config, f)
 
     def on_init(self):
+        """
+        Instantiates critical subsystems including UI menus, Shader programs, 
+        Sound mixers, Textures, and the Player entity.
+        """
         self.textures = Textures(self)
         self.player = Player(self)
         self.sounds = Sounds(self)
@@ -84,25 +103,29 @@ class Pyrite:
         self.options_menu = OptionsMenu(self)
 
     def init_game_session(self, save_name="Default_World", force_seed=None, game_mode=None):
+        """
+        Initializes a designated world session, seeding the procedural generator
+        and executing a blocking load loop until the initial area is fully generated 
+        and prepared for rendering.
+        """
         self.game_state = 'LOADING'
         
         if game_mode is not None:
             self.player.game_mode = game_mode
 
-        # --- SEED DETERMINATION ---
         # Determine the seed BEFORE any world objects are created to prevent premature Numba compilation.
         save_path = f'saves/{save_name}.db'
         seed = 0
         
         if os.path.exists(save_path):
             try:
-                conn = sqlite3.connect(save_path)
-                cursor = conn.cursor()
+                connection = sqlite3.connect(save_path)
+                cursor = connection.cursor()
                 cursor.execute('SELECT seed FROM world_meta WHERE id=1')
                 row = cursor.fetchone()
                 if row:
                     seed = row[0]
-                conn.close()
+                connection.close()
             except Exception as e:
                 print(f"[SYSTEM] Could not read seed from existing save file: {e}")
                 seed = random.randint(100000, 999999999)
@@ -141,6 +164,11 @@ class Pyrite:
         self.game_state = 'IN_GAME'
 
     def render_loading_screen(self, text="INITIALIZING..."):
+        """
+        Renders a minimal UI overlay during heavily blocking load operations, 
+        ensuring Pygame's event queue is flushed so the operating system doesn't 
+        flag the application as "Not Responding".
+        """
         # Discard pending events to prevent OS freezing and buffered inputs
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -183,6 +211,10 @@ class Pyrite:
         pg.display.flip()
 
     def update(self):
+        """
+        Advances the central engine logic. Delegates to the active game state 
+        (e.g., ticking the world simulation, evaluating UI animations).
+        """
         if self.game_state == 'MAIN_MENU':
             self.menu.update()
         elif self.game_state in ('IN_GAME', 'INVENTORY'):
@@ -205,6 +237,10 @@ class Pyrite:
             pg.display.set_caption('Pyrite')
 
     def render(self):
+        """
+        Clears the OpenGL framebuffer and issues draw instructions corresponding 
+        to the active state, layering menus over 3D scenes when appropriate.
+        """
         self.ctx.clear(color=self.bg_color)
         if self.game_state == 'MAIN_MENU':
             self.ctx.disable(mgl.DEPTH_TEST)
@@ -231,6 +267,11 @@ class Pyrite:
         pg.display.flip()
 
     def handle_events(self):
+        """
+        Polls raw input events from the operating system and routes them 
+        to the respective handlers (e.g., player movement, UI button clicks, 
+        or screen toggles).
+        """
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.quit_game()
@@ -291,9 +332,16 @@ class Pyrite:
                 self.options_menu.handle_event(event)
 
     def quit_game(self):
+        """
+        Interrupts the primary application execution loop to safely shut down.
+        """
         self.is_running = False
 
     def run(self):
+        """
+        The primary execution loop tracking logic updates, event polling, 
+        and frame rendering until the application halts.
+        """
         while self.is_running:
             self.handle_events()
             self.update()

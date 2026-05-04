@@ -3,7 +3,14 @@ from meshes.base_mesh import BaseMesh
 
 
 class CubeMesh(BaseMesh):
+    """
+    Generates the geometry for a standard 3D cube.
+    Used primarily for the wireframe voxel marker that highlights targeted blocks.
+    """
     def __init__(self, app):
+        """
+        Initializes the cube mesh, binding it to the voxel marker shader program.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -15,10 +22,18 @@ class CubeMesh(BaseMesh):
 
     @staticmethod
     def get_data(vertices, indices):
+        """
+        Flattens the structured lists of vertices and indices into a contiguous 
+        1D Numpy array required by OpenGL.
+        """
         data = [vertices[ind] for triangle in indices for ind in triangle]
         return np.array(data, dtype='float16')
 
     def get_vertex_data(self):
+        """
+        Defines the local 3D coordinates and 2D texture UVs for all six faces 
+        of the cube, and assembles them into the final vertex buffer payload.
+        """
         vertices = [
             (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1),
             (0, 1, 0), (0, 0, 0), (1, 0, 0), (1, 1, 0)

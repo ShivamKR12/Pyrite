@@ -4,7 +4,16 @@ import os
 
 
 class ObjMesh(BaseMesh):
+    """
+    Generates rendering geometry by parsing and loading standard 3D Wavefront (.obj) files.
+    Supports parsing material files (.mtl) for vertex colors and automatically centers 
+    the imported geometry around the origin.
+    """
     def __init__(self, app, obj_path, tex_id=None):
+        """
+        Initializes the OBJ mesh, preparing its shader program, vertex attributes,
+        and loading the requested object file from the disk.
+        """
         super().__init__()
         self.app = app
         self.ctx = self.app.ctx
@@ -16,12 +25,20 @@ class ObjMesh(BaseMesh):
         self.vao = self.get_vao()
         
     def render(self):
+        """
+        Issues the draw call to the GPU for this model. Optionally enables and binds 
+        an associated OpenGL texture if a texture ID was provided during initialization.
+        """
         self.program['u_use_texture'] = self.tex_id is not None
         if self.tex_id is not None:
             self.program['u_texture_0'] = self.tex_id
         self.vao.render()
 
     def parse_mtl(self, mtl_path):
+        """
+        Reads a Wavefront material (.mtl) file and extracts the diffuse color (Kd) 
+        values for each material, allowing the OBJ to render with its assigned base colors.
+        """
         materials = {}
         current_material = None
         try:
@@ -37,6 +54,11 @@ class ObjMesh(BaseMesh):
         return materials
 
     def get_vertex_data(self):
+        """
+        Parses the .obj file line by line to extract vertices, texture coordinates, 
+        and normals. Triangulates complex polygons using a triangle fan approach and 
+        mathematically centers the entire assembled geometry around the origin (0, 0, 0).
+        """
         vertices = []
         tex_coords = []
         normals = []

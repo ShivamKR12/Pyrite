@@ -4,7 +4,16 @@ import math
 
 
 class ChunkMesh(BaseMesh):
+    """
+    Manages the OpenGL geometry for a chunk, handling both opaque and transparent (water) meshes. 
+    It interfaces with the greedy meshing builder to generate vertex data and utilizes 
+    a VBO pool to manage GPU memory efficiently.
+    """
     def __init__(self, chunk):
+        """
+        Initializes the chunk mesh, linking it to its parent chunk and the appropriate shader program. 
+        Sets up the vertex buffer format and prepares attributes for rendering.
+        """
         super().__init__()
         self.app = chunk.app
         self.chunk = chunk
@@ -21,14 +30,27 @@ class ChunkMesh(BaseMesh):
         self.water_count = 0
 
     def render(self):
+        """
+        Issues the draw call for the opaque portion of the chunk's mesh, 
+        provided it has valid geometry to render.
+        """
         if self.vao and self.opaque_count > 0:
             self.vao.render(vertices=self.opaque_count)
 
     def render_water(self):
+        """
+        Issues the draw call for the transparent water portion of the chunk's mesh, 
+        starting from the end of the opaque vertex data.
+        """
         if self.vao and self.water_count > 0:
             self.vao.render(vertices=self.water_count, first=self.opaque_count)
 
     def get_vao(self):
+        """
+        Retrieves or builds the Vertex Array Object (VAO) for the chunk. It first generates 
+        the raw vertex data, then attempts to recycle an appropriately sized VBO from 
+        the global pool to prevent memory leaks, allocating a new one if necessary.
+        """
         if self.vertex_data is None:
             result = self.get_vertex_data()
             self.vertex_data = result[0]
@@ -68,6 +90,10 @@ class ChunkMesh(BaseMesh):
         return vao
 
     def get_vertex_data(self):
+        """
+        Triggers the greedy meshing algorithm to construct the optimized vertex payload 
+        (including ambient occlusion and lighting) from the chunk's 3D voxel array.
+        """
         mesh = build_chunk_mesh(
             chunk_voxels=self.chunk.voxels,
             chunk_lightmap=self.chunk.lightmap,

@@ -8,6 +8,10 @@ from settings import *
 # Has Biome Dithering to create more natural transitions and less blocky borders.
 @njit(cache=True, fastmath=True, nogil=True)
 def get_biome(x, z, perm_array):
+    """
+    Evaluates Simplex noise to determine the overarching temperature and moisture
+    levels of a specific vertical column, shaping its respective biome.
+    """
     # Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)
     # Scaled down frequencies by 10x to create massive, sprawling biomes
     temp = noise2(x * 0.002, z * 0.002, perm_array)
@@ -17,6 +21,10 @@ def get_biome(x, z, perm_array):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def get_height(x, z, perm_array):
+    """
+    Calculates the absolute maximum surface elevation of the terrain at a specific
+    X,Z coordinate using fractional Brownian motion and continentalness modifiers.
+    """
     temp, moist = get_biome(x, z, perm_array)
 
     # Continentalness: Controls overall elevation independently from climate
@@ -65,11 +73,19 @@ def get_height(x, z, perm_array):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def get_index(x, y, z):
+    """
+    Translates a localized 3D chunk coordinate (x, y, z) into a flattened
+    1D array index for highly optimized, contiguous memory access.
+    """
     return x + CHUNK_SIZE * z + CHUNK_AREA * y
 
 
 @njit(cache=True, fastmath=True, nogil=True)
 def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
+    """
+    Procedurally generates a single vertical column of blocks within a chunk.
+    Applies complex biome mapping, depth stratification, and 3D cave carving logic.
+    """
     wx = x + cx
     wz = z + cz
     world_height = get_height(wx, wz, perm_array)
@@ -173,6 +189,10 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def place_tree(voxels, x, y, z, voxel_id, tree_prob):
+    """
+    Constructs a localized tree structure (wood trunk and spherical leaf crown)
+    within the chunk volume if probability and physical boundaries allow for it.
+    """
     rnd = random()
     if rnd > tree_prob:
         return None
@@ -207,6 +227,10 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
 
 @njit(cache=True, fastmath=True, nogil=True)
 def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array):
+    """
+    Initializes a newly generated chunk's lightmap by simulating direct,
+    overhead sunlight falling vertically onto the procedural terrain layout.
+    """
     for x in range(CHUNK_SIZE):
         for z in range(CHUNK_SIZE):
             wx = x + cx

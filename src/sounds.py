@@ -4,7 +4,15 @@ from settings import *
 
 
 class Sounds:
+    """
+    Manages all audio assets, sound effects, and background music.
+    Handles loading sounds, randomizing playback for variety, and mapping specific
+    blocks to their respective material sound effects.
+    """
     def __init__(self, app):
+        """
+        Initializes the Pygame mixer, loads all block sounds, and starts the background music loop.
+        """
         self.app = app
         pg.mixer.init()
         pg.mixer.set_num_channels(32)
@@ -138,6 +146,10 @@ class Sounds:
         pg.mixer.music.play(-1) # Loop forever in the background
 
     def play_walk(self, voxel_id):
+        """
+        Plays a walking footstep sound based on the material of the block the player is standing on.
+        Automatically cycles through the available footstep variations.
+        """
         current_time = pg.time.get_ticks()
         if current_time - self.last_hit_time > 500: # Reset to 1 if you stop walking
             self.hit_index = 0
@@ -153,18 +165,30 @@ class Sounds:
         self.last_hit_time = current_time
 
     def play_break(self, voxel_id):
+        """
+        Plays a hard breaking sound when a block is fully destroyed.
+        """
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['break']).play()
 
     def play_place(self, voxel_id):
+        """
+        Plays a block placement sound when adding a new block to the world.
+        """
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['place']).play()
 
     def play_jump(self, voxel_id):
+        """
+        Plays a jump sound when the player jumps.
+        """
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['jump']).play()
         
     def play_breaking(self, voxel_id, mining_time, mining_duration):
+        """
+        Plays a continuous sequence of hitting sounds mapped to the progress of mining a block.
+        """
         if mining_time == 0.0:
             self.mining_index = -1
             
@@ -180,5 +204,9 @@ class Sounds:
             mining_sounds[target_index].play()
             self.mining_index = target_index
 
-    def play_place_block(self): # Played when items pop into the player's inventory
+    def play_place_block(self):
+        """
+        Plays a pop sound effect when a dropped item entity is collected and added 
+        to the player's inventory.
+        """
         self.pop_sound.play()

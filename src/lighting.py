@@ -11,6 +11,11 @@ DIRS = np.array([
 
 @njit(cache=True, nogil=True)
 def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
+    """
+    Numba-optimized helper to quickly retrieve a voxel ID from the global 
+    world arrays using absolute world coordinates. Returns a solid block (1) 
+    if the queried chunk is unloaded or out of bounds.
+    """
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx == -1: return 1
     lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
@@ -19,6 +24,10 @@ def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
+    """
+    Numba-optimized helper to rapidly read the packed light level (Sunlight and Blocklight) 
+    for a specific absolute world coordinate. Returns completely dark (0) if out of bounds.
+    """
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx == -1: return 0
     lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
@@ -27,6 +36,10 @@ def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
+    """
+    Numba-optimized helper to directly write a packed light value into the global 
+    lightmap arrays at the specified absolute world coordinate.
+    """
     idx = get_chunk_index((wx, wy, wz), chunk_positions)
     if idx != -1:
         lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
@@ -35,6 +48,11 @@ def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions):
 
 @njit(cache=True, nogil=True)
 def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Numba-optimized Breadth-First Search (BFS) light propagation algorithm.
+    Consumes a queue of light nodes and spreads their brightness outward into adjacent 
+    transparent blocks (air, water, glass) while respecting bounds and diminishing intensity.
+    """
     # Initialize with dummy arrays to satisfy Numba's strict type inference
     local_voxels = world_voxels[0] 
     local_lightmaps = world_lightmaps[0]
@@ -107,6 +125,11 @@ def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, ch
 
 @njit(cache=True, nogil=True)
 def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Scans a newly loaded/generated chunk for sunlight blocks (level 15) and light-emitting 
+    blocks (glowstone). Adds these blocks to a queue and triggers their initial internal 
+    BFS propagation to light up the chunk.
+    """
     queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
     queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
@@ -166,6 +189,10 @@ def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positio
 
 @njit(cache=True, nogil=True)
 def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Cross-chunk boundary light bleeding. Evaluates the outer borders of a given chunk against 
+    its neighboring chunks to allow light to properly spill in or out seamlessly.
+    """
     queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
     queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
@@ -222,6 +249,11 @@ def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_posit
 
 @njit(cache=True, nogil=True)
 def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill):
+    """
+    Strips out lighting dynamically when a light source (or opening) is blocked/destroyed.
+    Removes any light dependent on the broken node, but captures any overlapping brighter light 
+    nodes into a `refill_queue` so the space can be re-illuminated by surviving light sources.
+    """
     queue = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     head = 0
     tail = 0
@@ -260,6 +292,10 @@ def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_po
 
 @njit(cache=True, nogil=True)
 def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Executed when a player places a solid block. Strips existing light from the space
+    and propogates a refill sequence for neighbouring light source to compensate.
+    """
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     sun, block = curr_val >> 4, curr_val & 15
     set_light_fast(wx, wy, wz, 0, world_lightmaps, chunk_positions)
@@ -275,6 +311,11 @@ def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_po
 
 @njit(cache=True, nogil=True)
 def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Executed when a player destroys a block. Allows surrounding light to flood into the
+    newly opened space. Implements an O(1) verticle linear raycast optimization if the
+    block broken was covering directly top-down sunlight.
+    """
     queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_sun = 0
     queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
@@ -316,6 +357,10 @@ def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_p
 
 @njit(cache=True, nogil=True)
 def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Hardcodes a block light value of 14 into the grid and triggers a blocklight BFS
+    propogation. Used exclusively for placing items like Glowstone.
+    """
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)
     

@@ -8,7 +8,16 @@ import noise
 
 
 class Player(Camera):
+    """
+    Represents the player entity in the world.
+    Handles movement physics, collision detection, block interaction,
+    inventory management, and survival statistics like health and hunger.
+    """
     def __init__(self, app, position=None, yaw=-90, pitch=0):
+        """
+        Initializes the player's attributes, camera orientation, physics state,
+        inventory system, and survival stats.
+        """
         self.app = app
         if position is None:
             position = self.find_spawn_position()
@@ -49,6 +58,10 @@ class Player(Camera):
         self.spawn_immunity = True
 
     def find_spawn_position(self):        
+        """
+        Locates a valid surface spawn position near the center of the world
+        by scanning outward iteratively until a solid block above water is found.
+        """
         center_x = int(CENTER_XZ)
         center_z = int(CENTER_XZ)
         
@@ -69,6 +82,10 @@ class Player(Camera):
         return glm.vec3(PLAYER_POS)
 
     def update(self):
+        """
+        Called every frame. Updates player inputs, physics logic, view bobbing,
+        dynamic FOV for sprinting, fluid dynamics, and core survival metric drains.
+        """
         if self.app.game_state == 'IN_GAME':
             self.mouse_control()
             
@@ -194,6 +211,10 @@ class Player(Camera):
         super().update()
 
     def handle_event(self, event):
+        """
+        Processes discrete user inputs such as key presses (mode toggling, hotbar selection)
+        and mouse clicks (block mining and placing).
+        """
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_f:
                 self.game_mode = SURVIVAL if self.game_mode == CREATIVE else CREATIVE
@@ -223,6 +244,10 @@ class Player(Camera):
                 self.hotbar_index = (self.hotbar_index + 1) % HOTBAR_SIZE
 
     def mouse_control(self):
+        """
+        Retrieves relative mouse movement and adjusts the camera's yaw and pitch
+        based on the configured sensitivity.
+        """
         mouse_dx, mouse_dy = pg.mouse.get_rel()
         sens = self.app.config['sensitivity']
         if mouse_dx:
@@ -231,6 +256,10 @@ class Player(Camera):
             self.rotate_pitch(delta_y=mouse_dy * sens)
 
     def handle_interaction(self):
+        """
+        Processes continuous block interactions (mining and placing). 
+        Factoring in tool requirements, block hardness, and interaction delays.
+        """
         mouse_pressed = pg.mouse.get_pressed()
         voxel_handler = self.app.scene.world.voxel_handler
         
@@ -274,6 +303,10 @@ class Player(Camera):
                 self.interaction_timer = current_time
 
     def keyboard_control(self):
+        """
+        Calculates movement vectors based on keyboard input. Adapts movement
+        physics depending on whether the player is in Creative or Survival mode.
+        """
         if self.game_mode == CREATIVE:
             key_state = pg.key.get_pressed()
             vel = PLAYER_SPEED * 5 * self.app.delta_time
@@ -331,6 +364,10 @@ class Player(Camera):
                     self.on_ground = False
 
     def apply_gravity(self):
+        """
+        Applies downward gravitational acceleration to the player's vertical velocity,
+        accounting for drag if the player is swimming in water.
+        """
         if self.in_water:
             self.velocity.y += GRAVITY * PLAYER_UNDERWATER_GRAVITY_MULTIPLIER * self.app.delta_time
             self.velocity.y *= max(0.0, 1.0 - PLAYER_VERTICAL_WATER_DRAG * self.app.delta_time) # vertical water drag
@@ -338,6 +375,10 @@ class Player(Camera):
             self.velocity.y += GRAVITY * self.app.delta_time
 
     def move_and_collide(self):
+        """
+        Moves the player incrementally along the X, Y, and Z axes,
+        resolving collision clipping individually for each axis.
+        """
         # X axis
         # self.position.x += self.velocity.x
         self.feet_pos.x += self.velocity.x * self.app.delta_time
@@ -352,6 +393,11 @@ class Player(Camera):
         self.resolve_axis('z')
 
     def resolve_axis(self, axis):
+        """
+        Checks for intersection between the player's AABB and the surrounding 
+        solid voxels. Stops the player's velocity along the tested axis if 
+        a collision is detected to prevent clipping.
+        """
         aabb_min, aabb_max = self.get_aabb()
         min_x = int(glm.floor(aabb_min.x))
         max_x = int(glm.floor(aabb_max.x))
@@ -397,6 +443,10 @@ class Player(Camera):
                         aabb_min, aabb_max = self.get_aabb()
 
     def get_aabb(self):
+        """
+        Calculates and returns the minimum and maximum boundaries of the 
+        Axis-Aligned Bounding Box representing the player's physical volume.
+        """
         min_v = glm.vec3(
             # self.position.x - PLAYER_HALF_W,
             self.feet_pos.x - PLAYER_HALF_W,
@@ -417,6 +467,10 @@ class Player(Camera):
 
     @staticmethod
     def aabb_intersect(a_min, a_max, b_min, b_max):
+        """
+        Static helper that determines if two given 3D Axis-Aligned Bounding 
+        Boxes overlap with each other.
+        """
         return (
             a_min.x < b_max.x and a_max.x > b_min.x and
             a_min.y < b_max.y and a_max.y > b_min.y and
@@ -424,6 +478,10 @@ class Player(Camera):
         )
 
     def add_item(self, voxel_id):
+        """
+        Attempts to add an item to the player's inventory by stacking onto 
+        existing slots or finding an empty one. Returns True if successful.
+        """
         # Check if we already have a stack of this item
         for i in range(36): # Only check the main 36 storage slots
             if self.inventory[i] == voxel_id and self.inventory_counts[i] < 64:
@@ -438,6 +496,10 @@ class Player(Camera):
         return False # Inventory is full!
 
     def take_damage(self, amount):
+        """
+        Reduces player health by the specified amount (if in Survival mode),
+        triggering a respawn sequence if health is completely depleted.
+        """
         if self.game_mode == CREATIVE:
             return
         self.health -= amount
@@ -446,6 +508,10 @@ class Player(Camera):
             self.respawn()
 
     def respawn(self):
+        """
+        Resets survival statistics and teleports the player back to a 
+        safe, auto-calculated spawn position on the surface.
+        """
         self.health = self.max_health
         self.hunger = self.max_hunger
         self.oxygen = self.max_oxygen

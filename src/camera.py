@@ -3,7 +3,16 @@ from frustum import Frustum
 
 
 class Camera:
+    """
+    Represents a 3D camera in the world.
+    Handles position, orientation (yaw/pitch), view matrix calculation,
+    and movement direction vectors.
+    """
     def __init__(self, position, yaw, pitch):
+        """
+        Initializes the camera at a given position and orientation, and creates 
+        the perspective projection matrix and viewing frustum.
+        """
         self.position = glm.vec3(position)
         self.yaw = glm.radians(yaw)
         self.pitch = glm.radians(pitch)
@@ -18,13 +27,23 @@ class Camera:
         self.frustum = Frustum(self)
 
     def update(self):
+        """
+        Updates the camera's directional vectors and view matrix for the current frame.
+        """
         self.update_vectors()
         self.update_view_matrix()
 
     def update_view_matrix(self):
+        """
+        Calculates the OpenGL lookAt view matrix based on the camera's position and forward vector.
+        """
         self.m_view = glm.lookAt(self.position, self.position + self.forward, self.up)
 
     def update_vectors(self):
+        """
+        Recalculates the forward, right, and up vectors using spherical coordinates
+        derived from the current yaw and pitch.
+        """
         self.forward.x = glm.cos(self.yaw) * glm.cos(self.pitch)
         self.forward.y = glm.sin(self.pitch)
         self.forward.z = glm.sin(self.yaw) * glm.cos(self.pitch)
@@ -34,26 +53,50 @@ class Camera:
         self.up = glm.normalize(glm.cross(self.right, self.forward))
 
     def rotate_pitch(self, delta_y):
+        """
+        Adjusts the camera's pitch (up/down rotation), clamping it to prevent flipping over.
+        """
         self.pitch -= delta_y
         self.pitch = glm.clamp(self.pitch, -PITCH_MAX, PITCH_MAX)
 
     def rotate_yaw(self, delta_x):
+        """
+        Adjusts the camera's yaw (left/right rotation).
+        """
         self.yaw += delta_x
 
     def move_left(self, velocity):
+        """
+        Translates the camera leftward along its right vector.
+        """
         self.position -= self.right * velocity
 
     def move_right(self, velocity):
+        """
+        Translates the camera rightward along its right vector.
+        """
         self.position += self.right * velocity
 
     def move_up(self, velocity):
+        """
+        Translates the camera upward along its up vector.
+        """
         self.position += self.up * velocity
 
     def move_down(self, velocity):
+        """
+        Translates the camera downward along its up vector.
+        """
         self.position -= self.up * velocity
 
     def move_forward(self, velocity):
+        """
+        Translates the camera forward along its forward vector.
+        """
         self.position += self.forward * velocity
 
     def move_back(self, velocity):
+        """
+        Translates the camera backward along its forward vector.
+        """
         self.position -= self.forward * velocity

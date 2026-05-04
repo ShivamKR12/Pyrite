@@ -8,6 +8,11 @@ from .text import TextRenderer
 
 
 class Menu:
+    """
+    Manages the Main Menu, World Selection, and World Creation screens.
+    Handles smooth state transitions, dynamic world list loading from the 
+    SQLite saves directory, and interaction events.
+    """
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
@@ -108,8 +113,8 @@ class Menu:
             save_name = save_file[:-3]
             display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
             try:
-                conn = sqlite3.connect(f'saves/{save_file}')
-                cursor = conn.cursor()
+                connection = sqlite3.connect(f'saves/{save_file}')
+                cursor = connection.cursor()
                 cursor.execute('SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1')
                 row = cursor.fetchone()
                 if row:
@@ -118,7 +123,7 @@ class Menu:
                     game_mode = row[2]
                     creation_date = row[3][:16].replace('T', ' ') if row[3] else "Unknown"
                     last_played = row[4][:16].replace('T', ' ') if row[4] else "Unknown"
-                conn.close()
+                connection.close()
             except:
                 pass
             
@@ -327,6 +332,10 @@ class Menu:
 
 
 class PauseMenu:
+    """
+    Provides the in-game pause screen overlay.
+    Allows the player to resume the game, open options, or quit back to the Main Menu.
+    """
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
@@ -438,6 +447,11 @@ class PauseMenu:
 
 
 class OptionsMenu:
+    """
+    Manages the game settings screen.
+    Provides sliders and toggles for FOV, Mouse Sensitivity, Volume, Render Distance, 
+    and Visual Tints. Handles serializing these settings to config.json.
+    """
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)

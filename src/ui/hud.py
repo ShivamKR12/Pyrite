@@ -9,6 +9,9 @@ from .text import TextRenderer
 
 
 class Crosshair:
+    """
+    Renders a simple fixed crosshair at the center of the screen.
+    """
     def __init__(self, app):
         self.app = app
         self.mesh = CrosshairMesh(app)
@@ -18,6 +21,10 @@ class Crosshair:
 
 
 class Hotbar:
+    """
+    Renders the bottom-screen hotbar, including the transparent slot backgrounds,
+    active selection frame, 3D block/item icons, stack counts, and survival status bars.
+    """
     def __init__(self, app):
         self.app = app
         self.block_mesh = BlockIconMesh(app)
@@ -133,6 +140,10 @@ class Hotbar:
 
 
 class HeldBlock:
+    """
+    Renders the 3D model of the currently equipped item or block in the player's hand.
+    Includes procedural view bobbing and swinging animations for mining/placing.
+    """
     def __init__(self, app):
         self.app = app
         self.mesh = ItemMesh(app)
@@ -214,6 +225,10 @@ class HeldBlock:
 
 
 class InventoryUI:
+    """
+    Manages the full player inventory and crafting grid interface.
+    Handles drag-and-drop item management, stack splitting, and crafting matrix evaluation.
+    """
     def __init__(self, app):
         self.app = app
         self.block_mesh = BlockIconMesh(app)
@@ -531,6 +546,10 @@ class InventoryUI:
 
 
 class DebugOverlay:
+    """
+    Displays an on-screen overlay with performance metrics, player coordinates,
+    targeted block info, and current game mode (F3 menu).
+    """
     def __init__(self, app):
         self.app = app
         self.font = pg.font.SysFont('arial', FONT_SIZE_DEBUG, bold=True)
