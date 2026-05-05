@@ -58,7 +58,7 @@ class World:
         self.save_path = f'saves/{self.save_name}.db'
         self.db_lock = threading.Lock()
         self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
-        self.cursor = self.conn.cursor()
+        self.cursor = self.connection.cursor()
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS chunks (
                                 x INTEGER, y INTEGER, z INTEGER, 
                                 data BLOB,
@@ -80,7 +80,7 @@ class World:
         except sqlite3.OperationalError:
             pass # Column already exists!
             
-        self.conn.commit()
+        self.connection.commit()
         
         # Optimize SQLite for async-like high performance disk writing
         self.cursor.execute('PRAGMA journal_mode = WAL')
@@ -95,7 +95,7 @@ class World:
             self.cursor.execute('''INSERT INTO world_meta (id, world_name, seed, game_mode, creation_date, last_played)
                                    VALUES (?, ?, ?, ?, ?, ?)''', 
                                 (1, self.save_name.replace('_', ' '), world_seed, self.app.player.game_mode, now, now))
-            self.conn.commit()
+            self.connection.commit()
         else:
             self.app.player.game_mode = meta_row[3]
 
@@ -395,7 +395,7 @@ class World:
         l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
         with self.db_lock:
             self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)', (x, y, z, data, l_data))
-            self.conn.commit()
+            self.connection.commit()
 
     def unload_chunk(self, pos):
         """
@@ -406,7 +406,8 @@ class World:
             chunk = self.active_chunks.pop(pos)
 
             if not chunk.is_empty and chunk.voxels is not None:
-                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels, chunk.lightmap)
+                lightmap_copy = chunk.lightmap.copy() if chunk.lightmap is not None else None
+                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels.copy(), lightmap_copy)
 
             chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
             self.chunks[chunk_index] = None
@@ -566,11 +567,11 @@ class World:
             self.cursor.execute('UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1', (now, self.app.player.game_mode))
             self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', 
                                 (1, json.dumps(p_data)))
-            self.conn.commit()
+            self.connection.commit()
 
         # Wait for any pending asynchronous saves from unload_chunk to complete
         self.executor.shutdown(wait=True)
-        self.conn.close()
+        self.connection.close()
         
         # Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu
         for vbo, vao in self.vbo_pool:

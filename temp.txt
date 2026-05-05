@@ -255,6 +255,68 @@ The OpenGL Fragment Shader reads the interpolated sunlight and blocklight values
 * **Day/Night Cycle:** The sunlight channel is multiplied by a trigonometric time uniform (`u_sun_direction.y`), naturally dimming the sun-lit areas as the world turns to night.
 * **Dynamic Flicker:** A trigonometric noise formula (`1.0 + 0.05 * sin(u_time * 10.0) * cos(u_time * 23.0)`) is applied exclusively to the blocklight channel to simulate the natural, organic flicker of torches and glowstone.
 
+===== D:\Pyrite\docs\main.rst =====
+
+.. _main-engine:
+
+Core Engine (main.py)
+=====================
+
+Welcome to the core of the Pyrite engine! The ``main.py`` module serves as the primary entry point and orchestrator for the entire application. It establishes the multimedia backend, constructs the OpenGL context, and dictates the fundamental flow of execution through the main game loop.
+
+Engine Initialization
+---------------------
+
+The ``Pyrite`` class is the root application and state manager. Upon instantiation, it performs several critical bootstrapping tasks:
+
+* **Multimedia & Context:** Initializes Pygame and configures a hardware-accelerated ModernGL context. It explicitly requests a core OpenGL profile with depth testing, face culling, and alpha blending enabled.
+* **Configuration Management:** Dynamically loads user preferences from a local ``config.json`` file (such as FOV, mouse sensitivity, and render distance), merging them with engine defaults.
+* **Subsystem Instantiation:** Bootstraps all major managers and systems:
+
+  * ``Textures``: Loads and binds image assets to the GPU.
+  * ``Player``: Initializes the physics and camera entity.
+  * ``Sounds``: Interfaces with the Pygame audio mixer.
+  * ``ShaderProgram``: Compiles and manages GLSL shaders.
+  * ``UI``: Prepares all interactive menus (Main Menu, Pause, Options).
+
+State Management
+----------------
+
+Pyrite operates using a robust finite state machine to delegate logic and rendering. The active state is stored in ``self.game_state`` and seamlessly transitions between the following modes:
+
+* ``MAIN_MENU``: The front-end title screen and world selection interface.
+* ``LOADING``: A blocking transition state that flushes the event queue while heavy procedural generation and async database reads occur.
+* ``IN_GAME``: The active 3D voxel simulation, handing control over to the ``Scene`` and ``Player`` instances.
+* ``INVENTORY``: Pauses player movement and frees the mouse cursor to allow for drag-and-drop item management.
+* ``PAUSED``: Suspends background logic and draws a darkened UI overlay, allowing players to adjust settings or exit the session.
+* ``OPTIONS``: Renders the configuration sliders, saving changes to disk upon exit.
+
+World Generation and Sessions
+-----------------------------
+
+When a player selects a world, ``init_game_session()`` is invoked. This process ensures a clean environment by:
+
+1. **Seeding:** Retrieving an existing seed from the SQLite database or generating a fresh procedural seed.
+2. **Instantiating the Scene:** Constructing a new ``Scene`` and ``World`` object.
+3. **Pre-loading:** Engaging a blocking loop that forces initial chunks to load, build, and mesh.
+4. **Safety Flushing:** Discarding buffered inputs and relative mouse movements to prevent sudden camera snapping when the game begins.
+
+During this phase, a minimal ``render_loading_screen()`` UI overlay is repeatedly drawn to prevent the operating system from flagging the application as unresponsive.
+
+The Main Loop
+-------------
+
+The core execution cycle is governed by the ``run()`` method. Until the application halts, it continuously cycles through three primary stages:
+
+1. **Event Polling (``handle_events``):** Intercepts raw OS hardware events (mouse clicks, key presses, window closes). It delegates these events dynamically based on the current ``game_state`` (e.g., passing WASD inputs to the Player in-game, or slider drags to the Options Menu).
+2. **Logic Updates (``update``):** Advances internal systems. This increments the ``world_session_time``, processes physics boundaries, and evaluates UI animations. Delta time is strictly capped to prevent extreme physics desynchronization during performance spikes.
+3. **Rendering (``render``):** Clears the hardware frame buffer and dispatches draw calls. If in a menu, it disables depth testing to draw 2D quads. If in-game, it directs the ``Scene`` to perform its complex multi-pass rendering pipeline.
+
+Application Control
+-------------------
+
+Safely exiting the application is handled by the ``quit_game()`` sequence. It breaks the main execution loop, triggers the world to synchronously serialize all remaining chunks to the SQLite database, and cleanly releases multimedia hardware handles back to the OS.
+
 ===== D:\Pyrite\docs\rendering.rst =====
 
 Rendering Pipeline
@@ -7440,7 +7502,7 @@ class World:
         self.save_path = f'saves/{self.save_name}.db'
         self.db_lock = threading.Lock()
         self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
-        self.cursor = self.conn.cursor()
+        self.cursor = self.connection.cursor()
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS chunks (
                                 x INTEGER, y INTEGER, z INTEGER, 
                                 data BLOB,
@@ -7462,7 +7524,7 @@ class World:
         except sqlite3.OperationalError:
             pass # Column already exists!
             
-        self.conn.commit()
+        self.connection.commit()
         
         # Optimize SQLite for async-like high performance disk writing
         self.cursor.execute('PRAGMA journal_mode = WAL')
@@ -7477,7 +7539,7 @@ class World:
             self.cursor.execute('''INSERT INTO world_meta (id, world_name, seed, game_mode, creation_date, last_played)
                                    VALUES (?, ?, ?, ?, ?, ?)''', 
                                 (1, self.save_name.replace('_', ' '), world_seed, self.app.player.game_mode, now, now))
-            self.conn.commit()
+            self.connection.commit()
         else:
             self.app.player.game_mode = meta_row[3]
 
@@ -7777,7 +7839,7 @@ class World:
         l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
         with self.db_lock:
             self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)', (x, y, z, data, l_data))
-            self.conn.commit()
+            self.connection.commit()
 
     def unload_chunk(self, pos):
         """
@@ -7788,7 +7850,8 @@ class World:
             chunk = self.active_chunks.pop(pos)
 
             if not chunk.is_empty and chunk.voxels is not None:
-                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels, chunk.lightmap)
+                lightmap_copy = chunk.lightmap.copy() if chunk.lightmap is not None else None
+                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels.copy(), lightmap_copy)
 
             chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
             self.chunks[chunk_index] = None
@@ -7948,11 +8011,11 @@ class World:
             self.cursor.execute('UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1', (now, self.app.player.game_mode))
             self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', 
                                 (1, json.dumps(p_data)))
-            self.conn.commit()
+            self.connection.commit()
 
         # Wait for any pending asynchronous saves from unload_chunk to complete
         self.executor.shutdown(wait=True)
-        self.conn.close()
+        self.connection.close()
         
         # Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu
         for vbo, vao in self.vbo_pool:
@@ -7995,7 +8058,7 @@ extra/
 saves/
 build/
 dist/
-# docs/
+docs/main.rst
 docs/_build/
 command.txt
 convert_audio.ps1
