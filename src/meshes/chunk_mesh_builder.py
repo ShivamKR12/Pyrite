@@ -46,7 +46,7 @@ def get_ao(local_pos, world_pos, world_voxels, chunk_positions, plane):
 
 
 @njit(cache=True, nogil=True)
-def get_vertex_light(world_vertex_pos, plane, world_lightmaps, chunk_positions):
+def get_vertex_light(world_vertex_pos, plane, face_light, world_voxels, world_lightmaps, chunk_positions):
     """
     Computes the smoothed lighting value for a specific vertex by sampling and averaging
     the sunlight and blocklight from the four surrounding blocks that share the vertex
@@ -56,22 +56,37 @@ def get_vertex_light(world_vertex_pos, plane, world_lightmaps, chunk_positions):
 
     if plane == 'Y':
         # Vertex is on an XZ plane, so we sample the 4 adjacent blocks in that plane.
-        l0 = get_neighbor_light((vx, vy, vz), (vx, vy, vz), world_lightmaps, chunk_positions)
-        l1 = get_neighbor_light((vx - 1, vy, vz), (vx - 1, vy, vz), world_lightmaps, chunk_positions)
-        l2 = get_neighbor_light((vx, vy, vz - 1), (vx, vy, vz - 1), world_lightmaps, chunk_positions)
-        l3 = get_neighbor_light((vx - 1, vy, vz - 1), (vx - 1, vy, vz - 1), world_lightmaps, chunk_positions)
+        b0 = get_neighbor_voxel_id((vx, vy, vz), (vx, vy, vz), world_voxels, chunk_positions)
+        b1 = get_neighbor_voxel_id((vx - 1, vy, vz), (vx - 1, vy, vz), world_voxels, chunk_positions)
+        b2 = get_neighbor_voxel_id((vx, vy, vz - 1), (vx, vy, vz - 1), world_voxels, chunk_positions)
+        b3 = get_neighbor_voxel_id((vx - 1, vy, vz - 1), (vx - 1, vy, vz - 1), world_voxels, chunk_positions)
+        
+        l0 = face_light if not is_transparent(b0) else get_neighbor_light((vx, vy, vz), (vx, vy, vz), world_lightmaps, chunk_positions)
+        l1 = face_light if not is_transparent(b1) else get_neighbor_light((vx - 1, vy, vz), (vx - 1, vy, vz), world_lightmaps, chunk_positions)
+        l2 = face_light if not is_transparent(b2) else get_neighbor_light((vx, vy, vz - 1), (vx, vy, vz - 1), world_lightmaps, chunk_positions)
+        l3 = face_light if not is_transparent(b3) else get_neighbor_light((vx - 1, vy, vz - 1), (vx - 1, vy, vz - 1), world_lightmaps, chunk_positions)
     elif plane == 'X':
         # Vertex is on a YZ plane
-        l0 = get_neighbor_light((vx, vy, vz), (vx, vy, vz), world_lightmaps, chunk_positions)
-        l1 = get_neighbor_light((vx, vy - 1, vz), (vx, vy - 1, vz), world_lightmaps, chunk_positions)
-        l2 = get_neighbor_light((vx, vy, vz - 1), (vx, vy, vz - 1), world_lightmaps, chunk_positions)
-        l3 = get_neighbor_light((vx, vy - 1, vz - 1), (vx, vy - 1, vz - 1), world_lightmaps, chunk_positions)
+        b0 = get_neighbor_voxel_id((vx, vy, vz), (vx, vy, vz), world_voxels, chunk_positions)
+        b1 = get_neighbor_voxel_id((vx, vy - 1, vz), (vx, vy - 1, vz), world_voxels, chunk_positions)
+        b2 = get_neighbor_voxel_id((vx, vy, vz - 1), (vx, vy, vz - 1), world_voxels, chunk_positions)
+        b3 = get_neighbor_voxel_id((vx, vy - 1, vz - 1), (vx, vy - 1, vz - 1), world_voxels, chunk_positions)
+        
+        l0 = face_light if not is_transparent(b0) else get_neighbor_light((vx, vy, vz), (vx, vy, vz), world_lightmaps, chunk_positions)
+        l1 = face_light if not is_transparent(b1) else get_neighbor_light((vx, vy - 1, vz), (vx, vy - 1, vz), world_lightmaps, chunk_positions)
+        l2 = face_light if not is_transparent(b2) else get_neighbor_light((vx, vy, vz - 1), (vx, vy, vz - 1), world_lightmaps, chunk_positions)
+        l3 = face_light if not is_transparent(b3) else get_neighbor_light((vx, vy - 1, vz - 1), (vx, vy - 1, vz - 1), world_lightmaps, chunk_positions)
     else:  # Z plane
         # Vertex is on an XY plane
-        l0 = get_neighbor_light((vx, vy, vz), (vx, vy, vz), world_lightmaps, chunk_positions)
-        l1 = get_neighbor_light((vx - 1, vy, vz), (vx - 1, vy, vz), world_lightmaps, chunk_positions)
-        l2 = get_neighbor_light((vx, vy - 1, vz), (vx, vy - 1, vz), world_lightmaps, chunk_positions)
-        l3 = get_neighbor_light((vx - 1, vy - 1, vz), (vx - 1, vy - 1, vz), world_lightmaps, chunk_positions)
+        b0 = get_neighbor_voxel_id((vx, vy, vz), (vx, vy, vz), world_voxels, chunk_positions)
+        b1 = get_neighbor_voxel_id((vx - 1, vy, vz), (vx - 1, vy, vz), world_voxels, chunk_positions)
+        b2 = get_neighbor_voxel_id((vx, vy - 1, vz), (vx, vy - 1, vz), world_voxels, chunk_positions)
+        b3 = get_neighbor_voxel_id((vx - 1, vy - 1, vz), (vx - 1, vy - 1, vz), world_voxels, chunk_positions)
+        
+        l0 = face_light if not is_transparent(b0) else get_neighbor_light((vx, vy, vz), (vx, vy, vz), world_lightmaps, chunk_positions)
+        l1 = face_light if not is_transparent(b1) else get_neighbor_light((vx - 1, vy, vz), (vx - 1, vy, vz), world_lightmaps, chunk_positions)
+        l2 = face_light if not is_transparent(b2) else get_neighbor_light((vx, vy - 1, vz), (vx, vy - 1, vz), world_lightmaps, chunk_positions)
+        l3 = face_light if not is_transparent(b3) else get_neighbor_light((vx - 1, vy - 1, vz), (vx - 1, vy - 1, vz), world_lightmaps, chunk_positions)
 
     # Average the Sun and Block light separately to prevent overflow and incorrect mixing.
     sun = ((l0 >> 4) + (l1 >> 4) + (l2 >> 4) + (l3 >> 4)) >> 2
@@ -222,24 +237,28 @@ def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world
                 neighbor_id = get_neighbor_voxel_id((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions)
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), world_voxels, chunk_positions, plane='Y')
-                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    l0 = get_vertex_light((wx    , wy + 1, wz    ), 'Y', world_lightmaps, chunk_positions)
-                    l1 = get_vertex_light((wx + 1, wy + 1, wz    ), 'Y', world_lightmaps, chunk_positions)
-                    l2 = get_vertex_light((wx + 1, wy + 1, wz + 1), 'Y', world_lightmaps, chunk_positions)
-                    l3 = get_vertex_light((wx    , wy + 1, wz + 1), 'Y', world_lightmaps, chunk_positions)
+                    face_light = get_neighbor_light((wx, wy + 1, wz), (wx, wy + 1, wz), world_lightmaps, chunk_positions)
+                    l0 = get_vertex_light((wx    , wy + 1, wz    ), 'Y', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l1 = get_vertex_light((wx + 1, wy + 1, wz    ), 'Y', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l2 = get_vertex_light((wx + 1, wy + 1, wz + 1), 'Y', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l3 = get_vertex_light((wx    , wy + 1, wz + 1), 'Y', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > ((l0 >> 4) + (l0 & 15) + ao[0]) + ((l2 >> 4) + (l2 & 15) + ao[2])
                     mask0[x, z] = (np.uint64(v_id) << 41) | (np.uint64(l0) << 33) | (np.uint64(l1) << 25) | (np.uint64(l2) << 17) | (np.uint64(l3) << 9) | (np.uint64(ao[0]) << 7) | (np.uint64(ao[1]) << 5) | (np.uint64(ao[2]) << 3) | (np.uint64(ao[3]) << 1) | np.uint64(flip_id)
 
                 # bottom face
                 neighbor_id = get_neighbor_voxel_id((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions)
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), world_voxels, chunk_positions, plane='Y')
-                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    l0 = get_vertex_light((wx    , wy, wz    ), 'Y', world_lightmaps, chunk_positions)
-                    l1 = get_vertex_light((wx + 1, wy, wz    ), 'Y', world_lightmaps, chunk_positions)
-                    l2 = get_vertex_light((wx + 1, wy, wz + 1), 'Y', world_lightmaps, chunk_positions)
-                    l3 = get_vertex_light((wx    , wy, wz + 1), 'Y', world_lightmaps, chunk_positions)
+                    face_light = get_neighbor_light((wx, wy - 1, wz), (wx, wy - 1, wz), world_lightmaps, chunk_positions)
+                    l0 = get_vertex_light((wx    , wy, wz    ), 'Y', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l1 = get_vertex_light((wx + 1, wy, wz    ), 'Y', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l2 = get_vertex_light((wx + 1, wy, wz + 1), 'Y', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l3 = get_vertex_light((wx    , wy, wz + 1), 'Y', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > ((l0 >> 4) + (l0 & 15) + ao[0]) + ((l2 >> 4) + (l2 & 15) + ao[2])
                     mask1[x, z] = (np.uint64(v_id) << 41) | (np.uint64(l0) << 33) | (np.uint64(l1) << 25) | (np.uint64(l2) << 17) | (np.uint64(l3) << 9) | (np.uint64(ao[0]) << 7) | (np.uint64(ao[1]) << 5) | (np.uint64(ao[2]) << 3) | (np.uint64(ao[3]) << 1) | np.uint64(flip_id)
 
         for x in range(CHUNK_SIZE):
@@ -333,23 +352,27 @@ def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world
                 neighbor_id = get_neighbor_voxel_id((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions)
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), world_voxels, chunk_positions, plane='X')
-                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    l0 = get_vertex_light((wx + 1, wy    , wz    ), 'X', world_lightmaps, chunk_positions)
-                    l1 = get_vertex_light((wx + 1, wy + 1, wz    ), 'X', world_lightmaps, chunk_positions)
-                    l2 = get_vertex_light((wx + 1, wy + 1, wz + 1), 'X', world_lightmaps, chunk_positions)
-                    l3 = get_vertex_light((wx + 1, wy    , wz + 1), 'X', world_lightmaps, chunk_positions)
+                    face_light = get_neighbor_light((wx + 1, wy, wz), (wx + 1, wy, wz), world_lightmaps, chunk_positions)
+                    l0 = get_vertex_light((wx + 1, wy    , wz    ), 'X', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l1 = get_vertex_light((wx + 1, wy + 1, wz    ), 'X', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l2 = get_vertex_light((wx + 1, wy + 1, wz + 1), 'X', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l3 = get_vertex_light((wx + 1, wy    , wz + 1), 'X', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > ((l0 >> 4) + (l0 & 15) + ao[0]) + ((l2 >> 4) + (l2 & 15) + ao[2])
                     mask0[y, z] = (np.uint64(v_id) << 41) | (np.uint64(l0) << 33) | (np.uint64(l1) << 25) | (np.uint64(l2) << 17) | (np.uint64(l3) << 9) | (np.uint64(ao[0]) << 7) | (np.uint64(ao[1]) << 5) | (np.uint64(ao[2]) << 3) | (np.uint64(ao[3]) << 1) | np.uint64(flip_id)
 
                 neighbor_id = get_neighbor_voxel_id((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions)
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), world_voxels, chunk_positions, plane='X')
-                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    l0 = get_vertex_light((wx, wy    , wz    ), 'X', world_lightmaps, chunk_positions)
-                    l1 = get_vertex_light((wx, wy + 1, wz    ), 'X', world_lightmaps, chunk_positions)
-                    l2 = get_vertex_light((wx, wy + 1, wz + 1), 'X', world_lightmaps, chunk_positions)
-                    l3 = get_vertex_light((wx, wy    , wz + 1), 'X', world_lightmaps, chunk_positions)
+                    face_light = get_neighbor_light((wx - 1, wy, wz), (wx - 1, wy, wz), world_lightmaps, chunk_positions)
+                    l0 = get_vertex_light((wx, wy    , wz    ), 'X', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l1 = get_vertex_light((wx, wy + 1, wz    ), 'X', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l2 = get_vertex_light((wx, wy + 1, wz + 1), 'X', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l3 = get_vertex_light((wx, wy    , wz + 1), 'X', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > ((l0 >> 4) + (l0 & 15) + ao[0]) + ((l2 >> 4) + (l2 & 15) + ao[2])
                     mask1[y, z] = (np.uint64(v_id) << 41) | (np.uint64(l0) << 33) | (np.uint64(l1) << 25) | (np.uint64(l2) << 17) | (np.uint64(l3) << 9) | (np.uint64(ao[0]) << 7) | (np.uint64(ao[1]) << 5) | (np.uint64(ao[2]) << 3) | (np.uint64(ao[3]) << 1) | np.uint64(flip_id)
         for y in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
@@ -442,23 +465,27 @@ def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world
                 neighbor_id = get_neighbor_voxel_id((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions)
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), world_voxels, chunk_positions, plane='Z')
-                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    l0 = get_vertex_light((wx    , wy    , wz), 'Z', world_lightmaps, chunk_positions)
-                    l1 = get_vertex_light((wx    , wy + 1, wz), 'Z', world_lightmaps, chunk_positions)
-                    l2 = get_vertex_light((wx + 1, wy + 1, wz), 'Z', world_lightmaps, chunk_positions)
-                    l3 = get_vertex_light((wx + 1, wy    , wz), 'Z', world_lightmaps, chunk_positions)
+                    face_light = get_neighbor_light((wx, wy, wz - 1), (wx, wy, wz - 1), world_lightmaps, chunk_positions)
+                    l0 = get_vertex_light((wx    , wy    , wz), 'Z', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l1 = get_vertex_light((wx    , wy + 1, wz), 'Z', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l2 = get_vertex_light((wx + 1, wy + 1, wz), 'Z', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l3 = get_vertex_light((wx + 1, wy    , wz), 'Z', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > ((l0 >> 4) + (l0 & 15) + ao[0]) + ((l2 >> 4) + (l2 & 15) + ao[2])
                     mask0[x, y] = (np.uint64(v_id) << 41) | (np.uint64(l0) << 33) | (np.uint64(l1) << 25) | (np.uint64(l2) << 17) | (np.uint64(l3) << 9) | (np.uint64(ao[0]) << 7) | (np.uint64(ao[1]) << 5) | (np.uint64(ao[2]) << 3) | (np.uint64(ao[3]) << 1) | np.uint64(flip_id)
 
                 neighbor_id = get_neighbor_voxel_id((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions)
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
                     ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), world_voxels, chunk_positions, plane='Z')
-                    flip_id = ao[1] + ao[3] > ao[0] + ao[2]
+                    # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
                     v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
-                    l0 = get_vertex_light((wx    , wy    , wz + 1), 'Z', world_lightmaps, chunk_positions)
-                    l1 = get_vertex_light((wx    , wy + 1, wz + 1), 'Z', world_lightmaps, chunk_positions)
-                    l2 = get_vertex_light((wx + 1, wy + 1, wz + 1), 'Z', world_lightmaps, chunk_positions)
-                    l3 = get_vertex_light((wx + 1, wy    , wz + 1), 'Z', world_lightmaps, chunk_positions)
+                    face_light = get_neighbor_light((wx, wy, wz + 1), (wx, wy, wz + 1), world_lightmaps, chunk_positions)
+                    l0 = get_vertex_light((wx    , wy    , wz + 1), 'Z', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l1 = get_vertex_light((wx    , wy + 1, wz + 1), 'Z', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l2 = get_vertex_light((wx + 1, wy + 1, wz + 1), 'Z', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    l3 = get_vertex_light((wx + 1, wy    , wz + 1), 'Z', face_light, world_voxels, world_lightmaps, chunk_positions)
+                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > ((l0 >> 4) + (l0 & 15) + ao[0]) + ((l2 >> 4) + (l2 & 15) + ao[2])
                     mask1[x, y] = (np.uint64(v_id) << 41) | (np.uint64(l0) << 33) | (np.uint64(l1) << 25) | (np.uint64(l2) << 17) | (np.uint64(l3) << 9) | (np.uint64(ao[0]) << 7) | (np.uint64(ao[1]) << 5) | (np.uint64(ao[2]) << 3) | (np.uint64(ao[3]) << 1) | np.uint64(flip_id)
 
         for x in range(CHUNK_SIZE):

@@ -4,6 +4,10 @@ from settings import *
 from meshes.chunk_mesh_builder import get_chunk_index
 
 
+# Pre-allocated global memory queues to prevent massive GC churn per interaction
+GLOBAL_QUEUE_A = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
+GLOBAL_QUEUE_B = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
+
 DIRS = np.array([
     [0, 1, 0], [0, -1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, -1], [0, 0, 1]
 ], dtype=np.int32)
@@ -124,15 +128,8 @@ def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, ch
 
 
 @njit(cache=True, nogil=True)
-def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
-    """
-    Scans a newly loaded/generated chunk for sunlight blocks (level 15) and light-emitting 
-    blocks (glowstone). Adds these blocks to a queue and triggers their initial internal 
-    BFS propagation to light up the chunk.
-    """
-    queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
+def _init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block):
     tail_sun = 0
-    queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_block = 0
 
     chunk_idx = get_chunk_index((cx, cy, cz), chunk_positions)
@@ -187,15 +184,18 @@ def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positio
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
+def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Scans a newly loaded/generated chunk for sunlight blocks (level 15) and light-emitting 
+    blocks (glowstone). Adds these blocks to a queue and triggers their initial internal 
+    BFS propagation to light up the chunk.
+    """
+    _init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B)
+
+
 @njit(cache=True, nogil=True)
-def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
-    """
-    Cross-chunk boundary light bleeding. Evaluates the outer borders of a given chunk against 
-    its neighboring chunks to allow light to properly spill in or out seamlessly.
-    """
-    queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
+def _stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block):
     tail_sun = 0
-    queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_block = 0
 
     for dir_idx in range(6):
@@ -247,14 +247,21 @@ def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_posit
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
+def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Cross-chunk boundary light bleeding. Evaluates the outer borders of a given chunk against 
+    its neighboring chunks to allow light to properly spill in or out seamlessly.
+    """
+    _stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B)
+
+
 @njit(cache=True, nogil=True)
-def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill):
+def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill, queue):
     """
     Strips out lighting dynamically when a light source (or opening) is blocked/destroyed.
     Removes any light dependent on the broken node, but captures any overlapping brighter light 
     nodes into a `refill_queue` so the space can be re-illuminated by surviving light sources.
     """
-    queue = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     head = 0
     tail = 0
     queue[tail] = (np.uint64(wx) << 40) | (np.uint64(wy) << 24) | (np.uint64(wz) << 8) | np.uint64(light_level)
@@ -291,34 +298,30 @@ def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_po
 
 
 @njit(cache=True, nogil=True)
+def _update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, refill_queue, removal_queue):
+    curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
+    sun, block = curr_val >> 4, curr_val & 15
+    set_light_fast(wx, wy, wz, 0, world_lightmaps, chunk_positions)
+    
+    if sun > 0:
+        tail_refill = remove_light_node(wx, wy, wz, sun, True, world_lightmaps, chunk_positions, refill_queue, 0, removal_queue)
+        propagate_light_queue(refill_queue, tail_refill, True, world_voxels, world_lightmaps, chunk_positions)
+    if block > 0:
+        tail_refill = remove_light_node(wx, wy, wz, block, False, world_lightmaps, chunk_positions, refill_queue, 0, removal_queue)
+        propagate_light_queue(refill_queue, tail_refill, False, world_voxels, world_lightmaps, chunk_positions)
+
+
 def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     """
     Executed when a player places a solid block. Strips existing light from the space
     and propogates a refill sequence for neighbouring light source to compensate.
     """
-    curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
-    sun, block = curr_val >> 4, curr_val & 15
-    set_light_fast(wx, wy, wz, 0, world_lightmaps, chunk_positions)
-    
-    refill_queue = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
-    if sun > 0:
-        tail_refill = remove_light_node(wx, wy, wz, sun, True, world_lightmaps, chunk_positions, refill_queue, 0)
-        propagate_light_queue(refill_queue, tail_refill, True, world_voxels, world_lightmaps, chunk_positions)
-    if block > 0:
-        tail_refill = remove_light_node(wx, wy, wz, block, False, world_lightmaps, chunk_positions, refill_queue, 0)
-        propagate_light_queue(refill_queue, tail_refill, False, world_voxels, world_lightmaps, chunk_positions)
+    _update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B)
 
 
 @njit(cache=True, nogil=True)
-def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
-    """
-    Executed when a player destroys a block. Allows surrounding light to flood into the
-    newly opened space. Implements an O(1) verticle linear raycast optimization if the
-    block broken was covering directly top-down sunlight.
-    """
-    queue_sun = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
+def _update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block):
     tail_sun = 0
-    queue_block = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
     tail_block = 0
     
     up_val = get_light_fast(wx, wy + 1, wz, world_lightmaps, chunk_positions)
@@ -355,15 +358,27 @@ def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_p
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
+def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
+    """
+    Executed when a player destroys a block. Allows surrounding light to flood into the
+    newly opened space. Implements an O(1) verticle linear raycast optimization if the
+    block broken was covering directly top-down sunlight.
+    """
+    _update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B)
+
+
 @njit(cache=True, nogil=True)
+def _place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, queue):
+    curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
+    set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)
+    
+    queue[0] = (np.uint64(wx) << 32) | (np.uint64(wy) << 16) | np.uint64(wz)
+    propagate_light_queue(queue, 1, False, world_voxels, world_lightmaps, chunk_positions)
+
+
 def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     """
     Hardcodes a block light value of 14 into the grid and triggers a blocklight BFS
     propogation. Used exclusively for placing items like Glowstone.
     """
-    curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
-    set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)
-    
-    queue = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
-    queue[0] = (np.uint64(wx) << 32) | (np.uint64(wy) << 16) | np.uint64(wz)
-    propagate_light_queue(queue, 1, False, world_voxels, world_lightmaps, chunk_positions)
+    _place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A)
