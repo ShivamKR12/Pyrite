@@ -50,6 +50,7 @@ class World:
         self.sorted_chunks = []
         self.last_active_chunk_count = 0
         self.chunk_centers = np.empty((0, 3), dtype='float32')
+        self.frustum_mask = np.empty(0, dtype=np.bool_)
         self.bbox_mesh = CubeMesh(app)
 
         self.app.render_loading_screen("CONNECTING TO DATABASE...")
@@ -451,19 +452,20 @@ class World:
             # Update the chunk centers array for vectorized culling
             if self.sorted_chunks:
                 self.chunk_centers = np.array([c.center for c in self.sorted_chunks], dtype='float32')
+                self.frustum_mask = np.ones(len(self.sorted_chunks), dtype=np.bool_)
             else:
                 self.chunk_centers = np.empty((0, 3), dtype='float32')
+                self.frustum_mask = np.ones(0, dtype=np.bool_)
             self.last_player_chunk_pos = player_chunk_pos
             self.last_active_chunk_count = active_chunk_count
             
         freeze = getattr(self.app, 'freeze_culling', False)
         
         # Vectorized frustum culling
-        frustum_mask = np.ones(len(self.sorted_chunks), dtype=np.bool_)
         if not freeze and len(self.chunk_centers) > 0:
             frustum = player.frustum
-            frustum_mask = frustum_cull_fast(
-                self.chunk_centers, np.array(player_pos, dtype='float32'), 
+            frustum_cull_fast(
+                self.chunk_centers, self.frustum_mask, np.array(player_pos, dtype='float32'), 
                 np.array(player.forward, dtype='float32'), np.array(player.right, dtype='float32'), 
                 np.array(player.up, dtype='float32'),
                 frustum.tan_y, frustum.tan_x, frustum.factor_y, frustum.factor_x
@@ -472,7 +474,7 @@ class World:
         # 1. Update visibility from occlusion queries
         if not freeze:
             for i, chunk in enumerate(self.sorted_chunks):
-                if not frustum_mask[i] or chunk.is_empty:
+                if not self.frustum_mask[i] or chunk.is_empty:
                     chunk.is_visible = False
                     continue
                     
@@ -508,7 +510,7 @@ class World:
             for i, chunk in enumerate(self.sorted_chunks):
                 if not chunk.is_visible:
                     # Only query chunks that are IN the frustum but currently occluded
-                    if chunk.is_empty or not frustum_mask[i]:
+                    if chunk.is_empty or not self.frustum_mask[i]:
                         chunk.query_submitted = False
                         continue
                         

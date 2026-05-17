@@ -45,11 +45,11 @@ class Frustum:
 
 
 @njit(cache=True, fastmath=True, parallel=True)
-def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
+def frustum_cull_fast(chunk_centers, out_mask, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
     """
     Numba-optimized vectorized frustum culling.
     Rapidly tests an array of chunk centers against the camera's view frustum planes.
-    Returns a boolean array mask indicating which chunks are currently visible.
+    Populates a pre-allocated boolean array mask indicating which chunks are currently visible.
     """
     n = len(chunk_centers)
     is_visible = np.empty(n, dtype=np.bool_)
@@ -68,12 +68,12 @@ def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, ta
         
         dist_sq = svx*svx + svy*svy + svz*svz
         if dist_sq < radius_sq:
-            is_visible[i] = True
+            out_mask[i] = True
             continue
 
         sz = svx * cfx + svy * cfy + svz * cfz
         if not (NEAR - CHUNK_SPHERE_RADIUS <= sz <= FAR + CHUNK_SPHERE_RADIUS):
-            is_visible[i] = False
+            out_mask[i] = False
             continue
             
         sz = max(0.0, sz)
@@ -81,15 +81,15 @@ def frustum_cull_fast(chunk_centers, cam_pos, cam_forward, cam_right, cam_up, ta
         sy = svx * cux + svy * cuy + svz * cuz
         dist_y = factor_y * CHUNK_SPHERE_RADIUS + sz * tan_y
         if not (-dist_y <= sy <= dist_y):
-            is_visible[i] = False
+            out_mask[i] = False
             continue
 
         sx = svx * crx + svy * cry + svz * crz
         dist_x = factor_x * CHUNK_SPHERE_RADIUS + sz * tan_x
         if not (-dist_x <= sx <= dist_x):
-            is_visible[i] = False
+            out_mask[i] = False
             continue
             
-        is_visible[i] = True
+        out_mask[i] = True
             
-    return is_visible
+    return out_mask
