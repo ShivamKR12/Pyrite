@@ -7,11 +7,14 @@ sys.path.insert(0, os.path.abspath('../src'))
 project = 'Pyrite'
 copyright = '2026, ShivamKR12'
 author = 'ShivamKR12'
+version = '1.0'
+release = '1.0.0'
 
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'sphinx.ext.mathjax',
 ]
 
 templates_path = ['_templates']
@@ -26,3 +29,13 @@ html_theme_options = {
     'navigation_depth': 4,
     'collapse_navigation': False,
 }
+
+# MathJax for formula rendering
+mathjax_path = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+
+# Output file base name for HTML build
+html_logo = None
+
+# Docstring processing
+autodoc_typehints = 'description'
+autodoc_member_order = 'bysource'

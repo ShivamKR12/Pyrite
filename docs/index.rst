@@ -9,12 +9,43 @@ This documentation breaks down the core systems of the engine, explaining how te
 
 .. toctree::
    :maxdepth: 2
-   :caption: Engine Systems:
+   :caption: Getting Started:
+
+   setup
+   main
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Engine Architecture:
 
    architecture
    rendering
-   terrain
    lighting
+   shaders
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Core Systems:
+
+   meshes
+   terrain
+   player
+   ui
+   persistence
    survival
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Learning and Reference:
+
+   tutorials
+   api
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Development:
+
+   testing
+   deployment
 
 * :ref:`search`

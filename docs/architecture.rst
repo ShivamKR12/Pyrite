@@ -18,6 +18,18 @@ To manage the flow of asynchronous data back to the synchronous main thread (whi
 * **build_queue:** A list of chunks awaiting greedy meshing. To prioritize player experience, this queue is dynamically re-sorted every frame so that chunks closest to the player are processed first.
 * **mesh_queue:** Contains the final step. The main thread safely pops from this queue to allocate OpenGL Vertex Buffer Objects (VBOs) and Vertex Array Objects (VAOs) without risking cross-thread OpenGL context crashes. To prevent memory leaks, Pyrite utilizes a **VBO Pool** that recycles released buffers for new meshes.
 
+Subsystem Responsibilities
+--------------------------
+The architecture is intentionally layered so that heavy computation occurs outside the main render thread, while the main thread remains responsible for OpenGL state, input dispatch, and the final draw call submission.
+
+* The **World** subsystem owns chunk lifecycle, procedural generation, and persistence.
+* The **Player** subsystem owns camera updates, movement, and collision logic.
+* The **Scene** subsystem owns visible object sorting, frustum culling, and render pass orchestration.
+* The **ShaderProgram** subsystem owns GLSL compilation and uniform updates.
+* The **UI** subsystem owns menu events, overlay rendering, and game-state transitions.
+
+This separation keeps the code readable and makes it easier to reason about why the main thread stays responsive even when chunks are being generated and meshed in the background.
+
 World & Data Persistence
 ------------------------
 Pyrite handles infinite terrain through a chunk-based streaming system. Each chunk is a 48x48x48 (`CHUNK_SIZE`) grid.
@@ -41,7 +53,13 @@ Memory Management (1D vs 3D Arrays)
 -----------------------------------
 Instead of storing chunks as slow, nested Python lists (e.g., `chunk[x][y][z]`), Pyrite flattens all volumetric data into 1D Numpy arrays. 
 
-A block's specific index in the array is calculated using: 
-`index = x + z * CHUNK_SIZE + y * CHUNK_AREA`. 
+A block's specific index in the array is calculated using:
 
-This guarantees contiguous memory alignment, ensuring maximum CPU Cache utilization during Numba JIT execution.
+.. code-block:: text
+
+    CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE
+    index = x + z * CHUNK_SIZE + y * CHUNK_AREA
+
+This means X advances fastest in memory, Z advances next, and Y advances last. By flattening the chunk into a contiguous 1D array with this row-major layout, the engine can scan vertical columns and entire chunk planes efficiently, which is essential for Numba-accelerated operations like lighting propagation and greedy meshing.
+
+This layout guarantees contiguous memory alignment, ensuring maximum CPU cache utilization during Numba JIT execution.

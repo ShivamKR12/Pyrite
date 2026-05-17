@@ -5,13 +5,19 @@ Rendering millions of individual block faces in Python is impossible. Pyrite sol
 
 Greedy Meshing
 --------------
-Instead of rendering 6 faces for every block, Pyrite utilizes a Greedy Meshing algorithm. The Numba compiler scans the chunk 2D slice by 2D slice across the X, Y, and Z planes.
+Instead of rendering 6 faces for every block, Pyrite uses a greedy meshing algorithm to collapse many adjacent block faces into larger quads. The algorithm walks through the chunk one 2D slice at a time, examining X, Y, and Z planes in turn.
 
-It groups adjacent, coplanar block faces of the *exact same ID and Lighting Data* into massive, single polygons. A flat grassy plain that would normally require 4,096 separate quads is compressed into a single massive quad, drastically reducing the vertex payload sent to the GPU.
+For each plane, it identifies run-length groups of faces that are coplanar, have the same block ID, and share identical lighting/occlusion state. These groups are merged into a single rectangle, which means broad surfaces such as plains, walls, or ceilings can be rendered with far fewer polygons.
+
+This is the most important rendering optimization in the engine because Python is too slow to emit millions of individual faces every frame. By reducing the draw call and vertex counts dramatically, greedy meshing makes real-time voxel rendering viable.
 
 **The 32-bit Vertex Payload:**
 To minimize GPU bandwidth, vertex data is heavily bit-packed into a single 32-bit integer:
 `x: 6-bit, y: 6-bit, z: 6-bit, voxel_id: 8-bit, face_id: 3-bit, ao_id: 2-bit, flip_id: 1-bit`
+
+Because the mesh builder must still preserve per-face lighting and ambient occlusion, the packed vertex includes only the data needed to reconstruct face position and appearance in the vertex shader. This compact format lets Pyrite send large batches of geometry to the GPU without blowing up memory bandwidth.
+
+By combining greedy face merging with compact vertex encoding, the renderer reduces per-chunk vertex counts from millions to tens of thousands in most scenes.
 
 Vectorized Frustum Culling
 --------------------------
@@ -42,3 +48,16 @@ In OpenGL, a global `TEXTURE_MAP` array translates the block's `voxel_id` into a
 Ambient Occlusion
 -----------------
 Pyrite simulates soft shadows in the corners of blocks using Vertex-based Ambient Occlusion (AO). The engine checks the adjacent diagonal blocks of a face during meshing. Depending on how many blocks surround the corner, it assigns an `ao_id` (0 to 3). The shader interpolates this value across the face to create a smooth darkening effect.
+
+Why this matters: ambient occlusion is a low-cost way to add depth and visual richness to blocky geometry without full ray tracing. It is evaluated once during mesh generation, then baked into the vertex data, so it does not require per-frame overhead.
+
+Render Flow Summary
+-------------------
+The renderer is not a single monolithic loop; it is a sequence of stages. In broad terms:
+
+1. **Scene culling:** Drop chunks outside the camera frustum.
+2. **Opaque pass:** Render solid geometry first, populating the depth buffer.
+3. **Transparent pass:** Render water and glass on top with blending enabled.
+4. **UI pass:** Render HUD and menus last with depth test disabled.
+
+This ordered approach is what allows Pyrite to keep the visible geometry count low and still present a coherent world each frame.
