@@ -1,9 +1,4 @@
-pygame-ce
-moderngl
-numba
-PyGLM
-numpy
-opensimplex[numpy]
+pyinstaller
 pytest
 sphinx
 sphinx-rtd-theme
