@@ -19,35 +19,39 @@ Pyrite is compiled into standalone executables using PyInstaller.
 The ``build.spec`` file configures compilation:: 
 
     # build.spec
+    from PyInstaller.utils.hooks import collect_dynamic_libs
+    
+    block_cipher = None
+    
     a = Analysis(
         ['run.py'],
-        pathex=[],
-        binaries=[],
+        pathex=['src'],
+        binaries=collect_dynamic_libs('numba'),
         datas=[
             ('assets', 'assets'),
             ('src/shaders', 'src/shaders'),
         ],
         hiddenimports=[
             'numba',
-            'moderngl',
+            'llvmlite',
+            'noise',
             'glm',
-            'numpy',
-            'numpy.core.multiarray',
-            'opensimplex',
+            'moderngl',
+            'pygame',
+            'scipy.linalg.cython_blas',
+            'scipy.linalg.cython_lapack',
         ],
         hookspath=[],
+        hooksconfig={},
         runtime_hooks=[],
-        excludedimports=[
-            'scipy',
-            'pandas',
-            'matplotlib',
-        ],
+        excludes=[],
         win_no_prefer_redirects=False,
         win_private_assemblies=False,
-        cipher=None,
+        cipher=block_cipher,
+        noarchive=False,
     )
     
-    pyz = PYZ(a.pure, a.zipped_data, cipher=cipher)
+    pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
     
     exe = EXE(
         pyz,
@@ -59,8 +63,13 @@ The ``build.spec`` file configures compilation::
         bootloader_ignore_signals=False,
         strip=False,
         upx=True,
-        console=False,  # No console window
-        icon='assets/icon.ico',
+        console=True, # Set to False in the future to hide the background terminal window!
+        icon='assets/icon-nobg.ico',
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+        target_arch=None,
+        codesign_identity=None,
+        entitlements_file=None,
     )
     
     coll = COLLECT(
@@ -218,14 +227,6 @@ Version format: **Major.Minor.Patch**
 - **Minor**: New features (1.0 → 1.1: new biome added)
 - **Patch**: Bug fixes (1.1.0 → 1.1.1: collision fix)
 
-Update ``build.spec``::
-
-    exe = EXE(
-        ...,
-        name='Pyrite-1.2.3',
-        ...
-    )
-
 **Version Changelog (CHANGELOG.md)**
 
 Document all changes::
@@ -236,9 +237,8 @@ Document all changes::
     
     ### Added
     - Initial release
-    - 4 biomes (desert, snow, forest, grassland)
+    - Procedural biomes and terrain generation
     - Survival mechanics (health, hunger, oxygen)
-    - Crafting system (16 recipes)
     - Dynamic lighting (sunlight + blocklight)
     
     ### Fixed
@@ -319,7 +319,7 @@ Troubleshooting Builds
 
 Solution: Add to build.spec hiddenimports::
 
-    hiddenimports=['numba', 'numba.core.types', 'numba.cuda']
+    hiddenimports=['numba', 'llvmlite', 'noise', 'glm', 'moderngl', 'pygame', 'scipy.linalg.cython_blas', 'scipy.linalg.cython_lapack']
 
 **Issue: "OpenGL 3.3 not supported"**
 

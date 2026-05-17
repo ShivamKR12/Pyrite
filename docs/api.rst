@@ -5,16 +5,16 @@ API Reference
 
 This section provides a structured reference to core Pyrite classes, methods, and constants. Use this for looking up specific functionality.
 
-Core Engine (main.py)
----------------------
+Core Engine (``main.py``)
+-------------------------
 
-**class Pyrite(App)**
+**class Pyrite**
 
 Root application class managing game lifecycle, state transitions, and subsystems.
 
 Key Attributes:
 
-- ``game_state``: Current state ('MAIN_MENU', 'IN_GAME', 'PAUSED', 'OPTIONS', 'LOADING')
+- ``game_state``: Current state (``'MAIN_MENU', 'IN_GAME', 'PAUSED', 'OPTIONS', 'LOADING', 'INVENTORY', 'WORLD_SELECT', 'CREATE_WORLD``)
 - ``world``: World instance (active when in-game)
 - ``player``: Player instance
 - ``scene``: Scene manager (rendering)
@@ -23,14 +23,15 @@ Key Attributes:
 Key Methods:
 
 - ``__init__()``: Initialize Pygame, OpenGL, load config
+- ``init_game_session(save_name, force_seed, game_mode)``: Load/create a world
 - ``run()``: Main loop (event → update → render)
 - ``handle_events()``: Dispatch OS events
-- ``update(delta_time)``: Tick all systems
+- ``update()``: Tick all systems
 - ``render()``: Draw frame
 - ``quit_game()``: Shutdown, save world
 
-Player (player.py)
--------------------
+Player (``player.py``)
+----------------------
 
 **class Player(Camera)**
 
@@ -50,15 +51,15 @@ Key Attributes:
 
 Key Methods:
 
-- ``update(delta_time)``: Physics, movement, animations
+- ``update()``: Physics, movement, animations
 - ``handle_event(event)``: Process input
 - ``get_aabb()``: Get bounding box
-- ``move_and_collide(delta_time, world)``: Physics with collision
+- ``move_and_collide()``: Physics with collision
 - ``add_item(voxel_id)``: Pickup item
 - ``take_damage(amount)``: Reduce health
 
-World (world.py)
------------------
+World (``world.py``)
+---------------------
 
 **class World**
 
@@ -66,21 +67,19 @@ Manages terrain generation, chunk loading/unloading, and persistence.
 
 Key Attributes:
 
-- ``active_chunks: Dict[(x,y,z), Chunk]``: Loaded chunks
-- ``seed: int``: World seed
-- ``terrain_gen: TerrainGenerator``: Procedural generation
-- ``persistence: WorldPersistence``: SQLite I/O
+- ``active_chunks: Dict``: Loaded chunks
+- ``world_seed: int``: World seed
+- ``voxels: np.ndarray``: Massive 1D array of all active world voxels
+- ``lightmaps: np.ndarray``: Massive 1D array of all active world light data
 
 Key Methods:
 
-- ``get_chunk(x, y, z, generate=True)``: Get or generate chunk
-- ``get_voxel(x, y, z)``: Get voxel ID at coordinate
-- ``set_voxel(x, y, z, id)``: Set voxel, trigger updates
-- ``unload_chunk(x, y, z)``: Unload chunk (saves to DB)
-- ``unload_all_chunks()``: Shutdown, flush all to disk
+- ``load_chunk(x, y, z)``: Queue a chunk for asynchronous loading/generation
+- ``unload_chunk(pos)``: Unload chunk and trigger async DB save
+- ``save()``: Synchronous shutdown, flush all to disk
 
-Chunk (world_objects/chunk.py)
--------------------------------
+Chunk (``chunk.py``)
+----------------------------------
 
 **class Chunk**
 
@@ -92,16 +91,16 @@ Key Attributes:
 - ``voxels: np.ndarray``: (110592,) uint8 voxel IDs
 - ``lightmap: np.ndarray``: (110592,) uint8 packed light
 - ``mesh: ChunkMesh``: Rendered geometry
-- ``loaded: bool``: Fully initialized
-- ``dirty: bool``: Needs mesh rebuild
+- ``is_empty: bool``: True if chunk contains only air
+- ``is_visible: bool``: Frustum/Occlusion visibility state
 
 Key Methods:
 
-- ``init_lighting()``: BFS light propagation
-- ``rebuild_mesh()``: Greedy meshing
+- ``build_mesh()``: Triggers chunk mesh builder
+- ``render()``: Submits VBOs to GPU
 
-Scene (scene.py)
------------------
+Scene (``scene.py``)
+--------------------
 
 **class Scene**
 
@@ -109,14 +108,11 @@ Multi-pass rendering orchestrator.
 
 Key Methods:
 
-- ``update(delta_time)``: Update cameras, animations
-- ``render(ctx, program)``: Render world + UI
-  - Opaque chunks (depth test)
-  - Sky, clouds, items
-  - UI overlay (depth disabled)
+- ``update()``: Update cameras, animations, chunks
+- ``render()``: Render world + UI
 
-VoxelHandler (voxel_handler.py)
---------------------------------
+VoxelHandler (``voxel_handler.py``)
+-----------------------------------
 
 **class VoxelHandler**
 
@@ -124,12 +120,12 @@ Raycast targeting and block manipulation.
 
 Key Methods:
 
-- ``raycast(world, max_distance)``: Cast ray from camera, return target block
-- ``add_voxel(pos, voxel_id)``: Place block
-- ``remove_voxel(pos)``: Mine block
+- ``ray_cast()``: Cast ray from camera, return target block
+- ``add_voxel()``: Place block
+- ``remove_voxel()``: Mine block
 
-Constants (settings.py)
------------------------
+Constants (``settings.py``)
+---------------------------
 
 Performance Tuning:
 
@@ -148,50 +144,21 @@ Physics:
 
 Survival:
 
-- ``MAX_HEALTH = 20``
-- ``MAX_HUNGER = 20``
-- ``MAX_OXYGEN = 20``
+- ``MAX_HEALTH = 20``: Player dies at 0 health
+- ``MAX_HUNGER = 20``: Hunger depletes over time, causes health loss at 0
+- ``MAX_OXYGEN = 20``: Breath underwater
 - ``BLOCK_HARDNESS``: Dict of block IDs → break time (ms)
 
 Environment:
 
 - ``CHUNK_SIZE = 48``: Voxels per axis
 - ``CHUNK_VOL = 110592``: Total voxels per chunk
-- ``WATER_LVL = 5.6``: Sea level
-- ``STONE_LVL = 8``: Bedrock layer start
+- ``WATER_LINE = 6``: Sea level
+- ``STONE_LVL = 49``: Bedrock layer start
 - ``WORLD_W, WORLD_H, WORLD_D``: Max chunk counts
 
-UI Components (ui/components.py)
----------------------------------
-
-**class UIComponent (Abstract)**
-
-Base class for all UI elements.
-
-Key Methods:
-
-- ``update(delta_time)``
-- ``render(ctx, program)``
-- ``handle_event(event)``
-- ``contains_point(x, y) → bool``
-
-**class Button(UIComponent)**
-
-- ``__init__(pos, size, label, callback)``
-- ``on_click()``: Execute callback
-
-**class Slider(UIComponent)**
-
-- ``value: float``: Current value
-- ``on_change(callback)``: Called on drag
-
-**class TextInput(UIComponent)**
-
-- ``text: str``: Current input
-- ``active: bool``: Focused
-
-Shader Programs
-----------------
+Shader Programs (``shader_program.py``)
+---------------------------------------
 
 **Uniform Bindings (All Shaders):**
 
@@ -215,10 +182,10 @@ Shader Programs
 - ``u_scale: vec2``: Size (NDC)
 - ``u_color: vec4``: Color (UI shaders)
 
-Mesh Building
---------------
+Mesh Building (``build_chunk_mesh.py``)
+---------------------------------------
 
-**Function: build_chunk_mesh(chunk_voxels, chunk_lightmap, chunk_pos, world_voxels, world_lightmaps, chunk_positions)**
+**Function:** ``build_chunk_mesh(chunk_voxels, chunk_lightmap, chunk_pos, world_voxels, world_lightmaps, chunk_positions)``
 
 Numba-compiled greedy meshing. Returns vertex data and light data (packed).
 
@@ -237,71 +204,56 @@ Numba-compiled greedy meshing. Returns vertex data and light data (packed).
 - Bits 7-4: Sunlight (0-15)
 - Bits 3-0: Blocklight (0-15)
 
-Terrain Generation
--------------------
+Terrain Generation (``terrain_gen.py``)
+---------------------------------------
+Handled via Numba JIT functions in ``Chunk.generate_terrain()`` using vectorized 3D simplex noise.
 
-**Function: get_height_at_column(x, z) → float**
+Lighting (``lighting.py``)
+--------------------------
 
-FBm noise combining 4 octaves. Returns height 0-256.
+Uses BFS lighting propagation logic executed completely through standalone Numba compiled functions such as:
 
-**Function: get_biome_at_column(x, z) → str**
-
-Returns one of: 'DESERT', 'SNOW', 'FOREST', 'GRASSLAND', 'PLAINS'
-
-**Function: generate_column(x, z) → List[int]**
-
-Returns voxel IDs from y=0 to y=256 for single column.
-
-Lighting
----------
-
-**Function: propagate_light_queue(queue, world_voxels, world_lightmaps, light_type)**
-
-BFS light spreading. Modifies world_lightmaps in-place.
-
-**Function: stitch_chunk_lighting(chunk, neighbors)**
-
-Synchronize light across chunk boundaries.
-
-Persistence
------------
-
-**Class: WorldPersistence**
-
-- ``save_chunk_to_db(conn, x, y, z, voxels, lightmap)``
-- ``load_chunk_from_db(conn, x, y, z) → (voxels, lightmap)``
-- ``save_player_data(conn, player)``
-- ``load_player_data(conn) → dict``
+- ``init_chunk_lighting()``
+- ``stitch_chunk_lighting()``
+- ``update_light_place_block()``
+- ``update_light_remove_block()``
+- ``place_torch()``
 
 Common Enums and Constants
 ---------------------------
 
-**Block IDs:**
+.. code-block:: python
 
-- AIR = 0
-- STONE = 1
-- DIRT = 2
-- GRASS = 3
-- SAND = 4
-- WATER = 5
-- WOOD = 6
-- LEAVES = 7
-- WOOD_PLANKS = 8
-- STICK = 9
-- WOODEN_PICKAXE = 10
+    # Block IDs
+    AIR = 0
+    SAND = 1
+    GRASS = 2
+    DIRT = 3
+    STONE = 4
+    SNOW = 5
+    LEAVES = 6
+    WOOD = 7
+    GRAVEL = 8
+    WOOD_PLANKS = 9
+    COBBELSTONE = 10
+    WATER = 11
+    GLOWSTONE = 12
+    GLASS = 13
+    CACTUS = 14
+    STONE_BRICKS = 15
+    # 16-32 are reserved for other blocks, 33+ are items
+    STICK = 33
+    WOODEN_PICKAXE = 34
 
-**Game States:**
+    # Game States
+    MAIN_MENU
+    WORLD_SELECT
+    CREATE_WORLD
+    LOADING
+    IN_GAME
+    INVENTORY
+    PAUSED
+    OPTIONS
 
-- MAIN_MENU
-- WORLD_SELECT
-- CREATE_WORLD
-- LOADING
-- IN_GAME
-- INVENTORY
-- PAUSED
-- OPTIONS
-
-**Transparent Blocks:**
-
-[AIR, WATER, GLASS, LEAVES, VINE]
-
+    # Transparent Blocks:
+    [AIR, WATER, GLASS, LEAVES]
