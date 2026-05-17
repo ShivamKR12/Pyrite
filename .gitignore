@@ -8,16 +8,14 @@ extra/
 saves/
 build/
 dist/
-docs/main.rst
 docs/_build/
 command.txt
 convert_audio.ps1
 test_obj.py
 append_texture.py
-audio_length.py
-ui.py
 config.json
 plans.txt
 crash_log.txt
 create_texture_array.py
 texture_array.png
+temp.txt
