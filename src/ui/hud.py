@@ -438,19 +438,18 @@ class InventoryUI:
                     self.update_crafting()
 
     def close(self):
+        player = self.app.player
+        
+        # Eject crafting items back into inventory (or drop them!)
+        for i in range(36, 40):
+            if player.inventory[i] != 0:
+                for _ in range(player.inventory_counts[i]):
+                    if not player.add_item(player.inventory[i]):
+                        self.app.scene.item_manager.add_item(player.position, player.inventory[i])
+                player.inventory[i], player.inventory_counts[i] = 0, 0
+        
+        # Re-inject leftover dragged item or drop it!
         if self.drag_id != 0:
-            player = self.app.player
-            
-            # Eject crafting items back into inventory (or drop them!)
-            for i in range(36, 40):
-                if player.inventory[i] != 0:
-                    for _ in range(player.inventory_counts[i]):
-                        if not player.add_item(player.inventory[i]):
-                            self.app.scene.item_manager.add_item(player.position, player.inventory[i])
-                    player.inventory[i], player.inventory_counts[i] = 0, 0
-            self.update_crafting()
-            
-            # Re-inject leftover dragged item or drop it!
             while self.drag_count > 0:
                 if not player.add_item(self.drag_id):
                     # Inventory completely full, drop in the world
@@ -460,6 +459,8 @@ class InventoryUI:
                 self.drag_count -= 1
             self.drag_id = 0
             self.drag_count = 0
+            
+        self.update_crafting()
 
     def render(self):
         gap = 0.01
