@@ -1,5 +1,6 @@
 pyinstaller
 pytest
+pylint
 sphinx
 sphinx-rtd-theme
 sphinxcontrib-mermaid
