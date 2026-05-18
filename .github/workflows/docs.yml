@@ -5,6 +5,11 @@ on:
     branches:
       - main
       - master
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'requirements-dev.txt'
+      - '.github/workflows/docs.yml'
 
 permissions:
   contents: write
