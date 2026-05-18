@@ -1,0 +1,25 @@
+/* Make the outer background slightly darker to contrast with the centered content */
+body, .wy-body-for-nav {
+    background: #f0f0f0;
+}
+
+/* Center the documentation view and add a drop shadow */
+.wy-grid-for-nav {
+    position: fixed !important;
+    max-width: 1400px;
+    margin: 0 auto;
+    box-shadow: 3px 3px 15px rgba(0,0,0,0.15);
+    overflow-y: auto;
+}
+
+@media screen and (min-width: 1400px) {
+    .wy-grid-for-nav {
+        left: calc(50% - 700px);
+    }
+}
+
+/* Expand content area to use the new larger max-width */
+.wy-nav-content {
+    max-width: none !important;
+    background: #ffffff;
+}

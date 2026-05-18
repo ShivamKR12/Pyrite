@@ -1,0 +1,793 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shader Systems and GLSL Breakdown &mdash; Pyrite 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=922250f3" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Mesh Systems and Vertex Packing" href="meshes.html" />
+    <link rel="prev" title="Lighting System:" href="lighting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Pyrite
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Core Engine Flow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="main.html#engine-initialization">Engine Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#state-management">State Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-generation-and-sessions">World Generation and Sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-loop">The Main Loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#scene-rendering-pipeline">Scene Rendering Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-session-initialization-loading-state">World Session Initialization (LOADING state)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#world-data-persistence">World &amp; Data Persistence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#sqlite-write-ahead-logging-wal">SQLite Write-Ahead Logging (WAL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#memory-management-1d-vs-3d-arrays">Memory Management (1D vs 3D Arrays)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Shader Systems and GLSL Breakdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#shader-architecture-overview">Shader Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#chunk-shader-main-terrain-rendering">Chunk Shader (Main Terrain Rendering)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#item-shader-dropped-items">Item Shader (Dropped Items)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sky-shader-procedural-atmosphere">Sky Shader (Procedural Atmosphere)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#clouds-shader-procedural">Clouds Shader (Procedural)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ui-block-shader-inventory-icons">UI Block Shader (Inventory Icons)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ui-color-shader-backgrounds-ui-quads">UI Color Shader (Backgrounds, UI Quads)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#uniform-management">Uniform Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#texture-atlas-binding">Texture Atlas Binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#debugging-tips">Debugging Tips</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-packing-32-bit-format">Vertex Packing: 32-Bit Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#greedy-meshing-algorithm">Greedy Meshing Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-light-smoothing">Vertex Light Smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#ambient-occlusion-ao-calculation">Ambient Occlusion (AO) Calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#flip-detection-diagonal-flip-for-lighting">Flip Detection (Diagonal Flip for Lighting)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#water-faces-handling">Water Faces Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#custom-mesh-variants">Custom Mesh Variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#replication-guide">Replication Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-topography-system">Biome &amp; Topography System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving">Cave Carving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-flora-generation">Tree &amp; Flora Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#height-generation-algorithm">Height Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-selection-algorithm">Biome Selection Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-placement-and-structure">Tree Placement and Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#ore-generation">Ore Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#column-generation-sequence">Column Generation Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="player.html">Player Systems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="player.html#player-class-hierarchy">Player Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#coordinate-system">Coordinate System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#controls-and-input-handling">Controls and Input Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#physics-gravity-and-velocity">Physics: Gravity and Velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#aabb-collision-detection">AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#water-physics">Water Physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#survival-stats-management">Survival Stats Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#inventory-management">Inventory Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#mining-and-placing">Mining and Placing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#view-bobbing-and-hand-animation">View Bobbing and Hand Animation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#dynamic-fov-during-sprint">Dynamic FOV During Sprint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#integration-with-game-loop">Integration with Game Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface Systems and Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#ui-architecture-overview">UI Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#core-ui-component-base-class">Core UI Component Base Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#in-game-hud-components">In-Game HUD Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#menu-system">Menu System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#layout-metrics-slot-grid">Layout Metrics (Slot Grid)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#button-and-component-library">Button and Component Library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#transition-animations">Transition Animations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#integration-with-main-loop">Integration with Main Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="persistence.html">World Persistence and Data Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#serialization-and-compression">Serialization and Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-operations">Database Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#world-management-file-system">World Management (File System)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival &amp; Physics Mechanics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#core-engine-main-py">Core Engine (<code class="docutils literal notranslate"><span class="pre">main.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#player-player-py">Player (<code class="docutils literal notranslate"><span class="pre">player.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#world-world-py">World (<code class="docutils literal notranslate"><span class="pre">world.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#chunk-chunk-py">Chunk (<code class="docutils literal notranslate"><span class="pre">chunk.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#scene-scene-py">Scene (<code class="docutils literal notranslate"><span class="pre">scene.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#voxelhandler-voxel-handler-py">VoxelHandler (<code class="docutils literal notranslate"><span class="pre">voxel_handler.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#constants-settings-py">Constants (<code class="docutils literal notranslate"><span class="pre">settings.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#shader-programs-shader-program-py">Shader Programs (<code class="docutils literal notranslate"><span class="pre">shader_program.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#mesh-building-build-chunk-mesh-py">Mesh Building (<code class="docutils literal notranslate"><span class="pre">build_chunk_mesh.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#terrain-generation-terrain-gen-py">Terrain Generation (<code class="docutils literal notranslate"><span class="pre">terrain_gen.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#lighting-lighting-py">Lighting (<code class="docutils literal notranslate"><span class="pre">lighting.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#common-enums-and-constants">Common Enums and Constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyrite</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Shader Systems and GLSL Breakdown</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/shaders.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="shader-systems-and-glsl-breakdown">
+<span id="shaders"></span><h1>Shader Systems and GLSL Breakdown<a class="headerlink" href="#shader-systems-and-glsl-breakdown" title="Link to this heading"></a></h1>
+<p>This document provides detailed explanations of Pyrite’s OpenGL shaders (GLSL 3.3), including vertex and fragment processing, uniform bindings, and lighting integration. All shaders are located in <code class="docutils literal notranslate"><span class="pre">src/shaders/</span></code>.</p>
+<section id="shader-architecture-overview">
+<h2>Shader Architecture Overview<a class="headerlink" href="#shader-architecture-overview" title="Link to this heading"></a></h2>
+<p>Pyrite uses 8 distinct shader pairs (vertex + fragment), each rendering a specific component:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1. chunk.vert / chunk.frag       → Voxel terrain (main geometry)
+2. item.vert / item.frag         → Dropped items
+3. obj.vert / obj.frag           → Wavefront .obj models (trees, structures)
+4. sky.vert / sky.frag           → Procedural sky (Rayleigh scattering)
+5. clouds.vert / clouds.frag     → Procedural clouds
+6. ui_block.vert / ui_block.frag → UI block icons (inventory, hotbar)
+7. ui_color.vert / ui_color.frag → UI colored quads (backgrounds, menus)
+8. ui_text.vert / ui_text.frag   → Text rendering (not detailed; uses glyph atlas)
+9. quad.vert / quad.frag         → Debug wireframes (frustum bounds, voxel markers)
+</pre></div>
+</div>
+</section>
+<section id="chunk-shader-main-terrain-rendering">
+<h2>Chunk Shader (Main Terrain Rendering)<a class="headerlink" href="#chunk-shader-main-terrain-rendering" title="Link to this heading"></a></h2>
+<p><strong>chunk.vert</strong> - Vertex Shader</p>
+<p>Purpose: Unpack vertex data, calculate world position, apply lighting, compute screen position.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">uint</span><span class="w"> </span><span class="n">packed_data</span><span class="p">;</span>
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">uint</span><span class="w"> </span><span class="n">light_data</span><span class="p">;</span>
+
+<span class="c1">// Unpacked per-vertex</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">z</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">ao_id</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">flip_id</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_proj</span><span class="p">;</span><span class="w">     </span><span class="c1">// Projection matrix</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_view</span><span class="p">;</span><span class="w">     </span><span class="c1">// View matrix (camera)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_model</span><span class="p">;</span><span class="w">    </span><span class="c1">// Model matrix (typically identity)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">;</span><span class="w">  </span><span class="c1">// Sun position (normalized)</span>
+
+<span class="c1">// Output to fragment shader</span>
+<span class="k">flat</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">voxel_id</span><span class="p">;</span>
+<span class="k">flat</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">face_id</span><span class="p">;</span>
+<span class="k">flat</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">is_water_neighbor</span><span class="p">;</span>
+<span class="k">out</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uv</span><span class="p">;</span>
+<span class="k">out</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">shading</span><span class="p">;</span>
+<span class="k">out</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">frag_world_pos</span><span class="p">;</span>
+<span class="k">out</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sun_light</span><span class="p">;</span>
+<span class="k">out</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">block_light</span><span class="p">;</span>
+
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">ao_values</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="mi">4</span><span class="p">](</span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.25</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">face_normals</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">[</span><span class="mi">6</span><span class="p">](</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">),</span><span class="w">  </span><span class="c1">// +X face</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">),</span><span class="w">  </span><span class="c1">// -X face</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">),</span><span class="w">  </span><span class="c1">// +Y face</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mo">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">),</span><span class="w">  </span><span class="c1">// -Y face</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mi">1</span><span class="p">),</span><span class="w">  </span><span class="c1">// +Z face</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w">   </span><span class="c1">// -Z face</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Unpacking Function:</strong></p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="n">unpack</span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="n">packed_data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Extract bit fields</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">26</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3F</span><span class="p">);</span>
+<span class="w">    </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">20</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3F</span><span class="p">);</span>
+<span class="w">    </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">14</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3F</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">voxel_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xFF</span><span class="p">);</span>
+<span class="w">    </span><span class="n">face_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x7</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ao_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3</span><span class="p">);</span>
+<span class="w">    </span><span class="n">flip_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Main Vertex Shader Logic:</strong></p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">unpack</span><span class="p">(</span><span class="n">packed_data</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Unpack light (4-4 bit split)</span>
+<span class="w">    </span><span class="n">sun_light</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">((</span><span class="n">light_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xF</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">15.0</span><span class="p">;</span><span class="w">      </span><span class="c1">// Normalize 0-15 to 0.0-1.0</span>
+<span class="w">    </span><span class="n">block_light</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">light_data</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xF</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">15.0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// World position</span>
+<span class="w">    </span><span class="n">frag_world_pos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="kt">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">z</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// Compute UV coordinates (0-1 within face, varies by face_id)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">face_id</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1">// ±X faces: use Y, Z</span>
+<span class="w">        </span><span class="n">uv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="kt">float</span><span class="p">(</span><span class="n">z</span><span class="p">),</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">y</span><span class="p">))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">48.0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">face_id</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1">// ±Y faces: use X, Z</span>
+<span class="w">        </span><span class="n">uv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="kt">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">z</span><span class="p">))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">48.0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1">// ±Z faces: use X, Y</span>
+<span class="w">        </span><span class="n">uv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="kt">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">y</span><span class="p">))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">48.0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Apply flip_id if needed (diagonal flip for lighting optimization)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">flip_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">uv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">uv</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">uv</span><span class="p">.</span><span class="n">y</span><span class="p">);</span><span class="w">  </span><span class="c1">// Reflect UV</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Compute diffuse lighting (normal dot light direction)</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">face_normals</span><span class="p">[</span><span class="n">face_id</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">diffuse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">u_sun_direction</span><span class="p">)),</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Combine ambient (0.5) + diffuse (0.5x intensity)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">base_light</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">diffuse</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Apply AO darkening (ao_values maps 0-3 to brightness factors)</span>
+<span class="w">    </span><span class="n">shading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">base_light</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ao_values</span><span class="p">[</span><span class="n">ao_id</span><span class="p">];</span>
+
+<span class="w">    </span><span class="c1">// Screen position</span>
+<span class="w">    </span><span class="nb">gl_Position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_proj</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">m_view</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">m_model</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">frag_world_pos</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>chunk.frag</strong> - Fragment Shader</p>
+<p>Purpose: Sample texture, apply lighting, handle day/night cycle, and apply fog.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">fragColor</span><span class="p">;</span>
+
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">gamma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">2.2</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">inv_gamma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">gamma</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2DArray</span><span class="w"> </span><span class="n">u_texture_array_0</span><span class="p">;</span><span class="w">  </span><span class="c1">// Texture atlas (256 layers, one per voxel ID)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bg_color</span><span class="p">;</span><span class="w">                     </span><span class="c1">// Background color (sky blue)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">u_underwater_tint</span><span class="p">;</span><span class="w">            </span><span class="c1">// Apply underwater blue tint</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_fog_density</span><span class="p">;</span><span class="w">               </span><span class="c1">// Fog thickness (0.0-1.0)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_fog_max_opacity</span><span class="p">;</span><span class="w">           </span><span class="c1">// Max fog opacity</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_time</span><span class="p">;</span><span class="w">                      </span><span class="c1">// Time in seconds (for animations)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">;</span><span class="w">              </span><span class="c1">// Sun direction (for day/night)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_texture_map</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span><span class="w">            </span><span class="c1">// Voxel ID → texture layer mapping</span>
+
+<span class="k">in</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uv</span><span class="p">;</span>
+<span class="k">in</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">shading</span><span class="p">;</span>
+<span class="k">in</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">frag_world_pos</span><span class="p">;</span>
+<span class="k">in</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sun_light</span><span class="p">;</span>
+<span class="k">in</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">block_light</span><span class="p">;</span>
+
+<span class="k">flat</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">face_id</span><span class="p">;</span>
+<span class="k">flat</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">voxel_id</span><span class="p">;</span>
+<span class="k">flat</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">is_water_neighbor</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>Fragment Processing:</strong></p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Get texture layer from voxel ID</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tex_layer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u_texture_map</span><span class="p">[</span><span class="n">voxel_id</span><span class="p">];</span>
+
+<span class="w">    </span><span class="c1">// Sample texture with 3D coordinate (u, v, layer)</span>
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">tex_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">u_texture_array_0</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">tex_layer</span><span class="p">)));</span>
+
+<span class="w">    </span><span class="c1">// Discard transparent pixels (alpha &lt; 0.5)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tex_color</span><span class="p">.</span><span class="n">a</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="k">discard</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Combine sunlight and blocklight (take max for better visuals)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">light_intensity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">sun_light</span><span class="p">,</span><span class="w"> </span><span class="n">block_light</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Day/night cycle: multiply sunlight by time-based factor</span>
+<span class="w">    </span><span class="c1">// Ranges 0.5 (night, u_sun_direction.y = -1) to 1.0 (day, u_sun_direction.y = 1)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">day_night</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+<span class="w">    </span><span class="n">sun_light</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">day_night</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">light_intensity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">sun_light</span><span class="p">,</span><span class="w"> </span><span class="n">block_light</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Apply ambient occlusion (via shading variable from vertex shader)</span>
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">lit_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex_color</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="n">light_intensity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shading</span><span class="p">),</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Apply fog (linear fog)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">length</span><span class="p">(</span><span class="n">frag_world_pos</span><span class="p">);</span><span class="w">  </span><span class="c1">// Distance from camera (simplified)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">fog_factor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clamp</span><span class="p">((</span><span class="n">dist</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">u_fog_density</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">50.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">u_fog_max_opacity</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">fogged</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">lit_color</span><span class="p">,</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">bg_color</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="n">fog_factor</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Apply underwater tint if enabled and in water</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">u_underwater_tint</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">is_water_neighbor</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fogged</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">fogged</span><span class="p">,</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="mf">0.3</span><span class="p">);</span><span class="w">  </span><span class="c1">// Blue tint, 30% opacity</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Gamma correction (convert from linear to sRGB for display)</span>
+<span class="w">    </span><span class="n">fragColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">pow</span><span class="p">(</span><span class="n">fogged</span><span class="p">.</span><span class="n">rgb</span><span class="p">,</span><span class="w"> </span><span class="n">gamma</span><span class="p">),</span><span class="w"> </span><span class="n">fogged</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Key Uniforms:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>u_texture_array_0:      256-layer 2D array texture (512x512 each layer)
+u_texture_map[256]:     Array mapping voxel ID to texture layer
+u_sun_direction:        Sun direction (affects lighting and day/night)
+u_time:                 Global time for animations (incremented each frame)
+u_fog_density:          Distance at which fog begins
+u_fog_max_opacity:      Maximum fog opacity (typically 0.85)
+u_underwater_tint:      Boolean enable/disable
+bg_color:               Background color (sky blue, RGB)
+</pre></div>
+</div>
+</section>
+<section id="item-shader-dropped-items">
+<h2>Item Shader (Dropped Items)<a class="headerlink" href="#item-shader-dropped-items" title="Link to this heading"></a></h2>
+<p><strong>item.vert</strong> - Similar to chunk.vert but for dropped item geometry.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">in_position</span><span class="p">;</span>
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">in_tex_coord</span><span class="p">;</span>
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">in_face_id</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_proj</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_view</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_model</span><span class="p">;</span><span class="w">     </span><span class="c1">// Item-specific transform (position, rotation, scale)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">;</span>
+
+<span class="k">out</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uv</span><span class="p">;</span>
+<span class="k">flat</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">face_id</span><span class="p">;</span>
+<span class="k">out</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">shading</span><span class="p">;</span>
+
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">face_normals</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">[</span><span class="mi">6</span><span class="p">](...);</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">uv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">in_tex_coord</span><span class="p">;</span>
+<span class="w">    </span><span class="n">face_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="n">in_face_id</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">face_normals</span><span class="p">[</span><span class="n">face_id</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">diffuse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">u_sun_direction</span><span class="p">)),</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">diffuse</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span><span class="w">  </span><span class="c1">// Ambient + diffuse</span>
+
+<span class="w">    </span><span class="nb">gl_Position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_proj</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">m_view</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">m_model</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">in_position</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>item.frag</strong> - Same logic as chunk.frag but samples item-specific texture.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">fragColor</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2DArray</span><span class="w"> </span><span class="n">u_texture_array_0</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">voxel_id</span><span class="p">;</span><span class="w">          </span><span class="c1">// Current item ID</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bg_color</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_fog_density</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_fog_max_opacity</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_texture_map</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
+
+<span class="k">in</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uv</span><span class="p">;</span>
+<span class="k">flat</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">face_id</span><span class="p">;</span>
+<span class="k">in</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">shading</span><span class="p">;</span>
+
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">gamma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">2.2</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">inv_gamma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">gamma</span><span class="p">;</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tex_layer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u_texture_map</span><span class="p">[</span><span class="n">voxel_id</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">tex_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">u_texture_array_0</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">tex_layer</span><span class="p">)));</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tex_color</span><span class="p">.</span><span class="n">a</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="k">discard</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">lit_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex_color</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="n">shading</span><span class="p">),</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Apply fog (same as chunk shader)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">length</span><span class="p">(</span><span class="n">frag_world_pos</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">fog_factor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clamp</span><span class="p">((</span><span class="n">dist</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">u_fog_density</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">50.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">u_fog_max_opacity</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">fogged</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">lit_color</span><span class="p">,</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">bg_color</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="n">fog_factor</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">fragColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">pow</span><span class="p">(</span><span class="n">fogged</span><span class="p">.</span><span class="n">rgb</span><span class="p">,</span><span class="w"> </span><span class="n">gamma</span><span class="p">),</span><span class="w"> </span><span class="n">fogged</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="sky-shader-procedural-atmosphere">
+<h2>Sky Shader (Procedural Atmosphere)<a class="headerlink" href="#sky-shader-procedural-atmosphere" title="Link to this heading"></a></h2>
+<p><strong>sky.vert</strong> - Minimalist vertex shader for full-screen quad.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">in_position</span><span class="p">;</span>
+
+<span class="k">out</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">view_dir</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_inv_proj</span><span class="p">;</span><span class="w">   </span><span class="c1">// Inverse projection matrix</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_inv_view</span><span class="p">;</span><span class="w">   </span><span class="c1">// Inverse view matrix</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Construct ray direction from NDC position to world space</span>
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">ray_clip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">in_position</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span><span class="w">  </span><span class="c1">// Z=-1 for far plane</span>
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">ray_eye</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_inv_proj</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ray_clip</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ray_eye</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">ray_eye</span><span class="p">.</span><span class="n">xy</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span><span class="w">         </span><span class="c1">// Point at infinity</span>
+
+<span class="w">    </span><span class="n">view_dir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">((</span><span class="n">m_inv_view</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ray_eye</span><span class="p">).</span><span class="n">xyz</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nb">gl_Position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">in_position</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span><span class="w">     </span><span class="c1">// Full-screen quad</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>sky.frag</strong> - Rayleigh scattering atmosphere.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">fragColor</span><span class="p">;</span>
+<span class="k">in</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">view_dir</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bg_color</span><span class="p">;</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Rayleigh scattering: intensity based on angle to sun</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">sun_angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="n">view_dir</span><span class="p">),</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">u_sun_direction</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// Phase function (Rayleigh-like, but simplified)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">sun_angle</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sun_angle</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Color sky based on sun angle</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">view_dir</span><span class="p">.</span><span class="n">y</span><span class="p">;</span><span class="w">  </span><span class="c1">// Vertical component</span>
+
+<span class="w">    </span><span class="c1">// Sunrise/sunset color shift</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">day_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.53</span><span class="p">,</span><span class="w"> </span><span class="mf">0.81</span><span class="p">,</span><span class="w"> </span><span class="mf">0.92</span><span class="p">);</span><span class="w">      </span><span class="c1">// Bright blue</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">sunset_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.6</span><span class="p">,</span><span class="w"> </span><span class="mf">0.3</span><span class="p">);</span><span class="w">      </span><span class="c1">// Orange/red</span>
+
+<span class="w">    </span><span class="c1">// Interpolate based on sun height</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">sun_height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">.</span><span class="n">y</span><span class="p">;</span><span class="w">  </span><span class="c1">// -1 (night) to 1 (day)</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">sky_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.2</span><span class="p">),</span><span class="w"> </span><span class="n">day_color</span><span class="p">,</span><span class="w"> </span><span class="n">clamp</span><span class="p">(</span><span class="n">sun_height</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// Add sunset glow near horizon</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sun_height</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.3</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">sky_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">sky_color</span><span class="p">,</span><span class="w"> </span><span class="n">sunset_color</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">0.3</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sun_height</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">fragColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">sky_color</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">phase</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="clouds-shader-procedural">
+<h2>Clouds Shader (Procedural)<a class="headerlink" href="#clouds-shader-procedural" title="Link to this heading"></a></h2>
+<p><strong>clouds.vert</strong> - Each cloud is a simple quad; vertex shader applies noise-based offset.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">in_position</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_proj</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">m_view</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">center</span><span class="p">;</span><span class="w">            </span><span class="c1">// 0 or 1, alternates between two layers</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_time</span><span class="p">;</span><span class="w">          </span><span class="c1">// For animation</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">cloud_scale</span><span class="p">;</span><span class="w">     </span><span class="c1">// Size of clouds</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">player_pos</span><span class="p">;</span><span class="w">       </span><span class="c1">// For camera-relative positioning</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">world_pos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">in_position</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Offset clouds with time for drifting effect</span>
+<span class="w">    </span><span class="n">world_pos</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">u_time</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.1</span><span class="p">;</span><span class="w">  </span><span class="c1">// Drift slowly</span>
+<span class="w">    </span><span class="n">world_pos</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">u_time</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.05</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Camera-relative positioning (clouds centered on player)</span>
+<span class="w">    </span><span class="n">world_pos</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">player_pos</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Apply scale</span>
+<span class="w">    </span><span class="n">world_pos</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">cloud_scale</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nb">gl_Position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_proj</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">m_view</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">world_pos</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>clouds.frag</strong> - Noise-based cloud appearance.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">fragColor</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bg_color</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_fog_density</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_fog_max_opacity</span><span class="p">;</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Procedural noise (simplified: use gl_FragCoord for pseudo-randomness)</span>
+<span class="w">    </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">gl_FragCoord</span><span class="p">.</span><span class="n">xy</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">512.0</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">noise</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fract</span><span class="p">(</span><span class="n">sin</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="mf">12.9898</span><span class="p">,</span><span class="w"> </span><span class="mf">78.233</span><span class="p">)))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">43758.5453</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Cloud color: white with some shading</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">cloud_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">0.8</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">noise</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.2</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Day/night shading</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">day_night</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+<span class="w">    </span><span class="n">cloud_color</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">day_night</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Transparency based on noise (cloudy areas more opaque)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clamp</span><span class="p">(</span><span class="n">noise</span><span class="p">,</span><span class="w"> </span><span class="mf">0.3</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">fragColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">cloud_color</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="ui-block-shader-inventory-icons">
+<h2>UI Block Shader (Inventory Icons)<a class="headerlink" href="#ui-block-shader-inventory-icons" title="Link to this heading"></a></h2>
+<p><strong>ui_block.vert</strong> - 2D quad positioning.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">in_position</span><span class="p">;</span>
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">in_tex_coord</span><span class="p">;</span>
+
+<span class="k">out</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uv</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">u_offset</span><span class="p">;</span><span class="w">   </span><span class="c1">// Screen position (-1 to 1)</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">u_scale</span><span class="p">;</span><span class="w">    </span><span class="c1">// Size</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nb">gl_Position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">in_position</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">u_scale</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">u_offset</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">uv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">in_tex_coord</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>ui_block.frag</strong> - Sample and display.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">fragColor</span><span class="p">;</span>
+
+<span class="k">in</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uv</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2DArray</span><span class="w"> </span><span class="n">u_texture_array_0</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">voxel_id</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_texture_map</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tex_layer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u_texture_map</span><span class="p">[</span><span class="n">voxel_id</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">vec4</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">u_texture_array_0</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">tex_layer</span><span class="p">)));</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">color</span><span class="p">.</span><span class="n">a</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="k">discard</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">fragColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">color</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="ui-color-shader-backgrounds-ui-quads">
+<h2>UI Color Shader (Backgrounds, UI Quads)<a class="headerlink" href="#ui-color-shader-backgrounds-ui-quads" title="Link to this heading"></a></h2>
+<p><strong>ui_color.vert</strong> - Simple 2D positioning.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">in_position</span><span class="p">;</span>
+
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">u_offset</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">u_scale</span><span class="p">;</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nb">gl_Position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">in_position</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">u_scale</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">u_offset</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>ui_color.frag</strong> - Output uniform color.</p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="cp">#version 330 core</span>
+
+<span class="k">layout</span><span class="w"> </span><span class="p">(</span><span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">fragColor</span><span class="p">;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">u_color</span><span class="p">;</span><span class="w">  </span><span class="c1">// RGBA color</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">fragColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u_color</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="uniform-management">
+<h2>Uniform Management<a class="headerlink" href="#uniform-management" title="Link to this heading"></a></h2>
+<p>All uniforms are set from Python via ModernGL’s <code class="docutils literal notranslate"><span class="pre">program</span></code> object:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example: Setting chunk shader uniforms</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">&#39;m_proj&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">projection_matrix</span><span class="p">)</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">&#39;m_view&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">view_matrix</span><span class="p">)</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_sun_direction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">sun_direction</span>  <span class="c1"># glm.vec3</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_texture_map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">texture_map</span>      <span class="c1"># List[int]</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">current_time</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_fog_density&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">fog_start_distance</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">&#39;bg_color&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.53</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">,</span> <span class="mf">0.92</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="texture-atlas-binding">
+<h2>Texture Atlas Binding<a class="headerlink" href="#texture-atlas-binding" title="Link to this heading"></a></h2>
+<p>All block textures are combined into a single <code class="docutils literal notranslate"><span class="pre">sampler2DArray</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load texture atlas</span>
+<span class="n">atlas</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">texture_array</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>  <span class="c1"># 256 layers, 512x512 each</span>
+
+<span class="c1"># Bind to shader</span>
+<span class="n">atlas</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_texture_array_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="debugging-tips">
+<h2>Debugging Tips<a class="headerlink" href="#debugging-tips" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Visualize Normals:</strong> Replace fragment color with normal vector (for lighting issues).</p></li>
+<li><p><strong>Show AO:</strong> Output ao_id directly as grayscale to verify ambient occlusion.</p></li>
+<li><p><strong>Show Lighting:</strong> Output sun_light and block_light channels separately.</p></li>
+<li><p><strong>Wireframe:</strong> Use <code class="docutils literal notranslate"><span class="pre">glPolygonMode(GL_FRONT_AND_BACK,</span> <span class="pre">GL_LINE)</span></code> in Python to see mesh structure.</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lighting.html" class="btn btn-neutral float-left" title="Lighting System:" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="meshes.html" class="btn btn-neutral float-right" title="Mesh Systems and Vertex Packing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, ShivamKR12.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

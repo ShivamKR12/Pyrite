@@ -1,0 +1,741 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mesh Systems and Vertex Packing &mdash; Pyrite 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=922250f3" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Procedural Terrain Generation" href="terrain.html" />
+    <link rel="prev" title="Shader Systems and GLSL Breakdown" href="shaders.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Pyrite
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Core Engine Flow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="main.html#engine-initialization">Engine Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#state-management">State Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-generation-and-sessions">World Generation and Sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-loop">The Main Loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#scene-rendering-pipeline">Scene Rendering Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-session-initialization-loading-state">World Session Initialization (LOADING state)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#world-data-persistence">World &amp; Data Persistence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#sqlite-write-ahead-logging-wal">SQLite Write-Ahead Logging (WAL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#memory-management-1d-vs-3d-arrays">Memory Management (1D vs 3D Arrays)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="shaders.html">Shader Systems and GLSL Breakdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#shader-architecture-overview">Shader Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#chunk-shader-main-terrain-rendering">Chunk Shader (Main Terrain Rendering)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#item-shader-dropped-items">Item Shader (Dropped Items)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#sky-shader-procedural-atmosphere">Sky Shader (Procedural Atmosphere)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#clouds-shader-procedural">Clouds Shader (Procedural)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#ui-block-shader-inventory-icons">UI Block Shader (Inventory Icons)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#ui-color-shader-backgrounds-ui-quads">UI Color Shader (Backgrounds, UI Quads)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#uniform-management">Uniform Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#texture-atlas-binding">Texture Atlas Binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mesh Systems and Vertex Packing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vertex-packing-32-bit-format">Vertex Packing: 32-Bit Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#greedy-meshing-algorithm">Greedy Meshing Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vertex-light-smoothing">Vertex Light Smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ambient-occlusion-ao-calculation">Ambient Occlusion (AO) Calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flip-detection-diagonal-flip-for-lighting">Flip Detection (Diagonal Flip for Lighting)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#water-faces-handling">Water Faces Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-flow-example">Data Flow Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-mesh-variants">Custom Mesh Variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#replication-guide">Replication Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-topography-system">Biome &amp; Topography System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving">Cave Carving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-flora-generation">Tree &amp; Flora Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#height-generation-algorithm">Height Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-selection-algorithm">Biome Selection Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-placement-and-structure">Tree Placement and Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#ore-generation">Ore Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#column-generation-sequence">Column Generation Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="player.html">Player Systems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="player.html#player-class-hierarchy">Player Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#coordinate-system">Coordinate System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#controls-and-input-handling">Controls and Input Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#physics-gravity-and-velocity">Physics: Gravity and Velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#aabb-collision-detection">AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#water-physics">Water Physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#survival-stats-management">Survival Stats Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#inventory-management">Inventory Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#mining-and-placing">Mining and Placing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#view-bobbing-and-hand-animation">View Bobbing and Hand Animation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#dynamic-fov-during-sprint">Dynamic FOV During Sprint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#integration-with-game-loop">Integration with Game Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface Systems and Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#ui-architecture-overview">UI Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#core-ui-component-base-class">Core UI Component Base Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#in-game-hud-components">In-Game HUD Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#menu-system">Menu System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#layout-metrics-slot-grid">Layout Metrics (Slot Grid)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#button-and-component-library">Button and Component Library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#transition-animations">Transition Animations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#integration-with-main-loop">Integration with Main Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="persistence.html">World Persistence and Data Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#serialization-and-compression">Serialization and Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-operations">Database Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#world-management-file-system">World Management (File System)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival &amp; Physics Mechanics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#core-engine-main-py">Core Engine (<code class="docutils literal notranslate"><span class="pre">main.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#player-player-py">Player (<code class="docutils literal notranslate"><span class="pre">player.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#world-world-py">World (<code class="docutils literal notranslate"><span class="pre">world.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#chunk-chunk-py">Chunk (<code class="docutils literal notranslate"><span class="pre">chunk.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#scene-scene-py">Scene (<code class="docutils literal notranslate"><span class="pre">scene.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#voxelhandler-voxel-handler-py">VoxelHandler (<code class="docutils literal notranslate"><span class="pre">voxel_handler.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#constants-settings-py">Constants (<code class="docutils literal notranslate"><span class="pre">settings.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#shader-programs-shader-program-py">Shader Programs (<code class="docutils literal notranslate"><span class="pre">shader_program.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#mesh-building-build-chunk-mesh-py">Mesh Building (<code class="docutils literal notranslate"><span class="pre">build_chunk_mesh.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#terrain-generation-terrain-gen-py">Terrain Generation (<code class="docutils literal notranslate"><span class="pre">terrain_gen.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#lighting-lighting-py">Lighting (<code class="docutils literal notranslate"><span class="pre">lighting.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#common-enums-and-constants">Common Enums and Constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyrite</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Mesh Systems and Vertex Packing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/meshes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mesh-systems-and-vertex-packing">
+<span id="meshes"></span><h1>Mesh Systems and Vertex Packing<a class="headerlink" href="#mesh-systems-and-vertex-packing" title="Link to this heading"></a></h1>
+<p>This document provides a complete, replicable guide to Pyrite’s mesh architecture, including data structures, vertex packing, the greedy meshing algorithm, and ambient occlusion (AO) calculation.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Pyrite renders millions of voxels using a multi-stage mesh pipeline:</p>
+<ol class="arabic simple">
+<li><p><strong>Greedy Meshing:</strong> CPU-side algorithm groups adjacent coplanar faces into large rectangular polygons.</p></li>
+<li><p><strong>Vertex Packing:</strong> Vertex attributes compressed into 32-bit integers to minimize GPU memory.</p></li>
+<li><p><strong>Lighting:</strong> Per-vertex smoothed light values sampled from adjacent blocks.</p></li>
+<li><p><strong>AO Calculation:</strong> Corner darkness determined by surrounding block density.</p></li>
+<li><p><strong>GPU Upload:</strong> Main thread creates VAO/VBO objects from packed data.</p></li>
+<li><p><strong>Rendering:</strong> Draw calls per mesh (opaque + transparent passes).</p></li>
+</ol>
+</section>
+<section id="mesh-classes-hierarchy">
+<h2>Mesh Classes Hierarchy<a class="headerlink" href="#mesh-classes-hierarchy" title="Link to this heading"></a></h2>
+<p><strong>BaseMesh</strong> (Core Abstract Class)</p>
+<p>Base class for all mesh types. Defines the interface:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>class BaseMesh:
+    __init__(self, ctx, program):
+        ctx: ModernGL context
+        program: Shader program to bind during render
+        self.vao: Vertex Array Object (initially None)
+        self.vbo: Vertex Buffer Object (initially None)
+        self.vertex_count: int
+        self.index_count: int
+        self.render_mode: GLenum (GL_TRIANGLES default)
+
+    render():
+        # Bind program, VAO, draw (implementation varies)
+
+    render_instanced():
+        # Render multiple instances
+
+    destroy():
+        # Release GPU resources
+</pre></div>
+</div>
+<p><strong>ChunkMesh</strong> (Per-Chunk Geometry)</p>
+<p>Represents a single 48x48x48 chunk. Created during chunk building.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>class ChunkMesh(BaseMesh):
+    __init__(self, chunk_voxels, chunk_lightmap, chunk_pos, ctx, program, world_data):
+        # Greedy mesh the chunk and store vertex data
+        self.chunk_pos: (int, int, int)  # Chunk coordinates in world
+        self.vertex_data: np.ndarray (uint32, packed vertices)
+        self.light_data: np.ndarray (uint32, packed light)
+        self.opaque_count, self.water_count: Face counts
+
+    render():
+        # Render opaque faces, then water faces with separate passes
+</pre></div>
+</div>
+<p><strong>CloudMesh, CubeMesh, ItemMesh, ObjMesh</strong> (Specialized)</p>
+<ul class="simple">
+<li><p><strong>CloudMesh:</strong> Fixed 2D procedural clouds (sky)</p></li>
+<li><p><strong>CubeMesh:</strong> Renders static cubes (UI, debugging)</p></li>
+<li><p><strong>ItemMesh:</strong> Item entities dropped in world</p></li>
+<li><p><strong>ObjMesh:</strong> Wavefront .obj models (trees, items)</p></li>
+</ul>
+</section>
+<section id="vertex-packing-32-bit-format">
+<h2>Vertex Packing: 32-Bit Format<a class="headerlink" href="#vertex-packing-32-bit-format" title="Link to this heading"></a></h2>
+<p>To minimize GPU bandwidth and memory, each vertex attribute is bit-packed into a single 32-bit unsigned integer.</p>
+<p><strong>Packed Vertex Layout:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Bits 31-26 (6 bits): X coordinate (0-47)
+Bits 25-20 (6 bits): Y coordinate (0-47)
+Bits 19-14 (6 bits): Z coordinate (0-47)
+Bits 13-6  (8 bits): Voxel ID (0-255)
+Bits 5-3   (3 bits): Face ID (0-5, one of 6 faces)
+Bits 2-1   (2 bits): AO ID (0-3, ambient occlusion level)
+Bit  0     (1 bit):  Flip ID (0 or 1, diagonal flip flag)
+</pre></div>
+</div>
+<p><strong>Total:</strong> 32 bits = 4 bytes per vertex (vs. 16 bytes for traditional (x, y, z, id, face, ao, flip, light))</p>
+<p><strong>Packing Formula:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">packed_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">26</span> \
+            <span class="o">|</span> <span class="p">(</span><span class="n">y</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">20</span> \
+            <span class="o">|</span> <span class="p">(</span><span class="n">z</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">14</span> \
+            <span class="o">|</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span> \
+            <span class="o">|</span> <span class="p">(</span><span class="n">face_id</span> <span class="o">&amp;</span> <span class="mh">0x7</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span> \
+            <span class="o">|</span> <span class="p">(</span><span class="n">ao_id</span> <span class="o">&amp;</span> <span class="mh">0x3</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span> \
+            <span class="o">|</span> <span class="p">(</span><span class="n">flip_id</span> <span class="o">&amp;</span> <span class="mh">0x1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Unpacking (in Vertex Shader):</strong></p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="n">unpack</span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="n">packed_data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">26</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3F</span><span class="p">);</span>
+<span class="w">    </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">20</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3F</span><span class="p">);</span>
+<span class="w">    </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">14</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3F</span><span class="p">);</span>
+<span class="w">    </span><span class="n">voxel_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xFF</span><span class="p">);</span>
+<span class="w">    </span><span class="n">face_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x7</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ao_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3</span><span class="p">);</span>
+<span class="w">    </span><span class="n">flip_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Light Data (Separate uint32):</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Bits 7-4 (4 bits): Sunlight (0-15)
+Bits 3-0 (4 bits): Blocklight (0-15)
+</pre></div>
+</div>
+</section>
+<section id="greedy-meshing-algorithm">
+<h2>Greedy Meshing Algorithm<a class="headerlink" href="#greedy-meshing-algorithm" title="Link to this heading"></a></h2>
+<p>Greedy meshing reduces face count by grouping coplanar, identical-ID faces into rectangles. Executed on CPU; results are packed and uploaded to GPU.</p>
+<p><strong>High-Level Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>For each of 3 orthogonal planes (XY, XZ, YZ):</p>
+<ol class="loweralpha simple">
+<li><p>Iterate through all slices perpendicular to that plane</p></li>
+<li><p>Build 2D mask of solid vs. transparent voxels</p></li>
+<li><p>For each solid voxel with exposed face:</p>
+<ul class="simple">
+<li><p>Calculate AO and light for all 4 corners</p></li>
+<li><p>Find greedy horizontal rectangle width</p></li>
+<li><p>Find greedy vertical rectangle height</p></li>
+<li><p>Emit quad vertices</p></li>
+</ul>
+</li>
+<li><p>Mark processed faces to avoid double-processing</p></li>
+</ol>
+</li>
+<li><p>Separate opaque and water faces into independent buffers</p></li>
+</ol>
+<p><strong>Detailed Algorithm: X-Plane Scanning</strong></p>
+<p>Processing YZ-plane slices (X varying):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">x_slice</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+    <span class="c1"># Build 2D mask of YZ values (which are solid and exposed on +X face)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span>
+
+            <span class="c1"># Check if solid and has exposed +X face</span>
+            <span class="k">if</span> <span class="n">is_solid</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">x_slice</span> <span class="o">==</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">is_solid</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x_slice</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]):</span>
+                    <span class="n">mask</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Greedy rectangle extraction from mask</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Find greedy width (extend along z-axis)</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">while</span> <span class="n">z</span> <span class="o">+</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="n">mask</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">width</span><span class="p">]:</span>
+                <span class="n">width</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Find greedy height (extend along y-axis)</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">valid</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">while</span> <span class="n">y</span> <span class="o">+</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="n">valid</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">z_check</span> <span class="ow">in</span> <span class="n">z</span> <span class="n">to</span> <span class="n">z</span> <span class="o">+</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="p">[</span><span class="n">y</span> <span class="o">+</span> <span class="n">height</span><span class="p">,</span> <span class="n">z_check</span><span class="p">]:</span>
+                        <span class="n">valid</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">valid</span><span class="p">:</span>
+                    <span class="n">height</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Mark processed to avoid overlap</span>
+            <span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">height</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">dz</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">width</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">mask</span><span class="p">[</span><span class="n">y</span> <span class="o">+</span> <span class="n">dy</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">dz</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="c1"># Get 4 corner light/AO values</span>
+            <span class="n">l0</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+            <span class="n">l1</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+            <span class="n">l2</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="n">width</span><span class="p">)</span>
+            <span class="n">l3</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="n">width</span><span class="p">)</span>
+
+            <span class="n">ao0</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+            <span class="n">ao1</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+            <span class="n">ao2</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="n">width</span><span class="p">))</span>
+            <span class="n">ao3</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="n">width</span><span class="p">))</span>
+
+            <span class="c1"># Flip detection (see section below)</span>
+            <span class="n">flip_id</span> <span class="o">=</span> <span class="n">should_flip_diagonal</span><span class="p">(</span><span class="n">l0</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">l3</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">ao3</span><span class="p">)</span>
+
+            <span class="c1"># Emit 2 triangles (6 indices)</span>
+            <span class="n">emit_quad</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l0</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">l3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Y and Z Plane Scanning</strong> work similarly, iterating through XZ and XY slices respectively.</p>
+<p><strong>Performance Note:</strong> This is a hot loop executed once per chunk load. Implemented in Numba with <code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">nogil=True)</span></code> for 500x+ speedup.</p>
+</section>
+<section id="vertex-light-smoothing">
+<h2>Vertex Light Smoothing<a class="headerlink" href="#vertex-light-smoothing" title="Link to this heading"></a></h2>
+<p>Light values are interpolated to vertices for smooth shading. Each vertex is shared by up to 8 blocks; we sample light from the 4 (on a plane) or 8 blocks surrounding that vertex.</p>
+<p><strong>For X-Plane Face (perpendicular normal = +X):</strong></p>
+<p>Four corners of the quad correspond to YZ positions. For each corner, sample from 4 blocks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_vertex_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">):</span>
+    <span class="c1"># plane=&#39;X&#39; means YZ quad; sample from 4 blocks around corner</span>
+
+    <span class="k">if</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;X&#39;</span><span class="p">:</span>
+        <span class="c1"># Corner at (x, y, z) in YZ space samples:</span>
+        <span class="n">l1</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>           <span class="c1"># Lower-left</span>
+        <span class="n">l2</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>         <span class="c1"># Upper-left</span>
+        <span class="n">l3</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>       <span class="c1"># Upper-right</span>
+        <span class="n">l4</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>         <span class="c1"># Lower-right</span>
+    <span class="k">elif</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;Y&#39;</span><span class="p">:</span>
+        <span class="c1"># Similar for XZ plane</span>
+        <span class="n">l1</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+        <span class="n">l2</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+        <span class="n">l3</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">l4</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># ... etc for Z plane</span>
+
+    <span class="c1"># Average light (simple mean, or weighted by AO)</span>
+    <span class="n">avg_sun</span> <span class="o">=</span> <span class="p">(</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">l4</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span>
+    <span class="n">avg_block</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l4</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">))</span> <span class="o">/</span> <span class="mi">4</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">avg_sun</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">avg_block</span>
+</pre></div>
+</div>
+</section>
+<section id="ambient-occlusion-ao-calculation">
+<h2>Ambient Occlusion (AO) Calculation<a class="headerlink" href="#ambient-occlusion-ao-calculation" title="Link to this heading"></a></h2>
+<p>AO darkens corners where multiple solid blocks converge, simulating soft shadows.</p>
+<p><strong>Corner Occlusion (for X-plane, Y-Z corner):</strong></p>
+<p>For each of the 4 corners of a quad, check 2x2 adjacent blocks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_ao</span><span class="p">(</span><span class="n">corner_y</span><span class="p">,</span> <span class="n">corner_z</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">):</span>
+    <span class="c1"># plane=&#39;X&#39;: Check blocks in YZ plane around corner</span>
+
+    <span class="c1"># Top-left, Top-right, Bottom-left, Bottom-right (relative to corner)</span>
+    <span class="n">ao_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">corner_z</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
+        <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="p">,</span> <span class="n">corner_z</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
+        <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">corner_z</span><span class="p">)):</span>
+        <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="p">,</span> <span class="n">corner_z</span><span class="p">)):</span>
+        <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># ao_count ranges 0-4, but we store only 0-3</span>
+    <span class="c1"># 0 = bright, 1 = slightly dark, 2 = moderately dark, 3 = very dark</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">ao_count</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Transparency Check:</strong></p>
+<p>Transparent blocks (AIR, WATER, GLASS, LEAVES) do not cast AO shadows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">voxel_id</span> <span class="ow">in</span> <span class="p">[</span><span class="n">AIR</span><span class="p">,</span> <span class="n">WATER</span><span class="p">,</span> <span class="n">GLASS</span><span class="p">,</span> <span class="n">LEAVES</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><strong>GPU Application (in Vertex Shader):</strong></p>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">ao_values</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="mi">4</span><span class="p">](</span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.25</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+
+<span class="c1">// Unpack ao_id (2 bits)</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">ao_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3</span><span class="p">);</span>
+
+<span class="c1">// Apply to shading</span>
+<span class="n">shading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">base_light</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ao_values</span><span class="p">[</span><span class="n">ao_id</span><span class="p">];</span>
+</pre></div>
+</div>
+</section>
+<section id="flip-detection-diagonal-flip-for-lighting">
+<h2>Flip Detection (Diagonal Flip for Lighting)<a class="headerlink" href="#flip-detection-diagonal-flip-for-lighting" title="Link to this heading"></a></h2>
+<p>When lighting is uneven across a quad, flipping the diagonal can improve visual appearance. This is determined by comparing lighting sums across the two diagonals.</p>
+<p><strong>Algorithm:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">should_flip_diagonal</span><span class="p">(</span><span class="n">l0</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">l3</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">ao3</span><span class="p">):</span>
+    <span class="c1"># l0, l1, l2, l3 = light at 4 corners (packed uint32)</span>
+    <span class="c1"># ao0, ao1, ao2, ao3 = AO at 4 corners</span>
+
+    <span class="c1"># Extract sun and block light</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_light</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">l</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span>  <span class="c1"># sun + block (simplified)</span>
+
+    <span class="c1"># Diagonal 1: (0,2) and Diagonal 2: (1,3)</span>
+    <span class="n">diag1_brightness</span> <span class="o">=</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">+</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ao0</span> <span class="o">+</span> <span class="n">ao2</span><span class="p">)</span>
+    <span class="n">diag2_brightness</span> <span class="o">=</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span> <span class="o">+</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ao1</span> <span class="o">+</span> <span class="n">ao3</span><span class="p">)</span>
+
+    <span class="c1"># Flip if diagonal 1 is brighter (optimization: break ties toward standard diagonal)</span>
+    <span class="k">return</span> <span class="n">diag1_brightness</span> <span class="o">&gt;</span> <span class="n">diag2_brightness</span>
+</pre></div>
+</div>
+<p><strong>GPU Application:</strong></p>
+<p>During rendering, the vertex shader uses <code class="docutils literal notranslate"><span class="pre">flip_id</span></code> to adjust vertex positions or UV coordinates accordingly.</p>
+</section>
+<section id="water-faces-handling">
+<h2>Water Faces Handling<a class="headerlink" href="#water-faces-handling" title="Link to this heading"></a></h2>
+<p>Water is rendered separately to allow transparency blending without depth-test complications.</p>
+<p><strong>Algorithm:</strong></p>
+<ol class="arabic simple">
+<li><p>During greedy meshing, water faces (voxel_id == WATER) are marked separately</p></li>
+<li><p>Opaque faces emitted first, water faces appended to same buffer</p></li>
+<li><p>Render call splits: draw opaque faces first (full depth test), then draw water faces (transparency blending enabled)</p></li>
+</ol>
+<p><strong>Separate render call (in Shader Program):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Opaque pass</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
+<span class="n">vao</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">moderngl</span><span class="o">.</span><span class="n">TRIANGLES</span><span class="p">,</span> <span class="n">vertices</span><span class="o">=</span><span class="n">opaque_count</span><span class="p">)</span>
+
+<span class="c1"># Water pass</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">blend_func</span> <span class="o">=</span> <span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">SRC_ALPHA</span><span class="p">,</span> <span class="n">moderngl</span><span class="o">.</span><span class="n">ONE_MINUS_SRC_ALPHA</span><span class="p">)</span>
+<span class="n">vao</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">moderngl</span><span class="o">.</span><span class="n">TRIANGLES</span><span class="p">,</span> <span class="n">vertices</span><span class="o">=</span><span class="n">water_count</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="n">opaque_count</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="mesh-building-pipeline-cpu-to-gpu">
+<h2>Mesh Building Pipeline (CPU to GPU)<a class="headerlink" href="#mesh-building-pipeline-cpu-to-gpu" title="Link to this heading"></a></h2>
+<p><strong>Sequential Process:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Chunk Load (Background Thread):</strong></p>
+<ul class="simple">
+<li><p>Generate or fetch voxel data from database</p></li>
+<li><p>Place in <code class="docutils literal notranslate"><span class="pre">load_queue</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Mesh Build (Background Thread via ThreadPoolExecutor):</strong></p>
+<ul class="simple">
+<li><p>Pop chunk from <code class="docutils literal notranslate"><span class="pre">load_queue</span></code></p></li>
+<li><p>Run greedy meshing: <code class="docutils literal notranslate"><span class="pre">build_chunk_mesh(chunk_voxels,</span> <span class="pre">chunk_lightmap)</span></code></p></li>
+<li><p>Output: <code class="docutils literal notranslate"><span class="pre">vertex_data</span></code> (flat uint32 array), <code class="docutils literal notranslate"><span class="pre">light_data</span></code> (flat uint32 array)</p></li>
+<li><p>Place in <code class="docutils literal notranslate"><span class="pre">build_queue</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>GPU Upload (Main Thread):</strong></p>
+<ul class="simple">
+<li><p>Pop from <code class="docutils literal notranslate"><span class="pre">mesh_queue</span></code> (result of lighting stitching in <code class="docutils literal notranslate"><span class="pre">build_queue</span></code>)</p></li>
+<li><p>Create VAO/VBO: <code class="docutils literal notranslate"><span class="pre">ctx.vertex_array(program,</span> <span class="pre">vbo,</span> <span class="pre">vao)</span></code></p></li>
+<li><p>Store in <code class="docutils literal notranslate"><span class="pre">chunk.mesh</span></code> object</p></li>
+<li><p>If VBO pool available, reuse; else allocate new</p></li>
+</ul>
+</li>
+<li><p><strong>Rendering (Main Thread, per frame):</strong></p>
+<ul class="simple">
+<li><p>Frustum cull active chunks</p></li>
+<li><p>Occlusion query invisible chunks</p></li>
+<li><p>Bind shader, draw visible chunk meshes</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>VBO Pool (Memory Recycling):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vbo_pool</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># List of unused VBOs</span>
+<span class="n">VBO_POOL_CAP</span> <span class="o">=</span> <span class="mi">150</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_or_create_vbo</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">vbo_pool</span><span class="p">:</span>
+        <span class="n">vbo</span> <span class="o">=</span> <span class="n">vbo_pool</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">vbo</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># Overwrite with new data</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vbo</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">vbo</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">release_vbo</span><span class="p">(</span><span class="n">vbo</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vbo_pool</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">VBO_POOL_CAP</span><span class="p">:</span>
+        <span class="n">vbo_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vbo</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>  <span class="c1"># Destroy GPU memory</span>
+</pre></div>
+</div>
+</section>
+<section id="data-flow-example">
+<h2>Data Flow Example<a class="headerlink" href="#data-flow-example" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Raw Chunk Voxels (1D array, 110,592 elements)
+         ↓
+[Greedy Meshing: CPU]
+         ↓
+Packed Vertex Data (e.g., 10,000 vertices for a grass chunk)
+         ↓
+[Lighting Stitching: CPU]
+         ↓
+Light Data (10,000 light values)
+         ↓
+[GPU Upload: Main Thread]
+         ↓
+VBO/VAO allocated on GPU
+         ↓
+[Rendering: per frame]
+         ↓
+Vertices unpacked in Vertex Shader → Position + Attributes
+         ↓
+Fragment Shader colors pixels
+</pre></div>
+</div>
+</section>
+<section id="custom-mesh-variants">
+<h2>Custom Mesh Variants<a class="headerlink" href="#custom-mesh-variants" title="Link to this heading"></a></h2>
+<p><strong>CloudMesh:</strong></p>
+<p>Fixed procedural clouds (no greedy meshing). Uses 2D Simplex noise to determine cloud density at each point. Emits simplified geometry.</p>
+<p><strong>ItemMesh:</strong></p>
+<p>Dropped items (pickaxe, stick, etc.) use simplified meshes. No greedy meshing; pre-defined vertex data per item type.</p>
+<p><strong>ObjMesh:</strong></p>
+<p>Loads Wavefront .obj files (trees, decorative structures). Parses vertices, UVs, normals. Stores as-is; no meshing.</p>
+</section>
+<section id="replication-guide">
+<h2>Replication Guide<a class="headerlink" href="#replication-guide" title="Link to this heading"></a></h2>
+<p><strong>To reimplement greedy meshing from scratch:</strong></p>
+<ol class="arabic simple">
+<li><p>Load voxel data into 3D array or flattened 1D array</p></li>
+<li><p>For each of 3 planes:
+a. Build 2D solid/empty mask (iterate through slice)
+b. Extract rectangles greedily (nested loop with width/height expansion)
+c. For each rectangle, calculate 4 corner lights and AO values
+d. Pack into 32-bit integers
+e. Emit 2 triangles (6 indices) for the quad</p></li>
+<li><p>Separate water faces from opaque</p></li>
+<li><p>Upload to GPU as VBO</p></li>
+<li><p>Render with phased passes (opaque → transparent)</p></li>
+</ol>
+<p><strong>Pseudocode:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_mesh</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">):</span>
+    <span class="n">vertex_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">light_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Process each plane</span>
+    <span class="k">for</span> <span class="n">plane</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;Z&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">slice_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">build_mask</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">plane</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">)</span>
+
+            <span class="n">processed</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span> <span class="ow">in</span> <span class="n">iterate_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">)</span> <span class="ow">in</span> <span class="n">processed</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">greedy_expand</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">,</span> <span class="n">processed</span><span class="p">)</span>
+
+                <span class="n">corners_light</span> <span class="o">=</span> <span class="n">sample_4_corners</span><span class="p">(</span><span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">)</span>
+                <span class="n">corners_ao</span> <span class="o">=</span> <span class="n">sample_4_corners_ao</span><span class="p">(</span><span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">)</span>
+                <span class="n">flip</span> <span class="o">=</span> <span class="n">compute_flip</span><span class="p">(</span><span class="n">corners_light</span><span class="p">,</span> <span class="n">corners_ao</span><span class="p">)</span>
+
+                <span class="n">packed</span> <span class="o">=</span> <span class="n">pack_vertices</span><span class="p">(</span><span class="n">slice_idx</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">flip</span><span class="p">)</span>
+                <span class="n">vertex_data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">packed</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vertex_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">light_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="shaders.html" class="btn btn-neutral float-left" title="Shader Systems and GLSL Breakdown" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="terrain.html" class="btn btn-neutral float-right" title="Procedural Terrain Generation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, ShivamKR12.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

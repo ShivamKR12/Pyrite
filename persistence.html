@@ -1,0 +1,758 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Persistence and Data Storage &mdash; Pyrite 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=922250f3" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Survival &amp; Physics Mechanics" href="survival.html" />
+    <link rel="prev" title="User Interface Systems and Components" href="ui.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Pyrite
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Core Engine Flow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="main.html#engine-initialization">Engine Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#state-management">State Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-generation-and-sessions">World Generation and Sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-loop">The Main Loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#scene-rendering-pipeline">Scene Rendering Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-session-initialization-loading-state">World Session Initialization (LOADING state)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#world-data-persistence">World &amp; Data Persistence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#sqlite-write-ahead-logging-wal">SQLite Write-Ahead Logging (WAL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#memory-management-1d-vs-3d-arrays">Memory Management (1D vs 3D Arrays)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="shaders.html">Shader Systems and GLSL Breakdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#shader-architecture-overview">Shader Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#chunk-shader-main-terrain-rendering">Chunk Shader (Main Terrain Rendering)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#item-shader-dropped-items">Item Shader (Dropped Items)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#sky-shader-procedural-atmosphere">Sky Shader (Procedural Atmosphere)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#clouds-shader-procedural">Clouds Shader (Procedural)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#ui-block-shader-inventory-icons">UI Block Shader (Inventory Icons)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#ui-color-shader-backgrounds-ui-quads">UI Color Shader (Backgrounds, UI Quads)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#uniform-management">Uniform Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#texture-atlas-binding">Texture Atlas Binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-packing-32-bit-format">Vertex Packing: 32-Bit Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#greedy-meshing-algorithm">Greedy Meshing Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-light-smoothing">Vertex Light Smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#ambient-occlusion-ao-calculation">Ambient Occlusion (AO) Calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#flip-detection-diagonal-flip-for-lighting">Flip Detection (Diagonal Flip for Lighting)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#water-faces-handling">Water Faces Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#custom-mesh-variants">Custom Mesh Variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#replication-guide">Replication Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-topography-system">Biome &amp; Topography System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving">Cave Carving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-flora-generation">Tree &amp; Flora Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#height-generation-algorithm">Height Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-selection-algorithm">Biome Selection Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-placement-and-structure">Tree Placement and Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#ore-generation">Ore Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#column-generation-sequence">Column Generation Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="player.html">Player Systems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="player.html#player-class-hierarchy">Player Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#coordinate-system">Coordinate System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#controls-and-input-handling">Controls and Input Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#physics-gravity-and-velocity">Physics: Gravity and Velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#aabb-collision-detection">AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#water-physics">Water Physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#survival-stats-management">Survival Stats Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#inventory-management">Inventory Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#mining-and-placing">Mining and Placing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#view-bobbing-and-hand-animation">View Bobbing and Hand Animation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#dynamic-fov-during-sprint">Dynamic FOV During Sprint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#integration-with-game-loop">Integration with Game Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface Systems and Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#ui-architecture-overview">UI Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#core-ui-component-base-class">Core UI Component Base Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#in-game-hud-components">In-Game HUD Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#menu-system">Menu System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#layout-metrics-slot-grid">Layout Metrics (Slot Grid)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#button-and-component-library">Button and Component Library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#transition-animations">Transition Animations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#integration-with-main-loop">Integration with Main Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">World Persistence and Data Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#serialization-and-compression">Serialization and Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#database-operations">Database Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#world-management-file-system">World Management (File System)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#wal-mode-benefits">WAL Mode Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival &amp; Physics Mechanics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#core-engine-main-py">Core Engine (<code class="docutils literal notranslate"><span class="pre">main.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#player-player-py">Player (<code class="docutils literal notranslate"><span class="pre">player.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#world-world-py">World (<code class="docutils literal notranslate"><span class="pre">world.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#chunk-chunk-py">Chunk (<code class="docutils literal notranslate"><span class="pre">chunk.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#scene-scene-py">Scene (<code class="docutils literal notranslate"><span class="pre">scene.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#voxelhandler-voxel-handler-py">VoxelHandler (<code class="docutils literal notranslate"><span class="pre">voxel_handler.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#constants-settings-py">Constants (<code class="docutils literal notranslate"><span class="pre">settings.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#shader-programs-shader-program-py">Shader Programs (<code class="docutils literal notranslate"><span class="pre">shader_program.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#mesh-building-build-chunk-mesh-py">Mesh Building (<code class="docutils literal notranslate"><span class="pre">build_chunk_mesh.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#terrain-generation-terrain-gen-py">Terrain Generation (<code class="docutils literal notranslate"><span class="pre">terrain_gen.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#lighting-lighting-py">Lighting (<code class="docutils literal notranslate"><span class="pre">lighting.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#common-enums-and-constants">Common Enums and Constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyrite</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">World Persistence and Data Storage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/persistence.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="world-persistence-and-data-storage">
+<span id="persistence"></span><h1>World Persistence and Data Storage<a class="headerlink" href="#world-persistence-and-data-storage" title="Link to this heading"></a></h1>
+<p>This document details Pyrite’s SQLite-based world persistence system, including database schema, chunk serialization, compression, async I/O, and world metadata management.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Pyrite persists world data using SQLite with Write-Ahead Logging (WAL) mode for high-performance, asynchronous writes. This allows the game loop to remain responsive while data is written in background threads.</p>
+<p><strong>Key Components:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Database File:</strong> <code class="docutils literal notranslate"><span class="pre">saves/&lt;world_name&gt;/&lt;world_name&gt;.db</span></code> (SQLite database)</p></li>
+<li><p><strong>Tables:</strong> <code class="docutils literal notranslate"><span class="pre">chunks</span></code>, <code class="docutils literal notranslate"><span class="pre">player_data</span></code>, <code class="docutils literal notranslate"><span class="pre">world_meta</span></code></p></li>
+<li><p><strong>Compression:</strong> zlib (1:5 ratio typical for voxel data)</p></li>
+<li><p><strong>Threading:</strong> Background threads handle I/O; main thread reads/writes safely via locks</p></li>
+</ol>
+</section>
+<section id="database-schema">
+<h2>Database Schema<a class="headerlink" href="#database-schema" title="Link to this heading"></a></h2>
+<p><strong>1. Chunks Table</strong></p>
+<p>Stores terrain voxel data and lightmaps for each chunk.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">chunks</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
+<span class="w">    </span><span class="n">y</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
+<span class="w">    </span><span class="n">z</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
+<span class="w">    </span><span class="n">voxel_data</span><span class="w"> </span><span class="nb">BLOB</span><span class="p">,</span><span class="w">        </span><span class="c1">-- Compressed 1D uint8 array</span>
+<span class="w">    </span><span class="n">lightmap_data</span><span class="w"> </span><span class="nb">BLOB</span><span class="p">,</span><span class="w">     </span><span class="c1">-- Compressed 1D uint8 array</span>
+<span class="w">    </span><span class="k">generated</span><span class="w"> </span><span class="nb">BOOLEAN</span><span class="p">,</span><span class="w">      </span><span class="c1">-- Whether terrain was procedurally generated</span>
+<span class="w">    </span><span class="k">timestamp</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span><span class="w">      </span><span class="c1">-- Unix timestamp of last save</span>
+
+<span class="w">    </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">z</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Row Structure:</strong></p>
+<ul class="simple">
+<li><p><strong>x, y, z:</strong> Chunk coordinates (e.g., chunk at x=0, y=0, z=0 covers world voxels 0-47 in each axis)</p></li>
+<li><p><strong>voxel_data:</strong> Compressed blob of shape (CHUNK_VOL,) = (110592,) uint8 values</p></li>
+<li><p><strong>lightmap_data:</strong> Compressed blob of shape (CHUNK_VOL,) containing packed sunlight+blocklight (4 bits each)</p></li>
+<li><p><strong>generated:</strong> True if chunk was procedurally generated (not hand-edited)</p></li>
+<li><p><strong>timestamp:</strong> Used for cleanup/optimization later</p></li>
+</ul>
+<p><strong>Chunk Coordinate Mapping:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>World voxel (x, y, z) → Chunk coordinate
+chunk_x = floor(x / CHUNK_SIZE)     # CHUNK_SIZE = 48
+chunk_y = floor(y / CHUNK_SIZE)
+chunk_z = floor(z / CHUNK_SIZE)
+
+Local voxel index within chunk:
+local_index = (x % 48) + (z % 48) * 48 + (y % 48) * 48² = flat_index
+</pre></div>
+</div>
+<p><strong>2. Player Data Table</strong></p>
+<p>Stores player position, inventory, and survival stats.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">player_data</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                         </span><span class="c1">-- Position X</span>
+<span class="w">    </span><span class="n">y</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                         </span><span class="c1">-- Position Y</span>
+<span class="w">    </span><span class="n">z</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                         </span><span class="c1">-- Position Z</span>
+<span class="w">    </span><span class="n">yaw</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                       </span><span class="c1">-- Rotation angle (radians)</span>
+<span class="w">    </span><span class="n">pitch</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                     </span><span class="c1">-- Rotation angle (radians)</span>
+<span class="w">    </span><span class="n">health</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                    </span><span class="c1">-- 0-20</span>
+<span class="w">    </span><span class="n">hunger</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                    </span><span class="c1">-- 0-20</span>
+<span class="w">    </span><span class="n">oxygen</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                    </span><span class="c1">-- 0-20</span>
+<span class="w">    </span><span class="n">inventory</span><span class="w"> </span><span class="n">JSON</span><span class="p">,</span><span class="w">                 </span><span class="c1">-- JSON array of voxel IDs</span>
+<span class="w">    </span><span class="n">inventory_counts</span><span class="w"> </span><span class="n">JSON</span><span class="p">,</span><span class="w">          </span><span class="c1">-- JSON array of stack sizes</span>
+<span class="w">    </span><span class="n">hotbar_index</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span><span class="w">           </span><span class="c1">-- Selected slot</span>
+<span class="w">    </span><span class="k">timestamp</span><span class="w"> </span><span class="nb">INTEGER</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Storage Format:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;x&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">128.5</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;y&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">64.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">256.75</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;yaw&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.57</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;pitch&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;health&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;hunger&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;oxygen&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;inventory&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;inventory_counts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">64</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>3. World Meta Table</strong></p>
+<p>Stores world-level metadata (seed, difficulty, game mode).</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">world_meta</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">key</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">value</span><span class="w"> </span><span class="nb">TEXT</span><span class="w">              </span><span class="c1">-- JSON serialized</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Stored Keys:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>seed:               Integer seed (or MD5 hash of string seed)
+difficulty:        String (&#39;PEACEFUL&#39;, &#39;EASY&#39;, &#39;NORMAL&#39;, &#39;HARD&#39;)
+game_mode:         String (&#39;SURVIVAL&#39;, &#39;CREATIVE&#39;)
+created_time:      Unix timestamp of world creation
+last_played:       Unix timestamp of last save
+player_name:       Player name/UUID
+spawn_x, spawn_y, spawn_z: Spawn location
+</pre></div>
+</div>
+</section>
+<section id="serialization-and-compression">
+<h2>Serialization and Compression<a class="headerlink" href="#serialization-and-compression" title="Link to this heading"></a></h2>
+<p><strong>Chunk Serialization:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">zlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">serialize_chunk</span><span class="p">(</span><span class="n">voxel_array</span><span class="p">,</span> <span class="n">lightmap_array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert chunk data to compressed binary&quot;&quot;&quot;</span>
+    <span class="c1"># voxel_array: (110592,) uint8 array</span>
+    <span class="c1"># lightmap_array: (110592,) uint8 array</span>
+
+    <span class="c1"># Convert to bytes</span>
+    <span class="n">voxel_bytes</span> <span class="o">=</span> <span class="n">voxel_array</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>      <span class="c1"># 110592 bytes</span>
+    <span class="n">lightmap_bytes</span> <span class="o">=</span> <span class="n">lightmap_array</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
+
+    <span class="c1"># Compress with zlib (level 6 default)</span>
+    <span class="n">voxel_compressed</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">voxel_bytes</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+    <span class="n">lightmap_compressed</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">lightmap_bytes</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">deserialize_chunk</span><span class="p">(</span><span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decompress and convert back to arrays&quot;&quot;&quot;</span>
+    <span class="n">voxel_bytes</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">voxel_compressed</span><span class="p">)</span>
+    <span class="n">lightmap_bytes</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">lightmap_compressed</span><span class="p">)</span>
+
+    <span class="n">voxel_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">voxel_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">110592</span><span class="p">,))</span>
+    <span class="n">lightmap_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">lightmap_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">110592</span><span class="p">,))</span>
+
+    <span class="k">return</span> <span class="n">voxel_array</span><span class="p">,</span> <span class="n">lightmap_array</span>
+</pre></div>
+</div>
+<p><strong>Compression Ratios:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Terrain Type        Compressed Size    Ratio
+Dense terrain       ~25 KB             1:4.4 (stone/dirt/grass)
+Cave systems        ~15 KB             1:7.4 (many air gaps)
+Mixed biomes        ~35 KB             1:3.2 (varied blocks)
+
+Typical world with 1,440 chunks (30x5x30):
+Uncompressed: 1,440 * 110,592 * 2 bytes ≈ 318 MB
+Compressed:   1,440 * 25 KB average ≈ 36 MB
+</pre></div>
+</div>
+</section>
+<section id="database-operations">
+<h2>Database Operations<a class="headerlink" href="#database-operations" title="Link to this heading"></a></h2>
+<p><strong>Initialize Database (at world creation):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_world_database</span><span class="p">(</span><span class="n">world_name</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize new world database&quot;&quot;&quot;</span>
+    <span class="n">db_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">.db&#39;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+    <span class="c1"># Enable WAL mode for performance</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA journal_mode=WAL&#39;</span><span class="p">)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA synchronous=NORMAL&#39;</span><span class="p">)</span>  <span class="c1"># Balance safety/speed</span>
+
+    <span class="c1"># Create tables</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        CREATE TABLE chunks (</span>
+<span class="s1">            x INTEGER, y INTEGER, z INTEGER,</span>
+<span class="s1">            voxel_data BLOB, lightmap_data BLOB,</span>
+<span class="s1">            generated BOOLEAN, timestamp INTEGER,</span>
+<span class="s1">            PRIMARY KEY (x, y, z)</span>
+<span class="s1">        )</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
+
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        CREATE TABLE player_data (</span>
+<span class="s1">            id INTEGER PRIMARY KEY,</span>
+<span class="s1">            x REAL, y REAL, z REAL,</span>
+<span class="s1">            yaw REAL, pitch REAL,</span>
+<span class="s1">            health REAL, hunger REAL, oxygen REAL,</span>
+<span class="s1">            inventory TEXT, inventory_counts TEXT,</span>
+<span class="s1">            hotbar_index INTEGER, timestamp INTEGER</span>
+<span class="s1">        )</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
+
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        CREATE TABLE world_meta (</span>
+<span class="s1">            key TEXT PRIMARY KEY,</span>
+<span class="s1">            value TEXT</span>
+<span class="s1">        )</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Store metadata</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO world_meta VALUES (?, ?)&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="p">))</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO world_meta VALUES (?, ?)&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;created_time&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())))</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO world_meta VALUES (?, ?)&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;game_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;SURVIVAL&quot;</span><span class="p">))</span>
+
+    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Save Chunk:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">save_chunk_to_db</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save chunk to database (insert or update)&quot;&quot;&quot;</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+    <span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span> <span class="o">=</span> <span class="n">serialize_chunk</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">)</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+
+    <span class="c1"># UPSERT pattern (insert or replace)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        INSERT OR REPLACE INTO chunks</span>
+<span class="s1">        (x, y, z, voxel_data, lightmap_data, generated, timestamp)</span>
+<span class="s1">        VALUES (?, ?, ?, ?, ?, ?, ?)</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">))</span>
+
+    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Load Chunk:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_chunk_from_db</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load chunk from database&quot;&quot;&quot;</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        SELECT voxel_data, lightmap_data</span>
+<span class="s1">        FROM chunks</span>
+<span class="s1">        WHERE x=? AND y=? AND z=?</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">))</span>
+
+    <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># Chunk not in database</span>
+
+    <span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span> <span class="o">=</span> <span class="n">row</span>
+    <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span> <span class="o">=</span> <span class="n">deserialize_chunk</span><span class="p">(</span><span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span>
+</pre></div>
+</div>
+<p><strong>Save Player Data:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">save_player_data</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">player</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save player position, inventory, stats&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+    <span class="n">player_data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
+        <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+        <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
+        <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">yaw</span><span class="p">),</span>
+        <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">pitch</span><span class="p">),</span>
+        <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">health</span><span class="p">),</span>
+        <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">hunger</span><span class="p">),</span>
+        <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">oxygen</span><span class="p">),</span>
+        <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">,</span>
+        <span class="s1">&#39;inventory_counts&#39;</span><span class="p">:</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">,</span>
+        <span class="s1">&#39;hotbar_index&#39;</span><span class="p">:</span> <span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        INSERT OR REPLACE INTO player_data</span>
+<span class="s1">        (id, x, y, z, yaw, pitch, health, hunger, oxygen, inventory, inventory_counts, hotbar_index, timestamp)</span>
+<span class="s1">        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="p">(</span>
+        <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">],</span>
+        <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;yaw&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;pitch&#39;</span><span class="p">],</span>
+        <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;health&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;hunger&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;oxygen&#39;</span><span class="p">],</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;inventory&#39;</span><span class="p">]),</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;inventory_counts&#39;</span><span class="p">]),</span>
+        <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;hotbar_index&#39;</span><span class="p">],</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+    <span class="p">))</span>
+
+    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Load Player Data:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_player_data</span><span class="p">(</span><span class="n">conn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load player from database&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM player_data WHERE id=1&#39;</span><span class="p">)</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># New world: return spawn point</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+            <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span><span class="p">,</span>
+            <span class="s1">&#39;inventory_counts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span><span class="p">,</span>
+            <span class="s1">&#39;hotbar_index&#39;</span><span class="p">:</span> <span class="mi">0</span>
+        <span class="p">}</span>
+
+    <span class="c1"># Parse from database</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+        <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+        <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
+        <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">9</span><span class="p">]),</span>
+        <span class="s1">&#39;inventory_counts&#39;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">10</span><span class="p">]),</span>
+        <span class="s1">&#39;hotbar_index&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="asynchronous-i-o-and-threading">
+<h2>Asynchronous I/O and Threading<a class="headerlink" href="#asynchronous-i-o-and-threading" title="Link to this heading"></a></h2>
+<p><strong>Background Save Queue:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">Queue</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">WorldPersistence</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">.db&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>  <span class="c1"># (chunk_x, chunk_y, chunk_z, voxels, lightmap)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executor</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">queue_chunk_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Queue chunk for background save&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_save_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Called from background thread&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="k">with</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">():</span>  <span class="c1"># Thread-safe DB access</span>
+                    <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span>
+                    <span class="n">save_chunk_to_db</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">)</span>
+                    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>  <span class="c1"># Timeout, continue</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flush all queued saves before closing&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+            <span class="n">chunk_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="c1"># Synchronously save remaining chunks</span>
+            <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span>
+            <span class="n">save_chunk_to_db</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="o">*</span><span class="n">chunk_data</span><span class="p">)</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Main Thread Integration:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># On world load</span>
+<span class="n">persistence</span> <span class="o">=</span> <span class="n">WorldPersistence</span><span class="p">(</span><span class="n">world_name</span><span class="p">)</span>
+<span class="n">save_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">persistence</span><span class="o">.</span><span class="n">process_save_queue</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">save_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># On chunk unload (main thread)</span>
+<span class="n">persistence</span><span class="o">.</span><span class="n">queue_chunk_save</span><span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">)</span>
+
+<span class="c1"># On application quit</span>
+<span class="n">persistence</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>  <span class="c1"># Block until all chunks saved</span>
+</pre></div>
+</div>
+</section>
+<section id="world-management-file-system">
+<h2>World Management (File System)<a class="headerlink" href="#world-management-file-system" title="Link to this heading"></a></h2>
+<p><strong>Directory Structure:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>saves/
+    MyWorld/
+        MyWorld.db          # SQLite database
+        MyWorld.db-shm      # Shared memory (WAL)
+        MyWorld.db-wal      # Write-ahead log
+    AnotherWorld/
+        AnotherWorld.db
+        ...
+</pre></div>
+</div>
+<p><strong>List Worlds:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">list_worlds</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find all saved worlds&quot;&quot;&quot;</span>
+    <span class="n">worlds</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">saves_dir</span> <span class="o">=</span> <span class="s1">&#39;saves&#39;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">saves_dir</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">worlds</span>
+
+    <span class="k">for</span> <span class="n">world_name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">saves_dir</span><span class="p">):</span>
+        <span class="n">world_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">saves_dir</span><span class="p">,</span> <span class="n">world_name</span><span class="p">)</span>
+        <span class="n">db_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">world_path</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">.db&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">db_file</span><span class="p">):</span>
+            <span class="c1"># Load metadata</span>
+            <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db_file</span><span class="p">)</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT value FROM world_meta WHERE key=&#39;created_time&#39;&quot;</span><span class="p">)</span>
+            <span class="n">created</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span> <span class="k">else</span> <span class="mi">0</span>
+
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT value FROM world_meta WHERE key=&#39;game_mode&#39;&quot;</span><span class="p">)</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;SURVIVAL&#39;</span>
+
+            <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="n">worlds</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">world_name</span><span class="p">,</span>
+                <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">db_file</span><span class="p">,</span>
+                <span class="s1">&#39;created&#39;</span><span class="p">:</span> <span class="n">created</span><span class="p">,</span>
+                <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="n">mode</span>
+            <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">worlds</span>
+</pre></div>
+</div>
+<p><strong>Delete World:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">delete_world</span><span class="p">(</span><span class="n">world_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete world and all save files&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+
+    <span class="n">world_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">world_path</span><span class="p">):</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">world_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="wal-mode-benefits">
+<h2>WAL Mode Benefits<a class="headerlink" href="#wal-mode-benefits" title="Link to this heading"></a></h2>
+<p>SQLite’s Write-Ahead Logging (WAL) mode provides:</p>
+<ol class="arabic simple">
+<li><p><strong>Non-blocking writes:</strong> Readers don’t block writers (and vice versa)</p></li>
+<li><p><strong>Batch commits:</strong> Multiple chunks written in single transaction</p></li>
+<li><p><strong>Crash recovery:</strong> Partial writes recovered safely</p></li>
+<li><p><strong>Performance:</strong> 2-10x faster than default journaling</p></li>
+</ol>
+<p><strong>Enable WAL:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+<span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA journal_mode=WAL&#39;</span><span class="p">)</span>
+<span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA synchronous=NORMAL&#39;</span><span class="p">)</span>  <span class="c1"># Balance safety (FULL=safer, NORMAL=faster)</span>
+<span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="replication-checklist">
+<h2>Replication Checklist<a class="headerlink" href="#replication-checklist" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>✓ Create SQLite schema (3 tables)</p></li>
+<li><p>✓ Implement chunk serialization (numpy → bytes)</p></li>
+<li><p>✓ Add zlib compression</p></li>
+<li><p>✓ Implement CRUD operations (save/load)</p></li>
+<li><p>✓ Set up threading and queues</p></li>
+<li><p>✓ Enable WAL mode</p></li>
+<li><p>✓ Handle database cleanup on quit</p></li>
+<li><p>✓ Implement world listing from filesystem</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ui.html" class="btn btn-neutral float-left" title="User Interface Systems and Components" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="survival.html" class="btn btn-neutral float-right" title="Survival &amp; Physics Mechanics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, ShivamKR12.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

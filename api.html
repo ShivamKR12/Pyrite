@@ -1,0 +1,547 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; Pyrite 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=922250f3" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Testing and Profiling" href="testing.html" />
+    <link rel="prev" title="Implementation Tutorials and Replication Guides" href="tutorials.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Pyrite
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Core Engine Flow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="main.html#engine-initialization">Engine Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#state-management">State Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-generation-and-sessions">World Generation and Sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-loop">The Main Loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#scene-rendering-pipeline">Scene Rendering Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-session-initialization-loading-state">World Session Initialization (LOADING state)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#world-data-persistence">World &amp; Data Persistence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#sqlite-write-ahead-logging-wal">SQLite Write-Ahead Logging (WAL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#memory-management-1d-vs-3d-arrays">Memory Management (1D vs 3D Arrays)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="shaders.html">Shader Systems and GLSL Breakdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#shader-architecture-overview">Shader Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#chunk-shader-main-terrain-rendering">Chunk Shader (Main Terrain Rendering)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#item-shader-dropped-items">Item Shader (Dropped Items)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#sky-shader-procedural-atmosphere">Sky Shader (Procedural Atmosphere)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#clouds-shader-procedural">Clouds Shader (Procedural)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#ui-block-shader-inventory-icons">UI Block Shader (Inventory Icons)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#ui-color-shader-backgrounds-ui-quads">UI Color Shader (Backgrounds, UI Quads)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#uniform-management">Uniform Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#texture-atlas-binding">Texture Atlas Binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-packing-32-bit-format">Vertex Packing: 32-Bit Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#greedy-meshing-algorithm">Greedy Meshing Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-light-smoothing">Vertex Light Smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#ambient-occlusion-ao-calculation">Ambient Occlusion (AO) Calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#flip-detection-diagonal-flip-for-lighting">Flip Detection (Diagonal Flip for Lighting)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#water-faces-handling">Water Faces Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#custom-mesh-variants">Custom Mesh Variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#replication-guide">Replication Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-topography-system">Biome &amp; Topography System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving">Cave Carving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-flora-generation">Tree &amp; Flora Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#height-generation-algorithm">Height Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-selection-algorithm">Biome Selection Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-placement-and-structure">Tree Placement and Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#ore-generation">Ore Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#column-generation-sequence">Column Generation Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="player.html">Player Systems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="player.html#player-class-hierarchy">Player Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#coordinate-system">Coordinate System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#controls-and-input-handling">Controls and Input Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#physics-gravity-and-velocity">Physics: Gravity and Velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#aabb-collision-detection">AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#water-physics">Water Physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#survival-stats-management">Survival Stats Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#inventory-management">Inventory Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#mining-and-placing">Mining and Placing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#view-bobbing-and-hand-animation">View Bobbing and Hand Animation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#dynamic-fov-during-sprint">Dynamic FOV During Sprint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html#integration-with-game-loop">Integration with Game Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface Systems and Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#ui-architecture-overview">UI Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#core-ui-component-base-class">Core UI Component Base Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#in-game-hud-components">In-Game HUD Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#menu-system">Menu System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#layout-metrics-slot-grid">Layout Metrics (Slot Grid)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#button-and-component-library">Button and Component Library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#transition-animations">Transition Animations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#integration-with-main-loop">Integration with Main Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="persistence.html">World Persistence and Data Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#serialization-and-compression">Serialization and Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-operations">Database Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#world-management-file-system">World Management (File System)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival &amp; Physics Mechanics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core-engine-main-py">Core Engine (<code class="docutils literal notranslate"><span class="pre">main.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#player-player-py">Player (<code class="docutils literal notranslate"><span class="pre">player.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#world-world-py">World (<code class="docutils literal notranslate"><span class="pre">world.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#chunk-chunk-py">Chunk (<code class="docutils literal notranslate"><span class="pre">chunk.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scene-scene-py">Scene (<code class="docutils literal notranslate"><span class="pre">scene.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#voxelhandler-voxel-handler-py">VoxelHandler (<code class="docutils literal notranslate"><span class="pre">voxel_handler.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#constants-settings-py">Constants (<code class="docutils literal notranslate"><span class="pre">settings.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#shader-programs-shader-program-py">Shader Programs (<code class="docutils literal notranslate"><span class="pre">shader_program.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mesh-building-build-chunk-mesh-py">Mesh Building (<code class="docutils literal notranslate"><span class="pre">build_chunk_mesh.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terrain-generation-terrain-gen-py">Terrain Generation (<code class="docutils literal notranslate"><span class="pre">terrain_gen.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lighting-lighting-py">Lighting (<code class="docutils literal notranslate"><span class="pre">lighting.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common-enums-and-constants">Common Enums and Constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyrite</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-reference">
+<span id="api"></span><h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<p>This section provides a structured reference to core Pyrite classes, methods, and constants. Use this for looking up specific functionality.</p>
+<section id="core-engine-main-py">
+<h2>Core Engine (<code class="docutils literal notranslate"><span class="pre">main.py</span></code>)<a class="headerlink" href="#core-engine-main-py" title="Link to this heading"></a></h2>
+<p><strong>class Pyrite</strong></p>
+<p>Root application class managing game lifecycle, state transitions, and subsystems.</p>
+<p>Key Attributes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">game_state</span></code>: Current state (<code class="docutils literal notranslate"><span class="pre">'MAIN_MENU',</span> <span class="pre">'IN_GAME',</span> <span class="pre">'PAUSED',</span> <span class="pre">'OPTIONS',</span> <span class="pre">'LOADING',</span> <span class="pre">'INVENTORY',</span> <span class="pre">'WORLD_SELECT',</span> <span class="pre">'CREATE_WORLD</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">world</span></code>: World instance (active when in-game)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">player</span></code>: Player instance</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scene</span></code>: Scene manager (rendering)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ctx</span></code>: ModernGL context</p></li>
+</ul>
+<p>Key Methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">__init__()</span></code>: Initialize Pygame, OpenGL, load config</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">init_game_session(save_name,</span> <span class="pre">force_seed,</span> <span class="pre">game_mode)</span></code>: Load/create a world</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">run()</span></code>: Main loop (event → update → render)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">handle_events()</span></code>: Dispatch OS events</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">update()</span></code>: Tick all systems</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">render()</span></code>: Draw frame</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quit_game()</span></code>: Shutdown, save world</p></li>
+</ul>
+</section>
+<section id="player-player-py">
+<h2>Player (<code class="docutils literal notranslate"><span class="pre">player.py</span></code>)<a class="headerlink" href="#player-player-py" title="Link to this heading"></a></h2>
+<p><strong>class Player(Camera)</strong></p>
+<p>Manages player physics, camera, input, inventory, and survival stats.</p>
+<p>Key Attributes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feet_pos:</span> <span class="pre">glm.vec3</span></code>: Position at feet (for collisions)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">velocity:</span> <span class="pre">glm.vec3</span></code>: Movement velocity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">yaw,</span> <span class="pre">pitch:</span> <span class="pre">float</span></code>: Camera rotation (radians)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">on_ground:</span> <span class="pre">bool</span></code>: Contact with solid block</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">in_water:</span> <span class="pre">bool</span></code>: Head submerged</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">health,</span> <span class="pre">hunger,</span> <span class="pre">oxygen:</span> <span class="pre">float</span></code>: Survival stats (0-20)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inventory:</span> <span class="pre">List[int]</span></code>: 41-slot inventory IDs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inventory_counts:</span> <span class="pre">List[int]</span></code>: Stack sizes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hotbar_index:</span> <span class="pre">int</span></code>: Selected hotbar slot (0-8)</p></li>
+</ul>
+<p>Key Methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">update()</span></code>: Physics, movement, animations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">handle_event(event)</span></code>: Process input</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_aabb()</span></code>: Get bounding box</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">move_and_collide()</span></code>: Physics with collision</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">add_item(voxel_id)</span></code>: Pickup item</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">take_damage(amount)</span></code>: Reduce health</p></li>
+</ul>
+</section>
+<section id="world-world-py">
+<h2>World (<code class="docutils literal notranslate"><span class="pre">world.py</span></code>)<a class="headerlink" href="#world-world-py" title="Link to this heading"></a></h2>
+<p><strong>class World</strong></p>
+<p>Manages terrain generation, chunk loading/unloading, and persistence.</p>
+<p>Key Attributes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">active_chunks:</span> <span class="pre">Dict</span></code>: Loaded chunks</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">world_seed:</span> <span class="pre">int</span></code>: World seed</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">voxels:</span> <span class="pre">np.ndarray</span></code>: Massive 1D array of all active world voxels</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lightmaps:</span> <span class="pre">np.ndarray</span></code>: Massive 1D array of all active world light data</p></li>
+</ul>
+<p>Key Methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">load_chunk(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code>: Queue a chunk for asynchronous loading/generation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unload_chunk(pos)</span></code>: Unload chunk and trigger async DB save</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">save()</span></code>: Synchronous shutdown, flush all to disk</p></li>
+</ul>
+</section>
+<section id="chunk-chunk-py">
+<h2>Chunk (<code class="docutils literal notranslate"><span class="pre">chunk.py</span></code>)<a class="headerlink" href="#chunk-chunk-py" title="Link to this heading"></a></h2>
+<p><strong>class Chunk</strong></p>
+<p>Represents a 48x48x48 voxel block.</p>
+<p>Key Attributes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">position:</span> <span class="pre">(int,</span> <span class="pre">int,</span> <span class="pre">int)</span></code>: Chunk coordinates</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">voxels:</span> <span class="pre">np.ndarray</span></code>: (110592,) uint8 voxel IDs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lightmap:</span> <span class="pre">np.ndarray</span></code>: (110592,) uint8 packed light</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mesh:</span> <span class="pre">ChunkMesh</span></code>: Rendered geometry</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">is_empty:</span> <span class="pre">bool</span></code>: True if chunk contains only air</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">is_visible:</span> <span class="pre">bool</span></code>: Frustum/Occlusion visibility state</p></li>
+</ul>
+<p>Key Methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">build_mesh()</span></code>: Triggers chunk mesh builder</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">render()</span></code>: Submits VBOs to GPU</p></li>
+</ul>
+</section>
+<section id="scene-scene-py">
+<h2>Scene (<code class="docutils literal notranslate"><span class="pre">scene.py</span></code>)<a class="headerlink" href="#scene-scene-py" title="Link to this heading"></a></h2>
+<p><strong>class Scene</strong></p>
+<p>Multi-pass rendering orchestrator.</p>
+<p>Key Methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">update()</span></code>: Update cameras, animations, chunks</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">render()</span></code>: Render world + UI</p></li>
+</ul>
+</section>
+<section id="voxelhandler-voxel-handler-py">
+<h2>VoxelHandler (<code class="docutils literal notranslate"><span class="pre">voxel_handler.py</span></code>)<a class="headerlink" href="#voxelhandler-voxel-handler-py" title="Link to this heading"></a></h2>
+<p><strong>class VoxelHandler</strong></p>
+<p>Raycast targeting and block manipulation.</p>
+<p>Key Methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ray_cast()</span></code>: Cast ray from camera, return target block</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">add_voxel()</span></code>: Place block</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remove_voxel()</span></code>: Mine block</p></li>
+</ul>
+</section>
+<section id="constants-settings-py">
+<h2>Constants (<code class="docutils literal notranslate"><span class="pre">settings.py</span></code>)<a class="headerlink" href="#constants-settings-py" title="Link to this heading"></a></h2>
+<p>Performance Tuning:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MESH_BUILD_LIMIT_INGAME</span> <span class="pre">=</span> <span class="pre">4</span></code>: Chunks meshed per frame</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME</span> <span class="pre">=</span> <span class="pre">2</span></code>: GPU uploads per frame</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">VBO_POOL_CAP</span> <span class="pre">=</span> <span class="pre">150</span></code>: Recycled GPU buffers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LIGHTING_QUEUE_SIZE</span> <span class="pre">=</span> <span class="pre">200000</span></code>: BFS light queue nodes</p></li>
+</ul>
+<p>Physics:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GRAVITY</span> <span class="pre">=</span> <span class="pre">-0.000025</span></code>: Downward acceleration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">JUMP_VELOCITY</span> <span class="pre">=</span> <span class="pre">0.0095</span></code>: Jump boost</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PLAYER_SPEED</span> <span class="pre">=</span> <span class="pre">0.005</span></code>: Movement speed</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PLAYER_WIDTH</span> <span class="pre">=</span> <span class="pre">0.6</span></code>: Collision box width</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PLAYER_HEIGHT</span> <span class="pre">=</span> <span class="pre">1.8</span></code>: Collision box height</p></li>
+</ul>
+<p>Survival:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MAX_HEALTH</span> <span class="pre">=</span> <span class="pre">20</span></code>: Player dies at 0 health</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MAX_HUNGER</span> <span class="pre">=</span> <span class="pre">20</span></code>: Hunger depletes over time, causes health loss at 0</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MAX_OXYGEN</span> <span class="pre">=</span> <span class="pre">20</span></code>: Breath underwater</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BLOCK_HARDNESS</span></code>: Dict of block IDs → break time (ms)</p></li>
+</ul>
+<p>Environment:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CHUNK_SIZE</span> <span class="pre">=</span> <span class="pre">48</span></code>: Voxels per axis</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CHUNK_VOL</span> <span class="pre">=</span> <span class="pre">110592</span></code>: Total voxels per chunk</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">WATER_LINE</span> <span class="pre">=</span> <span class="pre">6</span></code>: Sea level</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STONE_LVL</span> <span class="pre">=</span> <span class="pre">49</span></code>: Bedrock layer start</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">WORLD_W,</span> <span class="pre">WORLD_H,</span> <span class="pre">WORLD_D</span></code>: Max chunk counts</p></li>
+</ul>
+</section>
+<section id="shader-programs-shader-program-py">
+<h2>Shader Programs (<code class="docutils literal notranslate"><span class="pre">shader_program.py</span></code>)<a class="headerlink" href="#shader-programs-shader-program-py" title="Link to this heading"></a></h2>
+<p><strong>Uniform Bindings (All Shaders):</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">m_proj:</span> <span class="pre">mat4</span></code>: Projection matrix</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">m_view:</span> <span class="pre">mat4</span></code>: View matrix (camera)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">m_model:</span> <span class="pre">mat4</span></code>: Model matrix</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">u_sun_direction:</span> <span class="pre">vec3</span></code>: Sun position (normalized)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">u_time:</span> <span class="pre">float</span></code>: World time (seconds)</p></li>
+</ul>
+<p><strong>Chunk Shader Uniforms:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">u_texture_array_0:</span> <span class="pre">sampler2DArray</span></code>: Texture atlas</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">u_texture_map[256]:</span> <span class="pre">int[]</span></code>: Voxel ID → texture layer</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">u_fog_density:</span> <span class="pre">float</span></code>: Fog start distance</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">u_underwater_tint:</span> <span class="pre">bool</span></code>: Apply blue tint</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bg_color:</span> <span class="pre">vec3</span></code>: Background (sky) color</p></li>
+</ul>
+<p><strong>UI Shader Uniforms:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">u_offset:</span> <span class="pre">vec2</span></code>: Screen position (NDC)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">u_scale:</span> <span class="pre">vec2</span></code>: Size (NDC)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">u_color:</span> <span class="pre">vec4</span></code>: Color (UI shaders)</p></li>
+</ul>
+</section>
+<section id="mesh-building-build-chunk-mesh-py">
+<h2>Mesh Building (<code class="docutils literal notranslate"><span class="pre">build_chunk_mesh.py</span></code>)<a class="headerlink" href="#mesh-building-build-chunk-mesh-py" title="Link to this heading"></a></h2>
+<p><strong>Function:</strong> <code class="docutils literal notranslate"><span class="pre">build_chunk_mesh(chunk_voxels,</span> <span class="pre">chunk_lightmap,</span> <span class="pre">chunk_pos,</span> <span class="pre">world_voxels,</span> <span class="pre">world_lightmaps,</span> <span class="pre">chunk_positions)</span></code></p>
+<p>Numba-compiled greedy meshing. Returns vertex data and light data (packed).</p>
+<p><strong>Vertex Packing:</strong></p>
+<ul class="simple">
+<li><p>Bits 31-26: X coordinate (0-47)</p></li>
+<li><p>Bits 25-20: Y coordinate (0-47)</p></li>
+<li><p>Bits 19-14: Z coordinate (0-47)</p></li>
+<li><p>Bits 13-6: Voxel ID (0-255)</p></li>
+<li><p>Bits 5-3: Face ID (0-5)</p></li>
+<li><p>Bits 2-1: AO ID (0-3)</p></li>
+<li><p>Bit 0: Flip ID (0-1)</p></li>
+</ul>
+<p><strong>Light Packing:</strong></p>
+<ul class="simple">
+<li><p>Bits 7-4: Sunlight (0-15)</p></li>
+<li><p>Bits 3-0: Blocklight (0-15)</p></li>
+</ul>
+</section>
+<section id="terrain-generation-terrain-gen-py">
+<h2>Terrain Generation (<code class="docutils literal notranslate"><span class="pre">terrain_gen.py</span></code>)<a class="headerlink" href="#terrain-generation-terrain-gen-py" title="Link to this heading"></a></h2>
+<p>Handled via Numba JIT functions in <code class="docutils literal notranslate"><span class="pre">Chunk.generate_terrain()</span></code> using vectorized 3D simplex noise.</p>
+</section>
+<section id="lighting-lighting-py">
+<h2>Lighting (<code class="docutils literal notranslate"><span class="pre">lighting.py</span></code>)<a class="headerlink" href="#lighting-lighting-py" title="Link to this heading"></a></h2>
+<p>Uses BFS lighting propagation logic executed completely through standalone Numba compiled functions such as:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">init_chunk_lighting()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stitch_chunk_lighting()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">update_light_place_block()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">update_light_remove_block()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">place_torch()</span></code></p></li>
+</ul>
+</section>
+<section id="common-enums-and-constants">
+<h2>Common Enums and Constants<a class="headerlink" href="#common-enums-and-constants" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Block IDs</span>
+<span class="n">AIR</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">SAND</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">GRASS</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">DIRT</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">STONE</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">SNOW</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">LEAVES</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">WOOD</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">GRAVEL</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">WOOD_PLANKS</span> <span class="o">=</span> <span class="mi">9</span>
+<span class="n">COBBELSTONE</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">WATER</span> <span class="o">=</span> <span class="mi">11</span>
+<span class="n">GLOWSTONE</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">GLASS</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="n">CACTUS</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="n">STONE_BRICKS</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="c1"># 16-32 are reserved for other blocks, 33+ are items</span>
+<span class="n">STICK</span> <span class="o">=</span> <span class="mi">33</span>
+<span class="n">WOODEN_PICKAXE</span> <span class="o">=</span> <span class="mi">34</span>
+
+<span class="c1"># Game States</span>
+<span class="n">MAIN_MENU</span>
+<span class="n">WORLD_SELECT</span>
+<span class="n">CREATE_WORLD</span>
+<span class="n">LOADING</span>
+<span class="n">IN_GAME</span>
+<span class="n">INVENTORY</span>
+<span class="n">PAUSED</span>
+<span class="n">OPTIONS</span>
+
+<span class="c1"># Transparent Blocks:</span>
+<span class="p">[</span><span class="n">AIR</span><span class="p">,</span> <span class="n">WATER</span><span class="p">,</span> <span class="n">GLASS</span><span class="p">,</span> <span class="n">LEAVES</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorials.html" class="btn btn-neutral float-left" title="Implementation Tutorials and Replication Guides" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="testing.html" class="btn btn-neutral float-right" title="Testing and Profiling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, ShivamKR12.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

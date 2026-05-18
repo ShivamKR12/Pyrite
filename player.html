@@ -1,0 +1,853 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player Systems &mdash; Pyrite 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=922250f3" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User Interface Systems and Components" href="ui.html" />
+    <link rel="prev" title="Procedural Terrain Generation" href="terrain.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Pyrite
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Core Engine Flow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="main.html#engine-initialization">Engine Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#state-management">State Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-generation-and-sessions">World Generation and Sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-loop">The Main Loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#scene-rendering-pipeline">Scene Rendering Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#world-session-initialization-loading-state">World Session Initialization (LOADING state)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#world-data-persistence">World &amp; Data Persistence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#sqlite-write-ahead-logging-wal">SQLite Write-Ahead Logging (WAL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#memory-management-1d-vs-3d-arrays">Memory Management (1D vs 3D Arrays)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="shaders.html">Shader Systems and GLSL Breakdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#shader-architecture-overview">Shader Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#chunk-shader-main-terrain-rendering">Chunk Shader (Main Terrain Rendering)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#item-shader-dropped-items">Item Shader (Dropped Items)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#sky-shader-procedural-atmosphere">Sky Shader (Procedural Atmosphere)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#clouds-shader-procedural">Clouds Shader (Procedural)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#ui-block-shader-inventory-icons">UI Block Shader (Inventory Icons)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#ui-color-shader-backgrounds-ui-quads">UI Color Shader (Backgrounds, UI Quads)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#uniform-management">Uniform Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#texture-atlas-binding">Texture Atlas Binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-packing-32-bit-format">Vertex Packing: 32-Bit Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#greedy-meshing-algorithm">Greedy Meshing Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-light-smoothing">Vertex Light Smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#ambient-occlusion-ao-calculation">Ambient Occlusion (AO) Calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#flip-detection-diagonal-flip-for-lighting">Flip Detection (Diagonal Flip for Lighting)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#water-faces-handling">Water Faces Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#custom-mesh-variants">Custom Mesh Variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html#replication-guide">Replication Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-topography-system">Biome &amp; Topography System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving">Cave Carving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-flora-generation">Tree &amp; Flora Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#height-generation-algorithm">Height Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-selection-algorithm">Biome Selection Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-placement-and-structure">Tree Placement and Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#ore-generation">Ore Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#column-generation-sequence">Column Generation Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Player Systems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#player-class-hierarchy">Player Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coordinate-system">Coordinate System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#controls-and-input-handling">Controls and Input Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physics-gravity-and-velocity">Physics: Gravity and Velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#aabb-collision-detection">AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#water-physics">Water Physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#survival-stats-management">Survival Stats Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inventory-management">Inventory Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mining-and-placing">Mining and Placing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#view-bobbing-and-hand-animation">View Bobbing and Hand Animation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dynamic-fov-during-sprint">Dynamic FOV During Sprint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-with-game-loop">Integration with Game Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface Systems and Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#ui-architecture-overview">UI Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#core-ui-component-base-class">Core UI Component Base Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#in-game-hud-components">In-Game HUD Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#menu-system">Menu System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#layout-metrics-slot-grid">Layout Metrics (Slot Grid)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#button-and-component-library">Button and Component Library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#transition-animations">Transition Animations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html#integration-with-main-loop">Integration with Main Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="persistence.html">World Persistence and Data Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#serialization-and-compression">Serialization and Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-operations">Database Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#world-management-file-system">World Management (File System)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival &amp; Physics Mechanics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#core-engine-main-py">Core Engine (<code class="docutils literal notranslate"><span class="pre">main.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#player-player-py">Player (<code class="docutils literal notranslate"><span class="pre">player.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#world-world-py">World (<code class="docutils literal notranslate"><span class="pre">world.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#chunk-chunk-py">Chunk (<code class="docutils literal notranslate"><span class="pre">chunk.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#scene-scene-py">Scene (<code class="docutils literal notranslate"><span class="pre">scene.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#voxelhandler-voxel-handler-py">VoxelHandler (<code class="docutils literal notranslate"><span class="pre">voxel_handler.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#constants-settings-py">Constants (<code class="docutils literal notranslate"><span class="pre">settings.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#shader-programs-shader-program-py">Shader Programs (<code class="docutils literal notranslate"><span class="pre">shader_program.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#mesh-building-build-chunk-mesh-py">Mesh Building (<code class="docutils literal notranslate"><span class="pre">build_chunk_mesh.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#terrain-generation-terrain-gen-py">Terrain Generation (<code class="docutils literal notranslate"><span class="pre">terrain_gen.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#lighting-lighting-py">Lighting (<code class="docutils literal notranslate"><span class="pre">lighting.py</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#common-enums-and-constants">Common Enums and Constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyrite</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Player Systems</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/player.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="player-systems">
+<span id="player"></span><h1>Player Systems<a class="headerlink" href="#player-systems" title="Link to this heading"></a></h1>
+<p>This document details player control schemes, AABB collision detection, physics simulations, and survival mechanics (health, hunger, oxygen).</p>
+<section id="player-class-hierarchy">
+<h2>Player Class Hierarchy<a class="headerlink" href="#player-class-hierarchy" title="Link to this heading"></a></h2>
+<p><strong>Player (inherits from Camera)</strong></p>
+<p>The player object manages:</p>
+<ul class="simple">
+<li><p>Position, velocity, view direction</p></li>
+<li><p>Physics (gravity, jump, collisions)</p></li>
+<li><p>Input handling (keyboard, mouse)</p></li>
+<li><p>Survival stats (health, hunger, oxygen)</p></li>
+<li><p>Inventory and held item</p></li>
+</ul>
+<p>Architecture:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>class Player(Camera):
+    __init__(self, world, start_pos=(0, 50, 0)):
+        # Inherited from Camera
+        self.position: glm.vec3                    # Camera position (eye)
+        self.yaw, self.pitch: float                # Rotation angles (radians)
+
+        # Physics state
+        self.feet_pos: glm.vec3                    # Position at feet (for collisions)
+        self.velocity: glm.vec3                    # Movement velocity
+        self.on_ground: bool                       # Contact with solid block
+        self.in_water: bool                        # Submerged
+        self.head_in_water: bool                   # Head above surface
+
+        # Survival stats
+        self.health: float                         # 0-20
+        self.hunger: float                         # 0-20
+        self.oxygen: float                         # 0-20
+        self.highest_y: float                       # For fall damage calculation
+
+        # Inventory
+        self.inventory: List[int]                  # 41 slots, voxel IDs
+        self.inventory_counts: List[int]           # Stack sizes (1-64)
+        self.hotbar_index: int                     # Selected slot (0-8)
+
+        # Mode
+        self.game_mode: str                        # &#39;SURVIVAL&#39; or &#39;CREATIVE&#39;
+
+        # Animation
+        self.step_counter: float                   # For view bobbing, footsteps
+        self.held_item_swing: float                # 0-1, for swing animation
+
+        # Input state
+        self.keys_pressed: dict                    # Keys currently held
+</pre></div>
+</div>
+</section>
+<section id="coordinate-system">
+<h2>Coordinate System<a class="headerlink" href="#coordinate-system" title="Link to this heading"></a></h2>
+<p><strong>Feet Position vs. Eye Position</strong></p>
+<ul class="simple">
+<li><p><strong>feet_pos:</strong> Base of player bounding box (Y=0 of AABB)</p></li>
+<li><p><strong>position (inherited):</strong> Eye level = feet_pos.y + EYE_HEIGHT</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PLAYER_WIDTH</span> <span class="o">=</span> <span class="mf">0.6</span>         <span class="c1"># XZ diameter</span>
+<span class="n">PLAYER_HEIGHT</span> <span class="o">=</span> <span class="mf">1.8</span>        <span class="c1"># Total height</span>
+<span class="n">PLAYER_HALF_W</span> <span class="o">=</span> <span class="mf">0.3</span>        <span class="c1"># Half-width for AABB</span>
+<span class="n">PLAYER_EYE_HEIGHT</span> <span class="o">=</span> <span class="mf">1.6</span>    <span class="c1"># Distance from feet to eyes</span>
+
+<span class="c1"># Calculate AABB</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_aabb</span><span class="p">():</span>
+    <span class="n">half_w</span> <span class="o">=</span> <span class="n">PLAYER_HALF_W</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>     <span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">half_w</span><span class="p">,</span>  <span class="c1"># Min</span>
+        <span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">PLAYER_HEIGHT</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">half_w</span>  <span class="c1"># Max</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="controls-and-input-handling">
+<h2>Controls and Input Handling<a class="headerlink" href="#controls-and-input-handling" title="Link to this heading"></a></h2>
+<p><strong>Keyboard Input (per update, based on held keys)</strong></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Survival Mode</p></th>
+<th class="head"><p>Creative Mode</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>W</p></td>
+<td><p>Move forward</p></td>
+<td><p>Move forward</p></td>
+</tr>
+<tr class="row-odd"><td><p>A</p></td>
+<td><p>Move left</p></td>
+<td><p>Move left</p></td>
+</tr>
+<tr class="row-even"><td><p>S</p></td>
+<td><p>Move backward</p></td>
+<td><p>Move backward</p></td>
+</tr>
+<tr class="row-odd"><td><p>D</p></td>
+<td><p>Move right</p></td>
+<td><p>Move right</p></td>
+</tr>
+<tr class="row-even"><td><p>Space</p></td>
+<td><p>Jump (if grounded)</p></td>
+<td><p>Move up (fly)</p></td>
+</tr>
+<tr class="row-odd"><td><p>LShift</p></td>
+<td><p>Toggle sprint</p></td>
+<td><p>Move down (fly)</p></td>
+</tr>
+<tr class="row-even"><td><p>Mouse</p></td>
+<td><p>Look around</p></td>
+<td><p>Look around</p></td>
+</tr>
+<tr class="row-odd"><td><p>LClick</p></td>
+<td><p>Mine block</p></td>
+<td><p>Destroy block</p></td>
+</tr>
+<tr class="row-even"><td><p>RClick</p></td>
+<td><p>Place block</p></td>
+<td><p>Place block (fill)</p></td>
+</tr>
+<tr class="row-odd"><td><p>E</p></td>
+<td><p>Toggle inventory</p></td>
+<td><p>Toggle inventory</p></td>
+</tr>
+<tr class="row-even"><td><p>Scroll</p></td>
+<td><p>Select hotbar</p></td>
+<td><p>Select hotbar</p></td>
+</tr>
+<tr class="row-odd"><td><p>1-9</p></td>
+<td><p>Select hotbar</p></td>
+<td><p>Select hotbar</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Movement Calculation (Survival Mode)</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_movement</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
+    <span class="c1"># Compute move direction (camera-relative)</span>
+    <span class="n">direction</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;W&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">+=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">-=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">-=</span> <span class="n">get_right_vector</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;D&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">+=</span> <span class="n">get_right_vector</span><span class="p">()</span>
+
+    <span class="c1"># Sprint multiplier</span>
+    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;LShift&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">on_ground</span><span class="p">:</span>
+        <span class="n">sprint_mult</span> <span class="o">=</span> <span class="n">PLAYER_SPRINT_MULTIPLIER</span>  <span class="c1"># 1.5</span>
+        <span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sprint_mult</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Apply movement speed</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">direction</span><span class="o">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="n">sprint_mult</span> <span class="o">*</span> <span class="n">delta_time</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">direction</span><span class="o">.</span><span class="n">z</span> <span class="o">*</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="n">sprint_mult</span> <span class="o">*</span> <span class="n">delta_time</span>
+
+        <span class="c1"># View bobbing (sine wave based on distance traveled)</span>
+        <span class="n">step_counter</span> <span class="o">+=</span> <span class="n">length</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">vec2</span><span class="p">(</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">velocity</span><span class="o">.</span><span class="n">z</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta_time</span>
+
+    <span class="c1"># Jump (only on ground)</span>
+    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;Space&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">on_ground</span><span class="p">:</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">JUMP_VELOCITY</span>
+        <span class="n">on_ground</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Creative fly mode</span>
+    <span class="k">if</span> <span class="n">game_mode</span> <span class="o">==</span> <span class="s1">&#39;CREATIVE&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;Space&#39;</span><span class="p">]:</span>
+            <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="mi">5</span>  <span class="c1"># Upward</span>
+        <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;LShift&#39;</span><span class="p">]:</span>
+            <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="mi">5</span>  <span class="c1"># Downward</span>
+</pre></div>
+</div>
+<p><strong>Mouse Input (Camera Control)</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">handle_mouse_motion</span><span class="p">(</span><span class="n">rel_x</span><span class="p">,</span> <span class="n">rel_y</span><span class="p">,</span> <span class="n">sensitivity</span><span class="p">):</span>
+    <span class="c1"># rel_x, rel_y from pygame.mouse.get_rel()</span>
+
+    <span class="c1"># Yaw (left-right, X-axis rotation)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">yaw</span> <span class="o">-=</span> <span class="n">rel_x</span> <span class="o">*</span> <span class="n">sensitivity</span>
+
+    <span class="c1"># Pitch (up-down, Y-axis rotation)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">-=</span> <span class="n">rel_y</span> <span class="o">*</span> <span class="n">sensitivity</span>
+
+    <span class="c1"># Clamp pitch to ±90 degrees to prevent over-rotation</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">,</span> <span class="o">-</span><span class="n">glm</span><span class="o">.</span><span class="n">pi</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">pi</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Update camera view matrix accordingly</span>
+</pre></div>
+</div>
+</section>
+<section id="physics-gravity-and-velocity">
+<h2>Physics: Gravity and Velocity<a class="headerlink" href="#physics-gravity-and-velocity" title="Link to this heading"></a></h2>
+<p>Applied each update:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_gravity</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">on_ground</span><span class="p">:</span>
+        <span class="c1"># Fall acceleration</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">GRAVITY</span> <span class="o">*</span> <span class="n">delta_time</span>  <span class="c1"># GRAVITY = -0.000025</span>
+
+    <span class="k">if</span> <span class="n">in_water</span><span class="p">:</span>
+        <span class="c1"># Water buoyancy (reduced gravity)</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">GRAVITY</span> <span class="o">*</span> <span class="n">PLAYER_UNDERWATER_GRAVITY_MULTIPLIER</span> <span class="o">*</span> <span class="n">delta_time</span>
+        <span class="c1"># Also apply drag to vertical movement</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">PLAYER_VERTICAL_WATER_DRAG</span><span class="p">)</span>
+
+    <span class="c1"># Terminal velocity (optional clamping to prevent extreme speeds)</span>
+    <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Movement and Collision Resolution:</strong></p>
+<p>Movement is axis-separated to enable smooth wall-sliding:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">move_and_collide</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
+    <span class="c1"># Apply velocity to get new position candidates</span>
+    <span class="n">new_pos</span> <span class="o">=</span> <span class="n">feet_pos</span> <span class="o">+</span> <span class="n">velocity</span> <span class="o">*</span> <span class="n">delta_time</span>
+
+    <span class="c1"># Resolve collisions per-axis</span>
+    <span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
+    <span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
+    <span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
+
+    <span class="c1"># Update final position</span>
+    <span class="n">feet_pos</span> <span class="o">=</span> <span class="n">new_pos</span>
+    <span class="n">position</span> <span class="o">=</span> <span class="n">feet_pos</span> <span class="o">+</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">PLAYER_EYE_HEIGHT</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="aabb-collision-detection">
+<h2>AABB Collision Detection<a class="headerlink" href="#aabb-collision-detection" title="Link to this heading"></a></h2>
+<p><strong>Axis-Aligned Bounding Box (AABB)</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">resolve_axis</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">current_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">):</span>
+    <span class="c1"># Get AABB after movement</span>
+    <span class="n">aabb_min</span><span class="p">,</span> <span class="n">aabb_max</span> <span class="o">=</span> <span class="n">get_aabb_at</span><span class="p">(</span><span class="n">new_pos</span><span class="p">)</span>
+
+    <span class="c1"># Scan all voxels within and around AABB</span>
+    <span class="k">for</span> <span class="n">vx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="n">ceil</span><span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">x</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">vy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="n">ceil</span><span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">y</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">vz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">z</span><span class="p">),</span> <span class="n">ceil</span><span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">z</span><span class="p">)):</span>
+                <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">get_voxel</span><span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">)</span>
+
+                <span class="c1"># Skip transparent voxels (water allows movement)</span>
+                <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Check AABB intersection</span>
+                <span class="n">voxel_box</span> <span class="o">=</span> <span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">,</span> <span class="n">vx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">vy</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">vz</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">aabb_intersect</span><span class="p">(</span><span class="n">aabb_min</span><span class="p">,</span> <span class="n">aabb_max</span><span class="p">,</span> <span class="n">voxel_box</span><span class="p">):</span>
+                    <span class="c1"># Collision: snap position to voxel boundary</span>
+                    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;X&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Moving +X</span>
+                            <span class="n">new_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">current_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Moving -X</span>
+                            <span class="n">new_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">current_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">aabb_min</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                        <span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+
+                    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;Y&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Moving +Y</span>
+                            <span class="n">new_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">current_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Moving -Y</span>
+                            <span class="n">new_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">current_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">aabb_min</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                            <span class="n">on_ground</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+
+                    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;Z&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Moving +Z</span>
+                            <span class="n">new_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">current_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Moving -Z</span>
+                            <span class="n">new_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">current_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">aabb_min</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                        <span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p><strong>AABB Intersection Test:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">aabb_intersect</span><span class="p">(</span><span class="n">aabb1_min</span><span class="p">,</span> <span class="n">aabb1_max</span><span class="p">,</span> <span class="n">aabb2_min</span><span class="p">,</span> <span class="n">aabb2_max</span><span class="p">):</span>
+    <span class="c1"># No separation on any axis = collision</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">aabb1_min</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">x</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">x</span> <span class="ow">and</span>
+            <span class="n">aabb1_min</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span>
+            <span class="n">aabb1_min</span><span class="o">.</span><span class="n">z</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">z</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="water-physics">
+<h2>Water Physics<a class="headerlink" href="#water-physics" title="Link to this heading"></a></h2>
+<p>When in water:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_in_water</span><span class="p">():</span>
+    <span class="c1"># Check if feet_pos in water voxel</span>
+    <span class="n">voxel</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">get_voxel</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">voxel</span> <span class="o">==</span> <span class="n">WATER</span><span class="p">:</span>
+        <span class="n">in_water</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Check if head in water (for oxygen drain)</span>
+        <span class="n">head_voxel</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">get_voxel</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+        <span class="n">head_in_water</span> <span class="o">=</span> <span class="p">(</span><span class="n">head_voxel</span> <span class="o">==</span> <span class="n">WATER</span><span class="p">)</span>
+
+        <span class="c1"># Horizontal drag</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">*=</span> <span class="n">PLAYER_WATER_DRAG_MULTIPLIER</span>  <span class="c1"># 0.5</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">*=</span> <span class="n">PLAYER_WATER_DRAG_MULTIPLIER</span>
+
+        <span class="c1"># Vertical drag</span>
+        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">PLAYER_VERTICAL_WATER_DRAG</span><span class="p">)</span>  <span class="c1"># Additional damping</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">in_water</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">head_in_water</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+<p><strong>Dolphin Leap (jump near surface):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">try_jump_in_water</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">in_water</span> <span class="ow">and</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;Space&#39;</span><span class="p">]:</span>
+        <span class="c1"># Check if near surface (head not in water)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">head_in_water</span><span class="p">:</span>
+            <span class="c1"># Apply upward boost</span>
+            <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">JUMP_VELOCITY</span> <span class="o">*</span> <span class="n">PLAYER_DOLPHIN_LEAP_MULTIPLIER</span>  <span class="c1"># 1.05x</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Normal swimming upward</span>
+            <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="mi">3</span>
+</pre></div>
+</div>
+</section>
+<section id="survival-stats-management">
+<h2>Survival Stats Management<a class="headerlink" href="#survival-stats-management" title="Link to this heading"></a></h2>
+<p><strong>Health</strong> (0-20)</p>
+<ul class="simple">
+<li><p>Damaged by: Fall &gt; 3 blocks, void (Y &lt; -64), drowning, contact with hazards</p></li>
+<li><p>Healed by: Food (not implemented in basic version)</p></li>
+<li><p>Death: respawn at spawn point</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_fall_damage</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">on_ground</span><span class="p">:</span>
+        <span class="n">highest_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">highest_y</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">on_ground</span> <span class="ow">and</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">highest_y</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">:</span>
+        <span class="c1"># Fall distance &gt; 3 blocks</span>
+        <span class="n">fall_distance</span> <span class="o">=</span> <span class="n">highest_y</span> <span class="o">-</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span>
+        <span class="n">damage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fall_distance</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">)</span>
+        <span class="n">take_damage</span><span class="p">(</span><span class="n">damage</span><span class="p">)</span>
+        <span class="n">highest_y</span> <span class="o">=</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span>
+</pre></div>
+</div>
+<p><strong>Hunger</strong> (0-20)</p>
+<ul class="simple">
+<li><p>Drains when sprinting or traveling</p></li>
+<li><p>Restored by consuming food</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">HUNGER_DRAIN_SPRINT</span> <span class="o">=</span> <span class="mf">0.002</span>       <span class="c1"># per millisecond</span>
+<span class="n">HUNGER_DRAIN_WALK</span> <span class="o">=</span> <span class="mf">0.0005</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update_hunger</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">is_sprinting</span><span class="p">:</span>
+        <span class="n">hunger</span> <span class="o">-=</span> <span class="n">HUNGER_DRAIN_SPRINT</span> <span class="o">*</span> <span class="n">delta_time</span>
+    <span class="k">elif</span> <span class="n">is_moving</span><span class="p">:</span>
+        <span class="n">hunger</span> <span class="o">-=</span> <span class="n">HUNGER_DRAIN_WALK</span> <span class="o">*</span> <span class="n">delta_time</span>
+
+    <span class="n">hunger</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">hunger</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">MAX_HUNGER</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Oxygen</strong> (0-20)</p>
+<ul class="simple">
+<li><p>Depletes when head in water</p></li>
+<li><p>Regenerates when above water surface</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">OXYGEN_LOSE_TIMER</span> <span class="o">=</span> <span class="mi">1000</span>    <span class="c1"># ms, depletes 1 oxygen per second</span>
+<span class="n">OXYGEN_GAIN_TIMER</span> <span class="o">=</span> <span class="mi">200</span>     <span class="c1"># ms, regenerates 1 oxygen per 200ms</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update_oxygen</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">head_in_water</span><span class="p">:</span>
+        <span class="n">oxygen_drain_time</span> <span class="o">+=</span> <span class="n">delta_time</span>
+        <span class="k">if</span> <span class="n">oxygen_drain_time</span> <span class="o">&gt;=</span> <span class="n">OXYGEN_LOSE_TIMER</span><span class="p">:</span>
+            <span class="n">oxygen</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">oxygen_drain_time</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">oxygen_refill_time</span> <span class="o">+=</span> <span class="n">delta_time</span>
+        <span class="k">if</span> <span class="n">oxygen_refill_time</span> <span class="o">&gt;=</span> <span class="n">OXYGEN_GAIN_TIMER</span><span class="p">:</span>
+            <span class="n">oxygen</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">oxygen_refill_time</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">oxygen</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">oxygen</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">MAX_OXYGEN</span><span class="p">)</span>
+
+    <span class="c1"># Drowned at 0 oxygen</span>
+    <span class="k">if</span> <span class="n">oxygen</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">take_damage</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># 1 damage per frame</span>
+</pre></div>
+</div>
+<p><strong>Void Damage</strong> (Y &lt; -64)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">VOID_DEATH_Y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">64</span>
+<span class="n">VOID_DAMAGE</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">VOID_DAMAGE_INTERVAL</span> <span class="o">=</span> <span class="mi">500</span>  <span class="c1"># ms</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_void_damage</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">VOID_DEATH_Y</span><span class="p">:</span>
+        <span class="n">void_damage_time</span> <span class="o">+=</span> <span class="n">delta_time</span>
+        <span class="k">if</span> <span class="n">void_damage_time</span> <span class="o">&gt;=</span> <span class="n">VOID_DAMAGE_INTERVAL</span><span class="p">:</span>
+            <span class="n">take_damage</span><span class="p">(</span><span class="n">VOID_DAMAGE</span><span class="p">)</span>
+            <span class="n">void_damage_time</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="inventory-management">
+<h2>Inventory Management<a class="headerlink" href="#inventory-management" title="Link to this heading"></a></h2>
+<p><strong>Structure:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">inventory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span>  <span class="c1"># 41 slots, 0 = empty, 1-255 = voxel ID</span>
+<span class="n">inventory_counts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span>  <span class="c1"># Stack sizes (1-64)</span>
+
+<span class="c1"># Slots breakdown:</span>
+<span class="c1"># 0-8:   Hotbar</span>
+<span class="c1"># 9-35:  Main storage (27 slots)</span>
+<span class="c1"># 36-39: Crafting 2x2 grid</span>
+<span class="c1"># 40:    Crafting output</span>
+</pre></div>
+</div>
+<p><strong>Add Item (pickup or craft):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">add_item</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
+    <span class="c1"># Try to stack on existing</span>
+    <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">41</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">inventory</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">==</span> <span class="n">voxel_id</span> <span class="ow">and</span> <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">:</span>
+            <span class="n">space</span> <span class="o">=</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span>
+            <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span>
+
+    <span class="c1"># Add to empty slot (hotbar first)</span>
+    <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">41</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">inventory</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">inventory</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">=</span> <span class="n">voxel_id</span>
+            <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">return</span>
+</pre></div>
+</div>
+<p><strong>Get Held Item:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_held_item</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">inventory</span><span class="p">[</span><span class="n">hotbar_index</span><span class="p">],</span> <span class="n">inventory_counts</span><span class="p">[</span><span class="n">hotbar_index</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="mining-and-placing">
+<h2>Mining and Placing<a class="headerlink" href="#mining-and-placing" title="Link to this heading"></a></h2>
+<p><strong>Mining (LClick):</strong></p>
+<ol class="arabic simple">
+<li><p>Raycast from player camera to find target block</p></li>
+<li><p>Calculate break time based on block hardness and held tool</p></li>
+<li><p>If held long enough, remove block and drop item</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">BLOCK_HARDNESS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">STONE</span><span class="p">:</span> <span class="mi">1500</span><span class="p">,</span>        <span class="c1"># ms to break</span>
+    <span class="n">WOOD</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="n">DIRT</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="n">GRASS</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+
+<span class="n">TOOL_MULTIPLIER</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">BARE_HAND</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">WOODEN_PICKAXE</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>   <span class="c1"># 5x faster than bare hand</span>
+    <span class="n">STONE_PICKAXE</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mine_block</span><span class="p">(</span><span class="n">target_block_id</span><span class="p">):</span>
+    <span class="n">hardness</span> <span class="o">=</span> <span class="n">BLOCK_HARDNESS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">target_block_id</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+    <span class="n">held_item</span> <span class="o">=</span> <span class="n">get_held_item</span><span class="p">()</span>
+    <span class="n">multiplier</span> <span class="o">=</span> <span class="n">TOOL_MULTIPLIER</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">held_item</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">break_time</span> <span class="o">=</span> <span class="n">hardness</span> <span class="o">*</span> <span class="n">multiplier</span>  <span class="c1"># ms</span>
+
+    <span class="c1"># Player holds LClick; after break_time, remove block</span>
+    <span class="k">if</span> <span class="n">held_click_duration</span> <span class="o">&gt;=</span> <span class="n">break_time</span><span class="p">:</span>
+        <span class="n">world</span><span class="o">.</span><span class="n">remove_voxel</span><span class="p">(</span><span class="n">target_pos</span><span class="p">)</span>
+        <span class="c1"># Drop item if not in creative mode or not holding wrong tool</span>
+        <span class="k">if</span> <span class="n">game_mode</span> <span class="o">==</span> <span class="s1">&#39;SURVIVAL&#39;</span><span class="p">:</span>
+            <span class="n">drop_item</span><span class="p">(</span><span class="n">target_block_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Placing (RClick):</strong></p>
+<ol class="arabic simple">
+<li><p>Raycast to find target face</p></li>
+<li><p>Place block on adjacent empty voxel</p></li>
+<li><p>Consume from inventory</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">place_block</span><span class="p">():</span>
+    <span class="n">target_face_normal</span> <span class="o">=</span> <span class="n">raycast_result</span><span class="o">.</span><span class="n">normal</span>
+    <span class="n">target_pos</span> <span class="o">=</span> <span class="n">raycast_result</span><span class="o">.</span><span class="n">pos</span>
+
+    <span class="c1"># Compute placement position (adjacent to target)</span>
+    <span class="n">place_pos</span> <span class="o">=</span> <span class="n">target_pos</span> <span class="o">+</span> <span class="n">target_face_normal</span>
+
+    <span class="c1"># Check empty and no player collision</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">world</span><span class="o">.</span><span class="n">is_solid</span><span class="p">(</span><span class="n">place_pos</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">aabb_intersect_voxel</span><span class="p">(</span><span class="n">place_pos</span><span class="p">):</span>
+        <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">get_held_item</span><span class="p">()</span>
+        <span class="n">world</span><span class="o">.</span><span class="n">place_voxel</span><span class="p">(</span><span class="n">place_pos</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">game_mode</span> <span class="o">==</span> <span class="s1">&#39;SURVIVAL&#39;</span><span class="p">:</span>
+            <span class="n">consume_inventory</span><span class="p">(</span><span class="n">hotbar_index</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="view-bobbing-and-hand-animation">
+<h2>View Bobbing and Hand Animation<a class="headerlink" href="#view-bobbing-and-hand-animation" title="Link to this heading"></a></h2>
+<p><strong>View Bobbing (Camera offset):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_view_bobbing</span><span class="p">():</span>
+    <span class="c1"># Sine wave based on step_counter</span>
+    <span class="n">bob_y</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">step_counter</span> <span class="o">*</span> <span class="n">BOB_FREQ</span><span class="p">)</span> <span class="o">*</span> <span class="n">BOB_AMPLITUDE</span>
+
+    <span class="c1"># Vertical head offset</span>
+    <span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">bob_y</span>
+</pre></div>
+</div>
+<p><strong>Held Item Swing (for visual feedback):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_held_item_animation</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">held_item_swing</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Decrease swing over time</span>
+        <span class="n">held_item_swing</span> <span class="o">-=</span> <span class="n">delta_time</span> <span class="o">/</span> <span class="n">SWING_DURATION</span>  <span class="c1"># e.g., 0.2 seconds</span>
+        <span class="n">held_item_swing</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">held_item_swing</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># During swing, rotate/bob held item in camera space</span>
+    <span class="n">swing_rotation</span> <span class="o">=</span> <span class="n">held_item_swing</span> <span class="o">*</span> <span class="mi">45</span>  <span class="c1"># degrees</span>
+    <span class="n">swing_bob</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">held_item_swing</span> <span class="o">*</span> <span class="n">PI</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+</pre></div>
+</div>
+</section>
+<section id="dynamic-fov-during-sprint">
+<h2>Dynamic FOV During Sprint<a class="headerlink" href="#dynamic-fov-during-sprint" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_fov</span><span class="p">():</span>
+    <span class="n">target_fov</span> <span class="o">=</span> <span class="n">BASE_FOV</span>  <span class="c1"># e.g., 70 degrees</span>
+
+    <span class="k">if</span> <span class="n">is_sprinting</span><span class="p">:</span>
+        <span class="n">target_fov</span> <span class="o">=</span> <span class="n">BASE_FOV</span> <span class="o">+</span> <span class="mi">10</span>  <span class="c1"># Expand FOV while running</span>
+
+    <span class="c1"># Smooth lerp</span>
+    <span class="n">current_fov</span> <span class="o">=</span> <span class="n">lerp</span><span class="p">(</span><span class="n">current_fov</span><span class="p">,</span> <span class="n">target_fov</span><span class="p">,</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">delta_time</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-with-game-loop">
+<h2>Integration with Game Loop<a class="headerlink" href="#integration-with-game-loop" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">player_update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
+    <span class="n">update_movement</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+    <span class="n">handle_mouse_motion</span><span class="p">()</span>
+    <span class="n">apply_gravity</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+    <span class="n">move_and_collide</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+    <span class="n">update_in_water</span><span class="p">()</span>
+    <span class="n">update_oxygen</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+    <span class="n">update_hunger</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+    <span class="n">apply_fall_damage</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+    <span class="n">apply_void_damage</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+    <span class="n">update_held_item_animation</span><span class="p">()</span>
+    <span class="n">update_view_bobbing</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="terrain.html" class="btn btn-neutral float-left" title="Procedural Terrain Generation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ui.html" class="btn btn-neutral float-right" title="User Interface Systems and Components" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, ShivamKR12.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
