@@ -49,9 +49,9 @@ The Main Loop
 
 The core execution cycle is governed by the ``run()`` method. Until the application halts, it continuously cycles through three primary stages:
 
-1. **Event Polling (``handle_events``)**: Intercepts raw OS hardware events (mouse clicks, key presses, window closes). It delegates these events dynamically based on the current ``game_state`` (e.g., passing WASD inputs to the Player in-game, or slider drags to the Options Menu).
-2. **Logic Updates (``update``)**: Advances internal systems. This increments the ``world_session_time``, processes physics boundaries, and evaluates UI animations. Delta time is strictly capped to prevent extreme physics desynchronization during performance spikes.
-3. **Rendering (``render``)**: Clears the hardware frame buffer and dispatches draw calls. If in a menu, it disables depth testing to draw 2D quads. If in-game, it directs the ``Scene`` to perform its complex multi-pass rendering pipeline.
+1. **Event Polling** (``handle_events``): Intercepts raw OS hardware events (mouse clicks, key presses, window closes). It delegates these events dynamically based on the current ``game_state`` (e.g., passing WASD inputs to the Player in-game, or slider drags to the Options Menu).
+2. **Logic Updates** (``update``): Advances internal systems. This increments the ``world_session_time``, processes physics boundaries, and evaluates UI animations. Delta time is strictly capped to prevent extreme physics desynchronization during performance spikes.
+3. **Rendering** (``render``): Clears the hardware frame buffer and dispatches draw calls. If in a menu, it disables depth testing to draw 2D quads. If in-game, it directs the ``Scene`` to perform its complex multi-pass rendering pipeline.
 
 Application Control
 -------------------
@@ -88,36 +88,37 @@ Detailed State Machine
 
 **State Transitions and Logic:**
 
-.. code-block:: text
+.. mermaid::
 
-    MAIN_MENU
-    ├─ Play → WORLD_SELECT
-    ├─ Options / Settings
-    └─ Quit
+   stateDiagram-v2
 
-    WORLD_SELECT
-    ├─ Select existing world → LOADING
-    └─ Create new world → LOADING
+      direction LR
 
-    LOADING
-    ├─ Generate/load initial chunks
-    ├─ Warm up Numba / compile lighting
-    └─ Transition → IN_GAME
+      GameOpens --> MAIN_MENU
 
-    IN_GAME
-    ├─ Escape → PAUSED
-    ├─ E opens inventory overlay
-    └─ Game update/render loop continues
+      MAIN_MENU --> WORLD_SELECT : Play
+      MAIN_MENU --> OPTIONS : Settings
+      MAIN_MENU --> GameCloses : Quit
 
-    PAUSED
-    ├─ Resume → IN_GAME
-    └─ Options → OPTIONS
+      WORLD_SELECT --> LOADING : Load/Create World
 
-    OPTIONS
-    └─ Back → PAUSED
+      state LOADING {
+         [*] --> GenerateChunks
+         GenerateChunks --> CompileNumba
+         CompileNumba --> Ready
+      }
 
-    INVENTORY
-    └─ E → Return to IN_GAME
+      LOADING --> IN_GAME : Ready
+
+      IN_GAME --> PAUSED : ESC
+      IN_GAME --> INVENTORY : E
+
+      INVENTORY --> IN_GAME : E
+
+      PAUSED --> IN_GAME : Resume
+      PAUSED --> OPTIONS : Settings
+
+      OPTIONS --> PAUSED : Back
 
 **State Handler Pseudocode:**
 
