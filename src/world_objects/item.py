@@ -87,6 +87,17 @@ class ItemManager:
         if len(self.items) > ITEM_ENTITY_CAP: self.items.pop(0) # Automatically despawn the oldest item
         self.items.append(Item(self.app, position, voxel_id))
 
+    def load_item(self, voxel_id, px, py, pz, vx, vy, vz):
+        """
+        Restores a previously saved item entity into the world with its exact 
+        former position and velocity to bypass the random spawn burst.
+        """
+        if len(self.items) > ITEM_ENTITY_CAP: self.items.pop(0)
+        item = Item(self.app, (0, 0, 0), voxel_id)
+        item.position = glm.vec3(px, py, pz)
+        item.velocity = glm.vec3(vx, vy, vz)
+        self.items.append(item)
+
     def update(self):
         """
         Updates physics for all active items and removes ones marked as dead.

@@ -74,6 +74,11 @@ class World:
                                 game_mode INTEGER,
                                 creation_date TEXT,
                                 last_played TEXT)''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS dropped_items (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                voxel_id INTEGER,
+                                px REAL, py REAL, pz REAL,
+                                vx REAL, vy REAL, vz REAL)''')
         
         # Safely upgrade existing databases to support lightmap caching!
         try:
@@ -140,6 +145,14 @@ class World:
                 self.app.player.respawn()
         else:
             self.app.player.respawn()
+            
+        # Load dropped items
+        self.saved_dropped_items = []
+        try:
+            self.cursor.execute('SELECT voxel_id, px, py, pz, vx, vy, vz FROM dropped_items')
+            self.saved_dropped_items = self.cursor.fetchall()
+        except sqlite3.OperationalError:
+            pass # Table might not exist in old saves before migration
 
         # WARM UP NUMBA COMPILER:
         # Run Numba compilation on a background thread so the main thread can keep pumping Pygame events!
@@ -568,6 +581,14 @@ class World:
             self.cursor.execute('UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1', (now, self.app.player.game_mode))
             self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', 
                                 (1, json.dumps(p_data)))
+                                
+            # Save dropped items
+            if self.app.scene and hasattr(self.app.scene, 'item_manager'):
+                self.cursor.execute('DELETE FROM dropped_items')
+                item_data = []
+                for item in self.app.scene.item_manager.items:
+                    item_data.append((item.voxel_id, float(item.position.x), float(item.position.y), float(item.position.z), float(item.velocity.x), float(item.velocity.y), float(item.velocity.z)))
+                self.cursor.executemany('INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)', item_data)
             self.connection.commit()
 
         # Wait for any pending asynchronous saves from unload_chunk to complete

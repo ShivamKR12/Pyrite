@@ -37,6 +37,10 @@ class Scene:
         self.held_block = HeldBlock(app)
         self.item_manager = ItemManager(app)
         self.debug_overlay = DebugOverlay(app)
+        
+        # Restore saved dropped items from the database
+        for item_data in self.world.saved_dropped_items:
+            self.item_manager.load_item(*item_data)
 
     def update(self):
         """
