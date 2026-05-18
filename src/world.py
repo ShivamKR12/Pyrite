@@ -316,17 +316,17 @@ class World:
                 # Lightmap exists in DB! Skip expensive Numba BFS calculations entirely!
                 lightmap_data = np.frombuffer(zlib.decompress(row[1]), dtype='uint8').copy()
                 return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, False)
-            else:
-                # Old save file format, fallback to generating sunlight
-                lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
-                Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, cx, cy, cz, noise.perm)
-                return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
-        else:
-            voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
+                
+            # Old save file format, fallback to generating sunlight
             lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
-            Chunk.generate_terrain(voxel_data, lightmap_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
-            is_empty = not np.any(voxel_data)
-            return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
+            Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, cx, cy, cz, noise.perm)
+            return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
+            
+        voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
+        lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
+        Chunk.generate_terrain(voxel_data, lightmap_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
+        is_empty = not np.any(voxel_data)
+        return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
     def stream_chunks(self):
         """
@@ -535,7 +535,6 @@ class World:
         meshes properly blended over the previously drawn opaque terrain.
         """
         # We assume visibility is already calculated by the primary render() pass!
-        freeze = getattr(self.app, 'freeze_culling', False)
         for chunk in self.sorted_chunks:
             if chunk.is_visible:
                 chunk.render_water()

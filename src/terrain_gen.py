@@ -25,8 +25,6 @@ def get_height(x, z, perm_array):
     Calculates the absolute maximum surface elevation of the terrain at a specific
     X,Z coordinate using fractional Brownian motion and continentalness modifiers.
     """
-    temp, moist = get_biome(x, z, perm_array)
-
     # Continentalness: Controls overall elevation independently from climate
     # This creates distinct Plains, Hills, Plateaus, and Mountains!
     cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0, perm_array)
@@ -55,7 +53,7 @@ def get_height(x, z, perm_array):
         w = min((cont - 0.4) * 5.0, 1.0)
         target_h = base_h * 1.5 + detail_1 * 2.0 + detail_2 + detail_3 + 30
         height = height * (1.0 - w) + target_h * w
-    elif cont > 0.1 and cont <= 0.3:
+    elif 0.1 < cont <= 0.3:
         # Plateaus (steep cliffs, flat tops)
         w = min((cont - 0.1) * 10.0, 1.0) * min((0.3 - cont) * 10.0, 1.0)
         plat_h = CENTER_Y + 12

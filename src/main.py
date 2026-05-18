@@ -1,3 +1,5 @@
+"""Main application module for the Pyrite graphics engine."""
+
 from settings import *
 import moderngl as mgl
 import pygame as pg
@@ -30,7 +32,7 @@ class Pyrite:
         try:
             icon_img = pg.image.load(get_path('assets/icon-nobg.png'))
             pg.display.set_icon(icon_img)
-        except Exception:
+        except pg.error:
             pass
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, MAJOR_VER)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, MINOR_VER)
@@ -76,7 +78,7 @@ class Pyrite:
         Reads and applies engine settings from a local JSON configuration file.
         """
         if os.path.exists('config.json'):
-            with open('config.json', 'r') as f:
+            with open('config.json', 'r', encoding='utf-8') as f:
                 try:
                     self.config.update(json.load(f))
                 except json.JSONDecodeError:
@@ -86,7 +88,7 @@ class Pyrite:
         """
         Serializes and saves the active engine configuration to disk.
         """
-        with open('config.json', 'w') as f:
+        with open('config.json', 'w', encoding='utf-8') as f:
             json.dump(self.config, f)
 
     def on_init(self):
@@ -126,7 +128,7 @@ class Pyrite:
                 if row:
                     seed = row[0]
                 connection.close()
-            except Exception as e:
+            except sqlite3.Error as e:
                 print(f"[SYSTEM] Could not read seed from existing save file: {e}")
                 seed = random.randint(100000, 999999999)
         else:
