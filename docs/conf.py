@@ -15,6 +15,9 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
+    'sphinxcontrib.mermaid',
+    'sphinx.ext.graphviz',
+    'sphinxcontrib.plantuml',
 ]
 
 templates_path = ['_templates']
@@ -39,3 +42,6 @@ html_logo = None
 # Docstring processing
 autodoc_typehints = 'description'
 autodoc_member_order = 'bysource'
+
+# Mermaid version for GitHub Pages compatibility
+mermaid_version = "10.9.0"

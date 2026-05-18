@@ -2,3 +2,5 @@ pyinstaller
 pytest
 sphinx
 sphinx-rtd-theme
+sphinxcontrib-mermaid
+sphinxcontrib-plantuml
