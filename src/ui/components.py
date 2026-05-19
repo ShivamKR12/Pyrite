@@ -41,7 +41,48 @@ def get_shared_resource(app, res_type, **kwargs):
         return _shared_ui_resources[key]
 
 
-class Button:
+class UINode:
+    """Base class for all UI elements in the new layout system."""
+    def __init__(self, size=(0, 0)):
+        self.parent = None
+        self.children = []
+        self.local_pos = [0.0, 0.0]  # Position relative to parent
+        self.size = size
+
+    def add_child(self, child):
+        child.parent = self
+        self.children.append(child)
+        return child
+
+    def get_global_pos(self):
+        """Recursively computes absolute screen position by climbing the scene graph."""
+        if self.parent:
+            ppx, ppy = self.parent.get_global_pos()
+            return (ppx + self.local_pos[0], ppy + self.local_pos[1])
+        return tuple(self.local_pos)
+
+    def update_layout(self):
+        for child in self.children:
+            child.update_layout()
+
+
+class VBox(UINode):
+    """Vertical stacking container that automatically arranges its children."""
+    def __init__(self, pos=(0, 0), spacing=0.05):
+        super().__init__()
+        self.local_pos = list(pos)
+        self.spacing = spacing
+
+    def update_layout(self):
+        current_y = 0.0
+        for child in self.children:
+            child.local_pos[1] = current_y
+            child.local_pos[0] = 0.0  # Centered horizontally
+            current_y -= (child.size[1] + self.spacing)
+            child.update_layout()
+
+
+class Button(UINode):
     """
     Represents a clickable UI button with text, hover effects, and an assigned action.
     """
@@ -50,10 +91,10 @@ class Button:
         Initializes the button with its text, position, size, and the callback function
         to execute when clicked. Prepares necessary text and color meshes.
         """
+        super().__init__(size)
         self.app = app
         self.text = text
-        self.pos = pos
-        self.size = size
+        self.local_pos = list(pos)
         self.action = action
         self.border_radius = border_radius
         self.elevation = elevation
@@ -73,7 +114,7 @@ class Button:
         Checks if the given mouse position falls within the button's screen boundaries
         and updates its hover state accordingly.
         """
-        x, y = self.pos
+        x, y = self.local_pos
         y_dynamic = y + (self.dynamic_elevation / WIN_RES.y)
         w, h = self.size
         
@@ -116,7 +157,7 @@ class Button:
         """
         Renders the button with a 3D elevation effect and state-dependent colors.
         """
-        px, py = self.pos
+        px, py = self.local_pos
         w, h = self.size
         
         # Render Bottom (Elevation) Quad
@@ -151,7 +192,7 @@ class Button:
         if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
 
 
-class WorldButton:
+class WorldButton(UINode):
     """
     A specialized button used in the World Selection menu to display rich information 
     about a saved game world, including its thumbnail, seed, and playtime data.
@@ -161,6 +202,7 @@ class WorldButton:
         Initializes the world button with detailed metadata and loads its corresponding
         saved thumbnail image from the disk.
         """
+        super().__init__(size)
         self.app = app
         self.save_name = save_name
         self.display_name = display_name
@@ -168,8 +210,7 @@ class WorldButton:
         self.game_mode = "Survival" if game_mode == 1 else "Creative"
         self.creation_date = creation_date
         self.last_played = last_played
-        self.pos = pos
-        self.size = size
+        self.local_pos = list(pos)
         self.action = action
         self.border_radius = border_radius
         self.elevation = elevation
@@ -199,7 +240,8 @@ class WorldButton:
         Calculates if the mouse cursor is currently over the button's bounding box
         to trigger visual hover states.
         """
-        x, y = self.pos
+        x, y = self.local_pos
+        x, y = self.get_global_pos()
         y_dynamic = y + (self.dynamic_elevation / WIN_RES.y)
         w, h = self.size
         win_w, win_h = WIN_RES
@@ -235,7 +277,7 @@ class WorldButton:
         Draws the interactive button background, the world thumbnail image, and dynamically
         generates the text layout for the world's metadata.
         """
-        px, py = self.pos
+        px, py = self.get_global_pos()
         w, h = self.size
 
         mask = get_shared_resource(self.app, 'button_mask', radius=self.border_radius, size=(w, h))
@@ -285,7 +327,7 @@ class WorldButton:
         if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
 
 
-class TextInput:
+class TextInput(UINode):
     """
     Provides a simple interactive text entry field for the UI.
     Captures keyboard input and visually indicates when it is active.
@@ -295,9 +337,9 @@ class TextInput:
         Initializes the text input field with a placeholder label, screen position,
         and sets up the required text rendering meshes.
         """
+        super().__init__(size)
         self.app = app
-        self.pos = pos
-        self.size = size
+        self.local_pos = list(pos)
         self.label = label
         self.text = ""
         self.is_active = False
@@ -313,7 +355,7 @@ class TextInput:
         """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pg.mouse.get_pos()
-            x, y = self.pos
+            x, y = self.get_global_pos()
             w, h = self.size
             win_w, win_h = WIN_RES
             btn_x = (x + 1) * 0.5 * win_w
@@ -340,7 +382,8 @@ class TextInput:
         w, h = self.size
         c = (0.2, 0.25, 0.3, 0.9) if self.is_active else (0.1, 0.12, 0.15, 0.7)
         color = (c[0], c[1], c[2], c[3] * alpha)
-        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+        gx, gy = self.get_global_pos()
+        render_pos = (gx + offset[0], gy + offset[1])
         
         mask = get_shared_resource(self.app, 'button_mask', radius=8, size=(w, h))
         mask.use(location=4)
@@ -370,7 +413,7 @@ class TextInput:
         tex.release()
 
 
-class Slider:
+class Slider(UINode):
     """
     An interactive UI slider component used to adjust numerical settings 
     between a predefined minimum and maximum value.
@@ -380,9 +423,10 @@ class Slider:
         Initializes the slider, binding it to a specific configuration key, setting 
         its value range, and preparing its visual meshes.
         """
+        super().__init__(size)
         self.app = app
         self.text = text
-        self.pos = pos
+        self.local_pos = list(pos)
         self.size = size
         self.min_val = min_val
         self.max_val = max_val
@@ -405,7 +449,7 @@ class Slider:
         """
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
-        x, y = self.pos
+        x, y = self.get_global_pos()
         w, h = self.size
         win_w, win_h = WIN_RES
         
@@ -450,7 +494,8 @@ class Slider:
         the current progress, and the dynamic text showing the exact numerical value.
         """
         w, h = self.size
-        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+        gx, gy = self.get_global_pos()
+        render_pos = (gx + offset[0], gy + offset[1])
 
         mask = get_shared_resource(self.app, 'button_mask', radius=8, size=(w, h))
         mask.use(location=4)
@@ -495,15 +540,15 @@ class Slider:
         tex.release()
 
 
-class Toggle:
+class Toggle(UINode):
     """
     A binary toggle switch component for the UI (e.g. On/Off settings).
     """
     def __init__(self, app, text, pos, size, config_key, action=None):
+        super().__init__(size)
         self.app = app
         self.text = text
-        self.pos = pos
-        self.size = size
+        self.local_pos = list(pos)
         self.config_key = config_key
         self.action = action
 
@@ -516,7 +561,7 @@ class Toggle:
     def update(self, mouse_pos=None):
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
-        x, y = self.pos
+        x, y = self.get_global_pos()
         w, h = self.size
         win_w, win_h = WIN_RES
         
@@ -539,7 +584,8 @@ class Toggle:
 
     def render(self, offset=(0, 0), alpha=1.0):
         w, h = self.size
-        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+        gx, gy = self.get_global_pos()
+        render_pos = (gx + offset[0], gy + offset[1])
 
         val = self.app.config.get(self.config_key, False)
 

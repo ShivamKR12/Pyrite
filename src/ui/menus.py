@@ -222,11 +222,16 @@ class Menu:
             base_y = -0.05
             for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons)):
                 new_y = base_y - i * 0.26 + self.scroll_offset
-                btn.pos = (0, new_y)
-                del_btn.pos = (0.55, new_y)
+                btn.local_pos = [0, new_y]
+                del_btn.local_pos = [0.55, new_y]
                 if -0.45 < new_y < 0.02:
                     btn.check_hover(mouse_pos)
                     del_btn.check_hover(mouse_pos)
+                    
+                    # Prevent hitbox overlap: If hovering the delete button, ignore the world button underneath!
+                    if del_btn.is_hovered:
+                        btn.is_hovered = False
+                        btn.is_pressed = False
                 else:
                     btn.is_hovered = False
                     del_btn.is_hovered = False
@@ -254,7 +259,7 @@ class Menu:
             self.btn_back_select.handle_event(event)
 
             for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                if -0.45 < btn.pos[1] < 0.02:
+                if -0.45 < btn.local_pos[1] < 0.02:
                     btn.handle_event(event)
                     del_btn.handle_event(event)
 
