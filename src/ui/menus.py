@@ -47,17 +47,22 @@ class MainMenu:
         self.target_scroll_offset = 0.0
 
         # Main Menu
-        self.btn_play = Button(app, 'Play', (0, 0.15), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), -1))
-        self.btn_options = Button(app, 'Options', (0, 0.0), (0.2, 0.07), lambda: self.trigger_action(self.open_options, 1))
-        self.btn_quit = Button(app, 'Quit', (0, -0.15), (0.2, 0.07), lambda: self.trigger_action(self.app.quit_game, 1))
+        self.layout_main = VBox(pos=(0, 0.15), spacing=0.1)
+        self.layout_main.add_child(Button(app, 'Play', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), -1)))
+        self.layout_main.add_child(Button(app, 'Options', (0, 0), (0.2, 0.07), lambda: self.trigger_action(self.open_options, 1)))
+        self.layout_main.add_child(Button(app, 'Quit', (0, 0), (0.2, 0.07), lambda: self.trigger_action(self.app.quit_game, 1)))
+        self.layout_main.update_layout()
 
         # Create World
-        self.input_name = TextInput(app, (0, 0.15), (0.3, 0.05), "World Name")
-        self.input_seed = TextInput(app, (0, 0.0), (0.3, 0.05), "Seed (Leave blank for random)")
         self.create_game_mode = 1 # 1 is SURVIVAL
-        self.btn_game_mode = Button(app, 'Game Mode: Survival', (0, -0.15), (0.3, 0.05), self.toggle_game_mode)
-        self.btn_create = Button(app, 'Create New World', (0, -0.3), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1))
-        self.btn_back_create = Button(app, 'Back', (0, -0.5), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1))
+        self.layout_create = VBox(pos=(0, 0.25), spacing=0.08)
+        self.input_name = self.layout_create.add_child(TextInput(app, (0, 0), (0.3, 0.05), "World Name"))
+        self.input_seed = self.layout_create.add_child(TextInput(app, (0, 0), (0.3, 0.05), "Seed (Leave blank for random)"))
+        self.btn_game_mode = self.layout_create.add_child(Button(app, 'Game Mode: Survival', (0, 0), (0.3, 0.05), self.toggle_game_mode))
+        self.layout_create.add_child(UINode(size=(0, 0.05))) # Spacer
+        self.btn_create = self.layout_create.add_child(Button(app, 'Create New World', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1)))
+        self.btn_back_create = self.layout_create.add_child(Button(app, 'Back', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1)))
+        self.layout_create.update_layout()
         
         # Select World (will be populated dynamically)
         self.btn_new_world = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.trigger_action(lambda: self.set_state('CREATE_WORLD'), -1))
@@ -206,8 +211,7 @@ class MainMenu:
             mouse_pos = pg.mouse.get_pos()
             
         if self.state == 'MAIN':
-            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
-                btn.check_hover(mouse_pos)
+            self.layout_main.update(mouse_pos)
         elif self.state == 'SELECT_WORLD':
             # Smooth scroll interpolation
             if abs(self.target_scroll_offset - self.scroll_offset) > 0.001:
@@ -236,24 +240,15 @@ class MainMenu:
                     btn.is_hovered = False
                     del_btn.is_hovered = False
         elif self.state == 'CREATE_WORLD':
-            self.btn_game_mode.check_hover(mouse_pos)
-            self.btn_create.check_hover(mouse_pos)
-            self.btn_back_create.check_hover(mouse_pos)
+            self.layout_create.update(mouse_pos)
 
     def handle_event(self, event):
         if self.transition_state != 'IDLE': return # Ignore inputs during transitions
 
         if self.state == 'CREATE_WORLD':
-            self.input_name.handle_event(event)
-            self.input_seed.handle_event(event)
-            self.btn_game_mode.handle_event(event)
-            self.btn_create.handle_event(event)
-            self.btn_back_create.handle_event(event)
-
+            self.layout_create.handle_event(event)
         elif self.state == 'MAIN':
-            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
-                btn.handle_event(event)
-    
+            self.layout_main.handle_event(event)
         elif self.state == 'SELECT_WORLD':
             self.btn_new_world.handle_event(event)
             self.btn_back_select.handle_event(event)
@@ -315,8 +310,7 @@ class MainMenu:
         if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
 
         if self.state == 'MAIN':
-            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
-                btn.render(offset, alpha)
+            self.layout_main.render(offset, alpha)
         elif self.state == 'SELECT_WORLD':
             self.btn_new_world.render(offset, alpha)
             
@@ -334,11 +328,7 @@ class MainMenu:
 
             self.btn_back_select.render(offset, alpha)
         elif self.state == 'CREATE_WORLD':
-            self.input_name.render(offset, alpha)
-            self.input_seed.render(offset, alpha)
-            self.btn_game_mode.render(offset, alpha)
-            self.btn_create.render(offset, alpha)
-            self.btn_back_create.render(offset, alpha)
+            self.layout_create.render(offset, alpha)
 
 
 class PauseMenu:
@@ -358,7 +348,7 @@ class PauseMenu:
         self.pending_action = None
         self.anim_dir = 1
 
-        self.layout = VBox(pos=(0, 0.15), spacing=0.08)
+        self.layout = VBox(pos=(0, 0.15), spacing=0.1)
         self.layout.add_child(Button(app, 'Resume', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.resume_game, -1)))
         self.layout.add_child(Button(app, 'Options', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.open_options, 1)))
         self.layout.add_child(Button(app, 'Quit to Menu', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.quit_to_menu, 1)))
