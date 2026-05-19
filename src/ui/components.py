@@ -65,6 +65,18 @@ class UINode:
         for child in self.children:
             child.update_layout()
 
+    def update(self, mouse_pos=None):
+        for child in self.children:
+            child.update(mouse_pos)
+
+    def handle_event(self, event):
+        for child in self.children:
+            child.handle_event(event)
+
+    def render(self, offset=(0, 0), alpha=1.0):
+        for child in self.children:
+            child.render(offset, alpha)
+
 
 class VBox(UINode):
     """Vertical stacking container that automatically arranges its children."""
@@ -77,7 +89,7 @@ class VBox(UINode):
         current_y = 0.0
         for child in self.children:
             child.local_pos[1] = current_y
-            child.local_pos[0] = 0.0  # Centered horizontally
+            # We leave local_pos[0] untouched so you can still add custom horizontal indentations!
             current_y -= (child.size[1] + self.spacing)
             child.update_layout()
 
@@ -136,6 +148,11 @@ class Button(UINode):
             self.dynamic_elevation = self.elevation
             
         return self.is_hovered
+
+    def update(self, mouse_pos=None):
+        if mouse_pos is None:
+            mouse_pos = pg.mouse.get_pos()
+        self.check_hover(mouse_pos)
 
     def handle_event(self, event):
         """
@@ -258,6 +275,11 @@ class WorldButton(UINode):
             self.dynamic_elevation = self.elevation
             
         return self.is_hovered
+
+    def update(self, mouse_pos=None):
+        if mouse_pos is None:
+            mouse_pos = pg.mouse.get_pos()
+        self.check_hover(mouse_pos)
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:

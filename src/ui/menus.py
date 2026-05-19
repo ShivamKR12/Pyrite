@@ -2,7 +2,7 @@ from settings import *
 import pygame as pg
 import moderngl as mgl
 from pyglm import glm
-from .components import Button, WorldButton, TextInput, Slider, Toggle
+from .components import Button, WorldButton, TextInput, Slider, Toggle, VBox, UINode
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
 
@@ -358,11 +358,12 @@ class PauseMenu:
         self.pending_action = None
         self.anim_dir = 1
 
-        self.buttons = [
-            Button(app, 'Resume', (0, 0.15), (0.3, 0.07), lambda: self.trigger_action(self.resume_game, -1)),
-            Button(app, 'Options', (0, 0.0), (0.3, 0.07), lambda: self.trigger_action(self.open_options, 1)),
-            Button(app, 'Quit to Menu', (0, -0.15), (0.3, 0.07), lambda: self.trigger_action(self.quit_to_menu, 1))
-        ]
+        self.layout = VBox(pos=(0, 0.15), spacing=0.08)
+        self.layout.add_child(Button(app, 'Resume', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.resume_game, -1)))
+        self.layout.add_child(Button(app, 'Options', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.open_options, 1)))
+        self.layout.add_child(Button(app, 'Quit to Menu', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.quit_to_menu, 1)))
+        
+        self.layout.update_layout()
 
     def trigger_action(self, action, anim_dir=1):
         if self.transition_state in ('IDLE', 'IN'):
@@ -409,13 +410,11 @@ class PauseMenu:
         else:
             mouse_pos = pg.mouse.get_pos()
             
-        for button in self.buttons:
-            button.check_hover(mouse_pos)
+        self.layout.update(mouse_pos)
 
     def handle_event(self, event):
         if self.transition_state != 'IDLE': return
-        for button in self.buttons:
-            button.handle_event(event)
+        self.layout.handle_event(event)
 
     def render(self):
         t = self.transition_progress
@@ -449,8 +448,7 @@ class PauseMenu:
         self.title_mesh.render()
         if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
 
-        for button in self.buttons:
-            button.render(offset, alpha)
+        self.layout.render(offset, alpha)
 
 
 class OptionsMenu:
@@ -471,18 +469,24 @@ class OptionsMenu:
         self.pending_action = None
         self.anim_dir = 1
 
-        self.sliders = [
-            Slider(app, 'FOV', (0, 0.3), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True),
-            Slider(app, 'Sensitivity', (0, 0.1), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'),
-            Slider(app, 'Volume', (0, -0.1), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
-            Slider(app, 'Render Distance', (0, -0.3), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
-        ]
-        self.toggles = [
-            Toggle(app, 'Underwater Tint', (0.12, -0.5), (0.08, 0.035), 'underwater_tint')
-        ]
-        self.buttons = [
-            Button(app, 'Back', (0, -0.7), (0.2, 0.07), lambda: self.trigger_action(self.go_back, 1))
-        ]
+        # Ensure config keys exist to prevent KeyError on old config.json files
+        if 'music_volume' not in app.config:
+            app.config['music_volume'] = app.config.get('volume', 50)
+        if 'sfx_volume' not in app.config:
+            app.config['sfx_volume'] = 20
+
+        self.layout = VBox(pos=(0, 0.3), spacing=0.09)
+        self.layout.add_child(Slider(app, 'FOV', (0, 0), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True))
+        self.layout.add_child(Slider(app, 'Sensitivity', (0, 0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'))
+        self.layout.add_child(Slider(app, 'Music Volume', (0, 0), (0.3, 0.05), 0, 100, 'music_volume', self.update_music_volume, is_int=True))
+        self.layout.add_child(Slider(app, 'SFX Volume', (0, 0), (0.3, 0.05), 0, 100, 'sfx_volume', self.update_sfx_volume, is_int=True))
+        self.layout.add_child(Slider(app, 'Render Distance', (0, 0), (0.3, 0.05), 2, 14, 'render_distance', is_int=True))
+        self.layout.add_child(Toggle(app, 'Underwater Tint', (0.12, 0), (0.04, 0.035), 'underwater_tint'))
+        self.layout.add_child(UINode(size=(0, -0.25))) # Invisible Spacer!
+        self.layout.add_child(Button(app, 'Back', (0, 0), (0.2, 0.06), lambda: self.trigger_action(self.go_back, 1)))
+        
+        self.layout.update_layout()
+        
         self.previous_state = 'MAIN_MENU'
 
     def trigger_action(self, action, anim_dir=1):
@@ -496,8 +500,11 @@ class OptionsMenu:
         if self.app.scene:
             self.app.player.fov = glm.radians(val)
 
-    def update_volume(self, val):
+    def update_music_volume(self, val):
         pg.mixer.music.set_volume(val / 100.0)
+
+    def update_sfx_volume(self, val):
+        self.app.sounds.set_sfx_volume(val)
 
     def go_back(self):
         self.app.save_config()
@@ -529,22 +536,11 @@ class OptionsMenu:
         else:
             mouse_pos = pg.mouse.get_pos()
             
-        for slider in self.sliders:
-            slider.update(mouse_pos)
-        for toggle in self.toggles:
-            toggle.update(mouse_pos)
-
-        for button in self.buttons:
-            button.check_hover(mouse_pos)
+        self.layout.update(mouse_pos)
 
     def handle_event(self, event):
         if self.transition_state != 'IDLE': return
-        for slider in self.sliders:
-            slider.handle_event(event)
-        for toggle in self.toggles:
-            toggle.handle_event(event)
-        for button in self.buttons:
-            button.handle_event(event)
+        self.layout.handle_event(event)
 
     def render(self):
         t = self.transition_progress
@@ -579,9 +575,4 @@ class OptionsMenu:
         self.title_mesh.render()
         if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
 
-        for slider in self.sliders:
-            slider.render(offset, alpha)
-        for toggle in self.toggles:
-            toggle.render(offset, alpha)
-        for button in self.buttons:
-            button.render(offset, alpha)
+        self.layout.render(offset, alpha)

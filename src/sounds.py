@@ -19,7 +19,6 @@ class Sounds:
 
         def load(filename):
             s = pg.mixer.Sound(get_path(f'assets/sounds/{filename}'))
-            s.set_volume(0.2)
             return s
 
         self.sounds = {}
@@ -134,7 +133,9 @@ class Sounds:
         self.mining_index = -1
         
         self.pop_sound = pg.mixer.Sound(get_path('assets/sounds/others/pickup-sound.ogg'))
-        self.pop_sound.set_volume(1.0)
+        
+        # Apply initial SFX volume
+        self.set_sfx_volume(self.app.config.get('sfx_volume', 20))
         
         # Background Music
         self.music_tracks = [
@@ -142,8 +143,18 @@ class Sounds:
             get_path('assets/sounds/background/c418-minecraft.ogg')
         ]
         pg.mixer.music.load(random.choice(self.music_tracks))
-        pg.mixer.music.set_volume(self.app.config['volume'] / 100.0)
+        pg.mixer.music.set_volume(self.app.config.get('music_volume', 50) / 100.0)
         pg.mixer.music.play(-1) # Loop forever in the background
+
+    def set_sfx_volume(self, val):
+        """Updates the volume for all loaded sound effects."""
+        vol = val / 100.0
+        if hasattr(self, 'pop_sound'):
+            self.pop_sound.set_volume(min(1.0, vol * 5.0))
+        for category_dict in self.sounds.values():
+            for sound_list in category_dict.values():
+                for s in sound_list:
+                    s.set_volume(vol)
 
     def play_walk(self, voxel_id):
         """
