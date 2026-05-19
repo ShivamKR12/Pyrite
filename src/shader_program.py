@@ -76,6 +76,10 @@ class ShaderProgram:
         # ui text
         self.ui_text['u_texture_0'] = 4
         if 'u_alpha' in self.ui_text: self.ui_text['u_alpha'] = 1.0
+        if 'u_color' in self.ui_text: self.ui_text['u_color'] = (1.0, 1.0, 1.0, 1.0)
+        
+        if 'u_clip' in self.ui_color: self.ui_color['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
+        if 'u_clip' in self.ui_text: self.ui_text['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
         
         # item
         self.item['m_proj'].write(self.player.m_proj)

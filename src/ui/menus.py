@@ -2,7 +2,7 @@ from settings import *
 import pygame as pg
 import moderngl as mgl
 from pyglm import glm
-from .components import Button, WorldButton, TextInput, Slider
+from .components import Button, WorldButton, TextInput, Slider, Toggle
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
 
@@ -44,6 +44,7 @@ class Menu:
         self.world_buttons = []
         self.delete_buttons = []
         self.scroll_offset = 0.0
+        self.target_scroll_offset = 0.0
 
         # Main Menu
         self.btn_play = Button(app, 'Play', (0, 0.15), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), -1))
@@ -102,6 +103,7 @@ class Menu:
         self.world_buttons = []
         self.delete_buttons = []
         self.scroll_offset = 0.0
+        self.target_scroll_offset = 0.0
         os.makedirs('saves', exist_ok=True)
         # Sort by modification time (most recent first)
         saves = sorted([f for f in os.listdir('saves') if f.endswith('.db')], 
@@ -207,6 +209,12 @@ class Menu:
             for btn in [self.btn_play, self.btn_options, self.btn_quit]:
                 btn.check_hover(mouse_pos)
         elif self.state == 'SELECT_WORLD':
+            # Smooth scroll interpolation
+            if abs(self.target_scroll_offset - self.scroll_offset) > 0.001:
+                self.scroll_offset += (self.target_scroll_offset - self.scroll_offset) * min(1.0, 15.0 * self.app.delta_time * 0.001)
+            else:
+                self.scroll_offset = self.target_scroll_offset
+
             self.btn_new_world.check_hover(mouse_pos)
             self.btn_back_select.check_hover(mouse_pos)
             
@@ -252,11 +260,11 @@ class Menu:
 
             if event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 4: # Mouse Wheel Scroll Up
-                    self.scroll_offset = max(0.0, self.scroll_offset - 0.26)
+                    self.target_scroll_offset = max(0.0, self.target_scroll_offset - 0.26)
 
                 elif event.button == 5: # Mouse Wheel Scroll Down
                     max_scroll = max(0.0, (len(self.world_buttons) - 2) * 0.26)
-                    self.scroll_offset = min(max_scroll, self.scroll_offset + 0.26)        
+                    self.target_scroll_offset = min(max_scroll, self.target_scroll_offset + 0.26)        
 
     def render_bg(self):
         if hasattr(self, 'bg_tex') and self.bg_tex:
@@ -306,10 +314,19 @@ class Menu:
                 btn.render(offset, alpha)
         elif self.state == 'SELECT_WORLD':
             self.btn_new_world.render(offset, alpha)
+            
+            # Enable shader clipping area (x_min, y_min, x_max, y_max)
+            if 'u_clip' in self.app.shader_program.ui_color: self.app.shader_program.ui_color['u_clip'] = (-2.0, -0.55, 2.0, 0.1)
+            if 'u_clip' in self.app.shader_program.ui_text: self.app.shader_program.ui_text['u_clip'] = (-2.0, -0.55, 2.0, 0.1)
+
             for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                if -0.45 < btn.pos[1] < 0.02:
-                    btn.render(offset, alpha)
-                    del_btn.render(offset, alpha)
+                btn.render(offset, alpha)
+                del_btn.render(offset, alpha)
+                
+            # Reset clipping area
+            if 'u_clip' in self.app.shader_program.ui_color: self.app.shader_program.ui_color['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
+            if 'u_clip' in self.app.shader_program.ui_text: self.app.shader_program.ui_text['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
+
             self.btn_back_select.render(offset, alpha)
         elif self.state == 'CREATE_WORLD':
             self.input_name.render(offset, alpha)
@@ -455,8 +472,10 @@ class OptionsMenu:
             Slider(app, 'Volume', (0, -0.1), (0.3, 0.05), 0, 100, 'volume', self.update_volume, is_int=True),
             Slider(app, 'Render Distance', (0, -0.3), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
         ]
+        self.toggles = [
+            Toggle(app, 'Underwater Tint', (0.12, -0.5), (0.08, 0.035), 'underwater_tint')
+        ]
         self.buttons = [
-            Button(app, '', (0, -0.5), (0.3, 0.05), self.toggle_tint),
             Button(app, 'Back', (0, -0.7), (0.2, 0.07), lambda: self.trigger_action(self.go_back, 1))
         ]
         self.previous_state = 'MAIN_MENU'
@@ -474,11 +493,6 @@ class OptionsMenu:
 
     def update_volume(self, val):
         pg.mixer.music.set_volume(val / 100.0)
-
-    def toggle_tint(self):
-        current_val = self.app.config.get('underwater_tint', False)
-        self.app.config['underwater_tint'] = not current_val
-        self.app.save_config()
 
     def go_back(self):
         self.app.save_config()
@@ -512,9 +526,8 @@ class OptionsMenu:
             
         for slider in self.sliders:
             slider.update(mouse_pos)
-
-        tint_on = self.app.config.get('underwater_tint', False)
-        self.buttons[0].text = f"Underwater Tint: {'On' if tint_on else 'Off'}"
+        for toggle in self.toggles:
+            toggle.update(mouse_pos)
 
         for button in self.buttons:
             button.check_hover(mouse_pos)
@@ -523,6 +536,8 @@ class OptionsMenu:
         if self.transition_state != 'IDLE': return
         for slider in self.sliders:
             slider.handle_event(event)
+        for toggle in self.toggles:
+            toggle.handle_event(event)
         for button in self.buttons:
             button.handle_event(event)
 
@@ -561,5 +576,7 @@ class OptionsMenu:
 
         for slider in self.sliders:
             slider.render(offset, alpha)
+        for toggle in self.toggles:
+            toggle.render(offset, alpha)
         for button in self.buttons:
             button.render(offset, alpha)

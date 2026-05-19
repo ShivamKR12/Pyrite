@@ -6,6 +6,41 @@ from .text import TextRenderer
 import os
 
 
+_shared_ui_resources = {}
+
+def get_shared_resource(app, res_type, **kwargs):
+    """Lazily loads and shares UI meshes and fonts to prevent VRAM and CPU bloat."""
+    if res_type == 'color_mesh':
+        if 'color_mesh' not in _shared_ui_resources:
+            _shared_ui_resources['color_mesh'] = UIColorMesh(app)
+        return _shared_ui_resources['color_mesh']
+    elif res_type == 'text_mesh':
+        if 'text_mesh' not in _shared_ui_resources:
+            _shared_ui_resources['text_mesh'] = UITextMesh(app)
+        return _shared_ui_resources['text_mesh']
+    elif res_type == 'text_renderer':
+        font_size, bold = kwargs.get('size', 24), kwargs.get('bold', True)
+        key = f'text_renderer_{font_size}_{bold}'
+        if key not in _shared_ui_resources:
+            tr = TextRenderer(app)
+            tr.font = pg.font.SysFont('arial', font_size, bold=bold)
+            _shared_ui_resources[key] = tr
+        return _shared_ui_resources[key]
+    elif res_type == 'button_mask':
+        radius = kwargs.get('radius', 12)
+        w, h = kwargs.get('size', (0.2, 0.05))
+        key = f"mask_{w}_{h}_{radius}"
+        if key not in _shared_ui_resources:
+            px_w = max(1, int(w * WIN_RES.x))
+            px_h = max(1, int(h * WIN_RES.y))
+            surf = pg.Surface((px_w, px_h), pg.SRCALPHA)
+            pg.draw.rect(surf, (255, 255, 255, 255), surf.get_rect(), border_radius=radius)
+            tex = app.ctx.texture(surf.get_size(), 4, pg.image.tobytes(surf, 'RGBA', True))
+            tex.filter = (mgl.LINEAR, mgl.LINEAR)
+            _shared_ui_resources[key] = tex
+        return _shared_ui_resources[key]
+
+
 class Button:
     """
     Represents a clickable UI button with text, hover effects, and an assigned action.
@@ -24,32 +59,14 @@ class Button:
         self.elevation = elevation
         self.dynamic_elevation = elevation
 
-        self.color_mesh = UIColorMesh(app)
-        self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=True)
-        self.text_mesh = UITextMesh(app)
+        self.color_mesh = get_shared_resource(app, 'color_mesh')
+        self.text_mesh = get_shared_resource(app, 'text_mesh')
+        self.text_renderer = get_shared_resource(app, 'text_renderer', size=FONT_SIZE_BUTTONS, bold=True)
 
         self.is_hovered = False
         self.is_pressed = False
         self.base_color = UI_BUTTON_COLOR
         self.hover_color = UI_HOVER_COLOR
-        self._bg_textures = {}
-
-    def _get_bg_texture(self, color):
-        color_tuple = tuple(color)
-        if color_tuple not in self._bg_textures:
-            w, h = self.size
-            px_w = max(1, int(w * WIN_RES.x))
-            px_h = max(1, int(h * WIN_RES.y))
-            
-            surf = pg.Surface((px_w, px_h), pg.SRCALPHA)
-            pg_color = (int(color[0]*255), int(color[1]*255), int(color[2]*255), int(color[3]*255))
-            pg.draw.rect(surf, pg_color, surf.get_rect(), border_radius=self.border_radius)
-            
-            tex = self.app.ctx.texture(surf.get_size(), 4, pg.image.tobytes(surf, 'RGBA', True))
-            tex.filter = (mgl.LINEAR, mgl.LINEAR)
-            self._bg_textures[color_tuple] = tex
-        return self._bg_textures[color_tuple]
 
     def check_hover(self, mouse_pos):
         """
@@ -103,21 +120,22 @@ class Button:
         w, h = self.size
         
         # Render Bottom (Elevation) Quad
-        bottom_color = (self.base_color[0] * 0.5, self.base_color[1] * 0.5, self.base_color[2] * 0.5, self.base_color[3] * alpha)
-        tex_bg_bottom = self._get_bg_texture(bottom_color)
-        tex_bg_bottom.use(location=4)
+        mask = get_shared_resource(self.app, 'button_mask', radius=self.border_radius, size=(w, h))
+        mask.use(location=4)
+        
+        b_c = self.base_color
         self.text_mesh.program['u_scale'] = (w, h)
         self.text_mesh.program['u_offset'] = (px + offset[0], py + offset[1])
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (b_c[0] * 0.5, b_c[1] * 0.5, b_c[2] * 0.5, b_c[3])
         if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
         self.text_mesh.render()
 
         # Render Top (Main) Quad
         py_dynamic = py + (self.dynamic_elevation / WIN_RES.y)
         c = self.hover_color if self.is_hovered else self.base_color
-        tex_bg_top = self._get_bg_texture(c)
-        tex_bg_top.use(location=4)
         self.text_mesh.program['u_scale'] = (w, h)
         self.text_mesh.program['u_offset'] = (px + offset[0], py_dynamic + offset[1])
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = c
         self.text_mesh.render()
 
         # Render Text
@@ -128,6 +146,7 @@ class Button:
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
         self.text_mesh.program['u_offset'] = (px + offset[0], py_dynamic + offset[1])
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (1.0, 1.0, 1.0, 1.0)
         self.text_mesh.render()
         if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
 
@@ -156,16 +175,14 @@ class WorldButton:
         self.elevation = elevation
         self.dynamic_elevation = elevation
 
-        self.color_mesh = UIColorMesh(app)
-        self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=True)
-        self.text_mesh = UITextMesh(app)
+        self.color_mesh = get_shared_resource(app, 'color_mesh')
+        self.text_mesh = get_shared_resource(app, 'text_mesh')
+        self.text_renderer = get_shared_resource(app, 'text_renderer', size=FONT_SIZE_BUTTONS, bold=True)
 
         self.is_hovered = False
         self.is_pressed = False
         self.base_color = UI_BUTTON_COLOR
         self.hover_color = UI_HOVER_COLOR
-        self._bg_textures = {}
         
         thumb_path = f'saves/{save_name}_thumb.png'
         if os.path.exists(thumb_path):
@@ -177,22 +194,6 @@ class WorldButton:
         self.thumb_tex = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
         self.thumb_tex.filter = (mgl.LINEAR, mgl.LINEAR)
 
-    def _get_bg_texture(self, color):
-        color_tuple = tuple(color)
-        if color_tuple not in self._bg_textures:
-            w, h = self.size
-            px_w = max(1, int(w * WIN_RES.x))
-            px_h = max(1, int(h * WIN_RES.y))
-            
-            surf = pg.Surface((px_w, px_h), pg.SRCALPHA)
-            pg_color = (int(color[0]*255), int(color[1]*255), int(color[2]*255), int(color[3]*255))
-            pg.draw.rect(surf, pg_color, surf.get_rect(), border_radius=self.border_radius)
-            
-            tex = self.app.ctx.texture(surf.get_size(), 4, pg.image.tobytes(surf, 'RGBA', True))
-            tex.filter = (mgl.LINEAR, mgl.LINEAR)
-            self._bg_textures[color_tuple] = tex
-        return self._bg_textures[color_tuple]
-        
     def check_hover(self, mouse_pos):
         """
         Calculates if the mouse cursor is currently over the button's bounding box
@@ -237,23 +238,26 @@ class WorldButton:
         px, py = self.pos
         w, h = self.size
 
-        bottom_color = (self.base_color[0] * 0.5, self.base_color[1] * 0.5, self.base_color[2] * 0.5, self.base_color[3] * alpha)
-        tex_bg_bottom = self._get_bg_texture(bottom_color)
-        tex_bg_bottom.use(location=4)
+        mask = get_shared_resource(self.app, 'button_mask', radius=self.border_radius, size=(w, h))
+        mask.use(location=4)
+        
+        b_c = self.base_color
         render_pos_bottom = (px + offset[0], py + offset[1])
         self.text_mesh.program['u_scale'] = (w, h)
         self.text_mesh.program['u_offset'] = render_pos_bottom
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (b_c[0] * 0.5, b_c[1] * 0.5, b_c[2] * 0.5, b_c[3])
         if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
         self.text_mesh.render()
 
         py_dynamic = py + (self.dynamic_elevation / WIN_RES.y)
         render_pos_top = (px + offset[0], py_dynamic + offset[1])
         c = self.hover_color if self.is_hovered else self.base_color
-        tex_bg_top = self._get_bg_texture(c)
-        tex_bg_top.use(location=4)
         self.text_mesh.program['u_scale'] = (w, h)
         self.text_mesh.program['u_offset'] = render_pos_top
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = c
         self.text_mesh.render()
+
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (1.0, 1.0, 1.0, 1.0)
 
         self.thumb_tex.use(location=4)
         thumb_h = h * 0.8
@@ -298,10 +302,9 @@ class TextInput:
         self.text = ""
         self.is_active = False
 
-        self.color_mesh = UIColorMesh(app)
-        self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_BUTTONS, bold=False)
-        self.text_mesh = UITextMesh(app)
+        self.color_mesh = get_shared_resource(app, 'color_mesh')
+        self.text_mesh = get_shared_resource(app, 'text_mesh')
+        self.text_renderer = get_shared_resource(app, 'text_renderer', size=FONT_SIZE_BUTTONS, bold=False)
 
     def handle_event(self, event):
         """
@@ -334,30 +337,37 @@ class TextInput:
         Draws the input field's background and current text. Renders a blinking 
         underscore cursor if the field is currently active.
         """
+        w, h = self.size
         c = (0.2, 0.25, 0.3, 0.9) if self.is_active else (0.1, 0.12, 0.15, 0.7)
         color = (c[0], c[1], c[2], c[3] * alpha)
         render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
-        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = render_pos
-        self.color_mesh.program['u_color'] = color
-        self.color_mesh.render()
+        
+        mask = get_shared_resource(self.app, 'button_mask', radius=8, size=(w, h))
+        mask.use(location=4)
+        self.text_mesh.program['u_scale'] = (w, h)
+        self.text_mesh.program['u_offset'] = render_pos
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = color
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
+        self.text_mesh.render()
 
         display_text = self.text + ("_" if self.is_active and (pg.time.get_ticks() // 500) % 2 == 0 else "")
         if not display_text and not self.is_active:
             display_text = self.label
             
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (1.0, 1.0, 1.0, 1.0)
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
+        
+        # The rest of your text rendering logic remains the same
         tex = self.text_renderer.get_dynamic_texture(display_text)
         tex.use(location=4)
         tex_w, tex_h = tex.size
-        scale_y = self.size[1] * 0.6
+        scale_y = h * 0.6
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
         self.text_mesh.program['u_offset'] = render_pos
-        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
         self.text_mesh.render()
-        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
-        tex.release() # Release dynamic memory instantly to prevent VRAM leaking
+        tex.release()
 
 
 class Slider:
@@ -380,10 +390,9 @@ class Slider:
         self.action = action
         self.is_int = is_int
 
-        self.color_mesh = UIColorMesh(app)
-        self.text_renderer = TextRenderer(app)
-        self.text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_SLIDERS, bold=True)
-        self.text_mesh = UITextMesh(app)
+        self.color_mesh = get_shared_resource(app, 'color_mesh')
+        self.text_mesh = get_shared_resource(app, 'text_mesh')
+        self.text_renderer = get_shared_resource(app, 'text_renderer', size=FONT_SIZE_SLIDERS, bold=True)
 
         self.is_hovered = False
         self.is_dragging = False
@@ -440,22 +449,31 @@ class Slider:
         Renders the dark background track, the highlighted fill bar representing 
         the current progress, and the dynamic text showing the exact numerical value.
         """
+        w, h = self.size
         render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
-        self.color_mesh.program['u_scale'] = (self.size[0], self.size[1])
-        self.color_mesh.program['u_offset'] = render_pos
-        self.color_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8 * alpha)
-        self.color_mesh.render()
+
+        mask = get_shared_resource(self.app, 'button_mask', radius=8, size=(w, h))
+        mask.use(location=4)
+        self.text_mesh.program['u_scale'] = (w, h)
+        self.text_mesh.program['u_offset'] = render_pos
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8 * alpha)
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
+        self.text_mesh.render()
         
         val = self.app.config[self.config_key]
         progress = (val - self.min_val) / (self.max_val - self.min_val)
         
-        fill_w = self.size[0] * progress
-        fill_x = render_pos[0] - self.size[0] + fill_w
-        
-        self.color_mesh.program['u_scale'] = (fill_w, self.size[1])
-        self.color_mesh.program['u_offset'] = (fill_x, render_pos[1])
-        self.color_mesh.program['u_color'] = (UI_HOVER_COLOR[0], UI_HOVER_COLOR[1], UI_HOVER_COLOR[2], UI_HOVER_COLOR[3] * alpha)
-        self.color_mesh.render()
+        if progress > 0:
+            # Clip the fill bar to the correct progress width
+            clip_x_max = render_pos[0] - w + (w * 2 * progress)
+            if 'u_clip' in self.app.shader_program.ui_text: self.app.shader_program.ui_text['u_clip'] = (-2.0, -2.0, clip_x_max, 2.0)
+
+            fill_color = (UI_HOVER_COLOR[0], UI_HOVER_COLOR[1], UI_HOVER_COLOR[2], UI_HOVER_COLOR[3] * alpha)
+            if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = fill_color
+            self.text_mesh.render()
+
+            # Reset clipping area
+            if 'u_clip' in self.app.shader_program.ui_text: self.app.shader_program.ui_text['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
 
         if self.is_int or self.config_key == 'fov':
             display_val = int(val)
@@ -465,12 +483,104 @@ class Slider:
         tex = self.text_renderer.get_dynamic_texture(f"{self.text}: {display_val}")
         tex.use(location=4)
         tex_w, tex_h = tex.size
-        scale_y = self.size[1] * 0.6
+        scale_y = h * 0.6
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
         self.text_mesh.program['u_offset'] = render_pos
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (1.0, 1.0, 1.0, 1.0)
         if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
         self.text_mesh.render()
         if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
         tex.release()
+
+
+class Toggle:
+    """
+    A binary toggle switch component for the UI (e.g. On/Off settings).
+    """
+    def __init__(self, app, text, pos, size, config_key, action=None):
+        self.app = app
+        self.text = text
+        self.pos = pos
+        self.size = size
+        self.config_key = config_key
+        self.action = action
+
+        self.color_mesh = get_shared_resource(app, 'color_mesh')
+        self.text_mesh = get_shared_resource(app, 'text_mesh')
+        self.text_renderer = get_shared_resource(app, 'text_renderer', size=FONT_SIZE_SLIDERS, bold=True)
+
+        self.is_hovered = False
+
+    def update(self, mouse_pos=None):
+        if mouse_pos is None:
+            mouse_pos = pg.mouse.get_pos()
+        x, y = self.pos
+        w, h = self.size
+        win_w, win_h = WIN_RES
+        
+        btn_x = (x + 1) * 0.5 * win_w
+        btn_y = (-y + 1) * 0.5 * win_h
+        btn_w = w * 0.5 * win_w
+        btn_h = h * 0.5 * win_h
+        
+        self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
+                          btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.is_hovered:
+                val = self.app.config.get(self.config_key, False)
+                self.app.config[self.config_key] = not val
+                self.app.save_config()
+                if self.action:
+                    self.action(not val)
+
+    def render(self, offset=(0, 0), alpha=1.0):
+        w, h = self.size
+        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+
+        val = self.app.config.get(self.config_key, False)
+
+        # Render text aligned to the left of the toggle switch
+        display_val = 'ON' if val else 'OFF'
+        tex = self.text_renderer.get_dynamic_texture(f"{self.text}: {display_val}")
+        tex.use(location=4)
+        tex_w, tex_h = tex.size
+        scale_y = h * 0.8
+        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        
+        text_x = render_pos[0] - w - scale_x - 0.02
+        
+        self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+        self.text_mesh.program['u_offset'] = (text_x, render_pos[1])
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (1.0, 1.0, 1.0, 1.0)
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
+        self.text_mesh.render()
+        tex.release()
+
+        # Render track (pill shape)
+        track_mask = get_shared_resource(self.app, 'button_mask', radius=int(h * WIN_RES.y), size=(w, h))
+        track_mask.use(location=4)
+        self.text_mesh.program['u_scale'] = (w, h)
+        self.text_mesh.program['u_offset'] = render_pos
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = (0.1, 0.1, 0.1, 0.8 * alpha)
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
+        self.text_mesh.render()
+        
+        thumb_w, thumb_h = h / ASPECT_RATIO, h
+        travel_dist = w - thumb_w
+        thumb_x = render_pos[0] + travel_dist if val else render_pos[0] - travel_dist
+
+        thumb_mask = get_shared_resource(self.app, 'button_mask', radius=int(h * WIN_RES.y), size=(thumb_w, thumb_h))
+        thumb_mask.use(location=4)
+        self.text_mesh.program['u_scale'] = (thumb_w, thumb_h)
+        self.text_mesh.program['u_offset'] = (thumb_x, render_pos[1])
+        
+        base_c = (0.2, 0.7, 0.3, alpha) if val else (0.7, 0.2, 0.2, alpha)
+        if self.is_hovered:
+            base_c = (base_c[0]+0.1, base_c[1]+0.1, base_c[2]+0.1, alpha)
+        if 'u_color' in self.text_mesh.program: self.text_mesh.program['u_color'] = base_c
+        self.text_mesh.render()
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0

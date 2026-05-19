@@ -544,6 +544,33 @@ class InventoryUI:
                 self.text_mesh.program['u_scale'] = (scale_x, scale_y)
                 self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
                 self.text_mesh.render()
+        
+        # Draw Tooltip on Hover
+        if hover_idx != -1 and self.drag_id == 0:
+            hover_id = player.inventory[hover_idx]
+            if hover_id != 0:
+                # Simple static mapping dictionary, can be expanded!
+                item_names = {1: "Sand", 2: "Grass", 3: "Dirt", 4: "Stone", 5: "Wood", 6: "Leaves", 7: "Wood Planks", 9: "Glass", 10: "Glowstone", 20: "Stick", 21: "Wooden Pickaxe"}
+                name = item_names.get(hover_id, f"Item ID: {hover_id}")
+                
+                mouse_pos = pg.mouse.get_pos()
+                mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
+                my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+                
+                tex = self.text_renderer.get_dynamic_texture(name)
+                tex.use(location=4)
+                scale_y = 0.025
+                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                
+                self.color_mesh.program['u_scale'] = (scale_x + 0.01, scale_y + 0.01)
+                self.color_mesh.program['u_offset'] = (mx + scale_x + 0.02, my - scale_y - 0.02)
+                self.color_mesh.program['u_color'] = (0.05, 0.05, 0.05, 0.95)
+                self.color_mesh.render()
+                
+                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                self.text_mesh.program['u_offset'] = (mx + scale_x + 0.02, my - scale_y - 0.02)
+                self.text_mesh.render()
+                tex.release()
 
 
 class DebugOverlay:
