@@ -7,7 +7,7 @@ from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
 
 
-class Menu:
+class MainMenu:
     """
     Manages the Main Menu, World Selection, and World Creation screens.
     Handles smooth state transitions, dynamic world list loading from the 

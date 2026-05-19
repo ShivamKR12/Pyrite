@@ -14,7 +14,7 @@ from scene import Scene
 from player import Player
 from sounds import Sounds
 from textures import Textures
-from ui import TextRenderer, UITextMesh, Menu, PauseMenu, OptionsMenu
+from ui import TextRenderer, UITextMesh, MainMenu, PauseMenu, OptionsMenu
 
 
 class Pyrite:
@@ -100,7 +100,7 @@ class Pyrite:
         self.player = Player(self)
         self.sounds = Sounds(self)
         self.shader_program = ShaderProgram(self)
-        self.menu = Menu(self)
+        self.menu = MainMenu(self)
         self.pause_menu = PauseMenu(self)
         self.options_menu = OptionsMenu(self)
 
