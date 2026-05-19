@@ -10,7 +10,7 @@ class Button:
     """
     Represents a clickable UI button with text, hover effects, and an assigned action.
     """
-    def __init__(self, app, text, pos, size, action):
+    def __init__(self, app, text, pos, size, action, border_radius=12, elevation=5):
         """
         Initializes the button with its text, position, size, and the callback function
         to execute when clicked. Prepares necessary text and color meshes.
@@ -20,6 +20,9 @@ class Button:
         self.pos = pos
         self.size = size
         self.action = action
+        self.border_radius = border_radius
+        self.elevation = elevation
+        self.dynamic_elevation = elevation
 
         self.color_mesh = UIColorMesh(app)
         self.text_renderer = TextRenderer(app)
@@ -27,8 +30,26 @@ class Button:
         self.text_mesh = UITextMesh(app)
 
         self.is_hovered = False
+        self.is_pressed = False
         self.base_color = UI_BUTTON_COLOR
         self.hover_color = UI_HOVER_COLOR
+        self._bg_textures = {}
+
+    def _get_bg_texture(self, color):
+        color_tuple = tuple(color)
+        if color_tuple not in self._bg_textures:
+            w, h = self.size
+            px_w = max(1, int(w * WIN_RES.x))
+            px_h = max(1, int(h * WIN_RES.y))
+            
+            surf = pg.Surface((px_w, px_h), pg.SRCALPHA)
+            pg_color = (int(color[0]*255), int(color[1]*255), int(color[2]*255), int(color[3]*255))
+            pg.draw.rect(surf, pg_color, surf.get_rect(), border_radius=self.border_radius)
+            
+            tex = self.app.ctx.texture(surf.get_size(), 4, pg.image.tobytes(surf, 'RGBA', True))
+            tex.filter = (mgl.LINEAR, mgl.LINEAR)
+            self._bg_textures[color_tuple] = tex
+        return self._bg_textures[color_tuple]
 
     def check_hover(self, mouse_pos):
         """
@@ -36,6 +57,7 @@ class Button:
         and updates its hover state accordingly.
         """
         x, y = self.pos
+        y_dynamic = y + (self.dynamic_elevation / WIN_RES.y)
         w, h = self.size
         
         # Convert normalized screen coords to pixel coords
@@ -44,47 +66,68 @@ class Button:
         
         # Convert button normalized pos/size to pixel coords
         btn_x = (x + 1) * 0.5 * win_w
-        btn_y = (-y + 1) * 0.5 * win_h
+        btn_y = (-y_dynamic + 1) * 0.5 * win_h
         btn_w = w * 0.5 * win_w
         btn_h = h * 0.5 * win_h
         
         self.is_hovered = btn_x - btn_w < mouse_x < btn_x + btn_w and \
                           btn_y - btn_h < mouse_y < btn_y + btn_h
+                          
+        if not self.is_hovered and self.is_pressed:
+            self.is_pressed = False
+            self.dynamic_elevation = self.elevation
+            
         return self.is_hovered
+
+    def handle_event(self, event):
+        """
+        Tracks mouse clicks to animate the button and trigger its assigned action
+        only when the mouse is released while still hovering over it.
+        """
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.is_hovered:
+                self.is_pressed = True
+                self.dynamic_elevation = 0
+        elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
+            if self.is_pressed:
+                self.is_pressed = False
+                self.dynamic_elevation = self.elevation
+                if self.is_hovered and self.action:
+                    self.action()
 
     def render(self, offset=(0, 0), alpha=1.0):
         """
-        Renders the button's background and text, applying visual changes like scaling 
-        and color shifts depending on whether it is being hovered or clicked.
+        Renders the button with a 3D elevation effect and state-dependent colors.
         """
-        # 1. Render background with state-based scale and color
-        scale_mult = 1.0
-        c = self.base_color
-        if self.is_hovered:
-            if pg.mouse.get_pressed()[0]: # Clicked state
-                c = (self.hover_color[0]*0.8, self.hover_color[1]*0.8, self.hover_color[2]*0.8, self.hover_color[3])
-                scale_mult = 0.95
-            else: # Hover state
-                c = self.hover_color
-                scale_mult = 1.05
+        px, py = self.pos
+        w, h = self.size
+        
+        # Render Bottom (Elevation) Quad
+        bottom_color = (self.base_color[0] * 0.5, self.base_color[1] * 0.5, self.base_color[2] * 0.5, self.base_color[3] * alpha)
+        tex_bg_bottom = self._get_bg_texture(bottom_color)
+        tex_bg_bottom.use(location=4)
+        self.text_mesh.program['u_scale'] = (w, h)
+        self.text_mesh.program['u_offset'] = (px + offset[0], py + offset[1])
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
+        self.text_mesh.render()
 
-        color = (c[0], c[1], c[2], c[3] * alpha)
-        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+        # Render Top (Main) Quad
+        py_dynamic = py + (self.dynamic_elevation / WIN_RES.y)
+        c = self.hover_color if self.is_hovered else self.base_color
+        tex_bg_top = self._get_bg_texture(c)
+        tex_bg_top.use(location=4)
+        self.text_mesh.program['u_scale'] = (w, h)
+        self.text_mesh.program['u_offset'] = (px + offset[0], py_dynamic + offset[1])
+        self.text_mesh.render()
 
-        self.color_mesh.program['u_scale'] = (self.size[0] * scale_mult, self.size[1] * scale_mult)
-        self.color_mesh.program['u_offset'] = render_pos
-        self.color_mesh.program['u_color'] = color
-        self.color_mesh.render()
-
-        # 2. Render text
+        # Render Text
         tex = self.text_renderer.get_texture(self.text)
         tex.use(location=4)
         tex_w, tex_h = tex.size
-        scale_y = self.size[1] * 0.5 * scale_mult
+        scale_y = h * 0.5
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = render_pos
-        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
+        self.text_mesh.program['u_offset'] = (px + offset[0], py_dynamic + offset[1])
         self.text_mesh.render()
         if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = 1.0
 
@@ -94,7 +137,7 @@ class WorldButton:
     A specialized button used in the World Selection menu to display rich information 
     about a saved game world, including its thumbnail, seed, and playtime data.
     """
-    def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action):
+    def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action, border_radius=12, elevation=5):
         """
         Initializes the world button with detailed metadata and loads its corresponding
         saved thumbnail image from the disk.
@@ -109,6 +152,9 @@ class WorldButton:
         self.pos = pos
         self.size = size
         self.action = action
+        self.border_radius = border_radius
+        self.elevation = elevation
+        self.dynamic_elevation = elevation
 
         self.color_mesh = UIColorMesh(app)
         self.text_renderer = TextRenderer(app)
@@ -116,8 +162,10 @@ class WorldButton:
         self.text_mesh = UITextMesh(app)
 
         self.is_hovered = False
+        self.is_pressed = False
         self.base_color = UI_BUTTON_COLOR
         self.hover_color = UI_HOVER_COLOR
+        self._bg_textures = {}
         
         thumb_path = f'saves/{save_name}_thumb.png'
         if os.path.exists(thumb_path):
@@ -129,53 +177,90 @@ class WorldButton:
         self.thumb_tex = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
         self.thumb_tex.filter = (mgl.LINEAR, mgl.LINEAR)
 
+    def _get_bg_texture(self, color):
+        color_tuple = tuple(color)
+        if color_tuple not in self._bg_textures:
+            w, h = self.size
+            px_w = max(1, int(w * WIN_RES.x))
+            px_h = max(1, int(h * WIN_RES.y))
+            
+            surf = pg.Surface((px_w, px_h), pg.SRCALPHA)
+            pg_color = (int(color[0]*255), int(color[1]*255), int(color[2]*255), int(color[3]*255))
+            pg.draw.rect(surf, pg_color, surf.get_rect(), border_radius=self.border_radius)
+            
+            tex = self.app.ctx.texture(surf.get_size(), 4, pg.image.tobytes(surf, 'RGBA', True))
+            tex.filter = (mgl.LINEAR, mgl.LINEAR)
+            self._bg_textures[color_tuple] = tex
+        return self._bg_textures[color_tuple]
+        
     def check_hover(self, mouse_pos):
         """
         Calculates if the mouse cursor is currently over the button's bounding box
         to trigger visual hover states.
         """
         x, y = self.pos
+        y_dynamic = y + (self.dynamic_elevation / WIN_RES.y)
         w, h = self.size
         win_w, win_h = WIN_RES
         btn_x = (x + 1) * 0.5 * win_w
-        btn_y = (-y + 1) * 0.5 * win_h
+        btn_y = (-y_dynamic + 1) * 0.5 * win_h
         btn_w = w * 0.5 * win_w
         btn_h = h * 0.5 * win_h
         
         self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
                           btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+                          
+        if not self.is_hovered and self.is_pressed:
+            self.is_pressed = False
+            self.dynamic_elevation = self.elevation
+            
         return self.is_hovered
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.is_hovered:
+                self.is_pressed = True
+                self.dynamic_elevation = 0
+        
+        elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
+            if self.is_pressed:
+                self.is_pressed = False
+                self.dynamic_elevation = self.elevation
+                if self.is_hovered and self.action:
+                    self.action()
 
     def render(self, offset=(0, 0), alpha=1.0):
         """
         Draws the interactive button background, the world thumbnail image, and dynamically
         generates the text layout for the world's metadata.
         """
-        scale_mult = 1.0
-        c = self.base_color
-        if self.is_hovered:
-            if pg.mouse.get_pressed()[0]:
-                c = (self.hover_color[0]*0.8, self.hover_color[1]*0.8, self.hover_color[2]*0.8, self.hover_color[3])
-                scale_mult = 0.98 # Less extreme scale down for big buttons
-            else:
-                c = self.hover_color
-                scale_mult = 1.02
+        px, py = self.pos
+        w, h = self.size
 
-        color = (c[0], c[1], c[2], c[3] * alpha)
-        render_pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+        bottom_color = (self.base_color[0] * 0.5, self.base_color[1] * 0.5, self.base_color[2] * 0.5, self.base_color[3] * alpha)
+        tex_bg_bottom = self._get_bg_texture(bottom_color)
+        tex_bg_bottom.use(location=4)
+        render_pos_bottom = (px + offset[0], py + offset[1])
+        self.text_mesh.program['u_scale'] = (w, h)
+        self.text_mesh.program['u_offset'] = render_pos_bottom
+        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
+        self.text_mesh.render()
 
-        self.color_mesh.program['u_scale'] = (self.size[0] * scale_mult, self.size[1] * scale_mult)
-        self.color_mesh.program['u_offset'] = render_pos
-        self.color_mesh.program['u_color'] = color
-        self.color_mesh.render()
+        py_dynamic = py + (self.dynamic_elevation / WIN_RES.y)
+        render_pos_top = (px + offset[0], py_dynamic + offset[1])
+        c = self.hover_color if self.is_hovered else self.base_color
+        tex_bg_top = self._get_bg_texture(c)
+        tex_bg_top.use(location=4)
+        self.text_mesh.program['u_scale'] = (w, h)
+        self.text_mesh.program['u_offset'] = render_pos_top
+        self.text_mesh.render()
 
         self.thumb_tex.use(location=4)
-        thumb_h = self.size[1] * 0.8 * scale_mult
+        thumb_h = h * 0.8
         thumb_w = thumb_h * (self.thumb_tex.width / self.thumb_tex.height) / ASPECT_RATIO
-        thumb_x = render_pos[0] - (self.size[0] * scale_mult) + 0.02 + thumb_w
+        thumb_x = render_pos_top[0] - w + 0.02 + thumb_w
         self.text_mesh.program['u_scale'] = (thumb_w, thumb_h)
-        self.text_mesh.program['u_offset'] = (thumb_x, render_pos[1])
-        if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
+        self.text_mesh.program['u_offset'] = (thumb_x, render_pos_top[1])
         self.text_mesh.render()
         
         text_x = thumb_x + thumb_w + 0.02
@@ -183,11 +268,10 @@ class WorldButton:
         def render_text(text, offset_y, scale_h):
             tex = self.text_renderer.get_dynamic_texture(text)
             tex.use(location=4)
-            scale_y = self.size[1] * scale_h * scale_mult
+            scale_y = h * scale_h
             scale_x = scale_y * (tex.width / tex.height) / ASPECT_RATIO
             self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-            self.text_mesh.program['u_offset'] = (text_x + scale_x, render_pos[1] + (self.size[1] * scale_mult) * offset_y)
-            if 'u_alpha' in self.text_mesh.program: self.text_mesh.program['u_alpha'] = alpha
+            self.text_mesh.program['u_offset'] = (text_x + scale_x, render_pos_top[1] + h * offset_y)
             self.text_mesh.render()
             tex.release()
 

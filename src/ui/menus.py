@@ -228,47 +228,35 @@ class Menu:
             self.btn_back_create.check_hover(mouse_pos)
 
     def handle_event(self, event):
-        if self.transition_state != 'IDLE':
-            return # Ignore inputs during transitions
-            
+        if self.transition_state != 'IDLE': return # Ignore inputs during transitions
+
         if self.state == 'CREATE_WORLD':
             self.input_name.handle_event(event)
             self.input_seed.handle_event(event)
-            
-        if event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                if self.state == 'MAIN':
-                    for btn in [self.btn_play, self.btn_options, self.btn_quit]:
-                        if btn.is_hovered:
-                            btn.action()
-                            break
-                elif self.state == 'SELECT_WORLD':
-                    if self.btn_new_world.is_hovered:
-                        self.btn_new_world.action()
-                    elif self.btn_back_select.is_hovered:
-                        self.btn_back_select.action()
-                    else:
-                        for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
-                            if -0.45 < btn.pos[1] < 0.02:
-                                if del_btn.is_hovered:
-                                    del_btn.action()
-                                    break
-                                elif btn.is_hovered:
-                                    btn.action()
-                                    break
-                elif self.state == 'CREATE_WORLD':
-                    if self.btn_game_mode.is_hovered:
-                        self.btn_game_mode.action()
-                    elif self.btn_create.is_hovered:
-                        self.btn_create.action()
-                    elif self.btn_back_create.is_hovered:
-                        self.btn_back_create.action()
-            elif self.state == 'SELECT_WORLD':
+            self.btn_game_mode.handle_event(event)
+            self.btn_create.handle_event(event)
+            self.btn_back_create.handle_event(event)
+
+        elif self.state == 'MAIN':
+            for btn in [self.btn_play, self.btn_options, self.btn_quit]:
+                btn.handle_event(event)
+    
+        elif self.state == 'SELECT_WORLD':
+            self.btn_new_world.handle_event(event)
+            self.btn_back_select.handle_event(event)
+
+            for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
+                if -0.45 < btn.pos[1] < 0.02:
+                    btn.handle_event(event)
+                    del_btn.handle_event(event)
+
+            if event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 4: # Mouse Wheel Scroll Up
                     self.scroll_offset = max(0.0, self.scroll_offset - 0.26)
+
                 elif event.button == 5: # Mouse Wheel Scroll Down
                     max_scroll = max(0.0, (len(self.world_buttons) - 2) * 0.26)
-                    self.scroll_offset = min(max_scroll, self.scroll_offset + 0.26)
+                    self.scroll_offset = min(max_scroll, self.scroll_offset + 0.26)        
 
     def render_bg(self):
         if hasattr(self, 'bg_tex') and self.bg_tex:
@@ -404,11 +392,8 @@ class PauseMenu:
 
     def handle_event(self, event):
         if self.transition_state != 'IDLE': return
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            for button in self.buttons:
-                if button.is_hovered:
-                    button.action()
-                    break
+        for button in self.buttons:
+            button.handle_event(event)
 
     def render(self):
         t = self.transition_progress
@@ -538,11 +523,8 @@ class OptionsMenu:
         if self.transition_state != 'IDLE': return
         for slider in self.sliders:
             slider.handle_event(event)
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            for button in self.buttons:
-                if button.is_hovered:
-                    button.action()
-                    break
+        for button in self.buttons:
+            button.handle_event(event)
 
     def render(self):
         t = self.transition_progress
