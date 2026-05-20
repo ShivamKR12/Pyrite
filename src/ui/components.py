@@ -88,10 +88,14 @@ class VBox(UINode):
     def update_layout(self):
         current_y = 0.0
         for child in self.children:
+            child.update_layout() # Compute child's layout and size first!
             child.local_pos[1] = current_y
             # We leave local_pos[0] untouched so you can still add custom horizontal indentations!
             current_y -= (child.size[1] + self.spacing)
-            child.update_layout()
+            
+        # Update this VBox's total size so it can be safely nested!
+        total_height = abs(current_y) - self.spacing if self.children else 0.0
+        self.size = (self.size[0], max(0.0, total_height))
 
 
 class Button(UINode):
@@ -126,7 +130,7 @@ class Button(UINode):
         Checks if the given mouse position falls within the button's screen boundaries
         and updates its hover state accordingly.
         """
-        x, y = self.local_pos
+        x, y = self.get_global_pos()
         y_dynamic = y + (self.dynamic_elevation / WIN_RES.y)
         w, h = self.size
         
@@ -174,7 +178,7 @@ class Button(UINode):
         """
         Renders the button with a 3D elevation effect and state-dependent colors.
         """
-        px, py = self.local_pos
+        px, py = self.get_global_pos()
         w, h = self.size
         
         # Render Bottom (Elevation) Quad

@@ -55,13 +55,16 @@ class MainMenu:
 
         # Create World
         self.create_game_mode = 1 # 1 is SURVIVAL
-        self.layout_create = VBox(pos=(0, 0.25), spacing=0.08)
-        self.input_name = self.layout_create.add_child(TextInput(app, (0, 0), (0.3, 0.05), "World Name"))
-        self.input_seed = self.layout_create.add_child(TextInput(app, (0, 0), (0.3, 0.05), "Seed (Leave blank for random)"))
-        self.btn_game_mode = self.layout_create.add_child(Button(app, 'Game Mode: Survival', (0, 0), (0.3, 0.05), self.toggle_game_mode))
-        self.layout_create.add_child(UINode(size=(0, 0.05))) # Spacer
-        self.btn_create = self.layout_create.add_child(Button(app, 'Create New World', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1)))
-        self.btn_back_create = self.layout_create.add_child(Button(app, 'Back', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1)))
+        self.layout_create = VBox(pos=(0, 0.25), spacing=0.2) # Master container gap
+        
+        config_group = self.layout_create.add_child(VBox(spacing=0.1)) # Tight grouping for inputs!
+        self.input_name = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), "World Name"))
+        self.input_seed = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), "Seed (Leave blank for random)"))
+        self.btn_game_mode = config_group.add_child(Button(app, 'Game Mode: Survival', (0, 0), (0.3, 0.05), self.toggle_game_mode))
+        
+        action_group = self.layout_create.add_child(VBox(spacing=0.1)) # Normal spacing for buttons
+        self.btn_create = action_group.add_child(Button(app, 'Create New World', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1)))
+        self.btn_back_create = action_group.add_child(Button(app, 'Back', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1)))
         self.layout_create.update_layout()
         
         # Select World (will be populated dynamically)
@@ -472,7 +475,7 @@ class OptionsMenu:
         self.layout.add_child(Slider(app, 'SFX Volume', (0, 0), (0.3, 0.05), 0, 100, 'sfx_volume', self.update_sfx_volume, is_int=True))
         self.layout.add_child(Slider(app, 'Render Distance', (0, 0), (0.3, 0.05), 2, 14, 'render_distance', is_int=True))
         self.layout.add_child(Toggle(app, 'Underwater Tint', (0.12, 0), (0.04, 0.035), 'underwater_tint'))
-        self.layout.add_child(UINode(size=(0, -0.25))) # Invisible Spacer!
+        self.layout.add_child(UINode(size=(0, 0.05))) # Positive Spacer to add space
         self.layout.add_child(Button(app, 'Back', (0, 0), (0.2, 0.06), lambda: self.trigger_action(self.go_back, 1)))
         
         self.layout.update_layout()
