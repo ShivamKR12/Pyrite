@@ -36,12 +36,15 @@ void main() {
     }
     
     face_uv.x = face_uv.x / 3.0 - min(face_id, 2) / 3.0;
+    
     int tex_id = u_texture_map[voxel_id];
+    
     vec4 tex_sample = textureGrad(u_texture_array_0, vec3(face_uv, tex_id), vec2(dx.x / 3.0, dx.y), vec2(dy.x / 3.0, dy.y));
     
     if (tex_sample.a < 0.1) {
         discard;
     }
+    
     vec3 tex_col = tex_sample.rgb;
     tex_col = pow(tex_col, gamma);
     
@@ -64,6 +67,7 @@ void main() {
     //fog
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
     float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
+    
     tex_col = mix(tex_col, bg_color, fog_factor);
 
     float alpha = 1.0;

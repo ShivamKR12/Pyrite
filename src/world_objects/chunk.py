@@ -78,6 +78,7 @@ class Chunk:
 
         if np.any(voxels):
             self.is_empty = False
+        
         return voxels
 
     @staticmethod
@@ -89,9 +90,11 @@ class Chunk:
         """
         np.random.seed(seed ^ cx ^ cy ^ cz)
         random.seed(seed ^ cx ^ cy ^ cz)
+        
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
                 set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)
+        
         fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
 
     @staticmethod

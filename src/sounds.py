@@ -14,6 +14,7 @@ class Sounds:
         Initializes the Pygame mixer, loads all block sounds, and starts the background music loop.
         """
         self.app = app
+        
         pg.mixer.init()
         pg.mixer.set_num_channels(32)
 
@@ -142,6 +143,7 @@ class Sounds:
             get_path('assets/sounds/background/c418-aria-math-(minecraft-volume-beta).ogg'),
             get_path('assets/sounds/background/c418-minecraft.ogg')
         ]
+        
         pg.mixer.music.load(random.choice(self.music_tracks))
         pg.mixer.music.set_volume(self.app.config.get('music_volume', 50) / 100.0)
         pg.mixer.music.play(-1) # Loop forever in the background
@@ -149,8 +151,10 @@ class Sounds:
     def set_sfx_volume(self, val):
         """Updates the volume for all loaded sound effects."""
         vol = val / 100.0
+        
         if hasattr(self, 'pop_sound'):
             self.pop_sound.set_volume(min(1.0, vol * 5.0))
+        
         for category_dict in self.sounds.values():
             for sound_list in category_dict.values():
                 for s in sound_list:
@@ -162,6 +166,7 @@ class Sounds:
         Automatically cycles through the available footstep variations.
         """
         current_time = pg.time.get_ticks()
+        
         if current_time - self.last_hit_time > 500: # Reset to 1 if you stop walking
             self.hit_index = 0
             

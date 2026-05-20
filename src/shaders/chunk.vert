@@ -37,31 +37,41 @@ const vec3 face_normals[6] = vec3[6](
 
 vec3 hash31(float p) {
     vec3 p3 = fract(vec3(p * 21.2) * vec3(0.1031, 0.1030, 0.0973));
+    
     p3 += dot(p3, p3.yzx + 33.33);
+    
     return fract((p3.xxy + p3.yzz) * p3.zyx) + 0.05;
 }
 
 
 void unpack(uint packed_data) {
+    
     // a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
     uint b_bit = 6u, c_bit = 6u, d_bit = 8u, e_bit = 3u, f_bit = 2u, g_bit = 1u;
     uint b_mask = 63u, c_mask = 63u, d_mask = 255u, e_mask = 7u, f_mask = 3u, g_mask = 1u;
+    
     //
     uint fg_bit = f_bit + g_bit;
     uint efg_bit = e_bit + fg_bit;
     uint defg_bit = d_bit + efg_bit;
     uint cdefg_bit = c_bit + defg_bit;
     uint bcdefg_bit = b_bit + cdefg_bit;
+    
     // unpacking vertex data
     x = int(packed_data >> bcdefg_bit);
     y = int((packed_data >> cdefg_bit) & b_mask);
     z = int((packed_data >> defg_bit) & c_mask);
+    
     //
     int raw_voxel_id = int((packed_data >> efg_bit) & d_mask);
     is_water_neighbor = (raw_voxel_id >= 128) ? 1 : 0;
+    
     voxel_id = raw_voxel_id & 127;
+    
     face_id = int((packed_data >> fg_bit) & e_mask);
+    
     ao_id = int((packed_data >> g_bit) & f_mask);
+    
     flip_id = int(packed_data & g_mask);
 }
 
@@ -73,6 +83,7 @@ void main() {
     block_light = float(light_data & 15u) / 15.0;
 
     vec3 in_position = vec3(x, y, z);
+    
     // Generate naturally tiling UVs scaled to the size of the greedy quad!
     if (face_id == 0)      uv = vec2(x, -z);
     else if (face_id == 1) uv = vec2(x, z);
@@ -82,8 +93,11 @@ void main() {
     else                   uv = vec2(-x, -y);
 
     vec3 normal = face_normals[face_id];
+    
     float diffuse = max(0.0, dot(normal, u_sun_direction));
+    
     float ambient = max(0.2, 0.4 * (u_sun_direction.y + 0.5)); // Base lighting
+    
     shading = (ambient + diffuse * 0.4) * ao_values[ao_id];
 
     frag_world_pos = (m_model * vec4(in_position, 1.0)).xyz;

@@ -31,6 +31,7 @@ class VoxelHandler:
         """
         if self.voxel_id:
             current_id = self.app.player.inventory[self.app.player.hotbar_index]
+            
             if current_id == 0 or current_id in NON_PLACEABLE:
                 return # Can't place empty air
 
@@ -44,6 +45,7 @@ class VoxelHandler:
                 player_min, player_max = self.app.player.get_aabb()
                 voxel_min = glm.vec3(new_voxel_pos)
                 voxel_max = voxel_min + 1.0
+                
                 if self.app.player.aabb_intersect(player_min, player_max, voxel_min, voxel_max):
                     return
 
@@ -52,6 +54,7 @@ class VoxelHandler:
 
                 wx, wy, wz = new_voxel_pos
                 update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                
                 if current_id == GLOWSTONE:
                     place_torch(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
                 
@@ -64,6 +67,7 @@ class VoxelHandler:
                 # Consume item from hotbar if in Survival mode
                 if self.app.player.game_mode == SURVIVAL:
                     self.app.player.inventory_counts[self.app.player.hotbar_index] -= 1
+                    
                     if self.app.player.inventory_counts[self.app.player.hotbar_index] <= 0:
                         self.app.player.inventory[self.app.player.hotbar_index] = 0
 
@@ -95,12 +99,14 @@ class VoxelHandler:
         for x in range(min_cx, max_cx + 1):
             for y in range(min_cy, max_cy + 1):
                 for z in range(min_cz, max_cz + 1):
+                    
                     if x == cx and y == cy and z == cz:
                         continue # Main chunk is already in the build queue
                     
                     chunk_pos = (x, y, z)
                     if chunk_pos in self.app.scene.world.active_chunks:
                         chunk = self.app.scene.world.active_chunks[chunk_pos]
+                        
                         if chunk not in self.app.scene.world.build_queue:
                             self.app.scene.world.build_queue.append(chunk)
 
@@ -112,22 +118,26 @@ class VoxelHandler:
         """
         if self.voxel_id:
             wx, wy, wz = self.voxel_world_pos
+            
             if self.voxel_id == GLOWSTONE:
                 # Strips torch block light from the area first!
                 update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
                 
             self.chunk.voxels[self.voxel_index] = 0
+            
             # Allows sunlight/blocklight from neighbors back into the new hole!
             update_light_remove_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
 
             if self.chunk not in self.app.scene.world.build_queue:
                 self.app.scene.world.build_queue.append(self.chunk)
+            
             self.rebuild_adjacent_chunks(self.voxel_world_pos, is_light_update=True)
             self.app.sounds.play_break(self.voxel_id)
             
             # Spawn dropped item only in Survival mode
             if self.app.player.game_mode == SURVIVAL:
                 held_id = self.app.player.inventory[self.app.player.hotbar_index]
+            
                 if self.voxel_id == STONE and held_id != WOODEN_PICKAXE:
                     pass # Break but drop nothing!
                 else:
@@ -136,6 +146,7 @@ class VoxelHandler:
     def set_voxel(self, mode='remove'):
         if mode == 'add':
             self.add_voxel()
+        
         elif mode == 'remove':
             self.remove_voxel()
 
@@ -173,6 +184,7 @@ class VoxelHandler:
         while not (max_x > 1.0 and max_y > 1.0 and max_z > 1.0):
 
             result = self.get_voxel_id(voxel_world_pos=current_voxel_pos)
+            
             # Ignore water blocks for raycasting so the player can break blocks underwater!
             if result[0] and result[0] != WATER:
                 self.voxel_id, self.voxel_index, self.voxel_local_pos, self.chunk = result
@@ -180,30 +192,39 @@ class VoxelHandler:
 
                 if step_dir == 0:
                     self.voxel_normal.x = -dx
+                
                 elif step_dir == 1:
                     self.voxel_normal.y = -dy
+                
                 else:
                     self.voxel_normal.z = -dz
+                
                 return True
 
             if max_x < max_y:
+                
                 if max_x < max_z:
                     current_voxel_pos.x += dx
                     max_x += delta_x
                     step_dir = 0
+                
                 else:
                     current_voxel_pos.z += dz
                     max_z += delta_z
                     step_dir = 2
+            
             else:
+            
                 if max_y < max_z:
                     current_voxel_pos.y += dy
                     max_y += delta_y
                     step_dir = 1
+            
                 else:
                     current_voxel_pos.z += dz
                     max_z += delta_z
                     step_dir = 2
+        
         return False
 
     def get_voxel_id(self, voxel_world_pos):
@@ -214,6 +235,7 @@ class VoxelHandler:
 
         if chunk_pos in self.app.scene.world.active_chunks:
             chunk = self.app.scene.world.active_chunks[chunk_pos]
+            
             # Prevent errors if interacting with a chunk that is still loading asynchronously
             if chunk.voxels is None:
                 return 0, 0, 0, 0
@@ -224,4 +246,5 @@ class VoxelHandler:
             voxel_id = chunk.voxels[voxel_index]
 
             return voxel_id, voxel_index, voxel_local_pos, chunk
+        
         return 0, 0, 0, 0

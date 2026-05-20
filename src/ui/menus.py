@@ -5,6 +5,9 @@ from pyglm import glm
 from .components import Button, WorldButton, TextInput, Slider, Toggle, VBox, UINode
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
+import sqlite3
+import random
+import hashlib
 
 
 class MainMenu:
@@ -91,27 +94,30 @@ class MainMenu:
 
     def set_state(self, new_state):
         self.state = new_state
+        
         if new_state == 'SELECT_WORLD':
             self.load_world_list()
+        
         elif new_state == 'CREATE_WORLD':
             self.input_name.text = ""
             self.input_seed.text = ""
             self.input_name.is_active = True
             self.create_game_mode = 1
             self.btn_game_mode.text = 'Game Mode: Survival'
+        
         self.transition_state = 'IN'
         self.transition_progress = 0.0
 
     def load_world_list(self):
-        import os
-        import sqlite3
         for btn in self.world_buttons:
             if hasattr(btn, 'thumb_tex'):
                 btn.thumb_tex.release() # Safely release old image memory
+        
         self.world_buttons = []
         self.delete_buttons = []
         self.scroll_offset = 0.0
         self.target_scroll_offset = 0.0
+        
         os.makedirs('saves', exist_ok=True)
         # Sort by modification time (most recent first)
         saves = sorted([f for f in os.listdir('saves') if f.endswith('.db')], 
@@ -122,18 +128,22 @@ class MainMenu:
         for save_file in saves: # Load all worlds dynamically
             save_name = save_file[:-3]
             display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
+            
             try:
                 connection = sqlite3.connect(f'saves/{save_file}')
                 cursor = connection.cursor()
                 cursor.execute('SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1')
                 row = cursor.fetchone()
+                
                 if row:
                     display_name = row[0]
                     seed = row[1]
                     game_mode = row[2]
                     creation_date = row[3][:16].replace('T', ' ') if row[3] else "Unknown"
                     last_played = row[4][:16].replace('T', ' ') if row[4] else "Unknown"
+                
                 connection.close()
+            
             except:
                 pass
             
@@ -154,25 +164,27 @@ class MainMenu:
             y_offset -= 0.26
 
     def delete_world(self, save_name):
-        import os
         try:
             if os.path.exists(f'saves/{save_name}.db'):
                 os.remove(f'saves/{save_name}.db')
+            
             if os.path.exists(f'saves/{save_name}_thumb.png'):
                 os.remove(f'saves/{save_name}_thumb.png')
+        
         except Exception as e:
             print(f"[SYSTEM] Failed to delete world: {e}")
+        
         self.load_world_list() # Refresh the UI list instantly!
 
     def create_world(self):
         name = self.input_name.text.strip()
+        
         if not name:
             name = "New_World"
             
         base_save_name = name.replace(" ", "_")
         save_name = base_save_name
         
-        import os
         counter = 1
         while os.path.exists(f'saves/{save_name}.db'):
             save_name = f"{base_save_name}_{counter}"
@@ -180,14 +192,14 @@ class MainMenu:
 
         seed_str = self.input_seed.text.strip()
         if not seed_str:
-            import random
             seed = random.randint(100000, 999999999)
+        
         else:
             try:
                 seed = int(seed_str)
+            
             except ValueError:
                 # Convert letters into an exact numerical seed!
-                import hashlib
                 seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % (10**9)
                 
         self.app.init_game_session(save_name, seed, self.create_game_mode)
@@ -196,29 +208,36 @@ class MainMenu:
     def update(self):
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005 # ~200ms transitions
+            
             if self.transition_progress >= 1.0:
                 self.transition_progress = 1.0
+                
                 if self.transition_state == 'OUT':
                     if self.pending_action:
                         action = self.pending_action
                         self.pending_action = None
                         action()
+                    
                     else:
                         self.transition_state = 'IDLE'
+                
                 elif self.transition_state == 'IN':
                     self.transition_state = 'IDLE'
 
         if self.transition_state != 'IDLE':
             mouse_pos = (-999, -999) # Lock interactions during animations
+        
         else:
             mouse_pos = pg.mouse.get_pos()
             
         if self.state == 'MAIN':
             self.layout_main.update(mouse_pos)
+        
         elif self.state == 'SELECT_WORLD':
             # Smooth scroll interpolation
             if abs(self.target_scroll_offset - self.scroll_offset) > 0.001:
                 self.scroll_offset += (self.target_scroll_offset - self.scroll_offset) * min(1.0, 15.0 * self.app.delta_time * 0.001)
+            
             else:
                 self.scroll_offset = self.target_scroll_offset
 
@@ -231,6 +250,7 @@ class MainMenu:
                 new_y = base_y - i * 0.26 + self.scroll_offset
                 btn.local_pos = [0, new_y]
                 del_btn.local_pos = [0.55, new_y]
+                
                 if -0.45 < new_y < 0.02:
                     btn.check_hover(mouse_pos)
                     del_btn.check_hover(mouse_pos)
@@ -239,19 +259,24 @@ class MainMenu:
                     if del_btn.is_hovered:
                         btn.is_hovered = False
                         btn.is_pressed = False
+                
                 else:
                     btn.is_hovered = False
                     del_btn.is_hovered = False
+        
         elif self.state == 'CREATE_WORLD':
             self.layout_create.update(mouse_pos)
 
     def handle_event(self, event):
-        if self.transition_state != 'IDLE': return # Ignore inputs during transitions
+        if self.transition_state != 'IDLE':
+            return # Ignore inputs during transitions
 
         if self.state == 'CREATE_WORLD':
             self.layout_create.handle_event(event)
+        
         elif self.state == 'MAIN':
             self.layout_main.handle_event(event)
+        
         elif self.state == 'SELECT_WORLD':
             self.btn_new_world.handle_event(event)
             self.btn_back_select.handle_event(event)
@@ -273,13 +298,18 @@ class MainMenu:
         if hasattr(self, 'bg_tex') and self.bg_tex:
             self.bg_tex.use(location=4)
             img_aspect = self.bg_tex.width / self.bg_tex.height
+            
             if img_aspect > ASPECT_RATIO:
                 scale_x, scale_y = img_aspect / ASPECT_RATIO, 1.0
             else:
                 scale_x, scale_y = 1.0, ASPECT_RATIO / img_aspect
+            
             self.bg_tex_mesh.program['u_scale'] = (scale_x, scale_y)
             self.bg_tex_mesh.program['u_offset'] = (0.0, 0.0)
-            if 'u_alpha' in self.bg_tex_mesh.program: self.bg_tex_mesh.program['u_alpha'] = 1.0
+            
+            if 'u_alpha' in self.bg_tex_mesh.program:
+                self.bg_tex_mesh.program['u_alpha'] = 1.0
+            
             self.bg_tex_mesh.render()
 
     def render(self):
@@ -291,6 +321,7 @@ class MainMenu:
         if self.transition_state == 'IN':
             offset_y = (1.0 - ease) * -0.5 * self.anim_dir
             alpha = ease
+        
         elif self.transition_state == 'OUT':
             offset_y = ease * 0.5 * self.anim_dir
             alpha = 1.0 - ease
@@ -308,28 +339,40 @@ class MainMenu:
         
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
         self.title_mesh.program['u_offset'] = (0.0, 0.5 + offset_y * 0.5) # Parallax!
-        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = alpha
+        
+        if 'u_alpha' in self.title_mesh.program:
+            self.title_mesh.program['u_alpha'] = alpha
         self.title_mesh.render()
-        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
+        
+        if 'u_alpha' in self.title_mesh.program:
+            self.title_mesh.program['u_alpha'] = 1.0
 
         if self.state == 'MAIN':
             self.layout_main.render(offset, alpha)
+        
         elif self.state == 'SELECT_WORLD':
             self.btn_new_world.render(offset, alpha)
             
             # Enable shader clipping area (x_min, y_min, x_max, y_max)
-            if 'u_clip' in self.app.shader_program.ui_color: self.app.shader_program.ui_color['u_clip'] = (-2.0, -0.55, 2.0, 0.1)
-            if 'u_clip' in self.app.shader_program.ui_text: self.app.shader_program.ui_text['u_clip'] = (-2.0, -0.55, 2.0, 0.1)
+            if 'u_clip' in self.app.shader_program.ui_color:
+                self.app.shader_program.ui_color['u_clip'] = (-2.0, -0.55, 2.0, 0.1)
+            
+            if 'u_clip' in self.app.shader_program.ui_text:
+                self.app.shader_program.ui_text['u_clip'] = (-2.0, -0.55, 2.0, 0.1)
 
             for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
                 btn.render(offset, alpha)
                 del_btn.render(offset, alpha)
                 
             # Reset clipping area
-            if 'u_clip' in self.app.shader_program.ui_color: self.app.shader_program.ui_color['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
-            if 'u_clip' in self.app.shader_program.ui_text: self.app.shader_program.ui_text['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
+            if 'u_clip' in self.app.shader_program.ui_color:
+                self.app.shader_program.ui_color['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
+            
+            if 'u_clip' in self.app.shader_program.ui_text:
+                self.app.shader_program.ui_text['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
 
             self.btn_back_select.render(offset, alpha)
+        
         elif self.state == 'CREATE_WORLD':
             self.layout_create.render(offset, alpha)
 
@@ -379,6 +422,7 @@ class PauseMenu:
     def quit_to_menu(self):
         self.app.game_state = 'MAIN_MENU'
         self.app.menu.state = 'MAIN'
+        
         if self.app.scene:
             self.app.scene.world.save()
             self.app.scene = None # Unload the world to free memory
@@ -386,27 +430,34 @@ class PauseMenu:
     def update(self):
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005
+            
             if self.transition_progress >= 1.0:
                 self.transition_progress = 1.0
+                
                 if self.transition_state == 'OUT':
                     if self.pending_action:
                         action = self.pending_action
                         self.pending_action = None
                         action()
+                    
                     else:
                         self.transition_state = 'IDLE'
+                
                 elif self.transition_state == 'IN':
                     self.transition_state = 'IDLE'
                     
         if self.transition_state != 'IDLE':
             mouse_pos = (-999, -999)
+        
         else:
             mouse_pos = pg.mouse.get_pos()
             
         self.layout.update(mouse_pos)
 
     def handle_event(self, event):
-        if self.transition_state != 'IDLE': return
+        if self.transition_state != 'IDLE':
+            return
+        
         self.layout.handle_event(event)
 
     def render(self):
@@ -418,6 +469,7 @@ class PauseMenu:
         if self.transition_state == 'IN':
             offset_y = (1.0 - ease) * -0.5 * self.anim_dir
             alpha = ease
+        
         elif self.transition_state == 'OUT':
             offset_y = ease * 0.5 * self.anim_dir
             alpha = 1.0 - ease
@@ -437,9 +489,14 @@ class PauseMenu:
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
         self.title_mesh.program['u_offset'] = (0.0, 0.4 + offset_y * 0.5)
-        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = alpha
+        
+        if 'u_alpha' in self.title_mesh.program:
+            self.title_mesh.program['u_alpha'] = alpha
+        
         self.title_mesh.render()
-        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
+        
+        if 'u_alpha' in self.title_mesh.program:
+            self.title_mesh.program['u_alpha'] = 1.0
 
         self.layout.render(offset, alpha)
 
@@ -465,6 +522,7 @@ class OptionsMenu:
         # Ensure config keys exist to prevent KeyError on old config.json files
         if 'music_volume' not in app.config:
             app.config['music_volume'] = app.config.get('volume', 50)
+        
         if 'sfx_volume' not in app.config:
             app.config['sfx_volume'] = 20
 
@@ -502,9 +560,11 @@ class OptionsMenu:
     def go_back(self):
         self.app.save_config()
         self.app.game_state = self.previous_state
+        
         if self.previous_state == 'MAIN_MENU':
             self.app.menu.transition_state = 'IN'
             self.app.menu.transition_progress = 0.0
+        
         elif self.previous_state == 'PAUSED':
             self.app.pause_menu.transition_state = 'IN'
             self.app.pause_menu.transition_progress = 0.0
@@ -512,27 +572,34 @@ class OptionsMenu:
     def update(self):
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005
+            
             if self.transition_progress >= 1.0:
                 self.transition_progress = 1.0
+                
                 if self.transition_state == 'OUT':
                     if self.pending_action:
                         action = self.pending_action
                         self.pending_action = None
                         action()
+                    
                     else:
                         self.transition_state = 'IDLE'
+                
                 elif self.transition_state == 'IN':
                     self.transition_state = 'IDLE'
                     
         if self.transition_state != 'IDLE':
             mouse_pos = (-999, -999)
+        
         else:
             mouse_pos = pg.mouse.get_pos()
             
         self.layout.update(mouse_pos)
 
     def handle_event(self, event):
-        if self.transition_state != 'IDLE': return
+        if self.transition_state != 'IDLE':
+            return
+        
         self.layout.handle_event(event)
 
     def render(self):
@@ -544,6 +611,7 @@ class OptionsMenu:
         if self.transition_state == 'IN':
             offset_y = (1.0 - ease) * -0.5 * self.anim_dir
             alpha = ease
+        
         elif self.transition_state == 'OUT':
             offset_y = ease * 0.5 * self.anim_dir
             alpha = 1.0 - ease
@@ -564,8 +632,12 @@ class OptionsMenu:
         scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
         self.title_mesh.program['u_offset'] = (0.0, 0.55 + offset_y * 0.5)
-        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = alpha
+        
+        if 'u_alpha' in self.title_mesh.program:
+            self.title_mesh.program['u_alpha'] = alpha
         self.title_mesh.render()
-        if 'u_alpha' in self.title_mesh.program: self.title_mesh.program['u_alpha'] = 1.0
+        
+        if 'u_alpha' in self.title_mesh.program:
+            self.title_mesh.program['u_alpha'] = 1.0
 
         self.layout.render(offset, alpha)

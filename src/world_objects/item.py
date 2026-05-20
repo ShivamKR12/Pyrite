@@ -41,6 +41,7 @@ class Item:
             self.velocity.x *= 0.8 # Friction
             self.velocity.z *= 0.8 
             self.velocity.y = 0
+        
         elif self.position.y < -10:
             self.is_dead = True
             
@@ -48,6 +49,7 @@ class Item:
         
         if pg.time.get_ticks() > self.pickup_delay:
             if glm.distance(self.position, self.app.player.position) < ITEM_PICKUP_RADIUS:
+               
                 if self.app.player.add_item(self.voxel_id):
                     self.is_dead = True
                     self.app.sounds.play_place_block() # Pop sound!
@@ -59,6 +61,7 @@ class Item:
         """
         m_model = glm.translate(glm.mat4(), self.position)
         m_model = glm.rotate(m_model, self.rotation, glm.vec3(0, 1, 0))
+        
         return glm.scale(m_model, glm.vec3(self.scale))
 
 
@@ -84,7 +87,9 @@ class ItemManager:
         limit to automatically despawn old items if too many are active at once.
         """
         # Prevent entity overflow crashes if too many blocks break at once
-        if len(self.items) > ITEM_ENTITY_CAP: self.items.pop(0) # Automatically despawn the oldest item
+        if len(self.items) > ITEM_ENTITY_CAP:
+            self.items.pop(0) # Automatically despawn the oldest item
+        
         self.items.append(Item(self.app, position, voxel_id))
 
     def load_item(self, voxel_id, px, py, pz, vx, vy, vz):
@@ -92,7 +97,9 @@ class ItemManager:
         Restores a previously saved item entity into the world with its exact 
         former position and velocity to bypass the random spawn burst.
         """
-        if len(self.items) > ITEM_ENTITY_CAP: self.items.pop(0)
+        if len(self.items) > ITEM_ENTITY_CAP:
+            self.items.pop(0)
+        
         item = Item(self.app, (0, 0, 0), voxel_id)
         item.position = glm.vec3(px, py, pz)
         item.velocity = glm.vec3(vx, vy, vz)
@@ -102,7 +109,9 @@ class ItemManager:
         """
         Updates physics for all active items and removes ones marked as dead.
         """
-        for item in self.items: item.update()
+        for item in self.items:
+            item.update()
+        
         self.items = [item for item in self.items if not item.is_dead]
 
     def render(self):
@@ -114,12 +123,21 @@ class ItemManager:
         player_pos = self.app.player.position
         for item in self.items:
             # Simple distance culling (don't render items further than 32 blocks away)
-            if glm.distance2(item.position, player_pos) > ITEM_RENDER_DISTANCE_SQUARED: continue
+            if glm.distance2(item.position, player_pos) > ITEM_RENDER_DISTANCE_SQUARED:
+                continue
              
-            if item.voxel_id == STICK: mesh = self.stick_mesh
-            elif item.voxel_id == WOODEN_PICKAXE: mesh = self.pickaxe_mesh
-            else: mesh = self.mesh
+            if item.voxel_id == STICK:
+                mesh = self.stick_mesh
+            
+            elif item.voxel_id == WOODEN_PICKAXE:
+                mesh = self.pickaxe_mesh
+            
+            else:
+                mesh = self.mesh
              
             mesh.program['m_model'].write(item.get_model_matrix())
-            if 'voxel_id' in mesh.program: mesh.program['voxel_id'] = item.voxel_id
+            
+            if 'voxel_id' in mesh.program:
+                mesh.program['voxel_id'] = item.voxel_id
+            
             mesh.render()

@@ -15,17 +15,21 @@ uniform float u_fog_max_opacity;
 const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1 / gamma;
 
+
 void main() {
     vec3 base_color;
     float alpha = 1.0;
     
     if (u_use_texture) {
         vec4 tex_col = texture(u_texture_0, uv);
+        
         if (tex_col.a < 0.1) {
             discard;
         }
+        
         base_color = tex_col.rgb;
         alpha = tex_col.a;
+    
     } else {
         base_color = frag_color;
     }

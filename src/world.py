@@ -62,13 +62,16 @@ class World:
         self.db_lock = threading.Lock()
         self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
         self.cursor = self.connection.cursor()
+        
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS chunks (
                                 x INTEGER, y INTEGER, z INTEGER, 
                                 data BLOB,
                                 PRIMARY KEY (x, y, z))''')
+        
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS player_data (
                                 id INTEGER PRIMARY KEY,
                                 data TEXT)''')
+        
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS world_meta (
                                 id INTEGER PRIMARY KEY,
                                 world_name TEXT,
@@ -76,6 +79,7 @@ class World:
                                 game_mode INTEGER,
                                 creation_date TEXT,
                                 last_played TEXT)''')
+        
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS dropped_items (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 voxel_id INTEGER,
@@ -97,19 +101,24 @@ class World:
         # Initialize metadata if missing (e.g. creating a new world)
         self.cursor.execute('SELECT * FROM world_meta WHERE id=1')
         meta_row = self.cursor.fetchone()
+        
         if not meta_row:
             now = datetime.datetime.now().isoformat()
+            
             # Use the seed passed from main.py
             self.cursor.execute('''INSERT INTO world_meta (id, world_name, seed, game_mode, creation_date, last_played)
                                    VALUES (?, ?, ?, ?, ?, ?)''', 
                                 (1, self.save_name.replace('_', ' '), world_seed, self.app.player.game_mode, now, now))
+        
             self.connection.commit()
+        
         else:
             self.app.player.game_mode = meta_row[3]
 
         # Load player inventory and hotbar state
         self.cursor.execute('SELECT data FROM player_data WHERE id=1')
         row = self.cursor.fetchone()
+        
         if row:
             try:
                 p_data = json.loads(row[0])
@@ -128,31 +137,39 @@ class World:
                 self.app.world_session_time = p_data.get('time_played', 0.0)
                 
                 pos = p_data.get('position')
+                
                 if pos:
                     self.app.player.position = glm.vec3(pos[0], pos[1], pos[2])
                     self.app.player.feet_pos = glm.vec3(pos[0], pos[1] - PLAYER_EYE_HEIGHT, pos[2])
                     self.app.player.highest_y = pos[1]
+                
                 else:
                     self.app.player.respawn()
                     
                 yaw = p_data.get('yaw')
+                
                 if yaw is not None:
                     self.app.player.yaw = yaw
                     
                 pitch = p_data.get('pitch')
+                
                 if pitch is not None:
                     self.app.player.pitch = pitch
+            
             except Exception as e:
                 print(f"[SYSTEM] Failed to load player data: {e}")
                 self.app.player.respawn()
+        
         else:
             self.app.player.respawn()
             
         # Load dropped items
         self.saved_dropped_items = []
+        
         try:
             self.cursor.execute('SELECT voxel_id, px, py, pz, vx, vy, vz FROM dropped_items')
             self.saved_dropped_items = self.cursor.fetchall()
+        
         except sqlite3.OperationalError:
             pass # Table might not exist in old saves before migration
 
@@ -218,6 +235,7 @@ class World:
 
         # Submit tasks gradually to prevent ThreadPool starvation and startup lag
         mesh_limit = MESH_BUILD_LIMIT_INGAME if self.app.game_state != 'LOADING' else MESH_BUILD_LIMIT_LOADING
+        
         while self.build_queue and len(self.mesh_queue) < mesh_limit:
             chunk = self.build_queue.pop()
             future = self.executor.submit(chunk.mesh.get_vertex_data)
@@ -233,8 +251,10 @@ class World:
         """
         # Safely create OpenGL VAOs on the main thread
         ready_count = 0
+        
         for item in list(self.mesh_queue):
             chunk, future = item
+            
             if future.done():
                 result = future.result()
                 chunk.mesh.vertex_data = result[0]
@@ -244,6 +264,7 @@ class World:
                 # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                    
                     while len(self.vbo_pool) > VBO_POOL_CAP:
                         p_vbo, p_vao = self.vbo_pool.popleft()
                         p_vbo.release()
@@ -253,6 +274,7 @@ class World:
                 self.mesh_queue.remove(item)
                 ready_count += 1
                 limit = MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING if self.app.game_state == 'LOADING' else MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME
+                
                 if ready_count >= limit:  # Limit processing to prevent frame drops
                     break
 
@@ -263,13 +285,16 @@ class World:
         the chunk and its neighbors for mesh building.
         """
         processed = 0
+        
         for item in list(self.load_queue):
             chunk, future = item
+            
             if future.done():
                 source, elapsed_time, voxel_data, lightmap_data, is_empty, needs_lighting = future.result()
                 
                 if source == 'db':
                     self.db_load_time += elapsed_time
+                
                 else:
                     self.terrain_gen_time += elapsed_time
 
@@ -298,8 +323,10 @@ class World:
                     # Force remesh of all 6 chunk neighbors to ensure light spills render properly
                     for dx, dy, dz in [(-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1)]:
                         n_pos = (x + dx, y + dy, z + dz)
+                        
                         if n_pos in self.active_chunks:
                             n_chunk = self.active_chunks[n_pos]
+                            
                             if n_chunk.voxels is not None and n_chunk not in self.build_queue:
                                 self.build_queue.append(n_chunk)
                 
@@ -308,6 +335,7 @@ class World:
                 
                 # Limit chunks processed per frame to prevent FPS drops and Main Thread freezing!
                 limit = MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING if self.app.game_state == 'LOADING' else MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME
+                
                 if processed >= limit:
                     break
 
@@ -339,12 +367,14 @@ class World:
             # Old save file format, fallback to generating sunlight
             lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
             Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, cx, cy, cz, noise.perm)
+            
             return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
             
         voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
         lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
         Chunk.generate_terrain(voxel_data, lightmap_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed)
         is_empty = not np.any(voxel_data)
+        
         return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
     def stream_chunks(self):
@@ -359,6 +389,7 @@ class World:
         
         # Optimization: Only scan for chunks to stream if the player moves to a new chunk or changes render distance!
         stream_state = (player_cx, player_cz, render_dist)
+        
         if getattr(self, 'last_stream_state', None) == stream_state:
             return
             
@@ -367,6 +398,7 @@ class World:
         # 1. Unload chunks out of range
         for pos in list(self.active_chunks.keys()):
             x, y, z = pos
+            
             if (x - player_cx)**2 + (z - player_cz)**2 > (render_dist + 1)**2:
                 self.unload_chunk(pos)
                 
@@ -376,6 +408,7 @@ class World:
             for z in range(player_cz - render_dist, player_cz + render_dist + 1):
                 if (x - player_cx)**2 + (z - player_cz)**2 > render_dist**2:
                     continue
+                
                 for y in range(WORLD_H):
                     if (x, y, z) not in self.active_chunks:
                         self.load_chunk(x, y, z)
@@ -413,6 +446,7 @@ class World:
         """
         data = zlib.compress(voxels.tobytes())
         l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
+        
         with self.db_lock:
             self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)', (x, y, z, data, l_data))
             self.connection.commit()
@@ -432,20 +466,26 @@ class World:
             chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
             self.chunks[chunk_index] = None
             self.chunk_positions[chunk_index] = (-999, -999, -999)
+            
             if chunk.mesh:
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                    
                     while len(self.vbo_pool) > VBO_POOL_CAP:
                         p_vbo, p_vao = self.vbo_pool.popleft()
                         p_vbo.release()
                         p_vao.release()
+                
                 chunk.mesh.vbo, chunk.mesh.vao = None, None
+            
             if chunk in self.build_queue:
                 self.build_queue.remove(chunk)
+            
             for item in list(self.load_queue):
                 if item[0] is chunk:
                     self.load_queue.remove(item)
                     break
+            
             for item in list(self.mesh_queue):
                 if item[0] is chunk:
                     self.mesh_queue.remove(item)
@@ -468,13 +508,16 @@ class World:
                 self.active_chunks.values(),
                 key=lambda c: glm.distance2(c.center, player_pos)
             )
+            
             # Update the chunk centers array for vectorized culling
             if self.sorted_chunks:
                 self.chunk_centers = np.array([c.center for c in self.sorted_chunks], dtype='float32')
                 self.frustum_mask = np.ones(len(self.sorted_chunks), dtype=np.bool_)
+            
             else:
                 self.chunk_centers = np.empty((0, 3), dtype='float32')
                 self.frustum_mask = np.ones(0, dtype=np.bool_)
+            
             self.last_player_chunk_pos = player_chunk_pos
             self.last_active_chunk_count = active_chunk_count
             
@@ -505,10 +548,12 @@ class World:
         # 2. Render visible chunks AND query them simultaneously
         for chunk in self.sorted_chunks:
             if chunk.is_visible:
+                
                 if not freeze:
                     with chunk.query:
                         chunk.render()
                     chunk.query_submitted = True
+                
                 else:
                     chunk.render()
             
@@ -520,14 +565,17 @@ class World:
             if fbo:
                 fbo.color_mask = (False, False, False, False)
                 fbo.depth_mask = False
+            
             ctx.depth_func = '<='
             ctx.disable(mgl.CULL_FACE)
+            
             bbox_prog = self.app.shader_program.voxel_marker
             bbox_vao = self.bbox_mesh.vao
             bbox_prog['is_bbox'] = 1
             
             for i, chunk in enumerate(self.sorted_chunks):
                 if not chunk.is_visible:
+                    
                     # Only query chunks that are IN the frustum but currently occluded
                     if chunk.is_empty or not self.frustum_mask[i]:
                         chunk.query_submitted = False
@@ -539,12 +587,15 @@ class World:
                     
                     with chunk.query:
                         bbox_vao.render()
+                    
                     chunk.query_submitted = True
                     
             bbox_prog['is_bbox'] = 0
+            
             if fbo:
                 fbo.color_mask = (True, True, True, True)
                 fbo.depth_mask = True
+            
             ctx.depth_func = '<'
             ctx.enable(mgl.CULL_FACE)
             
@@ -592,9 +643,12 @@ class World:
             if self.app.scene and hasattr(self.app.scene, 'item_manager'):
                 self.cursor.execute('DELETE FROM dropped_items')
                 item_data = []
+                
                 for item in self.app.scene.item_manager.items:
                     item_data.append((item.voxel_id, float(item.position.x), float(item.position.y), float(item.position.z), float(item.velocity.x), float(item.velocity.y), float(item.velocity.z)))
+                
                 self.cursor.executemany('INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)', item_data)
+            
             self.connection.commit()
 
         # Wait for any pending asynchronous saves from unload_chunk to complete
@@ -605,12 +659,16 @@ class World:
         for vbo, vao in self.vbo_pool:
             vbo.release()
             vao.release()
+        
         self.vbo_pool.clear()
         
         for chunk in self.chunks:
             if chunk:
                 if chunk.mesh:
-                    if chunk.mesh.vao: chunk.mesh.vao.release()
-                    if chunk.mesh.vbo: chunk.mesh.vbo.release()
+                    if chunk.mesh.vao:
+                        chunk.mesh.vao.release()
+                    
+                    if chunk.mesh.vbo:
+                        chunk.mesh.vbo.release()
         
         self.bbox_mesh.vao.release()

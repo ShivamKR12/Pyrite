@@ -16,6 +16,7 @@ def get_biome(x, z, perm_array):
     # Scaled down frequencies by 10x to create massive, sprawling biomes
     temp = noise2(x * 0.002, z * 0.002, perm_array)
     moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0, perm_array)
+    
     return temp, moist
 
 
@@ -48,15 +49,18 @@ def get_height(x, z, perm_array):
         w = min((-0.2 - cont) * 5.0, 1.0)
         target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
         height = height * (1.0 - w) + target_h * w
+    
     elif cont > 0.4:
         # Extreme Mountains
         w = min((cont - 0.4) * 5.0, 1.0)
         target_h = base_h * 1.5 + detail_1 * 2.0 + detail_2 + detail_3 + 30
         height = height * (1.0 - w) + target_h * w
+    
     elif 0.1 < cont <= 0.3:
         # Plateaus (steep cliffs, flat tops)
         w = min((cont - 0.1) * 10.0, 1.0) * min((0.3 - cont) * 10.0, 1.0)
         plat_h = CENTER_Y + 12
+    
         if height > plat_h:
             flattened = plat_h + (height - plat_h) * 0.1
             height = height * (1.0 - w) + flattened * w
@@ -90,6 +94,7 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
     
     max_h = max(world_height, int(WATER_LINE) + 1)
     local_height = min(max_h - cy, CHUNK_SIZE)
+    
     if local_height <= 0:
         return
 
@@ -113,12 +118,15 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
     if is_underwater or is_beach:
         surface_id = SAND
         subsurface_id = SAND
+    
     elif is_desert:
         surface_id = SAND
         subsurface_id = SAND
+    
     elif is_snow:
         surface_id = SNOW
         subsurface_id = DIRT
+    
     else:
         surface_id = GRASS
         subsurface_id = DIRT
@@ -138,17 +146,21 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
         if wy > world_height - 1:
             if wy <= WATER_LINE:
                 voxel_id = WATER
+    
         else:
             # Determine default solid block type
             if wy == world_height - 1:
                 voxel_id = surface_id
+     
             elif wy >= world_height - dirt_depth:
                 voxel_id = subsurface_id
+     
             else:
                 voxel_id = STONE
 
             if wy > crust:
                 surface_dist = world_height - wy
+     
                 # Keep water/beaches intact by blocking cave generation entirely in the top sand/dirt layers
                 if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
                     
@@ -173,11 +185,14 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
         # Place Tree: No trees underwater, no trees on high mountains, no trees on snow, no floating trees!
         if wy == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and wy < STONE_LVL:
             tree_prob = 0.0
+     
             if surface_id == GRASS:
                 if moist > 0.4: 
                     tree_prob = 0.04   # Dense forest
+     
                 elif moist > 0.0: 
                     tree_prob = 0.005  # Sparse woods
+     
                 else: 
                     tree_prob = 0.0001 # Extreme plains (~1 tree every 5 chunks)
                 
@@ -194,10 +209,13 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
     rnd = random()
     if rnd > tree_prob:
         return None
+    
     if y + TREE_HEIGHT >= CHUNK_SIZE:
         return None
+    
     if x - TREE_H_WIDTH < 0 or x + TREE_H_WIDTH >= CHUNK_SIZE:
         return None
+    
     if z - TREE_H_WIDTH < 0 or z + TREE_H_WIDTH >= CHUNK_SIZE:
         return None
 
@@ -209,10 +227,12 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
     for n, iy in enumerate(range(TREE_H_HEIGHT, TREE_HEIGHT - 1)):
         k = iy % 2
         rng = int(random() * 2)
+    
         for ix in range(-TREE_H_WIDTH + m, TREE_H_WIDTH - m * rng):
             for iz in range(-TREE_H_WIDTH + m * rng, TREE_H_WIDTH - m):
                 if (ix + iz) % 4:
                     voxels[get_index(x + ix + k, y + iy, z + iz + k)] = LEAVES
+    
         m += 1 if n > 0 else 3 if n > 1 else 0
 
     # tree trunk
@@ -231,24 +251,32 @@ def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array):
     """
     for x in range(CHUNK_SIZE):
         for z in range(CHUNK_SIZE):
+    
             wx = x + cx
             wz = z + cz
             world_height = get_height(wx, wz, perm_array)
+    
             for y in range(CHUNK_SIZE):
                 wy = y + cy
                 index = get_index(x, y, z)
+    
                 if wy >= world_height:
                     voxel_id = voxels[index]
+    
                     if voxel_id == AIR or voxel_id == GLASS:
                         lightmap[index] = (15 << 4) | 0
+    
                     elif voxel_id == WATER:
                         depth = world_height - wy
                         sun = max(0, 15 + depth * 2)
                         lightmap[index] = (sun << 4) | 0
+    
                     elif voxel_id == LEAVES:
                         lightmap[index] = (14 << 4) | 0
+    
                     else:
                         lightmap[index] = 0
+    
                 else:
                     lightmap[index] = 0
 

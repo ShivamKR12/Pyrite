@@ -7,6 +7,7 @@ uniform vec3 u_sun_direction;
 uniform float u_fog_density;
 uniform float u_fog_max_opacity;
 
+
 void main() {
     vec3 cloud_color = vec3(1.0); // Base daytime color
     

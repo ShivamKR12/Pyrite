@@ -29,11 +29,13 @@ class Pyrite:
         global game state variables and configurations.
         """
         pg.init()
+        
         try:
             icon_img = pg.image.load(get_path('assets/icon-nobg.png'))
             pg.display.set_icon(icon_img)
         except pg.error:
             pass
+        
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, MAJOR_VER)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, MINOR_VER)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
@@ -128,9 +130,11 @@ class Pyrite:
                 if row:
                     seed = row[0]
                 connection.close()
+            
             except sqlite3.Error as e:
                 print(f"[SYSTEM] Could not read seed from existing save file: {e}")
                 seed = random.randint(100000, 999999999)
+        
         else:
             seed = force_seed if force_seed is not None else random.randint(100000, 999999999)
             
@@ -163,6 +167,7 @@ class Pyrite:
         pg.mouse.get_rel() # Reset relative mouse movement to prevent sudden camera spinning
         pg.event.set_grab(True)
         pg.mouse.set_visible(False)
+        
         self.game_state = 'IN_GAME'
 
     def render_loading_screen(self, text="INITIALIZING..."):
@@ -219,22 +224,28 @@ class Pyrite:
         """
         if self.game_state == 'MAIN_MENU':
             self.menu.update()
+        
         elif self.game_state in ('IN_GAME', 'INVENTORY'):
             self.player.update()
             self.shader_program.update()
             self.world_session_time += self.delta_time * 0.001
             self.scene.update()
+        
         elif self.game_state == 'PAUSED':
             self.pause_menu.update()
+        
         elif self.game_state == 'OPTIONS':
             self.options_menu.update()
 
         self.delta_time = min(self.clock.tick(), 50) # Cap delta time to avoid physics lag spikes
         self.time = pg.time.get_ticks() * 0.001
+        
         if self.game_state == 'IN_GAME':
             pg.display.set_caption(f'{self.clock.get_fps() :.0f}')
+        
         elif self.game_state == 'PAUSED':
             pg.display.set_caption('Game Paused')
+        
         else:
             pg.display.set_caption('Pyrite')
 
@@ -244,24 +255,31 @@ class Pyrite:
         to the active state, layering menus over 3D scenes when appropriate.
         """
         self.ctx.clear(color=self.bg_color)
+        
         if self.game_state == 'MAIN_MENU':
             self.ctx.disable(mgl.DEPTH_TEST)
             self.menu.render()
             self.ctx.enable(mgl.DEPTH_TEST)
+        
         elif self.game_state in ('IN_GAME', 'INVENTORY'):
             self.scene.render()
+        
         elif self.game_state == 'PAUSED':
             if self.scene:
                 self.scene.render()
+            
             self.ctx.disable(mgl.DEPTH_TEST)
             self.pause_menu.render()
             self.ctx.enable(mgl.DEPTH_TEST)
+        
         elif self.game_state == 'OPTIONS':
             if self.options_menu.previous_state == 'PAUSED' and self.scene:
                 self.scene.render()
+            
             elif self.options_menu.previous_state == 'MAIN_MENU':
                 self.ctx.disable(mgl.DEPTH_TEST)
                 self.menu.render_bg()
+            
             self.ctx.disable(mgl.DEPTH_TEST)
             self.options_menu.render()
             self.ctx.enable(mgl.DEPTH_TEST)
@@ -277,12 +295,16 @@ class Pyrite:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.quit_game()
+            
             elif event.type == pg.KEYDOWN and event.key == pg.K_p:
                 self.wireframe = not self.wireframe
+            
             elif event.type == pg.KEYDOWN and event.key == pg.K_o:
                 self.freeze_culling = not self.freeze_culling
+            
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if self.game_state == 'IN_GAME':
+                    
                     # Capture screen for thumbnail before UI draws over it!
                     try:
                         data = self.ctx.screen.read(components=3)
@@ -291,31 +313,40 @@ class Pyrite:
                         thumb_w, thumb_h = 320, int(320 / ASPECT_RATIO)
                         img = pg.transform.smoothscale(img, (thumb_w, thumb_h))
                         pg.image.save(img, f"saves/{self.scene.world.save_name}_thumb.png")
+                    
                     except Exception as e:
                         print(f"Failed to save thumbnail: {e}")
+                    
                     self.game_state = 'PAUSED'
                     self.pause_menu.transition_state = 'IN'
                     self.pause_menu.transition_progress = 0.0
                     pg.event.set_grab(False)
                     pg.mouse.set_visible(True)
+                
                 elif self.game_state == 'INVENTORY':
                     self.scene.inventory_ui.close()
                     self.game_state = 'IN_GAME'
                     pg.event.set_grab(True)
                     pg.mouse.set_visible(False)
+                
                 elif self.game_state == 'PAUSED':
                     self.pause_menu.trigger_action(self.pause_menu.resume_game, 1)
+                
                 elif self.game_state == 'OPTIONS':
                     self.options_menu.trigger_action(self.options_menu.go_back, 1)
+                
                 else: # Esc inside Main Menu quits the game
                     self.menu.trigger_action(self.quit_game, 1)
+            
             elif event.type == pg.KEYDOWN and event.key == pg.K_F3:
                 self.show_debug = not self.show_debug
+            
             elif event.type == pg.KEYDOWN and event.key == pg.K_e:
                 if self.game_state == 'IN_GAME':
                     self.game_state = 'INVENTORY'
                     pg.event.set_grab(False)
                     pg.mouse.set_visible(True)
+                
                 elif self.game_state == 'INVENTORY':
                     self.scene.inventory_ui.close()
                     self.game_state = 'IN_GAME'
@@ -324,12 +355,16 @@ class Pyrite:
             
             if self.game_state == 'MAIN_MENU':
                 self.menu.handle_event(event)
+            
             elif self.game_state == 'IN_GAME':
                 self.player.handle_event(event=event)
+            
             elif self.game_state == 'INVENTORY':
                 self.scene.inventory_ui.handle_event(event)
+            
             elif self.game_state == 'PAUSED':
                 self.pause_menu.handle_event(event)
+            
             elif self.game_state == 'OPTIONS':
                 self.options_menu.handle_event(event)
 
@@ -351,6 +386,7 @@ class Pyrite:
             
         if self.scene:
             self.scene.world.save()
+        
         pg.quit()
         sys.exit()
 

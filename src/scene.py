@@ -89,11 +89,15 @@ class Scene:
 
         # UI rendering (disable depth testing so it draws over everything)
         self.app.ctx.disable(mgl.DEPTH_TEST)
+        
         if self.app.game_state == 'IN_GAME':
             self.crosshair.render()
             self.hotbar.render()
+        
         elif self.app.game_state == 'INVENTORY':
             self.inventory_ui.render()
+        
         if getattr(self.app, 'show_debug', False):
             self.debug_overlay.render()
+        
         self.app.ctx.enable(mgl.DEPTH_TEST)

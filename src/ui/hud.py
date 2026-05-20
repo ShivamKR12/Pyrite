@@ -36,9 +36,11 @@ class Hotbar:
         player = self.app.player
         s = HOTBAR_SCALE
         slot_s = SLOT_SCALE
+        
         gap = 0.01
         x_spacing = (slot_s * 2 + gap) / ASPECT_RATIO
         start_x = -4 * x_spacing
+        
         y = HOTBAR_Y
         
         # 1. Draw the transparent slot backgrounds and selection frame
@@ -58,6 +60,7 @@ class Hotbar:
                 self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
                 self.color_mesh.program['u_color'] = UI_SLOT_SELECTED_BG_COLOR
                 self.color_mesh.render()
+            
             else:
                 # Draw standard dark background
                 self.color_mesh.program['u_scale'] = (slot_s / ASPECT_RATIO, slot_s)
@@ -68,6 +71,7 @@ class Hotbar:
         # 2. Draw the 3D block icons inside the slots
         for i in range(HOTBAR_SIZE):
             voxel_id = player.inventory[i]
+            
             if voxel_id != 0:
                 if voxel_id in (STICK, WOODEN_PICKAXE):
                     self.text_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
@@ -75,6 +79,7 @@ class Hotbar:
                     self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
                     self.text_mesh.render()
                     self.text_mesh.program['u_texture_0'] = 4 # Restore font texture
+                
                 else:
                     self.block_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
                     self.block_mesh.program['u_offset'] = (start_x + i * x_spacing, y)
@@ -84,6 +89,7 @@ class Hotbar:
         # 3. Draw the stack counts
         for i in range(HOTBAR_SIZE):
             count = player.inventory_counts[i]
+            
             if count > 0:
                 tex = self.text_renderer.get_texture(str(count))
                 tex.use(location=4)
@@ -101,6 +107,7 @@ class Hotbar:
 
         # 4. Draw Survival Stats (Health, Hunger, Oxygen)
         if player.game_mode == SURVIVAL:
+            
             # Helper to draw a stat bar
             def draw_bar(ratio, offset_x, offset_y, bg_color, fg_color, text):
                 # Background
@@ -153,6 +160,7 @@ class HeldBlock:
     def render(self):
         player = self.app.player
         voxel_id = player.inventory[player.hotbar_index]
+        
         if voxel_id == 0:
             return
 
@@ -170,8 +178,10 @@ class HeldBlock:
             swing_offset_y = swing_val * HELD_ITEM_SWING_OFFSET_Y
             swing_offset_z = -swing_val * HELD_ITEM_SWING_OFFSET_Z
             swing_rotation_x = swing_val * HELD_ITEM_SWING_ROT_X
+        
         else:
             time_since_place = pg.time.get_ticks() - player.interaction_timer
+            
             if time_since_place < player.interaction_delay:
                 progress = time_since_place / player.interaction_delay
                 swing_val = glm.sin(progress * glm.pi())
@@ -193,12 +203,14 @@ class HeldBlock:
             m_model = glm.rotate(m_model, HELD_STICK_ROT_Z, glm.vec3(0, 0, 1))
             m_model = glm.scale(m_model, HELD_STICK_SCALE)
             mesh = self.stick_mesh
+        
         elif voxel_id == WOODEN_PICKAXE:
             m_model = glm.translate(m_model, HELD_PICKAXE_POS_OFFSET)
             m_model = glm.rotate(m_model, HELD_PICKAXE_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
             m_model = glm.rotate(m_model, HELD_PICKAXE_ROT_Z, glm.vec3(0, 0, 1))
             m_model = glm.scale(m_model, HELD_PICKAXE_SCALE)
             mesh = self.pickaxe_mesh
+        
         else:
             m_model = glm.rotate(m_model, HELD_BLOCK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
             m_model = glm.rotate(m_model, HELD_BLOCK_ROT_Y, glm.vec3(0, 1, 0))
@@ -209,6 +221,7 @@ class HeldBlock:
         mesh.program['m_view'].write(player.m_view) 
         # mesh.program['m_view'].write(glm.mat4()) # Lock view matrix!
         mesh.program['m_model'].write(m_model)
+        
         if 'voxel_id' in mesh.program:
             mesh.program['voxel_id'] = voxel_id
 
@@ -264,6 +277,7 @@ class InventoryUI:
         
         if grid in recipes:
             player.inventory[40], player.inventory_counts[40] = recipes[grid]
+        
         else:
             player.inventory[40], player.inventory_counts[40] = 0, 0
 
@@ -276,18 +290,22 @@ class InventoryUI:
             col = i % HOTBAR_SIZE
             x = -4 * x_spacing + col * x_spacing
             y = HOTBAR_Y # Hotbar
+        
         elif i < 36:
             col = i % HOTBAR_SIZE
             row = 2 - ((i - HOTBAR_SIZE) // HOTBAR_SIZE) 
             y = HOTBAR_Y + (row + 1.5) * y_spacing
             x = -4 * x_spacing + col * x_spacing
+        
         elif i < 40: # 2x2 Crafting Grid
             grid_idx = i - 36
             x = 0.5 * x_spacing + (grid_idx % 2) * x_spacing
             y = HOTBAR_Y + (6.0 - (grid_idx // 2)) * y_spacing
+        
         else: # Output Slot
             x = 3.0 * x_spacing
             y = HOTBAR_Y + 5.5 * y_spacing
+        
         return x, y
 
     def get_slot_at_mouse(self, mouse_pos):
@@ -299,8 +317,10 @@ class InventoryUI:
         
         for i in range(INVENTORY_SIZE):
             sx, sy = self.get_slot_pos(i)
+            
             if sx - slot_w < mx < sx + slot_w and sy - slot_h < my < sy + slot_h:
                 return i
+        
         return -1
 
     def get_closest_valid_slot(self, mouse_pos, drag_id, drag_count):
@@ -309,6 +329,7 @@ class InventoryUI:
         
         best_i = -1
         best_dist_sq = float('inf')
+        
         gap = 0.01
         y_spacing = SLOT_SCALE * 2 + gap
         # Max snap distance based on UI scale
@@ -317,7 +338,9 @@ class InventoryUI:
         player = self.app.player
         
         for i in range(INVENTORY_SIZE):
-            if i == 40: continue # Prevent dropping items into the output slot
+            if i == 40:
+                continue # Prevent dropping items into the output slot
+            
             sx, sy = self.get_slot_pos(i)
             dx = (mx - sx) * ASPECT_RATIO
             dy = my - sy
@@ -325,14 +348,17 @@ class InventoryUI:
             
             if dist_sq < best_dist_sq and dist_sq < max_dist_sq:
                 slot_id = player.inventory[i]
+                
                 if slot_id == 0 or (slot_id == drag_id and player.inventory_counts[i] < 64):
                     best_i = i
                     best_dist_sq = dist_sq
+        
         return best_i
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN:
             i = self.get_slot_at_mouse(pg.mouse.get_pos())
+            
             if i != -1:
                 player = self.app.player
                 slot_id = player.inventory[i]
@@ -340,54 +366,70 @@ class InventoryUI:
                 
                 if event.button == 1: # Left click (Pick up stack / Swap / Place stack)
                     if i == 40: # Output slot logic
+                        
                         if slot_id != 0:
                             can_take = False
+                            
                             if self.drag_id == 0:
                                 self.drag_id = slot_id
                                 self.drag_count = slot_count
                                 can_take = True
+                            
                             elif self.drag_id == slot_id and self.drag_count + slot_count <= 64:
                                 self.drag_count += slot_count
                                 can_take = True
                                 
                             if can_take: # Consume 1 from each crafting input!
                                 for c in range(36, 40):
+                                    
                                     if player.inventory_counts[c] > 0:
                                         player.inventory_counts[c] -= 1
+                                        
                                         if player.inventory_counts[c] <= 0:
                                             player.inventory[c] = 0
+                                
                                 self.drag_start_pos = pg.mouse.get_pos()
+                    
                     else:
                         if self.drag_id == 0:
+                            
                             if slot_id != 0:
                                 self.drag_id = slot_id
                                 self.drag_count = slot_count
                                 player.inventory[i] = 0
                                 player.inventory_counts[i] = 0
                                 self.drag_start_pos = pg.mouse.get_pos()
+                        
                         else:
                             if slot_id == 0:
                                 player.inventory[i] = self.drag_id
                                 player.inventory_counts[i] = self.drag_count
                                 self.drag_id = 0
                                 self.drag_count = 0
+                            
                             elif slot_id == self.drag_id:
                                 space = 64 - slot_count
+                                
                                 if space >= self.drag_count:
                                     player.inventory_counts[i] += self.drag_count
                                     self.drag_id = 0
                                     self.drag_count = 0
+                                
                                 else:
                                     player.inventory_counts[i] = 64
                                     self.drag_count -= space
+                            
                             else:
                                 player.inventory[i], self.drag_id = self.drag_id, slot_id
                                 player.inventory_counts[i], self.drag_count = self.drag_count, slot_count
                                 self.drag_start_pos = pg.mouse.get_pos()
+                    
                     self.update_crafting()
+                
                 elif event.button == 3: # Right click (Split half / Place one)
                     if i != 40:
                         if self.drag_id == 0:
+                            
                             if slot_id != 0:
                                 half = slot_count - (slot_count // 2)
                                 self.drag_id = slot_id
@@ -396,17 +438,25 @@ class InventoryUI:
                                 if player.inventory_counts[i] <= 0:
                                     player.inventory[i] = 0
                                 self.drag_start_pos = pg.mouse.get_pos()
+                        
                         else:
                             if slot_id == 0:
                                 player.inventory[i] = self.drag_id
                                 player.inventory_counts[i] = 1
                                 self.drag_count -= 1
-                                if self.drag_count <= 0: self.drag_id = 0
+                                
+                                if self.drag_count <= 0:
+                                    self.drag_id = 0
+                            
                             elif slot_id == self.drag_id and slot_count < 64:
                                 player.inventory_counts[i] += 1
                                 self.drag_count -= 1
-                                if self.drag_count <= 0: self.drag_id = 0
+                                
+                                if self.drag_count <= 0:
+                                    self.drag_id = 0
+                    
                     self.update_crafting()
+        
         elif event.type == pg.MOUSEBUTTONUP:
             if event.button == 1 and self.drag_id != 0:
                 mouse_pos = pg.mouse.get_pos()
@@ -416,6 +466,7 @@ class InventoryUI:
                 # Check if mouse moved more than 10 pixels (to separate drag from standard click)
                 if dx*dx + dy*dy > 100: 
                     i = self.get_closest_valid_slot(mouse_pos, self.drag_id, self.drag_count)
+                    
                     if i != -1:
                         player = self.app.player
                         slot_id = player.inventory[i]
@@ -426,15 +477,19 @@ class InventoryUI:
                             player.inventory_counts[i] = self.drag_count
                             self.drag_id = 0
                             self.drag_count = 0
+                        
                         elif slot_id == self.drag_id:
                             space = 64 - slot_count
+                            
                             if space >= self.drag_count:
                                 player.inventory_counts[i] += self.drag_count
                                 self.drag_id = 0
                                 self.drag_count = 0
+                            
                             else:
                                 player.inventory_counts[i] = 64
                                 self.drag_count -= space
+                    
                     self.update_crafting()
 
     def close(self):
@@ -443,20 +498,25 @@ class InventoryUI:
         # Eject crafting items back into inventory (or drop them!)
         for i in range(36, 40):
             if player.inventory[i] != 0:
+                
                 for _ in range(player.inventory_counts[i]):
                     if not player.add_item(player.inventory[i]):
                         self.app.scene.item_manager.add_item(player.position, player.inventory[i])
+                
                 player.inventory[i], player.inventory_counts[i] = 0, 0
         
         # Re-inject leftover dragged item or drop it!
         if self.drag_id != 0:
             while self.drag_count > 0:
+                
                 if not player.add_item(self.drag_id):
                     # Inventory completely full, drop in the world
                     for _ in range(self.drag_count):
                         self.app.scene.item_manager.add_item(player.position, self.drag_id)
+                    
                     break
                 self.drag_count -= 1
+            
             self.drag_id = 0
             self.drag_count = 0
             
@@ -496,12 +556,14 @@ class InventoryUI:
 
             voxel_id = player.inventory[i]
             if voxel_id != 0:
+                
                 if voxel_id in (STICK, WOODEN_PICKAXE):
                     self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
                     self.text_mesh.program['u_offset'] = (x, y)
                     self.text_mesh.program['u_texture_0'] = 5 if voxel_id == STICK else 6
                     self.text_mesh.render()
                     self.text_mesh.program['u_texture_0'] = 4
+                
                 else:
                     self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
                     self.block_mesh.program['u_offset'] = (x, y)
@@ -509,6 +571,7 @@ class InventoryUI:
                     self.block_mesh.render()
 
             count = player.inventory_counts[i]
+            
             if count > 0:
                 tex = self.text_renderer.get_texture(str(count))
                 tex.use(location=4)
@@ -530,6 +593,7 @@ class InventoryUI:
                 self.text_mesh.program['u_texture_0'] = 5 if self.drag_id == STICK else 6
                 self.text_mesh.render()
                 self.text_mesh.program['u_texture_0'] = 4
+            
             else:
                 self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
                 self.block_mesh.program['u_offset'] = (mx, my)
@@ -548,6 +612,7 @@ class InventoryUI:
         # Draw Tooltip on Hover
         if hover_idx != -1 and self.drag_id == 0:
             hover_id = player.inventory[hover_idx]
+            
             if hover_id != 0:
                 # Simple static mapping dictionary, can be expanded!
                 item_names = {1: "Sand", 2: "Grass", 3: "Dirt", 4: "Stone", 5: "Wood", 6: "Leaves", 7: "Wood Planks", 9: "Glass", 10: "Glowstone", 20: "Stick", 21: "Wooden Pickaxe"}
@@ -587,6 +652,7 @@ class DebugOverlay:
 
     def render(self):
         current_time = pg.time.get_ticks()
+        
         if current_time - self.last_update > 250 or self.dynamic_texture is None:
             self.last_update = current_time
             

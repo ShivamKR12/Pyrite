@@ -17,12 +17,14 @@ class ChunkMesh(BaseMesh):
         super().__init__()
         self.app = chunk.app
         self.chunk = chunk
+        
         self.ctx = self.app.ctx
         self.program = self.app.shader_program.chunk
 
         self.vbo_format = '1u4 1u4'
         self.format_size = 2
         self.attrs = ('packed_data', 'light_data')
+        
         self.vao = None
         self.vbo = None
         self.vertex_data = None
@@ -66,6 +68,7 @@ class ChunkMesh(BaseMesh):
         # Find the smallest VBO in the pool that can safely fit our new mesh data
         best_i = -1
         best_size = float('inf')
+        
         for i, (p_vbo, p_vao) in enumerate(pool):
             if p_vbo.size >= byte_size and p_vbo.size < best_size:
                 best_i = i
@@ -76,6 +79,7 @@ class ChunkMesh(BaseMesh):
             self.vbo, self.vao = pool.popleft()
             self.vbo.write(self.vertex_data)
             self.vertex_data = None
+            
             return self.vao
 
         # Allocate a new VBO, but round the size up to the nearest power of 2
@@ -87,7 +91,9 @@ class ChunkMesh(BaseMesh):
         vao = self.ctx.vertex_array(
             self.program, [(self.vbo, self.vbo_format, *self.attrs)], skip_errors=True
         )
+        
         self.vertex_data = None
+        
         return vao
 
     def get_vertex_data(self):
@@ -104,4 +110,5 @@ class ChunkMesh(BaseMesh):
             world_lightmaps=self.chunk.world.lightmaps,
             chunk_positions=self.chunk.world.chunk_positions
         )
+        
         return mesh

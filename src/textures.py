@@ -37,8 +37,10 @@ class Textures:
         dimensions if the image contains vertical strips.
         """
         texture = pg.image.load(get_path(f'assets/{file_name}'))
+        
         if rotation != 0:
             texture = pg.transform.rotate(texture, rotation)
+        
         texture = pg.transform.flip(texture, flip_x=flip_x, flip_y=flip_y)
 
         if is_tex_array:
@@ -48,13 +50,16 @@ class Textures:
                 components=4,
                 data=pg.image.tobytes(texture, 'RGBA', False)
             )
+        
         else:
             texture = self.ctx.texture(
                 size=texture.get_size(),
                 components=4,
                 data=pg.image.tobytes(texture, 'RGBA', False)
             )
+        
         texture.anisotropy = 32.0
         texture.build_mipmaps()
         texture.filter = (mgl.NEAREST, mgl.NEAREST)
+        
         return texture

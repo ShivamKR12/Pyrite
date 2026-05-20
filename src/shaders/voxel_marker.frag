@@ -10,7 +10,9 @@ uniform sampler2D u_texture_breaking;
 uniform float mining_progress;
 uniform int is_bbox;
 
+
 void main() {
+    
     if (is_bbox == 1) {
         fragColor = vec4(0.0);
         return;
@@ -22,7 +24,9 @@ void main() {
     
     // Breaking animation overlay
     vec4 break_col = vec4(0.0);
+    
     if (mining_progress > 0.0) {
+        
         // Calculate which of the 8 frames to use based on progress
         int frame = int(mining_progress * 8.0);
         frame = clamp(frame, 0, 7);
@@ -34,8 +38,10 @@ void main() {
     }
     
     fragColor = frame_col;
+    
     if (break_col.a > 0.1) {
         fragColor = vec4(mix(fragColor.rgb, break_col.rgb, break_col.a), 1.0);
     }
+    
     fragColor.a = max(frame_col.a, break_col.a);
 }

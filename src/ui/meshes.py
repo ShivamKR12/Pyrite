@@ -28,6 +28,7 @@ class CrosshairMesh(BaseMesh):
         """
         w = 0.015
         h = w * ASPECT_RATIO
+        
         # Creates a perfect '+' sign in the center of the screen
         vertices = [
             # Horizontal line
@@ -37,7 +38,9 @@ class CrosshairMesh(BaseMesh):
             (-0.002, -h, 0.0), (0.002, -h, 0.0), (0.002, h, 0.0),
             (-0.002, -h, 0.0), (0.002, h, 0.0), (-0.002, h, 0.0)
         ]
+        
         colors = [(0.9, 0.9, 0.9) for _ in vertices]
+        
         return np.hstack([vertices, colors]).astype('float32')
 
 
@@ -68,7 +71,9 @@ class BlockIconMesh(BaseMesh):
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
         ]
+        
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
+        
         return np.hstack([vertices, tex_coords]).astype('float32')
 
 
@@ -99,6 +104,7 @@ class UIColorMesh(BaseMesh):
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
         ]
+        
         return np.array(vertices, dtype='float32')
 
 
@@ -129,5 +135,7 @@ class UITextMesh(BaseMesh):
             (-1.0, -1.0), ( 1.0, -1.0), ( 1.0,  1.0),
             (-1.0, -1.0), ( 1.0,  1.0), (-1.0,  1.0)
         ]
+        
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
+        
         return np.hstack([vertices, tex_coords]).astype('float32')

@@ -47,6 +47,7 @@ class CloudMesh(BaseMesh):
 
                 if noise2(0.13 * x, 0.13 * z, perm_array) < 0.2:
                     continue
+                
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
     @staticmethod
@@ -75,18 +76,22 @@ class CloudMesh(BaseMesh):
                 # find number of continuous quads along x
                 x_count = 1
                 idx = (x + x_count) + width * z
+                
                 while x + x_count < width and cloud_data[idx] and idx not in visited:
                     x_count += 1
                     idx = (x + x_count) + width * z
 
                 # find the number of continuous quads along z for each x
                 z_count_list = []
+                
                 for ix in range(x_count):
                     z_count = 1
                     idx = (x + ix) + width * (z + z_count)
+                
                     while (z + z_count) < depth and cloud_data[idx] and idx not in visited:
                         z_count += 1
                         idx = (x + ix) + width * (z + z_count)
+                
                     z_count_list.append(z_count)
 
                 # find min count z to form a large quad
@@ -108,4 +113,5 @@ class CloudMesh(BaseMesh):
                         index += 1
 
         mesh = mesh[:index + 1]
+        
         return mesh

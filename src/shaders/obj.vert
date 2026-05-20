@@ -14,6 +14,7 @@ out vec2 uv;
 out float shading;
 out vec3 frag_color;
 
+
 void main() {
     uv = in_tex_coord;
     frag_color = in_color;

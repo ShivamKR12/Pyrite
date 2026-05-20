@@ -14,6 +14,7 @@ class ShaderProgram:
         self.app = app
         self.ctx = app.ctx
         self.player = app.player
+        
         # -------- shaders -------- #
         self.chunk = self.get_program(shader_name='chunk')
         self.voxel_marker = self.get_program(shader_name='voxel_marker')
@@ -25,6 +26,7 @@ class ShaderProgram:
         self.ui_text = self.get_program('ui_text')
         self.item = self.get_program('item')
         self.obj = self.get_program('obj')
+        
         # ------------------------- #
         self.set_uniforms_on_init()
 
@@ -35,7 +37,9 @@ class ShaderProgram:
         """
         # Build the fast lookup array for the shaders
         tex_map = np.zeros(256, dtype='int32')
-        for uid, tex_id in TEXTURE_MAP.items(): tex_map[uid] = tex_id
+        
+        for uid, tex_id in TEXTURE_MAP.items():
+            tex_map[uid] = tex_id
         tex_map_bytes = tex_map.tobytes()
 
         # chunk
@@ -43,7 +47,9 @@ class ShaderProgram:
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['u_texture_array_0'] = 1
         self.chunk['bg_color'].write(BG_COLOR)
-        if 'u_texture_map' in self.chunk: self.chunk['u_texture_map'].write(tex_map_bytes)
+        
+        if 'u_texture_map' in self.chunk:
+            self.chunk['u_texture_map'].write(tex_map_bytes)
 
         # marker
         self.voxel_marker['m_proj'].write(self.player.m_proj)
@@ -71,22 +77,28 @@ class ShaderProgram:
         
         # ui block
         self.ui_block['u_texture_array_0'] = 1
-        if 'u_texture_map' in self.ui_block: self.ui_block['u_texture_map'].write(tex_map_bytes)
+        if 'u_texture_map' in self.ui_block:
+            self.ui_block['u_texture_map'].write(tex_map_bytes)
         
         # ui text
         self.ui_text['u_texture_0'] = 4
-        if 'u_alpha' in self.ui_text: self.ui_text['u_alpha'] = 1.0
-        if 'u_color' in self.ui_text: self.ui_text['u_color'] = (1.0, 1.0, 1.0, 1.0)
+        if 'u_alpha' in self.ui_text:
+            self.ui_text['u_alpha'] = 1.0
+        if 'u_color' in self.ui_text:
+            self.ui_text['u_color'] = (1.0, 1.0, 1.0, 1.0)
         
-        if 'u_clip' in self.ui_color: self.ui_color['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
-        if 'u_clip' in self.ui_text: self.ui_text['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
+        if 'u_clip' in self.ui_color:
+            self.ui_color['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
+        if 'u_clip' in self.ui_text:
+            self.ui_text['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
         
         # item
         self.item['m_proj'].write(self.player.m_proj)
         self.item['m_model'].write(glm.mat4())
         self.item['u_texture_array_0'] = 1
         self.item['bg_color'].write(BG_COLOR)
-        if 'u_texture_map' in self.item: self.item['u_texture_map'].write(tex_map_bytes)
+        if 'u_texture_map' in self.item:
+            self.item['u_texture_map'].write(tex_map_bytes)
         
         # obj
         self.obj['m_proj'].write(self.player.m_proj)
@@ -101,7 +113,10 @@ class ShaderProgram:
         and syncs UI animations (like mining progress).
         """
         self.chunk['m_view'].write(self.player.m_view)
-        if 'u_time' in self.chunk: self.chunk['u_time'] = self.app.world_session_time # Make sure the shader actually has the uniform before writing
+        
+        if 'u_time' in self.chunk:
+            self.chunk['u_time'] = self.app.world_session_time # Make sure the shader actually has the uniform before writing
+        
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
         self.clouds['player_pos'].write(self.player.position)
@@ -116,7 +131,8 @@ class ShaderProgram:
         self.obj['m_proj'].write(self.player.m_proj)
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
-        if 'u_time' in self.sky: self.sky['u_time'] = self.app.world_session_time
+        if 'u_time' in self.sky:
+            self.sky['u_time'] = self.app.world_session_time
 
         time_speed = DAY_NIGHT_SPEED # Adjust this to make the day longer or shorter based on world_session_time
         sun_y = glm.cos(self.app.world_session_time * time_speed)
@@ -129,6 +145,7 @@ class ShaderProgram:
             fog_density = UNDERWATER_FOG_DENSITY
             cloud_fog_density = FOG_DENSITY_BASE / 10.0 # Make clouds just barely visible underwater
             fog_max_opacity = UNDERWATER_FOG_MAX_OPACITY # Cap underwater fog so distant terrain remains visible
+        
         else:
             bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
             render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
@@ -138,16 +155,28 @@ class ShaderProgram:
             
         if 'u_fog_density' in self.chunk:
             self.chunk['u_fog_density'] = fog_density
-            if 'u_fog_max_opacity' in self.chunk: self.chunk['u_fog_max_opacity'] = fog_max_opacity
+            
+            if 'u_fog_max_opacity' in self.chunk:
+                self.chunk['u_fog_max_opacity'] = fog_max_opacity
+        
         if 'u_fog_density' in self.item:
             self.item['u_fog_density'] = fog_density
-            if 'u_fog_max_opacity' in self.item: self.item['u_fog_max_opacity'] = fog_max_opacity
+            
+            if 'u_fog_max_opacity' in self.item:
+                self.item['u_fog_max_opacity'] = fog_max_opacity
+        
         if 'u_fog_density' in self.obj:
             self.obj['u_fog_density'] = fog_density
-            if 'u_fog_max_opacity' in self.obj: self.obj['u_fog_max_opacity'] = fog_max_opacity
+            
+            if 'u_fog_max_opacity' in self.obj:
+                self.obj['u_fog_max_opacity'] = fog_max_opacity
+        
         if 'u_fog_density' in self.clouds:
             self.clouds['u_fog_density'] = cloud_fog_density
-            if 'u_fog_max_opacity' in self.clouds: self.clouds['u_fog_max_opacity'] = fog_max_opacity
+            
+            if 'u_fog_max_opacity' in self.clouds:
+                self.clouds['u_fog_max_opacity'] = fog_max_opacity
+        
         if 'u_underwater_tint' in self.chunk:
             self.chunk['u_underwater_tint'] = self.app.config.get('underwater_tint', False)
 
@@ -158,11 +187,16 @@ class ShaderProgram:
         sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.world_session_time * time_speed)))
         
         # Safely write sun direction only if the shader currently supports it
-        if 'u_sun_direction' in self.chunk: self.chunk['u_sun_direction'].write(sun_dir)
-        if 'u_sun_direction' in self.item: self.item['u_sun_direction'].write(sun_dir)
-        if 'u_sun_direction' in self.obj: self.obj['u_sun_direction'].write(sun_dir)
-        if 'u_sun_direction' in self.sky: self.sky['u_sun_direction'].write(sun_dir)
-        if 'u_sun_direction' in self.clouds: self.clouds['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.chunk:
+            self.chunk['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.item:
+            self.item['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.obj:
+            self.obj['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.sky:
+            self.sky['u_sun_direction'].write(sun_dir)
+        if 'u_sun_direction' in self.clouds:
+            self.clouds['u_sun_direction'].write(sun_dir)
         
         self.app.bg_color = bg_color
         self.chunk['bg_color'].write(bg_color)
@@ -175,7 +209,12 @@ class ShaderProgram:
         """
         Helper function to load and compile a matching pair of .vert and .frag shader files from disk.
         """
-        with open(get_path(f'src/shaders/{shader_name}.vert')) as file: vertex_shader = file.read()
-        with open(get_path(f'src/shaders/{shader_name}.frag')) as file: fragment_shader = file.read()
+        with open(get_path(f'src/shaders/{shader_name}.vert')) as file:
+            vertex_shader = file.read()
+        
+        with open(get_path(f'src/shaders/{shader_name}.frag')) as file:
+            fragment_shader = file.read()
+        
         program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
+        
         return program

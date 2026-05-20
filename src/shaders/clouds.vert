@@ -9,6 +9,7 @@ uniform float u_time;
 uniform float cloud_scale;
 uniform vec3 player_pos;
 
+
 void main() {
     vec3 pos = vec3(in_position);
     pos.xz -= center;
