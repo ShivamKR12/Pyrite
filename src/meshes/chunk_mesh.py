@@ -72,7 +72,8 @@ class ChunkMesh(BaseMesh):
                 best_size = p_vbo.size
 
         if best_i != -1:
-            self.vbo, self.vao = pool.pop(best_i)
+            pool.rotate(-best_i)
+            self.vbo, self.vao = pool.popleft()
             self.vbo.write(self.vertex_data)
             self.vertex_data = None
             return self.vao

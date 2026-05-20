@@ -9,6 +9,7 @@ import os
 import sqlite3
 import zlib
 import threading
+from collections import deque
 import json
 import time
 import moderngl as mgl
@@ -45,7 +46,7 @@ class World:
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
         self.lightmaps = np.full([WORLD_VOL, CHUNK_VOL], 255, dtype='uint8')
         self.voxel_handler = VoxelHandler(self)
-        self.vbo_pool = []
+        self.vbo_pool = deque()
         self.last_player_chunk_pos = None
         self.sorted_chunks = []
         self.last_active_chunk_count = 0
@@ -57,6 +58,7 @@ class World:
         self.save_name = save_name
         os.makedirs('saves', exist_ok=True)
         self.save_path = f'saves/{self.save_name}.db'
+        self.thread_local = threading.local()
         self.db_lock = threading.Lock()
         self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
         self.cursor = self.connection.cursor()
@@ -243,7 +245,7 @@ class World:
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
                     while len(self.vbo_pool) > VBO_POOL_CAP:
-                        p_vbo, p_vao = self.vbo_pool.pop(0)
+                        p_vbo, p_vao = self.vbo_pool.popleft()
                         p_vbo.release()
                         p_vao.release()
                     
@@ -317,9 +319,13 @@ class World:
         """
         t0 = time.perf_counter()
         cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
-        with self.db_lock:
-            self.cursor.execute('SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
-            row = self.cursor.fetchone()
+        
+        if not hasattr(self.thread_local, 'cursor'):
+            conn = sqlite3.connect(self.save_path, timeout=10)
+            self.thread_local.cursor = conn.cursor()
+            
+        self.thread_local.cursor.execute('SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
+        row = self.thread_local.cursor.fetchone()
 
         if row:
             voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8').copy()
@@ -430,7 +436,7 @@ class World:
                 if chunk.mesh.vao and chunk.mesh.vbo:
                     self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
                     while len(self.vbo_pool) > VBO_POOL_CAP:
-                        p_vbo, p_vao = self.vbo_pool.pop(0)
+                        p_vbo, p_vao = self.vbo_pool.popleft()
                         p_vbo.release()
                         p_vao.release()
                 chunk.mesh.vbo, chunk.mesh.vao = None, None

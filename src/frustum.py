@@ -44,7 +44,7 @@ class Frustum:
         return True
 
 
-@njit(cache=True, fastmath=True, parallel=True)
+@njit(cache=True, fastmath=True)
 def frustum_cull_fast(chunk_centers, out_mask, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
     """
     Numba-optimized vectorized frustum culling.
@@ -52,7 +52,6 @@ def frustum_cull_fast(chunk_centers, out_mask, cam_pos, cam_forward, cam_right, 
     Populates a pre-allocated boolean array mask indicating which chunks are currently visible.
     """
     n = len(chunk_centers)
-    is_visible = np.empty(n, dtype=np.bool_)
 
     cpx, cpy, cpz = cam_pos[0], cam_pos[1], cam_pos[2]
     cfx, cfy, cfz = cam_forward[0], cam_forward[1], cam_forward[2]
