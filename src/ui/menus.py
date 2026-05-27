@@ -8,6 +8,7 @@ from .text import TextRenderer
 import sqlite3
 import random
 import hashlib
+from profiler import global_profiler
 
 
 class MainMenu:
@@ -16,6 +17,7 @@ class MainMenu:
     Handles smooth state transitions, dynamic world list loading from the 
     SQLite saves directory, and interaction events.
     """
+    @global_profiler.profile_func("MainMenu_Init")
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
@@ -74,6 +76,7 @@ class MainMenu:
         self.btn_new_world = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.trigger_action(lambda: self.set_state('CREATE_WORLD'), -1))
         self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('MAIN'), 1))
 
+    @global_profiler.profile_func("MainMenu_TriggerAction")
     def trigger_action(self, action, anim_dir=1):
         if self.transition_state in ('IDLE', 'IN'):
             self.pending_action = action
@@ -81,17 +84,21 @@ class MainMenu:
             self.transition_progress = 0.0
             self.anim_dir = anim_dir
 
+    @global_profiler.profile_func("MainMenu_OpenOptions")
     def open_options(self):
         self.app.options_menu.previous_state = 'MAIN_MENU'
         self.app.game_state = 'OPTIONS'
         self.app.options_menu.transition_state = 'IN'
         self.app.options_menu.transition_progress = 0.0
 
+    @global_profiler.profile_func("MainMenu_ToggleGameMode")
     def toggle_game_mode(self):
         self.create_game_mode = 0 if self.create_game_mode == 1 else 1
         mode_text = "Survival" if self.create_game_mode == 1 else "Creative"
         self.btn_game_mode.text = f"Game Mode: {mode_text}"
+        self.btn_game_mode.text_tex = self.btn_game_mode.text_renderer.get_texture(self.btn_game_mode.text)
 
+    @global_profiler.profile_func("MainMenu_SetState")
     def set_state(self, new_state):
         self.state = new_state
         
@@ -104,14 +111,19 @@ class MainMenu:
             self.input_name.is_active = True
             self.create_game_mode = 1
             self.btn_game_mode.text = 'Game Mode: Survival'
+            self.btn_game_mode.text_tex = self.btn_game_mode.text_renderer.get_texture(self.btn_game_mode.text)
         
         self.transition_state = 'IN'
         self.transition_progress = 0.0
 
+    @global_profiler.profile_func("MainMenu_LoadWorldList")
     def load_world_list(self):
         for btn in self.world_buttons:
             if hasattr(btn, 'thumb_tex'):
-                btn.thumb_tex.release() # Safely release old image memory
+                btn.thumb_tex.release()
+                btn.tex_title.release()
+                btn.tex_details.release()
+                btn.tex_dates.release()
         
         self.world_buttons = []
         self.delete_buttons = []
@@ -163,6 +175,7 @@ class MainMenu:
             
             y_offset -= 0.26
 
+    @global_profiler.profile_func("MainMenu_DeleteWorld")
     def delete_world(self, save_name):
         try:
             if os.path.exists(f'saves/{save_name}.db'):
@@ -176,6 +189,7 @@ class MainMenu:
         
         self.load_world_list() # Refresh the UI list instantly!
 
+    @global_profiler.profile_func("MainMenu_CreateWorld")
     def create_world(self):
         name = self.input_name.text.strip()
         
@@ -205,6 +219,7 @@ class MainMenu:
         self.app.init_game_session(save_name, seed, self.create_game_mode)
         self.set_state('MAIN')
 
+    @global_profiler.profile_func("MainMenu_Update")
     def update(self):
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005 # ~200ms transitions
@@ -267,6 +282,7 @@ class MainMenu:
         elif self.state == 'CREATE_WORLD':
             self.layout_create.update(mouse_pos)
 
+    @global_profiler.profile_func("MainMenu_HandleEvent")
     def handle_event(self, event):
         if self.transition_state != 'IDLE':
             return # Ignore inputs during transitions
@@ -294,6 +310,7 @@ class MainMenu:
                     max_scroll = max(0.0, (len(self.world_buttons) - 2) * 0.26)
                     self.target_scroll_offset = min(max_scroll, self.target_scroll_offset + 0.26)        
 
+    @global_profiler.profile_func("MainMenu_RenderBg")
     def render_bg(self):
         if hasattr(self, 'bg_tex') and self.bg_tex:
             self.bg_tex.use(location=4)
@@ -312,6 +329,7 @@ class MainMenu:
             
             self.bg_tex_mesh.render()
 
+    @global_profiler.profile_func("MainMenu_Render")
     def render(self):
         t = self.transition_progress
         ease = 1.0 - (1.0 - t) ** 3
@@ -382,11 +400,13 @@ class PauseMenu:
     Provides the in-game pause screen overlay.
     Allows the player to resume the game, open options, or quit back to the Main Menu.
     """
+    @global_profiler.profile_func("PauseMenu_Init")
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
         self.title_mesh = UITextMesh(app)
+        self.title_tex = self.title_renderer.get_texture("Game Paused")
         self.bg_mesh = UIColorMesh(app)
 
         self.transition_state = 'IN'
@@ -401,6 +421,7 @@ class PauseMenu:
         
         self.layout.update_layout()
 
+    @global_profiler.profile_func("PauseMenu_TriggerAction")
     def trigger_action(self, action, anim_dir=1):
         if self.transition_state in ('IDLE', 'IN'):
             self.pending_action = action
@@ -408,17 +429,20 @@ class PauseMenu:
             self.transition_progress = 0.0
             self.anim_dir = anim_dir
 
+    @global_profiler.profile_func("PauseMenu_OpenOptions")
     def open_options(self):
         self.app.options_menu.previous_state = 'PAUSED'
         self.app.game_state = 'OPTIONS'
         self.app.options_menu.transition_state = 'IN'
         self.app.options_menu.transition_progress = 0.0
 
+    @global_profiler.profile_func("PauseMenu_ResumeGame")
     def resume_game(self):
         self.app.game_state = 'IN_GAME'
         pg.event.set_grab(True)
         pg.mouse.set_visible(False)
 
+    @global_profiler.profile_func("PauseMenu_QuitToMenu")
     def quit_to_menu(self):
         self.app.game_state = 'MAIN_MENU'
         self.app.menu.state = 'MAIN'
@@ -427,6 +451,7 @@ class PauseMenu:
             self.app.scene.world.save()
             self.app.scene = None # Unload the world to free memory
 
+    @global_profiler.profile_func("PauseMenu_Update")
     def update(self):
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005
@@ -454,12 +479,14 @@ class PauseMenu:
             
         self.layout.update(mouse_pos)
 
+    @global_profiler.profile_func("PauseMenu_HandleEvent")
     def handle_event(self, event):
         if self.transition_state != 'IDLE':
             return
         
         self.layout.handle_event(event)
 
+    @global_profiler.profile_func("PauseMenu_Render")
     def render(self):
         t = self.transition_progress
         ease = 1.0 - (1.0 - t) ** 3
@@ -482,7 +509,7 @@ class PauseMenu:
         self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6 * bg_alpha)
         self.bg_mesh.render()
 
-        tex = self.title_renderer.get_texture("Game Paused")
+        tex = self.title_tex
         tex.use(location=4)
         tex_w, tex_h = tex.size
         scale_y = 0.08
@@ -507,11 +534,13 @@ class OptionsMenu:
     Provides sliders and toggles for FOV, Mouse Sensitivity, Volume, Render Distance, 
     and Visual Tints. Handles serializing these settings to config.json.
     """
+    @global_profiler.profile_func("OptionsMenu_Init")
     def __init__(self, app):
         self.app = app
         self.title_renderer = TextRenderer(app)
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
         self.title_mesh = UITextMesh(app)
+        self.title_tex = self.title_renderer.get_texture("Options")
         self.bg_mesh = UIColorMesh(app)
 
         self.transition_state = 'IN'
@@ -540,6 +569,7 @@ class OptionsMenu:
         
         self.previous_state = 'MAIN_MENU'
 
+    @global_profiler.profile_func("OptionsMenu_TriggerAction")
     def trigger_action(self, action, anim_dir=1):
         if self.transition_state in ('IDLE', 'IN'):
             self.pending_action = action
@@ -547,16 +577,20 @@ class OptionsMenu:
             self.transition_progress = 0.0
             self.anim_dir = anim_dir
 
+    @global_profiler.profile_func("OptionsMenu_UpdateFov")
     def update_fov(self, val):
         if self.app.scene:
             self.app.player.fov = glm.radians(val)
 
+    @global_profiler.profile_func("OptionsMenu_UpdateMusicVolume")
     def update_music_volume(self, val):
         pg.mixer.music.set_volume(val / 100.0)
 
+    @global_profiler.profile_func("OptionsMenu_UpdateSfxVolume")
     def update_sfx_volume(self, val):
         self.app.sounds.set_sfx_volume(val)
 
+    @global_profiler.profile_func("OptionsMenu_GoBack")
     def go_back(self):
         self.app.save_config()
         self.app.game_state = self.previous_state
@@ -569,6 +603,7 @@ class OptionsMenu:
             self.app.pause_menu.transition_state = 'IN'
             self.app.pause_menu.transition_progress = 0.0
 
+    @global_profiler.profile_func("OptionsMenu_Update")
     def update(self):
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005
@@ -596,12 +631,14 @@ class OptionsMenu:
             
         self.layout.update(mouse_pos)
 
+    @global_profiler.profile_func("OptionsMenu_HandleEvent")
     def handle_event(self, event):
         if self.transition_state != 'IDLE':
             return
         
         self.layout.handle_event(event)
 
+    @global_profiler.profile_func("OptionsMenu_Render")
     def render(self):
         t = self.transition_progress
         ease = 1.0 - (1.0 - t) ** 3
@@ -625,7 +662,7 @@ class OptionsMenu:
             self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8 * bg_alpha)
             self.bg_mesh.render()
 
-        tex = self.title_renderer.get_texture("Options")
+        tex = self.title_tex
         tex.use(location=4)
         tex_w, tex_h = tex.size
         scale_y = 0.08

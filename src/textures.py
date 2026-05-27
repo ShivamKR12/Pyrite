@@ -1,6 +1,7 @@
 import pygame as pg
 import moderngl as mgl
 from settings import get_path
+from profiler import global_profiler
 
 
 class Textures:
@@ -8,6 +9,7 @@ class Textures:
     Loads, configures, and binds OpenGL textures and texture arrays.
     Handles mipmapping, anisotropic filtering, and texture units for crisp rendering.
     """
+    @global_profiler.profile_func("Textures_Init")
     def __init__(self, app):
         """
         Instantiates and assigns the various textures to their respective OpenGL 
@@ -30,6 +32,7 @@ class Textures:
         self.texture_stick.use(location=5)
         self.texture_pickaxe.use(location=6)
 
+    @global_profiler.profile_func("Textures_Load")
     def load(self, file_name, is_tex_array=False, rotation=0, flip_x=True, flip_y=False):
         """
         Reads an image file and converts it into an OpenGL Texture or TextureArray.

@@ -4,6 +4,7 @@ from settings import *
 from pyglm import glm
 from meshes.item_mesh import ItemMesh
 from meshes.obj_mesh import ObjMesh
+from profiler import global_profiler
 
 
 class Item:
@@ -11,6 +12,7 @@ class Item:
     Represents a physical, dropped 3D item entity in the world.
     Handles gravity, sliding friction, bouncing, and player pickup detection.
     """
+    @global_profiler.profile_func("Item_Init")
     def __init__(self, app, position, voxel_id):
         """
         Spawns an item bursting out of the specified position with a randomized velocity,
@@ -25,6 +27,7 @@ class Item:
         self.is_dead = False
         self.pickup_delay = pg.time.get_ticks() + ITEM_PICKUP_DELAY
 
+    @global_profiler.profile_func("Item_Update")
     def update(self):
         """
         Applies continuous gravity and velocity updates, handles simple ground collisions,
@@ -54,6 +57,7 @@ class Item:
                     self.is_dead = True
                     self.app.sounds.play_place_block() # Pop sound!
 
+    @global_profiler.profile_func("Item_GetModelMatrix")
     def get_model_matrix(self):
         """
         Returns the transformation matrix required to position, rotate, and scale 
@@ -70,6 +74,7 @@ class ItemManager:
     Manages all active Item entities in the scene.
     Handles updating physics, rendering, and enforcing an entity cap to prevent lag.
     """
+    @global_profiler.profile_func("ItemManager_Init")
     def __init__(self, app):
         """
         Initializes the item list and pre-loads the meshes required to render 
@@ -81,6 +86,7 @@ class ItemManager:
         self.stick_mesh = ObjMesh(app, get_path('assets/stick/stick.obj'))
         self.pickaxe_mesh = ObjMesh(app, get_path('assets/wooden_pickaxe/wooden_pickaxe.obj'))
 
+    @global_profiler.profile_func("ItemManager_AddItem")
     def add_item(self, position, voxel_id):
         """
         Spawns a new item entity into the world. Enforces a First-In-First-Out (FIFO) 
@@ -92,6 +98,7 @@ class ItemManager:
         
         self.items.append(Item(self.app, position, voxel_id))
 
+    @global_profiler.profile_func("ItemManager_LoadItem")
     def load_item(self, voxel_id, px, py, pz, vx, vy, vz):
         """
         Restores a previously saved item entity into the world with its exact 
@@ -105,6 +112,7 @@ class ItemManager:
         item.velocity = glm.vec3(vx, vy, vz)
         self.items.append(item)
 
+    @global_profiler.profile_func("ItemManager_Update")
     def update(self):
         """
         Updates physics for all active items and removes ones marked as dead.
@@ -114,6 +122,7 @@ class ItemManager:
         
         self.items = [item for item in self.items if not item.is_dead]
 
+    @global_profiler.profile_func("ItemManager_Render")
     def render(self):
         """
         Renders all items that fall within the specific item render distance.

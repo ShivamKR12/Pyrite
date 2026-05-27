@@ -3,6 +3,7 @@ from meshes.chunk_mesh import ChunkMesh
 from terrain_gen import *
 import numpy as np
 import random
+from profiler import global_profiler
 
 
 class Chunk:
@@ -11,6 +12,7 @@ class Chunk:
     Stores the voxel array, lightmap, and coordinates, and handles issuing draw calls 
     for its corresponding ChunkMesh.
     """
+    @global_profiler.profile_func("Chunk_Init")
     def __init__(self, world, position):
         """
         Initializes a chunk, preparing its occlusion queries and position boundaries.
@@ -31,6 +33,7 @@ class Chunk:
         self.center = (glm.vec3(self.position) + 0.5) * CHUNK_SIZE
         self.is_on_frustum = self.app.player.frustum.is_on_frustum
 
+    @global_profiler.profile_func("Chunk_GetModelMatrix")
     def get_model_matrix(self):
         """
         Calculates the transformation matrix required to position this chunk 
@@ -39,18 +42,21 @@ class Chunk:
         m_model = glm.translate(glm.mat4(), glm.vec3(self.position) * CHUNK_SIZE)
         return m_model
 
+    @global_profiler.profile_func("Chunk_SetUniform")
     def set_uniform(self):
         """
         Writes this chunk's model matrix to the active shader.
         """
         self.mesh.program['m_model'].write(self.m_model)
 
+    @global_profiler.profile_func("Chunk_BuildMesh")
     def build_mesh(self):
         """
         Instantiates a ChunkMesh object to begin the greedy meshing process.
         """
         self.mesh = ChunkMesh(self)
 
+    @global_profiler.profile_func("Chunk_Render")
     def render(self):
         """
         Issues the draw call for the opaque geometry (stone, dirt, grass) of this chunk.
@@ -59,6 +65,7 @@ class Chunk:
             self.set_uniform()
             self.mesh.render()
 
+    @global_profiler.profile_func("Chunk_RenderWater")
     def render_water(self):
         """
         Issues the draw call for the transparent geometry (water) of this chunk.
@@ -67,6 +74,7 @@ class Chunk:
             self.set_uniform()
             self.mesh.render_water()
 
+    @global_profiler.profile_func("Chunk_BuildVoxels")
     def build_voxels(self):
         """
         Helper function to allocate an empty array and immediately invoke the terrain generator.

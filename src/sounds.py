@@ -1,6 +1,7 @@
 import pygame as pg
 import random
 from settings import *
+from profiler import global_profiler
 
 
 class Sounds:
@@ -9,6 +10,7 @@ class Sounds:
     Handles loading sounds, randomizing playback for variety, and mapping specific
     blocks to their respective material sound effects.
     """
+    @global_profiler.profile_func("Sounds_Init")
     def __init__(self, app):
         """
         Initializes the Pygame mixer, loads all block sounds, and starts the background music loop.
@@ -148,6 +150,7 @@ class Sounds:
         pg.mixer.music.set_volume(self.app.config.get('music_volume', 50) / 100.0)
         pg.mixer.music.play(-1) # Loop forever in the background
 
+    @global_profiler.profile_func("Sounds_SetSFXVolume")
     def set_sfx_volume(self, val):
         """Updates the volume for all loaded sound effects."""
         vol = val / 100.0
@@ -160,6 +163,7 @@ class Sounds:
                 for s in sound_list:
                     s.set_volume(vol)
 
+    @global_profiler.profile_func("Sounds_PlayWalk")
     def play_walk(self, voxel_id):
         """
         Plays a walking footstep sound based on the material of the block the player is standing on.
@@ -180,13 +184,15 @@ class Sounds:
         self.hit_index += 1
         self.last_hit_time = current_time
 
+    @global_profiler.profile_func("Sounds_PlayBreak")
     def play_break(self, voxel_id):
         """
         Plays a hard breaking sound when a block is fully destroyed.
         """
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['break']).play()
-
+    
+    @global_profiler.profile_func("Sounds_PlayPlace")
     def play_place(self, voxel_id):
         """
         Plays a block placement sound when adding a new block to the world.
@@ -194,6 +200,7 @@ class Sounds:
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['place']).play()
 
+    @global_profiler.profile_func("Sounds_PlayJump")
     def play_jump(self, voxel_id):
         """
         Plays a jump sound when the player jumps.
@@ -201,6 +208,7 @@ class Sounds:
         s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['jump']).play()
         
+    @global_profiler.profile_func("Sounds_PlayBreaking")
     def play_breaking(self, voxel_id, mining_time, mining_duration):
         """
         Plays a continuous sequence of hitting sounds mapped to the progress of mining a block.
@@ -220,6 +228,7 @@ class Sounds:
             mining_sounds[target_index].play()
             self.mining_index = target_index
 
+    @global_profiler.profile_func("Sounds_PlayPlaceBlock")
     def play_place_block(self):
         """
         Plays a pop sound effect when a dropped item entity is collected and added 

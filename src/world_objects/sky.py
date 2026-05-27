@@ -1,12 +1,14 @@
 import numpy as np
 import moderngl as mgl
 from meshes.base_mesh import BaseMesh
+from profiler import global_profiler
 
 
 class SkyMesh(BaseMesh):
     """
     Generates the geometry for the skybox, represented as a full-screen 2D quad.
     """
+    @global_profiler.profile_func("SkyMesh_Init")
     def __init__(self, app):
         """
         Initializes the sky mesh, binding it to the shader program responsible 
@@ -20,6 +22,7 @@ class SkyMesh(BaseMesh):
         self.attrs = ('in_position',)
         self.vao = self.get_vao()
 
+    @global_profiler.profile_func("SkyMesh_GetVertexData")
     def get_vertex_data(self):
         """
         Returns the vertex coordinates for a full-screen quad spanning 
@@ -37,6 +40,7 @@ class Sky:
     Manages the skybox object, handling the rendering of the atmospheric 
     background and celestial bodies.
     """
+    @global_profiler.profile_func("Sky_Init")
     def __init__(self, app):
         """
         Initializes the sky object and creates its associated full-screen quad mesh.
@@ -44,6 +48,7 @@ class Sky:
         self.app = app
         self.mesh = SkyMesh(app)
 
+    @global_profiler.profile_func("Sky_Render")
     def render(self):
         """
         Issues the draw call for the skybox. Temporarily disables depth testing 

@@ -4,10 +4,12 @@ import pygame as pg
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
 import os
+from profiler import global_profiler
 
 
 _shared_ui_resources = {}
 
+@global_profiler.profile_func("GetSharedResource")
 def get_shared_resource(app, res_type, **kwargs):
     """Lazily loads and shares UI meshes and fonts to prevent VRAM and CPU bloat."""
     if res_type == 'color_mesh':
@@ -52,18 +54,21 @@ def get_shared_resource(app, res_type, **kwargs):
 
 class UINode:
     """Base class for all UI elements in the new layout system."""
+    @global_profiler.profile_func("UINode_Init")
     def __init__(self, size=(0, 0)):
         self.parent = None
         self.children = []
         self.local_pos = [0.0, 0.0]  # Position relative to parent
         self.size = size
 
+    @global_profiler.profile_func("UINode_AddChild")
     def add_child(self, child):
         child.parent = self
         self.children.append(child)
         
         return child
 
+    @global_profiler.profile_func("UINode_GetGlobalPos")
     def get_global_pos(self):
         """Recursively computes absolute screen position by climbing the scene graph."""
         if self.parent:
@@ -73,18 +78,22 @@ class UINode:
         
         return tuple(self.local_pos)
 
+    @global_profiler.profile_func("UINode_UpdateLayout")
     def update_layout(self):
         for child in self.children:
             child.update_layout()
 
+    @global_profiler.profile_func("UINode_Update")
     def update(self, mouse_pos=None):
         for child in self.children:
             child.update(mouse_pos)
 
+    @global_profiler.profile_func("UINode_HandleEvent")
     def handle_event(self, event):
         for child in self.children:
             child.handle_event(event)
 
+    @global_profiler.profile_func("UINode_Render")
     def render(self, offset=(0, 0), alpha=1.0):
         for child in self.children:
             child.render(offset, alpha)
@@ -92,11 +101,13 @@ class UINode:
 
 class VBox(UINode):
     """Vertical stacking container that automatically arranges its children."""
+    @global_profiler.profile_func("VBox_Init")
     def __init__(self, pos=(0, 0), spacing=0.05):
         super().__init__()
         self.local_pos = list(pos)
         self.spacing = spacing
 
+    @global_profiler.profile_func("VBox_UpdateLayout")
     def update_layout(self):
         current_y = 0.0
         
@@ -115,6 +126,7 @@ class Button(UINode):
     """
     Represents a clickable UI button with text, hover effects, and an assigned action.
     """
+    @global_profiler.profile_func("Button_Init")
     def __init__(self, app, text, pos, size, action, border_radius=12, elevation=5):
         """
         Initializes the button with its text, position, size, and the callback function
@@ -137,7 +149,9 @@ class Button(UINode):
         self.is_pressed = False
         self.base_color = UI_BUTTON_COLOR
         self.hover_color = UI_HOVER_COLOR
+        self.text_tex = self.text_renderer.get_texture(self.text)
 
+    @global_profiler.profile_func("Button_CheckHover")
     def check_hover(self, mouse_pos):
         """
         Checks if the given mouse position falls within the button's screen boundaries
@@ -166,12 +180,14 @@ class Button(UINode):
             
         return self.is_hovered
 
+    @global_profiler.profile_func("Button_Update")
     def update(self, mouse_pos=None):
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
         
         self.check_hover(mouse_pos)
 
+    @global_profiler.profile_func("Button_HandleEvent")
     def handle_event(self, event):
         """
         Tracks mouse clicks to animate the button and trigger its assigned action
@@ -190,6 +206,7 @@ class Button(UINode):
                 if self.is_hovered and self.action:
                     self.action()
 
+    @global_profiler.profile_func("Button_Render")
     def render(self, offset=(0, 0), alpha=1.0):
         """
         Renders the button with a 3D elevation effect and state-dependent colors.
@@ -225,7 +242,7 @@ class Button(UINode):
         self.text_mesh.render()
 
         # Render Text
-        tex = self.text_renderer.get_texture(self.text)
+        tex = self.text_tex
         tex.use(location=4)
         tex_w, tex_h = tex.size
         scale_y = h * 0.5
@@ -247,6 +264,7 @@ class WorldButton(UINode):
     A specialized button used in the World Selection menu to display rich information 
     about a saved game world, including its thumbnail, seed, and playtime data.
     """
+    @global_profiler.profile_func("WorldButton_Init")
     def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action, border_radius=12, elevation=5):
         """
         Initializes the world button with detailed metadata and loads its corresponding
@@ -284,7 +302,12 @@ class WorldButton(UINode):
         
         self.thumb_tex = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
         self.thumb_tex.filter = (mgl.LINEAR, mgl.LINEAR)
+        
+        self.tex_title = self.text_renderer.get_dynamic_texture(self.display_name)
+        self.tex_details = self.text_renderer.get_dynamic_texture(f"{self.game_mode} Mode  |  Seed: {self.seed}")
+        self.tex_dates = self.text_renderer.get_dynamic_texture(f"Created: {self.creation_date}  |  Last Played: {self.last_played}")
 
+    @global_profiler.profile_func("WorldButton_CheckHover")
     def check_hover(self, mouse_pos):
         """
         Calculates if the mouse cursor is currently over the button's bounding box
@@ -311,12 +334,14 @@ class WorldButton(UINode):
             
         return self.is_hovered
 
+    @global_profiler.profile_func("WorldButton_Update")
     def update(self, mouse_pos=None):
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
         
         self.check_hover(mouse_pos)
 
+    @global_profiler.profile_func("WorldButton_HandleEvent")
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             if self.is_hovered:
@@ -330,6 +355,7 @@ class WorldButton(UINode):
                 if self.is_hovered and self.action:
                     self.action()
 
+    @global_profiler.profile_func("WorldButton_Render")
     def render(self, offset=(0, 0), alpha=1.0):
         """
         Draws the interactive button background, the world thumbnail image, and dynamically
@@ -378,19 +404,17 @@ class WorldButton(UINode):
         
         text_x = thumb_x + thumb_w + 0.02
         
-        def render_text(text, offset_y, scale_h):
-            tex = self.text_renderer.get_dynamic_texture(text)
+        def render_cached_text(tex, offset_y, scale_h):
             tex.use(location=4)
             scale_y = h * scale_h
             scale_x = scale_y * (tex.width / tex.height) / ASPECT_RATIO
             self.text_mesh.program['u_scale'] = (scale_x, scale_y)
             self.text_mesh.program['u_offset'] = (text_x + scale_x, render_pos_top[1] + h * offset_y)
             self.text_mesh.render()
-            tex.release()
 
-        render_text(self.display_name, 0.4, 0.25)
-        render_text(f"{self.game_mode} Mode  |  Seed: {self.seed}", -0.05, 0.15)
-        render_text(f"Created: {self.creation_date}  |  Last Played: {self.last_played}", -0.4, 0.12)
+        render_cached_text(self.tex_title, 0.4, 0.25)
+        render_cached_text(self.tex_details, -0.05, 0.15)
+        render_cached_text(self.tex_dates, -0.4, 0.12)
         
         if 'u_alpha' in self.text_mesh.program:
             self.text_mesh.program['u_alpha'] = 1.0
@@ -401,6 +425,7 @@ class TextInput(UINode):
     Provides a simple interactive text entry field for the UI.
     Captures keyboard input and visually indicates when it is active.
     """
+    @global_profiler.profile_func("TextInput_Init")
     def __init__(self, app, pos, size, label=""):
         """
         Initializes the text input field with a placeholder label, screen position,
@@ -416,7 +441,10 @@ class TextInput(UINode):
         self.color_mesh = get_shared_resource(app, 'color_mesh')
         self.text_mesh = get_shared_resource(app, 'text_mesh')
         self.text_renderer = get_shared_resource(app, 'text_renderer', size=FONT_SIZE_BUTTONS, bold=False)
+        self.cached_text = None
+        self.text_tex = None
 
+    @global_profiler.profile_func("TextInput_HandleEvent")
     def handle_event(self, event):
         """
         Processes mouse clicks to activate/deactivate the input field and captures
@@ -448,6 +476,7 @@ class TextInput(UINode):
                 if len(self.text) < 20 and event.unicode.isprintable():
                     self.text += event.unicode
 
+    @global_profiler.profile_func("TextInput_Render")
     def render(self, offset=(0, 0), alpha=1.0):
         """
         Draws the input field's background and current text. Renders a blinking 
@@ -486,7 +515,13 @@ class TextInput(UINode):
             self.text_mesh.program['u_alpha'] = alpha
         
         # The rest of your text rendering logic remains the same
-        tex = self.text_renderer.get_dynamic_texture(display_text)
+        if self.cached_text != display_text or self.text_tex is None:
+            if self.text_tex:
+                self.text_tex.release()
+            self.text_tex = self.text_renderer.get_dynamic_texture(display_text)
+            self.cached_text = display_text
+            
+        tex = self.text_tex
         tex.use(location=4)
         tex_w, tex_h = tex.size
         
@@ -497,14 +532,13 @@ class TextInput(UINode):
         self.text_mesh.program['u_offset'] = render_pos
         self.text_mesh.render()
         
-        tex.release()
-
 
 class Slider(UINode):
     """
     An interactive UI slider component used to adjust numerical settings 
     between a predefined minimum and maximum value.
     """
+    @global_profiler.profile_func("Slider_Init")
     def __init__(self, app, text, pos, size, min_val, max_val, config_key, action=None, is_int=False):
         """
         Initializes the slider, binding it to a specific configuration key, setting 
@@ -527,7 +561,10 @@ class Slider(UINode):
 
         self.is_hovered = False
         self.is_dragging = False
+        self.cached_text = None
+        self.text_tex = None
 
+    @global_profiler.profile_func("Slider_Update")
     def update(self, mouse_pos=None):
         """
         Updates the slider's hover state and dragging interaction. Modifies the 
@@ -568,6 +605,7 @@ class Slider(UINode):
                 if self.action:
                     self.action(val)
 
+    @global_profiler.profile_func("Slider_HandleEvent")
     def handle_event(self, event):
         """
         Detects mouse down events to initiate the dragging state if the cursor 
@@ -577,6 +615,7 @@ class Slider(UINode):
             if self.is_hovered:
                 self.is_dragging = True
 
+    @global_profiler.profile_func("Slider_Render")
     def render(self, offset=(0, 0), alpha=1.0):
         """
         Renders the dark background track, the highlighted fill bar representing 
@@ -625,7 +664,15 @@ class Slider(UINode):
         else:
             display_val = f"{val:.4f}"
             
-        tex = self.text_renderer.get_dynamic_texture(f"{self.text}: {display_val}")
+        display_str = f"{self.text}: {display_val}"
+        
+        if self.cached_text != display_str or self.text_tex is None:
+            if self.text_tex:
+                self.text_tex.release()
+            self.text_tex = self.text_renderer.get_dynamic_texture(display_str)
+            self.cached_text = display_str
+            
+        tex = self.text_tex
         tex.use(location=4)
         tex_w, tex_h = tex.size
         scale_y = h * 0.6
@@ -644,14 +691,13 @@ class Slider(UINode):
         
         if 'u_alpha' in self.text_mesh.program:
             self.text_mesh.program['u_alpha'] = 1.0
-        
-        tex.release()
 
 
 class Toggle(UINode):
     """
     A binary toggle switch component for the UI (e.g. On/Off settings).
     """
+    @global_profiler.profile_func("Toggle_Init")
     def __init__(self, app, text, pos, size, config_key, action=None):
         super().__init__(size)
         self.app = app
@@ -665,7 +711,10 @@ class Toggle(UINode):
         self.text_renderer = get_shared_resource(app, 'text_renderer', size=FONT_SIZE_SLIDERS, bold=True)
 
         self.is_hovered = False
+        self.cached_val = None
+        self.text_tex = None
 
+    @global_profiler.profile_func("Toggle_Update")
     def update(self, mouse_pos=None):
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
@@ -683,6 +732,7 @@ class Toggle(UINode):
         self.is_hovered = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and \
                           btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
 
+    @global_profiler.profile_func("Toggle_HandleEvent")
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             
@@ -694,6 +744,7 @@ class Toggle(UINode):
                 if self.action:
                     self.action(not val)
 
+    @global_profiler.profile_func("Toggle_Render")
     def render(self, offset=(0, 0), alpha=1.0):
         w, h = self.size
         gx, gy = self.get_global_pos()
@@ -702,8 +753,14 @@ class Toggle(UINode):
         val = self.app.config.get(self.config_key, False)
 
         # Render text aligned to the left of the toggle switch
-        display_val = 'ON' if val else 'OFF'
-        tex = self.text_renderer.get_dynamic_texture(f"{self.text}: {display_val}")
+        if self.cached_val != val or self.text_tex is None:
+            if self.text_tex:
+                self.text_tex.release()
+            display_val = 'ON' if val else 'OFF'
+            self.text_tex = self.text_renderer.get_dynamic_texture(f"{self.text}: {display_val}")
+            self.cached_val = val
+            
+        tex = self.text_tex
         tex.use(location=4)
         tex_w, tex_h = tex.size
         scale_y = h * 0.8
@@ -721,7 +778,6 @@ class Toggle(UINode):
             self.text_mesh.program['u_alpha'] = alpha
         
         self.text_mesh.render()
-        tex.release()
 
         # Render track (pill shape)
         track_mask = get_shared_resource(self.app, 'button_mask', radius=int(h * WIN_RES.y), size=(w, h))

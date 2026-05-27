@@ -1,5 +1,6 @@
 from settings import *
 from meshes.base_mesh import BaseMesh
+from profiler import global_profiler
 
 
 class CubeMesh(BaseMesh):
@@ -7,6 +8,7 @@ class CubeMesh(BaseMesh):
     Generates the geometry for a standard 3D cube.
     Used primarily for the wireframe voxel marker that highlights targeted blocks.
     """
+    @global_profiler.profile_func("CubeMesh_Init")
     def __init__(self, app):
         """
         Initializes the cube mesh, binding it to the voxel marker shader program.
@@ -30,6 +32,7 @@ class CubeMesh(BaseMesh):
         
         return np.array(data, dtype='float16')
 
+    @global_profiler.profile_func("CubeMesh_GetVertexData")
     def get_vertex_data(self):
         """
         Defines the local 3D coordinates and 2D texture UVs for all six faces 

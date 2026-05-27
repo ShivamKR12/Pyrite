@@ -2,6 +2,7 @@ from numba import njit
 import numpy as np
 from settings import *
 from meshes.chunk_mesh_builder import get_chunk_index
+from profiler import global_profiler
 
 
 # Pre-allocated global memory queues to prevent massive GC churn per interaction
@@ -205,6 +206,7 @@ def _init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positi
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
+@global_profiler.profile_func("Lighting_InitChunkLighting")
 def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
     """
     Scans a newly loaded/generated chunk for sunlight blocks (level 15) and light-emitting 
@@ -283,6 +285,7 @@ def _stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_posi
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
+@global_profiler.profile_func("Lighting_StitchChunkLighting")
 def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions):
     """
     Cross-chunk boundary light bleeding. Evaluates the outer borders of a given chunk against 
@@ -354,6 +357,7 @@ def _update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_p
         propagate_light_queue(refill_queue, tail_refill, False, world_voxels, world_lightmaps, chunk_positions)
 
 
+@global_profiler.profile_func("Lighting_PlaceLightBlock")
 def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     """
     Executed when a player places a solid block. Strips existing light from the space
@@ -409,6 +413,7 @@ def _update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
 
+@global_profiler.profile_func("Lighting_RemoveLightBlock")
 def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     """
     Executed when a player destroys a block. Allows surrounding light to flood into the
@@ -427,6 +432,7 @@ def _place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, que
     propagate_light_queue(queue, 1, False, world_voxels, world_lightmaps, chunk_positions)
 
 
+@global_profiler.profile_func("Lighting_PlaceLightBlock")
 def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions):
     """
     Hardcodes a block light value of 14 into the grid and triggers a blocklight BFS

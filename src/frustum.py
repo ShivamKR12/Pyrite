@@ -2,6 +2,7 @@ from settings import *
 from numba import njit, prange
 import numpy as np
 from pyglm import glm
+from profiler import global_profiler
 
 
 class Frustum:
@@ -9,10 +10,12 @@ class Frustum:
     Calculates the camera's viewing frustum planes and boundaries dynamically 
     based on the Field of View and Aspect Ratio.
     """
+    @global_profiler.profile_func("Frustum_Init")
     def __init__(self, camera):
         self.cam: Camera = camera # type: ignore
         self.update_factors(V_FOV, H_FOV)
         
+    @global_profiler.profile_func("Frustum_UpdateFactors")
     def update_factors(self, v_fov, h_fov):
         self.factor_y = 1.0 / math.cos(half_y := v_fov * 0.5)
         self.tan_y = math.tan(half_y)
@@ -20,6 +23,7 @@ class Frustum:
         self.factor_x = 1.0 / math.cos(half_x := h_fov * 0.5)
         self.tan_x = math.tan(half_x)
 
+    @global_profiler.profile_func("Frustum_IsOnFrustum")
     def is_on_frustum(self, chunk):
         # vector to sphere center
         sphere_vec = chunk.center - self.cam.position

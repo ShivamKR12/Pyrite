@@ -18,6 +18,7 @@ import datetime
 from meshes.chunk_mesh_builder import build_chunk_mesh
 from lighting import init_chunk_lighting, stitch_chunk_lighting, update_light_place_block, update_light_remove_block, place_torch
 import noise
+from profiler import global_profiler
 
 
 class World:
@@ -26,6 +27,7 @@ class World:
     Responsible for chunk streaming, multithreaded terrain generation, mesh 
     building queues, and persistent background SQLite disk storage.
     """
+    @global_profiler.profile_func("World_Init")
     def __init__(self, app, save_name, world_seed):
         """
         Initializes the world arrays, establishes an async-like SQLite database 
@@ -198,7 +200,8 @@ class World:
                 chunk_positions=self.chunk_positions
             )
             
-        future = self.executor.submit(compile_numba)
+        with global_profiler.measure("Numba_Warmup_Submit"):
+            future = self.executor.submit(compile_numba)
         
         while not future.done():
             self.app.render_loading_screen("COMPILING NUMBA JIT (MAY TAKE A MOMENT)...")
@@ -207,6 +210,7 @@ class World:
         print(f"[SYSTEM] Numba compilation finished in {time.perf_counter() - t0:.3f} seconds!")
         self.app.render_loading_screen("NUMBA COMPILATION SUCCESSFUL!")
 
+    @global_profiler.profile_func("World_Update")
     def update(self):
         """
         Tick loop that handles continuous background data processing. Steps through
@@ -238,11 +242,23 @@ class World:
         
         while self.build_queue and len(self.mesh_queue) < mesh_limit:
             chunk = self.build_queue.pop()
-            future = self.executor.submit(chunk.mesh.get_vertex_data)
+            nl = getattr(chunk, 'pending_lighting', False)
+            chunk.pending_lighting = False
+            
+            def build_task(c=chunk, needs_light=nl):
+                cx, cy, cz = c.position
+                if needs_light:
+                    init_chunk_lighting(cx * CHUNK_SIZE, cy * CHUNK_SIZE, cz * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
+                
+                stitch_chunk_lighting(cx * CHUNK_SIZE, cy * CHUNK_SIZE, cz * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
+                return c.mesh.get_vertex_data()
+                
+            future = self.executor.submit(build_task)
             self.mesh_queue.append((chunk, future))
             
         self.process_mesh_queue()
 
+    @global_profiler.profile_func("Process_Mesh_Queue")
     def process_mesh_queue(self):
         """
         Pulls completed mesh data from background threads and safely initializes 
@@ -278,6 +294,7 @@ class World:
                 if ready_count >= limit:  # Limit processing to prevent frame drops
                     break
 
+    @global_profiler.profile_func("Process_Load_Queue")
     def process_load_queue(self):
         """
         Consumes asynchronously loaded/generated chunk data, registers it into 
@@ -313,9 +330,7 @@ class World:
                     self.chunk_positions[chunk_index] = chunk.position
                     
                     if needs_lighting:
-                        init_chunk_lighting(x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
-                    
-                    stitch_chunk_lighting(x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
+                        chunk.pending_lighting = True
                     
                     chunk.build_mesh()
                     self.build_queue.append(chunk)
@@ -339,6 +354,7 @@ class World:
                 if processed >= limit:
                     break
 
+    @global_profiler.profile_func("Fetch_Or_Generate_Voxels")
     def _fetch_or_generate_voxels(self, x, y, z):
         """
         Background worker function that attempts to retrieve compressed chunk data
@@ -377,6 +393,7 @@ class World:
         
         return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
+    @global_profiler.profile_func("Stream_Chunks")
     def stream_chunks(self):
         """
         Checks the player's position against the render distance to determine 
@@ -420,6 +437,7 @@ class World:
         for pos in chunks_to_load:
             self.load_chunk(*pos)
                         
+    @global_profiler.profile_func("Load_Chunk")
     def load_chunk(self, x, y, z):
         """
         Initializes a Chunk instance at the given coordinates and dispatches 
@@ -439,6 +457,7 @@ class World:
         future = self.executor.submit(self._fetch_or_generate_voxels, x, y, z)
         self.load_queue.append((chunk, future))
 
+    @global_profiler.profile_func("Save_Chunk_To_DB")
     def save_chunk_to_db(self, x, y, z, voxels, lightmap):
         """
         Compresses a chunk's massive 1D voxel and lighting arrays using zlib, 
@@ -451,6 +470,7 @@ class World:
             self.cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)', (x, y, z, data, l_data))
             self.connection.commit()
 
+    @global_profiler.profile_func("Unload_Chunk")
     def unload_chunk(self, pos):
         """
         Removes a chunk from the active world space, triggers an asynchronous 
@@ -491,6 +511,7 @@ class World:
                     self.mesh_queue.remove(item)
                     break
 
+    @global_profiler.profile_func("World_Render")
     def render(self):
         """
         Performs dynamic vectorized frustum culling and hardware occlusion 
@@ -526,12 +547,13 @@ class World:
         # Vectorized frustum culling
         if not freeze and len(self.chunk_centers) > 0:
             frustum = player.frustum
-            frustum_cull_fast(
-                self.chunk_centers, self.frustum_mask, np.array(player_pos, dtype='float32'), 
-                np.array(player.forward, dtype='float32'), np.array(player.right, dtype='float32'), 
-                np.array(player.up, dtype='float32'),
-                frustum.tan_y, frustum.tan_x, frustum.factor_y, frustum.factor_x
-            )
+            with global_profiler.measure("Frustum_Culling"):
+                frustum_cull_fast(
+                    self.chunk_centers, self.frustum_mask, np.array(player_pos, dtype='float32'), 
+                    np.array(player.forward, dtype='float32'), np.array(player.right, dtype='float32'), 
+                    np.array(player.up, dtype='float32'),
+                    frustum.tan_y, frustum.tan_x, frustum.factor_y, frustum.factor_x
+                )
 
         # 1. Update visibility from occlusion queries
         if not freeze:
@@ -599,6 +621,7 @@ class World:
             ctx.depth_func = '<'
             ctx.enable(mgl.CULL_FACE)
             
+    @global_profiler.profile_func("World_Render_Water")
     def render_water(self):
         """
         A secondary rendering pass explicitly designed to draw transparent water 
@@ -609,6 +632,7 @@ class World:
             if chunk.is_visible:
                 chunk.render_water()
             
+    @global_profiler.profile_func("World_Save")
     def save(self):
         """
         Synchronously dumps all currently active chunks, inventory contents, 

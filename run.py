@@ -17,4 +17,11 @@ if __name__ == '__main__':
         print("CRASH DETECTED! Saved to crash_log.txt")
         print("==================================================")
         traceback.print_exc()
+        
+        try:
+            from profiler import global_profiler
+            global_profiler.save_report("crash_profiling_results.json")
+        except Exception:
+            pass
+
         input("\nPress ENTER to exit...")

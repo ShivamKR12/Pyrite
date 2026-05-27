@@ -1,5 +1,6 @@
 import numpy as np
 from meshes.base_mesh import BaseMesh
+from profiler import global_profiler
 
 
 class ItemMesh(BaseMesh):
@@ -7,6 +8,7 @@ class ItemMesh(BaseMesh):
     Generates the geometry for dropped 3D items and blocks in the world.
     Builds a standard cube mesh formatted to support the global block texture atlas.
     """
+    @global_profiler.profile_func("ItemMesh_Init")
     def __init__(self, app):
         """
         Initializes the item mesh, binding it to the specialized item shader program
@@ -20,6 +22,7 @@ class ItemMesh(BaseMesh):
         self.attrs = ('in_position', 'in_tex_coord', 'in_face_id')
         self.vao = self.get_vao()
 
+    @global_profiler.profile_func("ItemMesh_GetVertexData")
     def get_vertex_data(self):
         """
         Calculates and returns the complete set of vertices, texture coordinates, 

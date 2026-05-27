@@ -1,6 +1,7 @@
 import numpy as np
 from meshes.base_mesh import BaseMesh
 import os
+from profiler import global_profiler
 
 
 class ObjMesh(BaseMesh):
@@ -9,6 +10,7 @@ class ObjMesh(BaseMesh):
     Supports parsing material files (.mtl) for vertex colors and automatically centers 
     the imported geometry around the origin.
     """
+    @global_profiler.profile_func("ObjMesh_Init")
     def __init__(self, app, obj_path, tex_id=None):
         """
         Initializes the OBJ mesh, preparing its shader program, vertex attributes,
@@ -24,6 +26,7 @@ class ObjMesh(BaseMesh):
         self.tex_id = tex_id
         self.vao = self.get_vao()
         
+    @global_profiler.profile_func("ObjMesh_Render")
     def render(self):
         """
         Issues the draw call to the GPU for this model. Optionally enables and binds 
@@ -36,6 +39,7 @@ class ObjMesh(BaseMesh):
         
         self.vao.render()
 
+    @global_profiler.profile_func("ObjMesh_ParseMTL")
     def parse_mtl(self, mtl_path):
         """
         Reads a Wavefront material (.mtl) file and extracts the diffuse color (Kd) 
@@ -60,6 +64,7 @@ class ObjMesh(BaseMesh):
         
         return materials
 
+    @global_profiler.profile_func("ObjMesh_GetVertexData")
     def get_vertex_data(self):
         """
         Parses the .obj file line by line to extract vertices, texture coordinates, 

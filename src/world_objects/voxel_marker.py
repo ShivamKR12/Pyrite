@@ -1,5 +1,6 @@
 from settings import *
 from meshes.cube_mesh import CubeMesh
+from profiler import global_profiler
 
 
 class VoxelMarker:
@@ -7,6 +8,7 @@ class VoxelMarker:
     Renders a 3D wireframe highlight around the voxel currently targeted by the player.
     It tracks the voxel handler's targeted position and visually outlines it.
     """
+    @global_profiler.profile_func("VoxelMarker_Init")
     def __init__(self, voxel_handler):
         """
         Initializes the voxel marker, binding it to the world's voxel handler
@@ -18,6 +20,7 @@ class VoxelMarker:
         self.m_model = self.get_model_matrix()
         self.mesh = CubeMesh(self.app)
 
+    @global_profiler.profile_func("VoxelMarker_Update")
     def update(self):
         """
         Updates the marker's 3D position to match the currently targeted voxel.
@@ -29,6 +32,7 @@ class VoxelMarker:
             else:
                 self.position = self.handler.voxel_world_pos
 
+    @global_profiler.profile_func("VoxelMarker_SetUniform")
     def set_uniform(self):
         """
         Sends the interaction mode and the calculated model transformation matrix
@@ -37,6 +41,7 @@ class VoxelMarker:
         self.mesh.program['mode_id'] = self.handler.interaction_mode
         self.mesh.program['m_model'].write(self.get_model_matrix())
 
+    @global_profiler.profile_func("VoxelMarker_GetModelMatrix")
     def get_model_matrix(self):
         """
         Calculates the transformation matrix required to position the wireframe
@@ -45,6 +50,7 @@ class VoxelMarker:
         m_model = glm.translate(glm.mat4(), glm.vec3(self.position))
         return m_model
 
+    @global_profiler.profile_func("VoxelMarker_Render")
     def render(self):
         """
         Issues the draw call for the wireframe cube if the player is actively

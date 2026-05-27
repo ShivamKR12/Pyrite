@@ -1,5 +1,6 @@
 from settings import *
 from lighting import update_light_place_block, place_torch, update_light_remove_block
+from profiler import global_profiler
 
 
 class VoxelHandler:
@@ -8,6 +9,7 @@ class VoxelHandler:
     Handles calculating the targeted block, removing blocks (mining), and adding 
     blocks (placing), while triggering necessary lighting and meshing updates.
     """
+    @global_profiler.profile_func("VoxelHandler_Init")
     def __init__(self, world):
         self.app = world.app
         self.chunks = world.chunks
@@ -23,6 +25,7 @@ class VoxelHandler:
         # Keep for voxel_marker compatibility, permanently set to 0 for standard Minecraft highlighting
         self.interaction_mode = 0  
 
+    @global_profiler.profile_func("VoxelHandler_AddVoxel")
     def add_voxel(self):
         """
         Attempts to place the currently held block into the world at the targeted face.
@@ -53,15 +56,18 @@ class VoxelHandler:
                 chunk.voxels[voxel_index] = current_id
 
                 wx, wy, wz = new_voxel_pos
-                update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
                 
-                if current_id == GLOWSTONE:
-                    place_torch(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                def async_add_voxel(wx=wx, wy=wy, wz=wz, cid=current_id, ch=chunk):
+                    update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                    if cid == GLOWSTONE:
+                        place_torch(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                    
+                    if ch not in self.app.scene.world.build_queue:
+                        self.app.scene.world.build_queue.append(ch)
+                    self.rebuild_adjacent_chunks(glm.vec3(wx, wy, wz), is_light_update=True)
+
+                self.app.scene.world.executor.submit(async_add_voxel)
                 
-                if chunk not in self.app.scene.world.build_queue:
-                    self.app.scene.world.build_queue.append(chunk)
-                
-                self.rebuild_adjacent_chunks(new_voxel_pos, is_light_update=True)
                 self.app.sounds.play_place(current_id)
 
                 # Consume item from hotbar if in Survival mode
@@ -75,6 +81,7 @@ class VoxelHandler:
                 if chunk.is_empty:
                     chunk.is_empty = False
 
+    @global_profiler.profile_func("VoxelHandler_RebuildAdjacentChunks")
     def rebuild_adjacent_chunks(self, world_pos, is_light_update=True):
         """
         Automatically queues neighboring chunks for mesh regeneration if a block 
@@ -110,6 +117,7 @@ class VoxelHandler:
                         if chunk not in self.app.scene.world.build_queue:
                             self.app.scene.world.build_queue.append(chunk)
 
+    @global_profiler.profile_func("VoxelHandler_RemoveVoxel")
     def remove_voxel(self):
         """
         Breaks the targeted voxel, updates local block lighting (stripping or 
@@ -119,19 +127,20 @@ class VoxelHandler:
         if self.voxel_id:
             wx, wy, wz = self.voxel_world_pos
             
-            if self.voxel_id == GLOWSTONE:
-                # Strips torch block light from the area first!
-                update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
-                
             self.chunk.voxels[self.voxel_index] = 0
             
-            # Allows sunlight/blocklight from neighbors back into the new hole!
-            update_light_remove_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+            def async_remove_voxel(wx=wx, wy=wy, wz=wz, vid=self.voxel_id, ch=self.chunk):
+                if vid == GLOWSTONE:
+                    update_light_place_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
+                
+                update_light_remove_block(int(wx), int(wy), int(wz), self.app.scene.world.voxels, self.app.scene.world.lightmaps, self.app.scene.world.chunk_positions)
 
-            if self.chunk not in self.app.scene.world.build_queue:
-                self.app.scene.world.build_queue.append(self.chunk)
+                if ch not in self.app.scene.world.build_queue:
+                    self.app.scene.world.build_queue.append(ch)
+                self.rebuild_adjacent_chunks(glm.vec3(wx, wy, wz), is_light_update=True)
+
+            self.app.scene.world.executor.submit(async_remove_voxel)
             
-            self.rebuild_adjacent_chunks(self.voxel_world_pos, is_light_update=True)
             self.app.sounds.play_break(self.voxel_id)
             
             # Spawn dropped item only in Survival mode
@@ -143,6 +152,7 @@ class VoxelHandler:
                 else:
                     self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
 
+    @global_profiler.profile_func("VoxelHandler_SetVoxel")
     def set_voxel(self, mode='remove'):
         if mode == 'add':
             self.add_voxel()
@@ -150,9 +160,11 @@ class VoxelHandler:
         elif mode == 'remove':
             self.remove_voxel()
 
+    @global_profiler.profile_func("VoxelHandler_Update")
     def update(self):
         self.ray_cast()
 
+    @global_profiler.profile_func("VoxelHandler_RayCast")
     def ray_cast(self):
         """
         Casts a ray forward from the camera's position through the voxel grid using 
@@ -227,6 +239,7 @@ class VoxelHandler:
         
         return False
 
+    @global_profiler.profile_func("VoxelHandler_GetVoxelId")
     def get_voxel_id(self, voxel_world_pos):
         cx = int(glm.floor(voxel_world_pos.x / CHUNK_SIZE))
         cy = int(glm.floor(voxel_world_pos.y / CHUNK_SIZE))

@@ -15,6 +15,7 @@ from player import Player
 from sounds import Sounds
 from textures import Textures
 from ui import TextRenderer, UITextMesh, MainMenu, PauseMenu, OptionsMenu
+from profiler import global_profiler
 
 
 class Pyrite:
@@ -23,6 +24,7 @@ class Pyrite:
     Manages the Pygame window, ModernGL context, main game loop, and dispatches 
     rendering and logic to the active game state (e.g., Menus vs In-Game).
     """
+    @global_profiler.profile_func("Pyrite_Init")
     def __init__(self):
         """
         Initializes Pygame, the OpenGL context, window settings, and prepares 
@@ -75,6 +77,7 @@ class Pyrite:
 
         self.on_init()
 
+    @global_profiler.profile_func("Load_Config")
     def load_config(self):
         """
         Reads and applies engine settings from a local JSON configuration file.
@@ -86,6 +89,7 @@ class Pyrite:
                 except json.JSONDecodeError:
                     pass
 
+    @global_profiler.profile_func("Save_Config")
     def save_config(self):
         """
         Serializes and saves the active engine configuration to disk.
@@ -93,6 +97,7 @@ class Pyrite:
         with open('config.json', 'w', encoding='utf-8') as f:
             json.dump(self.config, f)
 
+    @global_profiler.profile_func("On_Init")
     def on_init(self):
         """
         Instantiates critical subsystems including UI menus, Shader programs, 
@@ -106,6 +111,7 @@ class Pyrite:
         self.pause_menu = PauseMenu(self)
         self.options_menu = OptionsMenu(self)
 
+    @global_profiler.profile_func("Init_Game_Session")
     def init_game_session(self, save_name="Default_World", force_seed=None, game_mode=None):
         """
         Initializes a designated world session, seeding the procedural generator
@@ -170,6 +176,7 @@ class Pyrite:
         
         self.game_state = 'IN_GAME'
 
+    @global_profiler.profile_func("Render_Loading_Screen")
     def render_loading_screen(self, text="INITIALIZING..."):
         """
         Renders a minimal UI overlay during heavily blocking load operations, 
@@ -217,6 +224,7 @@ class Pyrite:
         
         pg.display.flip()
 
+    @global_profiler.profile_func("Pyrite_Update")
     def update(self):
         """
         Advances the central engine logic. Delegates to the active game state 
@@ -249,6 +257,7 @@ class Pyrite:
         else:
             pg.display.set_caption('Pyrite')
 
+    @global_profiler.profile_func("Pyrite_Render")
     def render(self):
         """
         Clears the OpenGL framebuffer and issues draw instructions corresponding 
@@ -286,6 +295,7 @@ class Pyrite:
             
         pg.display.flip()
 
+    @global_profiler.profile_func("Handle_Events")
     def handle_events(self):
         """
         Polls raw input events from the operating system and routes them 
@@ -368,26 +378,31 @@ class Pyrite:
             elif self.game_state == 'OPTIONS':
                 self.options_menu.handle_event(event)
 
+    @global_profiler.profile_func("Quit_Game")
     def quit_game(self):
         """
         Interrupts the primary application execution loop to safely shut down.
         """
         self.is_running = False
 
+    @global_profiler.profile_func("Pyrite_Run")
     def run(self):
         """
         The primary execution loop tracking logic updates, event polling, 
         and frame rendering until the application halts.
         """
         while self.is_running:
+            global_profiler.start_frame()
             self.handle_events()
             self.update()
             self.render()
+            global_profiler.end_frame()
             
         if self.scene:
             self.scene.world.save()
         
         pg.quit()
+        global_profiler.save_report("profiling_results.json")
         sys.exit()
 
 

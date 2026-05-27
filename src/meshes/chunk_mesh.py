@@ -1,6 +1,7 @@
 from meshes.base_mesh import BaseMesh
 from meshes.chunk_mesh_builder import build_chunk_mesh
 import math
+from profiler import global_profiler
 
 
 class ChunkMesh(BaseMesh):
@@ -9,6 +10,7 @@ class ChunkMesh(BaseMesh):
     It interfaces with the greedy meshing builder to generate vertex data and utilizes 
     a VBO pool to manage GPU memory efficiently.
     """
+    @global_profiler.profile_func("ChunkMesh_Init")
     def __init__(self, chunk):
         """
         Initializes the chunk mesh, linking it to its parent chunk and the appropriate shader program. 
@@ -31,6 +33,7 @@ class ChunkMesh(BaseMesh):
         self.opaque_count = 0
         self.water_count = 0
 
+    @global_profiler.profile_func("ChunkMesh_Render")
     def render(self):
         """
         Issues the draw call for the opaque portion of the chunk's mesh, 
@@ -39,6 +42,7 @@ class ChunkMesh(BaseMesh):
         if self.vao and self.opaque_count > 0:
             self.vao.render(vertices=self.opaque_count)
 
+    @global_profiler.profile_func("ChunkMesh_RenderWater")
     def render_water(self):
         """
         Issues the draw call for the transparent water portion of the chunk's mesh, 
@@ -47,6 +51,7 @@ class ChunkMesh(BaseMesh):
         if self.vao and self.water_count > 0:
             self.vao.render(vertices=self.water_count, first=self.opaque_count)
 
+    @global_profiler.profile_func("ChunkMesh_GetVAO")
     def get_vao(self):
         """
         Retrieves or builds the Vertex Array Object (VAO) for the chunk. It first generates 
@@ -96,6 +101,7 @@ class ChunkMesh(BaseMesh):
         
         return vao
 
+    @global_profiler.profile_func("ChunkMesh_GetVertexData")
     def get_vertex_data(self):
         """
         Triggers the greedy meshing algorithm to construct the optimized vertex payload 

@@ -10,6 +10,7 @@ from ui import HeldBlock
 from ui import InventoryUI
 from ui import DebugOverlay
 from world_objects.item import ItemManager
+from profiler import global_profiler
 
 
 class Scene:
@@ -18,6 +19,7 @@ class Scene:
     Instantiates and manages the world environment, 3D items, UI components,
     and handles the overarching rendering pipeline for the in-game state.
     """
+    @global_profiler.profile_func("Scene_Init")
     def __init__(self, app, save_name, seed):
         """
         Initializes the scene components, including the terrain world,
@@ -42,6 +44,7 @@ class Scene:
         for item_data in self.world.saved_dropped_items:
             self.item_manager.load_item(*item_data)
 
+    @global_profiler.profile_func("Scene_Update")
     def update(self):
         """
         Ticks the overarching logic of the scene, progressing the world state,
@@ -52,6 +55,7 @@ class Scene:
         self.clouds.update()
         self.item_manager.update()
 
+    @global_profiler.profile_func("Scene_Render")
     def render(self):
         """
         Executes the multi-pass rendering pipeline.

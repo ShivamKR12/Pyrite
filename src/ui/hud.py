@@ -6,16 +6,19 @@ from meshes.item_mesh import ItemMesh
 from meshes.obj_mesh import ObjMesh
 from .meshes import CrosshairMesh, BlockIconMesh, UIColorMesh, UITextMesh
 from .text import TextRenderer
+from profiler import global_profiler
 
 
 class Crosshair:
     """
     Renders a simple fixed crosshair at the center of the screen.
     """
+    @global_profiler.profile_func("Crosshair_Init")
     def __init__(self, app):
         self.app = app
         self.mesh = CrosshairMesh(app)
 
+    @global_profiler.profile_func("Crosshair_Render")
     def render(self):
         self.mesh.render()
 
@@ -25,13 +28,22 @@ class Hotbar:
     Renders the bottom-screen hotbar, including the transparent slot backgrounds,
     active selection frame, 3D block/item icons, stack counts, and survival status bars.
     """
+    @global_profiler.profile_func("Hotbar_Init")
     def __init__(self, app):
         self.app = app
         self.block_mesh = BlockIconMesh(app)
         self.color_mesh = UIColorMesh(app)
         self.text_mesh = UITextMesh(app)
         self.text_renderer = TextRenderer(app)
+        self.count_textures = {i: self.text_renderer.get_texture(str(i)) for i in range(1, 65)}
+        self.cached_health_str = ""
+        self.health_tex = None
+        self.cached_hunger_str = ""
+        self.hunger_tex = None
+        self.cached_oxy_str = ""
+        self.oxy_tex = None
         
+    @global_profiler.profile_func("Hotbar_Render")
     def render(self):
         player = self.app.player
         s = HOTBAR_SCALE
@@ -91,25 +103,26 @@ class Hotbar:
             count = player.inventory_counts[i]
             
             if count > 0:
-                tex = self.text_renderer.get_texture(str(count))
-                tex.use(location=4)
-                
-                tex_w, tex_h = tex.size
-                scale_y = 0.025
-                scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
-                
-                offset_x = start_x + i * x_spacing + 0.015
-                offset_y = y - 0.025
-                
-                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-                self.text_mesh.program['u_offset'] = (offset_x, offset_y)
-                self.text_mesh.render()
+                tex = self.count_textures.get(count)
+                if tex:
+                    tex.use(location=4)
+                    
+                    tex_w, tex_h = tex.size
+                    scale_y = 0.025
+                    scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+                    
+                    offset_x = start_x + i * x_spacing + 0.015
+                    offset_y = y - 0.025
+                    
+                    self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                    self.text_mesh.program['u_offset'] = (offset_x, offset_y)
+                    self.text_mesh.render()
 
         # 4. Draw Survival Stats (Health, Hunger, Oxygen)
         if player.game_mode == SURVIVAL:
             
             # Helper to draw a stat bar
-            def draw_bar(ratio, offset_x, offset_y, bg_color, fg_color, text):
+            def draw_bar(ratio, offset_x, offset_y, bg_color, fg_color, tex):
                 # Background
                 self.color_mesh.program['u_scale'] = (0.2, 0.01)
                 self.color_mesh.program['u_offset'] = (offset_x, offset_y)
@@ -124,7 +137,6 @@ class Hotbar:
                     self.color_mesh.render()
                     
                 # Text
-                tex = self.text_renderer.get_texture(text)
                 tex.use(location=4)
                 scale_y = 0.015
                 scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
@@ -133,17 +145,35 @@ class Hotbar:
                 self.text_mesh.render()
 
             health_ratio = max(0.0, player.health / player.max_health)
-            draw_bar(health_ratio, -0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.1, 0.1, 0.9), 
-                     f"HP: {int(player.health)}/{player.max_health}")
+            health_str = f"HP: {int(player.health)}/{player.max_health}"
+            if health_str != self.cached_health_str or self.health_tex is None:
+                if self.health_tex:
+                    self.health_tex.release()
+                self.health_tex = self.text_renderer.get_dynamic_texture(health_str)
+                self.cached_health_str = health_str
+                
+            draw_bar(health_ratio, -0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.1, 0.1, 0.9), self.health_tex)
 
             hunger_ratio = max(0.0, player.hunger / player.max_hunger)
-            draw_bar(hunger_ratio, 0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.5, 0.1, 0.9), 
-                     f"Food: {int(player.hunger)}/{player.max_hunger}")
+            hunger_str = f"Food: {int(player.hunger)}/{player.max_hunger}"
+            if hunger_str != self.cached_hunger_str or self.hunger_tex is None:
+                if self.hunger_tex:
+                    self.hunger_tex.release()
+                self.hunger_tex = self.text_renderer.get_dynamic_texture(hunger_str)
+                self.cached_hunger_str = hunger_str
+                
+            draw_bar(hunger_ratio, 0.22, y + 0.08, (0.1, 0.1, 0.1, 0.8), (0.8, 0.5, 0.1, 0.9), self.hunger_tex)
 
             if player.oxygen < player.max_oxygen:
                 oxy_ratio = max(0.0, player.oxygen / player.max_oxygen)
-                draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), 
-                         f"O2: {int(player.oxygen)}/{player.max_oxygen}")
+                oxy_str = f"O2: {int(player.oxygen)}/{player.max_oxygen}"
+                if oxy_str != self.cached_oxy_str or self.oxy_tex is None:
+                    if self.oxy_tex:
+                        self.oxy_tex.release()
+                    self.oxy_tex = self.text_renderer.get_dynamic_texture(oxy_str)
+                    self.cached_oxy_str = oxy_str
+                    
+                draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), self.oxy_tex)
 
 
 class HeldBlock:
@@ -151,12 +181,14 @@ class HeldBlock:
     Renders the 3D model of the currently equipped item or block in the player's hand.
     Includes procedural view bobbing and swinging animations for mining/placing.
     """
+    @global_profiler.profile_func("HeldBlock_Init")
     def __init__(self, app):
         self.app = app
         self.mesh = ItemMesh(app)
         self.stick_mesh = ObjMesh(app, get_path('assets/stick/stick.obj'), tex_id=5)
         self.pickaxe_mesh = ObjMesh(app, get_path('assets/wooden_pickaxe/wooden_pickaxe.obj'))
 
+    @global_profiler.profile_func("HeldBlock_Render")
     def render(self):
         player = self.app.player
         voxel_id = player.inventory[player.hotbar_index]
@@ -242,6 +274,7 @@ class InventoryUI:
     Manages the full player inventory and crafting grid interface.
     Handles drag-and-drop item management, stack splitting, and crafting matrix evaluation.
     """
+    @global_profiler.profile_func("InventoryUI_Init")
     def __init__(self, app):
         self.app = app
         self.block_mesh = BlockIconMesh(app)
@@ -252,7 +285,13 @@ class InventoryUI:
         self.drag_id = 0
         self.drag_count = 0
         self.drag_start_pos = (0, 0)
+        self.tooltip_texture = None
+        self.last_hover_name = ""
+        self._cached_aspect = ASPECT_RATIO
+        self._slot_positions = {}
+        self.count_textures = {i: self.text_renderer.get_texture(str(i)) for i in range(1, 65)}
 
+    @global_profiler.profile_func("InventoryUI_UpdateCrafting")
     def update_crafting(self):
         player = self.app.player
         grid = tuple(player.inventory[36:40]) # Tuple is hashable for dictionary lookup
@@ -281,7 +320,15 @@ class InventoryUI:
         else:
             player.inventory[40], player.inventory_counts[40] = 0, 0
 
+    @global_profiler.profile_func("InventoryUI_GetSlotPos")
     def get_slot_pos(self, i):
+        if self._cached_aspect != ASPECT_RATIO:
+            self._slot_positions.clear()
+            self._cached_aspect = ASPECT_RATIO
+            
+        if i in self._slot_positions:
+            return self._slot_positions[i]
+            
         gap = 0.01
         x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
         y_spacing = SLOT_SCALE * 2 + gap
@@ -306,8 +353,10 @@ class InventoryUI:
             x = 3.0 * x_spacing
             y = HOTBAR_Y + 5.5 * y_spacing
         
+        self._slot_positions[i] = (x, y)
         return x, y
 
+    @global_profiler.profile_func("InventoryUI_GetSlotAtMouse")
     def get_slot_at_mouse(self, mouse_pos):
         mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
         my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
@@ -323,6 +372,7 @@ class InventoryUI:
         
         return -1
 
+    @global_profiler.profile_func("InventoryUI_GetClosestValidSlot")
     def get_closest_valid_slot(self, mouse_pos, drag_id, drag_count):
         mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
         my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
@@ -355,6 +405,7 @@ class InventoryUI:
         
         return best_i
 
+    @global_profiler.profile_func("InventoryUI_HandleEvent")
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN:
             i = self.get_slot_at_mouse(pg.mouse.get_pos())
@@ -492,6 +543,7 @@ class InventoryUI:
                     
                     self.update_crafting()
 
+    @global_profiler.profile_func("InventoryUI_Close")
     def close(self):
         player = self.app.player
         
@@ -521,7 +573,13 @@ class InventoryUI:
             self.drag_count = 0
             
         self.update_crafting()
+        
+        if self.tooltip_texture:
+            self.tooltip_texture.release()
+            self.tooltip_texture = None
+            self.last_hover_name = ""
 
+    @global_profiler.profile_func("InventoryUI_Render")
     def render(self):
         gap = 0.01
         x_spacing = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
@@ -573,13 +631,14 @@ class InventoryUI:
             count = player.inventory_counts[i]
             
             if count > 0:
-                tex = self.text_renderer.get_texture(str(count))
-                tex.use(location=4)
-                scale_y = 0.025
-                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
-                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-                self.text_mesh.program['u_offset'] = (x + 0.015, y - 0.025)
-                self.text_mesh.render()
+                tex = self.count_textures.get(count)
+                if tex:
+                    tex.use(location=4)
+                    scale_y = 0.025
+                    scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                    self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                    self.text_mesh.program['u_offset'] = (x + 0.015, y - 0.025)
+                    self.text_mesh.render()
 
         # Dragged Item Render (Follows Mouse Cursor)
         if self.drag_id != 0:
@@ -601,13 +660,14 @@ class InventoryUI:
                 self.block_mesh.render()
             
             if self.drag_count > 0:
-                tex = self.text_renderer.get_texture(str(self.drag_count))
-                tex.use(location=4)
-                scale_y = 0.025
-                scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
-                self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-                self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
-                self.text_mesh.render()
+                tex = self.count_textures.get(self.drag_count)
+                if tex:
+                    tex.use(location=4)
+                    scale_y = 0.025
+                    scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                    self.text_mesh.program['u_scale'] = (scale_x, scale_y)
+                    self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
+                    self.text_mesh.render()
         
         # Draw Tooltip on Hover
         if hover_idx != -1 and self.drag_id == 0:
@@ -622,7 +682,13 @@ class InventoryUI:
                 mx = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
                 my = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
                 
-                tex = self.text_renderer.get_dynamic_texture(name)
+                if name != self.last_hover_name:
+                    if self.tooltip_texture:
+                        self.tooltip_texture.release()
+                    self.tooltip_texture = self.text_renderer.get_dynamic_texture(name)
+                    self.last_hover_name = name
+                
+                tex = self.tooltip_texture
                 tex.use(location=4)
                 scale_y = 0.025
                 scale_x = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
@@ -635,7 +701,6 @@ class InventoryUI:
                 self.text_mesh.program['u_scale'] = (scale_x, scale_y)
                 self.text_mesh.program['u_offset'] = (mx + scale_x + 0.02, my - scale_y - 0.02)
                 self.text_mesh.render()
-                tex.release()
 
 
 class DebugOverlay:
@@ -643,6 +708,7 @@ class DebugOverlay:
     Displays an on-screen overlay with performance metrics, player coordinates,
     targeted block info, and current game mode (F3 menu).
     """
+    @global_profiler.profile_func("DebugOverlay_Init")
     def __init__(self, app):
         self.app = app
         self.font = pg.font.SysFont('arial', FONT_SIZE_DEBUG, bold=True)
@@ -650,6 +716,7 @@ class DebugOverlay:
         self.dynamic_texture = None
         self.last_update = 0
 
+    @global_profiler.profile_func("DebugOverlay_Render")
     def render(self):
         current_time = pg.time.get_ticks()
         

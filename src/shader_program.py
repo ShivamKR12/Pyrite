@@ -1,4 +1,5 @@
 from settings import *
+from profiler import global_profiler
 
 
 class ShaderProgram:
@@ -6,6 +7,7 @@ class ShaderProgram:
     Compiles, links, and manages all GLSL shader programs used by the engine.
     Handles sending static and dynamic uniform data (view matrices, lighting, fog) to the GPU.
     """
+    @global_profiler.profile_func("ShaderProgram_Init")
     def __init__(self, app):
         """
         Retrieves the GLSL source code for chunks, markers, UI elements, and environments,
@@ -30,6 +32,7 @@ class ShaderProgram:
         # ------------------------- #
         self.set_uniforms_on_init()
 
+    @global_profiler.profile_func("ShaderProgram_SetUniformsOnInit")
     def set_uniforms_on_init(self):
         """
         Initializes static shader uniforms (like texture assignments, texture mapping arrays,
@@ -106,6 +109,7 @@ class ShaderProgram:
         self.obj['u_use_texture'] = False
         self.obj['bg_color'].write(BG_COLOR)
 
+    @global_profiler.profile_func("ShaderProgram_Update")
     def update(self):
         """
         Updates dynamic uniforms every frame. Sends the camera's view matrix, 
@@ -205,6 +209,7 @@ class ShaderProgram:
         self.obj['bg_color'].write(bg_color)
         self.sky['bg_color'].write(bg_color)
 
+    @global_profiler.profile_func("ShaderProgram_GetProgram")
     def get_program(self, shader_name):
         """
         Helper function to load and compile a matching pair of .vert and .frag shader files from disk.

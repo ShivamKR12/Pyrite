@@ -1,6 +1,7 @@
 from settings import *
 import moderngl as mgl
 import pygame as pg
+from profiler import global_profiler
 
 
 class TextRenderer:
@@ -8,6 +9,7 @@ class TextRenderer:
     Handles the rendering of text strings into OpenGL textures.
     Provides methods for caching static text and generating single-frame dynamic text.
     """
+    @global_profiler.profile_func("TextRenderer_Init")
     def __init__(self, app):
         """
         Initializes the text renderer, setting up the default font and preparing
@@ -19,6 +21,7 @@ class TextRenderer:
         self.font = pg.font.SysFont('arial', FONT_SIZE_STATS, bold=True)
         self.textures = {}
 
+    @global_profiler.profile_func("TextRenderer_GetTexture")
     def get_texture(self, text):
         """
         Generates and returns an OpenGL texture for the specified text string.
@@ -45,6 +48,7 @@ class TextRenderer:
         
         return texture
 
+    @global_profiler.profile_func("TextRenderer_GetDynamicTexture")
     def get_dynamic_texture(self, text):
         """
         Generates and returns an OpenGL texture for text that changes frequently.

@@ -3,6 +3,7 @@ from meshes.base_mesh import BaseMesh
 from noise import noise2
 from numba import prange, njit
 import noise
+from profiler import global_profiler
 
 
 class CloudMesh(BaseMesh):
@@ -11,6 +12,7 @@ class CloudMesh(BaseMesh):
     Utilizes simplex noise to map cloud density and a 2D greedy meshing algorithm 
     to create an optimized, low-polygon mesh of cloud blocks.
     """
+    @global_profiler.profile_func("CloudMesh_Init")
     def __init__(self, app):
         """
         Initializes the cloud mesh, setting up the shader program and vertex buffer 
@@ -25,6 +27,7 @@ class CloudMesh(BaseMesh):
         self.attrs = ('in_position',)
         self.vao = self.get_vao()
 
+    @global_profiler.profile_func("CloudMesh_GetVertexData")
     def get_vertex_data(self):
         """
         Coordinates the generation of the raw cloud density data and subsequently 

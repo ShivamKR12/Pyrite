@@ -5,6 +5,7 @@ from camera import Camera
 from settings import *
 from terrain_gen import get_height
 import noise
+from profiler import global_profiler
 
 
 class Player(Camera):
@@ -13,6 +14,7 @@ class Player(Camera):
     Handles movement physics, collision detection, block interaction,
     inventory management, and survival statistics like health and hunger.
     """
+    @global_profiler.profile_func("Player_Init")
     def __init__(self, app, position=None, yaw=-90, pitch=0):
         """
         Initializes the player's attributes, camera orientation, physics state,
@@ -61,7 +63,8 @@ class Player(Camera):
         self.last_damage_time = 0
         self.spawn_immunity = True
 
-    def find_spawn_position(self):        
+    @global_profiler.profile_func("Player_FindSpawnPosition")
+    def find_spawn_position(self):
         """
         Locates a valid surface spawn position near the center of the world
         by scanning outward iteratively until a solid block above water is found.
@@ -86,6 +89,7 @@ class Player(Camera):
                             
         return glm.vec3(PLAYER_POS)
 
+    @global_profiler.profile_func("Player_Update")
     def update(self):
         """
         Called every frame. Updates player inputs, physics logic, view bobbing,
@@ -235,6 +239,7 @@ class Player(Camera):
         
         super().update()
 
+    @global_profiler.profile_func("Player_HandleEvent")
     def handle_event(self, event):
         """
         Processes discrete user inputs such as key presses (mode toggling, hotbar selection)
@@ -275,6 +280,7 @@ class Player(Camera):
             if event.button == 5:  # Scroll Down
                 self.hotbar_index = (self.hotbar_index + 1) % HOTBAR_SIZE
 
+    @global_profiler.profile_func("Player_MouseControl")
     def mouse_control(self):
         """
         Retrieves relative mouse movement and adjusts the camera's yaw and pitch
@@ -289,6 +295,7 @@ class Player(Camera):
         if mouse_dy:
             self.rotate_pitch(delta_y=mouse_dy * sens)
 
+    @global_profiler.profile_func("Player_HandleInteraction")
     def handle_interaction(self):
         """
         Processes continuous block interactions (mining and placing). 
@@ -341,6 +348,7 @@ class Player(Camera):
                 voxel_handler.set_voxel(mode='add')
                 self.interaction_timer = current_time
 
+    @global_profiler.profile_func("Player_KeyboardControl")
     def keyboard_control(self):
         """
         Calculates movement vectors based on keyboard input. Adapts movement
@@ -423,6 +431,7 @@ class Player(Camera):
                     self.velocity.y = JUMP_VELOCITY
                     self.on_ground = False
 
+    @global_profiler.profile_func("Player_ApplyGravity")
     def apply_gravity(self):
         """
         Applies downward gravitational acceleration to the player's vertical velocity,
@@ -435,6 +444,7 @@ class Player(Camera):
         else:
             self.velocity.y += GRAVITY * self.app.delta_time
 
+    @global_profiler.profile_func("Player_MoveAndCollide")
     def move_and_collide(self):
         """
         Moves the player incrementally along the X, Y, and Z axes,
@@ -455,12 +465,16 @@ class Player(Camera):
         self.feet_pos.z += self.velocity.z * self.app.delta_time
         self.resolve_axis('z')
 
+    @global_profiler.profile_func("Player_ResolveAxis")
     def resolve_axis(self, axis):
         """
         Checks for intersection between the player's AABB and the surrounding 
         solid voxels. Stops the player's velocity along the tested axis if 
         a collision is detected to prevent clipping.
         """
+        if getattr(self.velocity, axis) == 0:
+            return
+            
         aabb_min, aabb_max = self.get_aabb()
         
         min_x = int(glm.floor(aabb_min.x))
@@ -469,6 +483,22 @@ class Player(Camera):
         max_y = int(glm.floor(aabb_max.y))
         min_z = int(glm.floor(aabb_min.z))
         max_z = int(glm.floor(aabb_max.z))
+        
+        if axis == 'x':
+            if self.velocity.x > 0:
+                min_x = max_x
+            else:
+                max_x = min_x
+        elif axis == 'y':
+            if self.velocity.y > 0:
+                min_y = max_y
+            else:
+                max_y = min_y
+        elif axis == 'z':
+            if self.velocity.z > 0:
+                min_z = max_z
+            else:
+                max_z = min_z
         
         world = self.app.scene.world
         
@@ -521,6 +551,7 @@ class Player(Camera):
                     
                         aabb_min, aabb_max = self.get_aabb()
 
+    @global_profiler.profile_func("Player_GetAABB")
     def get_aabb(self):
         """
         Calculates and returns the minimum and maximum boundaries of the 
@@ -558,6 +589,7 @@ class Player(Camera):
             a_min.z < b_max.z and a_max.z > b_min.z
         )
 
+    @global_profiler.profile_func("Player_AddItem")
     def add_item(self, voxel_id):
         """
         Attempts to add an item to the player's inventory by stacking onto 
@@ -580,6 +612,7 @@ class Player(Camera):
         
         return False # Inventory is full!
 
+    @global_profiler.profile_func("Player_TakeDamage")
     def take_damage(self, amount):
         """
         Reduces player health by the specified amount (if in Survival mode),
@@ -594,6 +627,7 @@ class Player(Camera):
         if self.health <= 0:
             self.respawn()
 
+    @global_profiler.profile_func("Player_Respawn")
     def respawn(self):
         """
         Resets survival statistics and teleports the player back to a 
