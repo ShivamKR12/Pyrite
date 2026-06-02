@@ -361,7 +361,7 @@ Mesh Building Pipeline (CPU to GPU)
 2. **Mesh Build (Background Thread via ThreadPoolExecutor):**
 
    - Pop chunk from ``load_queue``
-   - Run greedy meshing: ``build_chunk_mesh(chunk_voxels, chunk_lightmap)``
+   - Run greedy meshing: ``build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world_voxels, world_lightmaps, chunk_positions)``
    - Output: ``vertex_data`` (flat uint32 array), ``light_data`` (flat uint32 array)
    - Place in ``build_queue``
 

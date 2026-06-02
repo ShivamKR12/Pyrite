@@ -1,60 +1,57 @@
 .. _testing:
 
-Testing and Profiling
-=====================
+Testing
+=======
 
-This chapter covers unit testing, integration testing, and performance profiling strategies for Pyrite.
+This project uses pytest. The repository includes a minimal test in ``tests/test_engine.py`` that imports top-level modules, so run tests from the repository root.
 
-Testing Framework Setup
------------------------
+Quickstart
+----------
 
-Pyrite uses **pytest** for automated testing. Install with::
+- Create and activate a virtual environment:
 
-    pip install pytest pytest-cov pytest-xdist
+  ```powershell
+  python -m venv .venv
+  .\.venv\Scripts\Activate.ps1   # PowerShell (Windows)
+  source .venv/bin/activate        # macOS / Linux
+  ```
 
-Create a test file structure in ``tests/`` directory::
+- Install test dependencies:
 
-    tests/
-        test_engine.py
+  ```bash
+  pip install -r requirements-dev.txt
+  pip install -r requirements.txt
+  ```
 
-Run tests with::
+- Run the full test suite:
 
-    pytest tests/ -v                    # Verbose output
-    pytest tests/ -v --cov=src          # With coverage report
-    pytest tests/ -v -n 4               # Parallel (4 workers)
+  ```bash
+  pytest -q
+  ```
 
-Engine Tests
-------------
+- Run a single test file:
 
-Currently, Pyrite includes basic initialization and state tests within ``test_engine.py``. As the test suite grows, additional tests will be added to this directory.
+  ```bash
+  pytest -q tests/test_engine.py
+  ```
 
-Continuous Integration
+Useful options
+--------------
+
+- `-q` : quiet output (use `-v` for verbose)
+- `--maxfail=1` : stop on first failure
+- `--cov=src` : require `pytest-cov` to collect coverage
+- `-n auto` : run tests in parallel with `pytest-xdist` installed
+
+Continuous integration
 ----------------------
 
-**GitHub Actions Workflow Example**
+There is a GitHub Actions workflow at ``.github/workflows/test.yml`` that runs the test job on push and pull requests. The workflow uses `actions/setup-python` and currently specifies Python 3.13; adjust the workflow if you need a different Python version (the code targets Python 3.9+).
 
-Refer to ``.github/workflows/test.yml``::
+Notes
+-----
 
-    name: Tests
-    
-    on:
-      push:
-        branches: [ master, main ]
-      pull_request:
-        branches: [ master, main ]
-    
-    jobs:
-      test:
-        runs-on: ubuntu-latest
-        
-        steps:
-        - uses: actions/checkout@v4
-        - name: Set up Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: '3.13'
-        
-        - name: Install dependencies and test
-          run: |
-            pip install -r requirements.txt pytest
-            pytest tests/
+- Run tests from the repository root so imports like `from settings import ...` work correctly.
+- If tests fail due to missing native extensions, ensure the development environment has required build tools and that `requirements-dev.txt` is installed.
+- For profiling, use `pytest --durations=10` or Python profilers directly; profiling guidance belongs in a separate section when needed.
+

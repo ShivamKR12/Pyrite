@@ -8,7 +8,7 @@ This document provides detailed explanations of Pyrite's OpenGL shaders (GLSL 3.
 Shader Architecture Overview
 ----------------------------
 
-Pyrite uses 8 distinct shader pairs (vertex + fragment), each rendering a specific component:
+Pyrite uses 10 distinct shader pairs (vertex + fragment), each rendering a specific component:
 
 .. code-block:: text
 
@@ -19,8 +19,9 @@ Pyrite uses 8 distinct shader pairs (vertex + fragment), each rendering a specif
     5. clouds.vert / clouds.frag     → Procedural clouds
     6. ui_block.vert / ui_block.frag → UI block icons (inventory, hotbar)
     7. ui_color.vert / ui_color.frag → UI colored quads (backgrounds, menus)
-    8. ui_text.vert / ui_text.frag   → Text rendering (not detailed; uses glyph atlas)
-    9. quad.vert / quad.frag         → Debug wireframes (frustum bounds, voxel markers)
+    8. ui_text.vert / ui_text.frag   → Text rendering (glyph atlas)
+    9. voxel_marker.vert / voxel_marker.frag → Block selection highlight (mining indicator)
+    10. quad.vert / quad.frag         → 2D rendering (debug, UI geometry)
 
 Chunk Shader (Main Terrain Rendering)
 -------------------------------------
@@ -59,12 +60,12 @@ Purpose: Unpack vertex data, calculate world position, apply lighting, compute s
     const float ao_values[4] = float[4](0.1, 0.25, 0.5, 1.0);
 
     const vec3 face_normals[6] = vec3[6](
-        vec3( 1,  0,  0),  // +X face
-        vec3(-1,  0,  0),  // -X face
-        vec3( 0,  1,  0),  // +Y face
-        vec3( 0, -1,  0),  // -Y face
-        vec3( 0,  0,  1),  // +Z face
-        vec3( 0,  0, -1)   // -Z face
+        vec3( 0.0,  1.0,  0.0), // 0: top (+Y face)
+        vec3( 0.0, -1.0,  0.0), // 1: bottom (-Y face)
+        vec3( 1.0,  0.0,  0.0), // 2: right (+X face)
+        vec3(-1.0,  0.0,  0.0), // 3: left (-X face)
+        vec3( 0.0,  0.0, -1.0), // 4: back (-Z face)
+        vec3( 0.0,  0.0,  1.0)  // 5: front (+Z face)
     );
 
 **Unpacking Function:**
