@@ -1,3 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyrite"
+version = "1.0.0"
+description = "A highly-optimized, procedural 3D Voxel Engine written entirely in Python."
+readme = "README.md"
+requires-python = ">=3.13"
+
+# Ruff Configuration
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+src = ["src"]
+
+[tool.ruff.lint]
+# E/W: Pycodestyle, F: Pyflakes, I: Isort, B: Flake8-bugbear, SIM: Flake8-simplify
+select = ["E", "F", "W", "I", "B", "SIM"]
+ignore = [
+    "E741", # Allow ambiguous variable names like 'l' or 'I' (common in 3D matrix math)
+    "F403", # Allow wildcard imports (used heavily with settings.py)
+    "F405", # Allow variables from wildcard imports
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# MyPy Configuration
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true # Crucial for C-extensions like moderngl and pyglm
+check_untyped_defs = true
+
+# Pytest Configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --tb=short"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
 [tool.pylint.main]
 # Allow Pylint to analyze C-extensions to resolve false positive errors.
 extension-pkg-allow-list = ["pygame", "moderngl", "pyglm", "numba"]

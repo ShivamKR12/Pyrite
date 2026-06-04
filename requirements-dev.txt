@@ -1,7 +1,23 @@
-pyinstaller
-pytest
-pylint
-sphinx
-sphinx-rtd-theme
-sphinxcontrib-mermaid
-sphinxcontrib-plantuml
+# Pull in the core game engine requirements first
+-r requirements.txt
+
+pylint==4.0.5
+
+# Testing Frame
+pytest==9.0.3
+pytest-cov==7.1.0
+
+mutmut==3.5.0
+
+# Bundling Executables
+pyinstaller==6.20.0
+
+# Documentation Engine & Extensions
+Sphinx==9.1.0
+sphinx_rtd_theme==3.1.0
+sphinxcontrib-mermaid==2.0.2
+sphinxcontrib-plantuml==0.31
+
+# Code Quality & Formatting Guardrails
+ruff==0.4.4
+mypy==1.10.0

@@ -1,6 +1,6 @@
-pygame-ce
-moderngl
-numba
-PyGLM
-numpy
-opensimplex[numpy]
+pygame-ce==2.5.7
+moderngl==5.12.0
+numpy==2.4.5
+pyglm==2.8.3
+opensimplex==0.4.5.1
+numba==0.65.1
