@@ -1,0 +1,42 @@
+# .gitattributes
+
+# =========================================================================
+# 1. Global Line Ending Normalization
+# =========================================================================
+# Force Git to normalize all text files to LF in the repository database, 
+# but check out native line endings (CRLF for Windows, LF for Unix) locally.
+* text=auto
+
+# =========================================================================
+# 2. Strict Core Logic Enforcement (Force LF in Repository)
+# =========================================================================
+# Source code, shaders, configurations, and pipeline workflows
+*.py           text eol=lf
+*.vert         text eol=lf
+*.frag         text eol=lf
+*.json         text eol=lf
+*.toml         text eol=lf
+*.ini          text eol=lf
+*.yml          text eol=lf
+*.md           text eol=lf
+*.rst          text eol=lf
+
+# =========================================================================
+# 3. Game Asset Protection (Strict Binary Tracking)
+# =========================================================================
+# Explicitly tell Git to treat these formats as byte streams and ignore 
+# any line-ending parsing to prevent file corruption.
+*.png          binary
+*.jpg          binary
+*.jpeg         binary
+*.ico          binary
+*.obj          binary
+*.mtl          binary
+*.ogg          binary
+*.db           binary
+
+# =========================================================================
+# 4. Miscellaneous Script Handling
+# =========================================================================
+*.ps1          text eol=crlf
+*.spec         text eol=native

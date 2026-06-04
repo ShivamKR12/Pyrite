@@ -19,3 +19,6 @@ config.json
 crash_log.txt
 create_texture_array.py
 temp.txt
+CODEBASE_ANALYSIS.md
+crash_profiling_results.json
+profiling_results.json
