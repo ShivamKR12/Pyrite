@@ -297,6 +297,9 @@ class World:
         for item in list(self.mesh_queue):
             chunk, future = item
             
+            if chunk is None:
+                continue
+            
             if future.done():
                 result = future.result()
                 chunk.mesh.vertex_data = result[0]
@@ -331,6 +334,9 @@ class World:
         
         for item in list(self.load_queue):
             chunk, future = item
+            
+            if chunk is None:
+                continue
             
             if future.done():
                 source, elapsed_time, voxel_data, lightmap_data, is_empty, needs_lighting = future.result()
