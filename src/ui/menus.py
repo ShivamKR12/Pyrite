@@ -187,9 +187,9 @@ class MainMenu:
                 self.app.init_game_session(sn)
                 self.set_state('MAIN')
             
-            btn: Any = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
+            new_btn: Any = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
                               (0, y_offset), (0.65, 0.12), lambda sn=save_name: self.trigger_action(lambda: load_and_reset(sn), -1))
-            self.world_buttons.append(btn)
+            self.world_buttons.append(new_btn)
             
             # Create a small red 'X' button positioned right next to the WorldButton
             del_btn: Any = Button(self.app, 'X', (0.55, y_offset), (0.05, 0.08), lambda sn=save_name: self.delete_world(sn))

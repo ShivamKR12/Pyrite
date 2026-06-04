@@ -44,7 +44,7 @@ def noise2(x: float, y: float, perm_array: Any) -> float:
     """
     Evaluates 2D Simplex Noise using the pre-compiled permutation array.
     """
-    return _noise2(x, y, perm_array)
+    return float(_noise2(x, y, perm_array))
 
 
 @njit(cache=True, fastmath=True, nogil=True)
@@ -52,4 +52,4 @@ def noise3(x: float, y: float, z: float, perm_array: Any, perm_grad_array: Any) 
     """
     Evaluates 3D Simplex Noise using the pre-compiled permutation arrays.
     """
-    return _noise3(x, y, z, perm_array, perm_grad_array)
+    return float(_noise3(x, y, z, perm_array, perm_grad_array))

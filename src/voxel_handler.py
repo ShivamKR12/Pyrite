@@ -254,24 +254,24 @@ class VoxelHandler:
             if max_x < max_y:
                 
                 if max_x < max_z:
-                    current_voxel_pos.x += dx
+                    current_voxel_pos.x += int(dx)
                     max_x += delta_x
                     step_dir = 0
                 
                 else:
-                    current_voxel_pos.z += dz
+                    current_voxel_pos.z += int(dz)
                     max_z += delta_z
                     step_dir = 2
             
             else:
             
                 if max_y < max_z:
-                    current_voxel_pos.y += dy
+                    current_voxel_pos.y += int(dy)
                     max_y += delta_y
                     step_dir = 1
             
                 else:
-                    current_voxel_pos.z += dz
+                    current_voxel_pos.z += int(dz)
                     max_z += delta_z
                     step_dir = 2
         

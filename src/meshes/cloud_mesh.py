@@ -51,7 +51,7 @@ class CloudMesh(BaseMesh):
         cloud_data: Any = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
         self.gen_clouds(cloud_data, noise.perm)
 
-        return self.build_mesh(cloud_data)
+        return self.build_mesh(cloud_data)  # type: ignore[no-any-return]
 
     @staticmethod
     @njit(cache=True, fastmath=True, parallel=True, nogil=True)

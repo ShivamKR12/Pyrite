@@ -567,9 +567,9 @@ class InventoryUI:
                     i = self.get_closest_valid_slot(mouse_pos, self.drag_id, self.drag_count)
                     
                     if i != -1:
-                        player: Any = self.app.player
-                        slot_id: int = player.inventory[i]
-                        slot_count: int = player.inventory_counts[i]
+                        player = self.app.player
+                        slot_id = player.inventory[i]
+                        slot_count = player.inventory_counts[i]
                         
                         if slot_id == 0:
                             player.inventory[i] = self.drag_id
@@ -578,7 +578,7 @@ class InventoryUI:
                             self.drag_count = 0
                         
                         elif slot_id == self.drag_id:
-                            space: int = 64 - slot_count
+                            space = 64 - slot_count
                             
                             if space >= self.drag_count:
                                 player.inventory_counts[i] += self.drag_count

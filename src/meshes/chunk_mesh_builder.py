@@ -111,7 +111,7 @@ def get_vertex_light(local_vertex_pos: Tuple[int, int, int], world_vertex_pos: T
     sun = ((l0 >> 4) + (l1 >> 4) + (l2 >> 4) + (l3 >> 4)) >> 2
     block = ((l0 & 15) + (l1 & 15) + (l2 & 15) + (l3 & 15)) >> 2
     
-    return (sun << 4) | block
+    return int((sun << 4) | block)
 
 
 @njit(cache=True, nogil=True)
@@ -172,7 +172,7 @@ def get_neighbor_voxel_id(local_voxel_pos: Tuple[int, int, int], world_voxel_pos
     """
     x, y, z = local_voxel_pos
     if 0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE:
-        return chunk_voxels[x + z * CHUNK_SIZE + y * CHUNK_AREA]
+        return int(chunk_voxels[x + z * CHUNK_SIZE + y * CHUNK_AREA])
 
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     
@@ -186,7 +186,7 @@ def get_neighbor_voxel_id(local_voxel_pos: Tuple[int, int, int], world_voxel_pos
     lz = world_voxel_pos[2] % CHUNK_SIZE
     voxel_index = lx + lz * CHUNK_SIZE + ly * CHUNK_AREA
 
-    return chunk_voxels_global[voxel_index]
+    return int(chunk_voxels_global[voxel_index])
 
 
 @njit(cache=True, nogil=True)
@@ -197,7 +197,7 @@ def get_neighbor_light(local_voxel_pos: Tuple[int, int, int], world_voxel_pos: T
     """
     x, y, z = local_voxel_pos
     if 0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE:
-        return chunk_lightmap[x + z * CHUNK_SIZE + y * CHUNK_AREA]
+        return int(chunk_lightmap[x + z * CHUNK_SIZE + y * CHUNK_AREA])
 
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
     
@@ -211,7 +211,7 @@ def get_neighbor_light(local_voxel_pos: Tuple[int, int, int], world_voxel_pos: T
     lz = world_voxel_pos[2] % CHUNK_SIZE
     voxel_index = lx + lz * CHUNK_SIZE + ly * CHUNK_AREA
     
-    return chunk_lights_global[voxel_index]
+    return int(chunk_lights_global[voxel_index])
 
 
 @njit(cache=True, nogil=True)
@@ -232,7 +232,7 @@ def is_void(local_voxel_pos: Tuple[int, int, int], world_voxel_pos: Tuple[int, i
     val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, chunk_voxels, world_voxels, chunk_positions)
     
     # Transparent blocks do not cast AO shadows!
-    return is_transparent(val)
+    return bool(is_transparent(val))
 
 
 @njit(cache=True, nogil=True)

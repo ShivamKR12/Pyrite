@@ -619,7 +619,7 @@ class Player(Camera):
         Static helper that determines if two given 3D Axis-Aligned Bounding 
         Boxes overlap with each other.
         """
-        return (
+        return bool(
             a_min.x < b_max.x and a_max.x > b_min.x and
             a_min.y < b_max.y and a_max.y > b_min.y and
             a_min.z < b_max.z and a_max.z > b_min.z

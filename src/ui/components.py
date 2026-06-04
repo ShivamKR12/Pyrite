@@ -61,7 +61,7 @@ def get_shared_resource(app: Any, res_type: str, **kwargs: Any) -> Any:
         size_tuple: Tuple[float, float] = kwargs.get('size', (0.2, 0.05))
         w: float = size_tuple[0]
         h: float = size_tuple[1]
-        key: str = f"mask_{w}_{h}_{radius}"
+        key = f"mask_{w}_{h}_{radius}"
         
         if key not in _shared_ui_resources:
             px_w: int = max(1, int(w * WIN_RES.x))
@@ -110,7 +110,7 @@ class UINode:
            
             return (ppx + self.local_pos[0], ppy + self.local_pos[1])
         
-        return tuple(self.local_pos)
+        return (self.local_pos[0], self.local_pos[1])
 
     @global_profiler.profile_func("UINode_UpdateLayout")
     def update_layout(self) -> None:
@@ -182,12 +182,12 @@ class Button(UINode):
         elevation (int): The pixel height of the 3D elevation effect.
     """
     @global_profiler.profile_func("Button_Init")
-    def __init__(self, app: Any, text: str, pos: Tuple[float, float], size: Tuple[float, float], action: Callable[[], None], border_radius: int = 12, elevation: int = 5) -> None:
+    def __init__(self, app: Any, text: str, pos: Tuple[float, float], size: Tuple[float, float], action: Optional[Callable[[], None]] = None, border_radius: int = 12, elevation: int = 5) -> None:
         super().__init__(size)
         self.app: Any = app
         self.text: str = text
         self.local_pos: List[float] = list(pos)
-        self.action: Callable[[], None] = action
+        self.action: Optional[Callable[[], None]] = action
         self.border_radius: int = border_radius
         self.elevation: int = elevation
         self.dynamic_elevation: int = elevation
@@ -328,7 +328,7 @@ class WorldButton(UINode):
         elevation (int): The pixel height of the 3D elevation effect.
     """
     @global_profiler.profile_func("WorldButton_Init")
-    def __init__(self, app: Any, save_name: str, display_name: str, seed: int, game_mode: int, creation_date: str, last_played: str, pos: Tuple[float, float], size: Tuple[float, float], action: Callable[[], None], border_radius: int = 12, elevation: int = 5) -> None:
+    def __init__(self, app: Any, save_name: str, display_name: str, seed: int, game_mode: int, creation_date: str, last_played: str, pos: Tuple[float, float], size: Tuple[float, float], action: Optional[Callable[[], None]] = None, border_radius: int = 12, elevation: int = 5) -> None:
         super().__init__(size)
         self.app: Any = app
         self.save_name: str = save_name
@@ -338,7 +338,7 @@ class WorldButton(UINode):
         self.creation_date: str = creation_date
         self.last_played: str = last_played
         self.local_pos: List[float] = list(pos)
-        self.action: Callable[[], None] = action
+        self.action: Optional[Callable[[], None]] = action
         self.border_radius: int = border_radius
         self.elevation: int = elevation
         self.dynamic_elevation: int = elevation

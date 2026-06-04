@@ -40,7 +40,7 @@ def get_voxel_fast(wx: int, wy: int, wz: int, world_voxels: Any, chunk_positions
     
     lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
     
-    return world_voxels[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
+    return int(world_voxels[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA])
 
 
 @njit(cache=True, nogil=True)
@@ -56,7 +56,7 @@ def get_light_fast(wx: int, wy: int, wz: int, world_lightmaps: Any, chunk_positi
     
     lx, ly, lz = wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE
     
-    return world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
+    return int(world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA])
 
 
 @njit(cache=True, nogil=True)
