@@ -20,4 +20,4 @@ jobs:
         
     - name: Run Mutmut on Core Logic
       # We target the player and terrain logic specifically for mutation injections
-      run: mutmut run --paths-to-mutate=src/player.py,src/terrain_gen.py
+      run: mutmut run "src/player.py" "src/terrain_gen.py"

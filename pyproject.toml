@@ -24,6 +24,11 @@ ignore = [
     "F405", # Allow variables from wildcard imports
 ]
 
+# Mutmut Configuration (Version 3+)
+[tool.mutmut]
+source_paths = ["src/"]
+pytest_add_cli_args_test_selection = ["tests/"]
+
 [tool.ruff.format]
 quote-style = "single"
 indent-style = "space"
