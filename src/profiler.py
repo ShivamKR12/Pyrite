@@ -33,6 +33,9 @@ class ThreadSampleBuffer:
         self.lock: threading.Lock = threading.Lock()
 
     def record(self, category: str, elapsed_time: float) -> None:
+        """
+        Records a single profiling sample for a given category in a thread-safe manner.
+        """
         if category not in self.categories:
             with self.lock:
                 if category not in self.categories:

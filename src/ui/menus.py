@@ -626,18 +626,24 @@ class OptionsMenu:
 
     @global_profiler.profile_func("OptionsMenu_UpdateFov")
     def update_fov(self, val: float) -> None:
-        """Applies the field-of-view setting instantly to the active player."""
+        """
+        Applies the field-of-view setting instantly to the active player.
+        """
         if self.app.scene:
             self.app.player.fov = glm.radians(val)
 
     @global_profiler.profile_func("OptionsMenu_UpdateMusicVolume")
     def update_music_volume(self, val: float) -> None:
-        """Adjusts the global Pygame mixer music volume."""
+        """
+        Adjusts the global Pygame mixer music volume.
+        """
         pg.mixer.music.set_volume(val / 100.0)
 
     @global_profiler.profile_func("OptionsMenu_UpdateSfxVolume")
     def update_sfx_volume(self, val: float) -> None:
-        """Delegates sound effect volume changes to the central Sounds manager."""
+        """
+        Delegates sound effect volume changes to the central Sounds manager.
+        """
         self.app.sounds.set_sfx_volume(val)
 
     @global_profiler.profile_func("OptionsMenu_GoBack")

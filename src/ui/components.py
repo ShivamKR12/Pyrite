@@ -95,6 +95,9 @@ class UINode:
 
     @global_profiler.profile_func("UINode_AddChild")
     def add_child(self, child: 'UINode') -> 'UINode':
+        """
+        Adds a child node to this node's list of children and sets its parent.
+        """
         child.parent = self
         self.children.append(child)
         
@@ -114,21 +117,33 @@ class UINode:
 
     @global_profiler.profile_func("UINode_UpdateLayout")
     def update_layout(self) -> None:
+        """
+        Recursively calls `update_layout` on all children.
+        """
         for child in self.children:
             child.update_layout()
 
     @global_profiler.profile_func("UINode_Update")
     def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
+        """
+        Recursively calls `update` on all children, passing down the mouse position.
+        """
         for child in self.children:
             child.update(mouse_pos)
 
     @global_profiler.profile_func("UINode_HandleEvent")
     def handle_event(self, event: Any) -> None:
+        """
+        Recursively calls `handle_event` on all children, passing down the Pygame event.
+        """
         for child in self.children:
             child.handle_event(event)
 
     @global_profiler.profile_func("UINode_Render")
     def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
+        """
+        Recursively calls `render` on all children, passing down animation offsets and alpha.
+        """
         for child in self.children:
             child.render(offset, alpha)
 
@@ -204,6 +219,9 @@ class Button(UINode):
 
     @global_profiler.profile_func("Button_CheckHover")
     def check_hover(self, mouse_pos: Tuple[int, int]) -> bool:
+        """
+        Checks if the mouse cursor is within the button's bounding box.
+        """
         global_pos: Tuple[float, float] = self.get_global_pos()
         x: float = global_pos[0]
         y: float = global_pos[1]
@@ -369,6 +387,9 @@ class WorldButton(UINode):
 
     @global_profiler.profile_func("WorldButton_CheckHover")
     def check_hover(self, mouse_pos: Tuple[int, int]) -> bool:
+        """
+        Checks if the mouse cursor is within the button's bounding box.
+        """
         global_pos: Tuple[float, float] = self.get_global_pos()
         x: float = global_pos[0]
         y: float = global_pos[1]

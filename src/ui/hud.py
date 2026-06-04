@@ -9,7 +9,7 @@ the 3D view-bobbing held item, and the F3 debug screen.
 import moderngl as mgl
 import pygame as pg
 from pyglm import glm
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from meshes.item_mesh import ItemMesh
 from meshes.obj_mesh import ObjMesh

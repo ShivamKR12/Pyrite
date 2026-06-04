@@ -241,10 +241,10 @@ class ShaderProgram:
         """
         Helper function to load and compile a matching pair of .vert and .frag shader files from disk.
         """
-        with open(get_path(f'src/shaders/{shader_name}.vert')) as file:
+        with open(get_path(f'src/shaders/{shader_name}.vert'), 'r', encoding='utf-8') as file:
             vertex_shader: str = file.read()
         
-        with open(get_path(f'src/shaders/{shader_name}.frag')) as file:
+        with open(get_path(f'src/shaders/{shader_name}.frag'), 'r', encoding='utf-8') as file:
             fragment_shader: str = file.read()
         
         program: Any = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)

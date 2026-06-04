@@ -34,6 +34,9 @@ class Frustum:
         
     @global_profiler.profile_func("Frustum_UpdateFactors")
     def update_factors(self, v_fov: float, h_fov: float) -> None:
+        """
+        Recalculates the tangent and factor values based on the camera's FOV.
+        """
         self.factor_y = 1.0 / math.cos(half_y := v_fov * 0.5)
         self.tan_y = math.tan(half_y)
 
@@ -42,6 +45,9 @@ class Frustum:
 
     @global_profiler.profile_func("Frustum_IsOnFrustum")
     def is_on_frustum(self, chunk: Any) -> bool:
+        """
+        Tests if a chunk's bounding sphere is within the camera's view frustum.
+        """
         # vector to sphere center
         sphere_vec = chunk.center - self.cam.position
 

@@ -1,3 +1,7 @@
+"""
+Sphinx configuration file for the Pyrite documentation.
+"""
+
 import os
 import sys
 

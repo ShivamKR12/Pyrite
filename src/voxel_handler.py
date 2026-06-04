@@ -107,6 +107,9 @@ class VoxelHandler:
     @global_profiler.profile_func("VoxelHandler_RebuildAdjacentChunks")
     def rebuild_adjacent_chunks(self, world_pos: Any, is_light_update: bool = True) -> None:
         """
+        Queues adjacent chunks for remeshing if a block modification occurs near a border.
+        """
+        """
         Automatically queues neighboring chunks for mesh regeneration if a block 
         modification occurs near a chunk border, or if it creates a large lighting 
         update requiring neighbors to recalculate their block/sunlight visuals.
@@ -147,6 +150,9 @@ class VoxelHandler:
     @global_profiler.profile_func("VoxelHandler_RemoveVoxel")
     def remove_voxel(self) -> None:
         """
+        Breaks the targeted voxel and triggers lighting/meshing updates.
+        """
+        """
         Breaks the targeted voxel, updates local block lighting (stripping or 
         letting sunlight in), spawns a dropped item entity in Survival mode, 
         and queues chunks for remeshing.
@@ -183,6 +189,9 @@ class VoxelHandler:
 
     @global_profiler.profile_func("VoxelHandler_SetVoxel")
     def set_voxel(self, mode: str = 'remove') -> None:
+        """
+        Wrapper to call either add_voxel or remove_voxel based on the mode.
+        """
         if mode == 'add':
             self.add_voxel()
         
