@@ -1,4 +1,4 @@
-name: Pylint
+name: Mypy Type Checking
 
 on:
   push:
@@ -13,24 +13,19 @@ on:
       - 'requirements*.txt'
 
 jobs:
-  build:
+  mypy:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.13"]
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.13'
 
     - name: Install dependencies
       run: |
         pip install -r requirements-dev.txt
 
-    - name: Analysing the code with pylint
-      run: |
-        pylint $(git ls-files '*.py') --fail-under=7.0
+    - name: Static type checking with Mypy
+      run: mypy src/

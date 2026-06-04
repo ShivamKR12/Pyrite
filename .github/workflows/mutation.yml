@@ -1,0 +1,23 @@
+name: Mutation Testing
+
+on:
+  workflow_dispatch: # Manual trigger only, as mutation testing is resource-heavy
+
+jobs:
+  mutation-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        
+    - name: Install dependencies
+      run: |
+        pip install -r requirements-dev.txt
+        
+    - name: Run Mutmut on Core Logic
+      # We target the player and terrain logic specifically for mutation injections
+      run: mutmut run --paths-to-mutate=src/player.py,src/terrain_gen.py

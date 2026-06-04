@@ -1,0 +1,28 @@
+name: GLSL Shader Validation
+
+on:
+  push:
+    paths:
+      - 'src/shaders/**'
+  pull_request:
+    paths:
+      - 'src/shaders/**'
+
+jobs:
+  validate-shaders:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install glslangValidator
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y glslang-tools
+
+    - name: Lint and Verify Shaders
+      run: |
+        # Find all shader files and validate them individually to prevent unintended linking attempts
+        find src/shaders -type f \( -name "*.vert" -o -name "*.frag" -o -name "*.geom" -o -name "*.comp" -o -name "*.tesc" -o -name "*.tese" -o -name "*.glsl" \) | while read -r file; do
+          echo "Validating $file..."
+          glslangValidator "$file" || exit 1
+        done
