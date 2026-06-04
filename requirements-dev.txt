@@ -19,5 +19,5 @@ sphinxcontrib-mermaid==2.0.2
 sphinxcontrib-plantuml==0.31
 
 # Code Quality & Formatting Guardrails
-ruff==0.4.4
-mypy==1.10.0
+ruff==0.15.16
+mypy==2.1.0
