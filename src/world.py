@@ -1,7 +1,12 @@
-from settings import *
-from world_objects.chunk import Chunk
-from meshes.cube_mesh import CubeMesh
-from voxel_handler import VoxelHandler
+"""
+Global 3D environment and multi-threading architecture controller.
+
+The World manager orchestrates the engine's asynchronous lifeblood: dynamic chunk 
+streaming, ThreadPool dispatching for mesh generation and lighting, and background 
+Write-Ahead Logging (WAL) SQLite disk saving/loading. It directly handles the 
+GPU dispatch via hardware occlusion queries and dynamic vectorized frustum culling.
+"""
+
 import concurrent.futures
 from pyglm import glm
 import numpy as np
@@ -13,8 +18,21 @@ from collections import deque
 import json
 import time
 import moderngl as mgl
-from frustum import frustum_cull_fast
 import datetime
+from typing import Any, Dict, List, Optional, Tuple
+from numpy.typing import NDArray
+
+from settings import (
+    WORLD_VOL, CHUNK_VOL, CHUNK_SIZE, WORLD_W, WORLD_H, WORLD_D, WORLD_AREA, 
+    PLAYER_EYE_HEIGHT, MESH_BUILD_LIMIT_INGAME, MESH_BUILD_LIMIT_LOADING, 
+    MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME, MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING, 
+    MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME, MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING, 
+    VBO_POOL_CAP
+)
+from world_objects.chunk import Chunk
+from meshes.cube_mesh import CubeMesh
+from voxel_handler import VoxelHandler
+from frustum import frustum_cull_fast
 from meshes.chunk_mesh_builder import build_chunk_mesh
 from lighting import init_chunk_lighting, stitch_chunk_lighting, update_light_place_block, update_light_remove_block, place_torch
 import noise
@@ -24,46 +42,54 @@ from profiler import global_profiler
 class World:
     """
     Manages the global 3D voxel environment.
+    
     Responsible for chunk streaming, multithreaded terrain generation, mesh 
-    building queues, and persistent background SQLite disk storage.
+    building queues, and persistent background SQLite disk storage. It acts
+    as the central hub linking the player, terrain data, lighting updates,
+    and GPU render dispatching.
+    
+    Args:
+        app (Any): The main Pyrite application instance.
+        save_name (str): The string identifier/filename for the SQLite world database.
+        world_seed (int): The deterministic seed used for procedural terrain generation.
     """
     @global_profiler.profile_func("World_Init")
-    def __init__(self, app, save_name, world_seed):
+    def __init__(self, app: Any, save_name: str, world_seed: int) -> None:
         """
         Initializes the world arrays, establishes an async-like SQLite database 
         connection, restores player data, and warms up the Numba compiler.
         """
-        self.world_seed = world_seed
-        self.app = app
+        self.world_seed: int = world_seed
+        self.app: Any = app
         self.app.render_loading_screen("ALLOCATING MEMORY...")
-        self.chunks = [None for _ in range(WORLD_VOL)]
-        self.active_chunks = {}
-        self.chunk_positions = np.full((WORLD_VOL, 3), -999, dtype='int32')
+        self.chunks: List[Optional[Any]] = [None for _ in range(WORLD_VOL)]
+        self.active_chunks: Dict[Tuple[int, int, int], Any] = {}
+        self.chunk_positions: NDArray[np.int32] = np.full((WORLD_VOL, 3), -999, dtype='int32')
         
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max(4, (os.cpu_count() or 5) - 1))
-        self.mesh_queue = []
-        self.build_queue = []
-        self.load_queue = []
+        self.executor: concurrent.futures.ThreadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=max(4, (os.cpu_count() or 5) - 1))
+        self.mesh_queue: List[Tuple[Any, concurrent.futures.Future[Any]]] = []
+        self.build_queue: List[Any] = []
+        self.load_queue: List[Tuple[Any, concurrent.futures.Future[Any]]] = []
         
-        self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
-        self.lightmaps = np.full([WORLD_VOL, CHUNK_VOL], 255, dtype='uint8')
-        self.voxel_handler = VoxelHandler(self)
-        self.vbo_pool = deque()
-        self.last_player_chunk_pos = None
-        self.sorted_chunks = []
-        self.last_active_chunk_count = 0
-        self.chunk_centers = np.empty((0, 3), dtype='float32')
-        self.frustum_mask = np.empty(0, dtype=np.bool_)
-        self.bbox_mesh = CubeMesh(app)
+        self.voxels: NDArray[np.uint8] = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
+        self.lightmaps: NDArray[np.uint8] = np.full([WORLD_VOL, CHUNK_VOL], 255, dtype='uint8')
+        self.voxel_handler: Any = VoxelHandler(self)
+        self.vbo_pool: deque[Tuple[Any, Any]] = deque()
+        self.last_player_chunk_pos: Optional[Tuple[int, int]] = None
+        self.sorted_chunks: List[Any] = []
+        self.last_active_chunk_count: int = 0
+        self.chunk_centers: NDArray[np.float32] = np.empty((0, 3), dtype='float32')
+        self.frustum_mask: NDArray[np.bool_] = np.empty(0, dtype=np.bool_)
+        self.bbox_mesh: Any = CubeMesh(app)
 
         self.app.render_loading_screen("CONNECTING TO DATABASE...")
-        self.save_name = save_name
+        self.save_name: str = save_name
         os.makedirs('saves', exist_ok=True)
-        self.save_path = f'saves/{self.save_name}.db'
-        self.thread_local = threading.local()
-        self.db_lock = threading.Lock()
-        self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
-        self.cursor = self.connection.cursor()
+        self.save_path: str = f'saves/{self.save_name}.db'
+        self.thread_local: threading.local = threading.local()
+        self.db_lock: threading.Lock = threading.Lock()
+        self.connection: sqlite3.Connection = sqlite3.connect(self.save_path, check_same_thread=False)
+        self.cursor: sqlite3.Cursor = self.connection.cursor()
         
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS chunks (
                                 x INTEGER, y INTEGER, z INTEGER, 
@@ -166,7 +192,7 @@ class World:
             self.app.player.respawn()
             
         # Load dropped items
-        self.saved_dropped_items = []
+        self.saved_dropped_items: List[Any] = []
         
         try:
             self.cursor.execute('SELECT voxel_id, px, py, pz, vx, vy, vz FROM dropped_items')
@@ -181,7 +207,7 @@ class World:
         print("[SYSTEM] Warming up Numba JIT Compiler... this may take a few seconds.")
         t0 = time.perf_counter()
         
-        def compile_numba():
+        def compile_numba() -> None:
             dummy_voxels = np.zeros(CHUNK_VOL, dtype='uint8')
             dummy_lights = np.full(CHUNK_VOL, 255, dtype='uint8')
             Chunk.generate_terrain(dummy_voxels, dummy_lights, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed)
@@ -211,13 +237,13 @@ class World:
         self.app.render_loading_screen("NUMBA COMPILATION SUCCESSFUL!")
 
     @global_profiler.profile_func("World_Update")
-    def update(self):
+    def update(self) -> None:
         """
         Tick loop that handles continuous background data processing. Steps through
         loading chunks, dispatching thread-pool mesh tasks, and streaming logic.
         """
-        self.db_load_time = 0.0
-        self.terrain_gen_time = 0.0
+        self.db_load_time: float = 0.0
+        self.terrain_gen_time: float = 0.0
 
         self.voxel_handler.update()
         self.stream_chunks()
@@ -245,7 +271,7 @@ class World:
             nl = getattr(chunk, 'pending_lighting', False)
             chunk.pending_lighting = False
             
-            def build_task(c=chunk, needs_light=nl):
+            def build_task(c: Any = chunk, needs_light: bool = nl) -> Any:
                 cx, cy, cz = c.position
                 if needs_light:
                     init_chunk_lighting(cx * CHUNK_SIZE, cy * CHUNK_SIZE, cz * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions)
@@ -259,7 +285,7 @@ class World:
         self.process_mesh_queue()
 
     @global_profiler.profile_func("Process_Mesh_Queue")
-    def process_mesh_queue(self):
+    def process_mesh_queue(self) -> None:
         """
         Pulls completed mesh data from background threads and safely initializes 
         OpenGL Vertex Array Objects (VAOs) on the main thread, utilizing a 
@@ -295,7 +321,7 @@ class World:
                     break
 
     @global_profiler.profile_func("Process_Load_Queue")
-    def process_load_queue(self):
+    def process_load_queue(self) -> None:
         """
         Consumes asynchronously loaded/generated chunk data, registers it into 
         the active world arrays, applies volumetric lighting (BFS), and schedules 
@@ -355,7 +381,7 @@ class World:
                     break
 
     @global_profiler.profile_func("Fetch_Or_Generate_Voxels")
-    def _fetch_or_generate_voxels(self, x, y, z):
+    def _fetch_or_generate_voxels(self, x: int, y: int, z: int) -> Tuple[str, float, NDArray[np.uint8], NDArray[np.uint8], bool, bool]:
         """
         Background worker function that attempts to retrieve compressed chunk data
         from the SQLite database. If the chunk has never been visited, generates 
@@ -394,7 +420,7 @@ class World:
         return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
     @global_profiler.profile_func("Stream_Chunks")
-    def stream_chunks(self):
+    def stream_chunks(self) -> None:
         """
         Checks the player's position against the render distance to determine 
         which distant chunks to unload, and which new surrounding chunks to queue 
@@ -438,7 +464,7 @@ class World:
             self.load_chunk(*pos)
                         
     @global_profiler.profile_func("Load_Chunk")
-    def load_chunk(self, x, y, z):
+    def load_chunk(self, x: int, y: int, z: int) -> None:
         """
         Initializes a Chunk instance at the given coordinates and dispatches 
         an asynchronous task to fetch or generate its actual voxel data.
@@ -458,7 +484,7 @@ class World:
         self.load_queue.append((chunk, future))
 
     @global_profiler.profile_func("Save_Chunk_To_DB")
-    def save_chunk_to_db(self, x, y, z, voxels, lightmap):
+    def save_chunk_to_db(self, x: int, y: int, z: int, voxels: NDArray[np.uint8], lightmap: Optional[NDArray[np.uint8]]) -> None:
         """
         Compresses a chunk's massive 1D voxel and lighting arrays using zlib, 
         and executes a thread-safe write to the SQLite database.
@@ -471,7 +497,7 @@ class World:
             self.connection.commit()
 
     @global_profiler.profile_func("Unload_Chunk")
-    def unload_chunk(self, pos):
+    def unload_chunk(self, pos: Tuple[int, int, int]) -> None:
         """
         Removes a chunk from the active world space, triggers an asynchronous 
         disk save, purges it from any pending queues, and recycles its VRAM.
@@ -512,7 +538,7 @@ class World:
                     break
 
     @global_profiler.profile_func("World_Render")
-    def render(self):
+    def render(self) -> None:
         """
         Performs dynamic vectorized frustum culling and hardware occlusion 
         queries to identify visible chunks, then safely dispatches rendering 
@@ -622,7 +648,7 @@ class World:
             ctx.enable(mgl.CULL_FACE)
             
     @global_profiler.profile_func("World_Render_Water")
-    def render_water(self):
+    def render_water(self) -> None:
         """
         A secondary rendering pass explicitly designed to draw transparent water 
         meshes properly blended over the previously drawn opaque terrain.
@@ -633,7 +659,7 @@ class World:
                 chunk.render_water()
             
     @global_profiler.profile_func("World_Save")
-    def save(self):
+    def save(self) -> None:
         """
         Synchronously dumps all currently active chunks, inventory contents, 
         player coordinates, and world metadata safely to the SQLite disk on exit.

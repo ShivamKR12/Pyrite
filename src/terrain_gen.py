@@ -1,13 +1,30 @@
+"""
+Core procedural terrain and biome generation mechanics.
+
+This module utilizes high-performance `@njit` (Numba) compilation to execute 
+complex 3D Simplex noise and fractional Brownian motion calculations across the CPU.
+It dictates the shaping of landmasses, continentalness modifiers, biome distributions 
+(sand, snow, grass), cave carving logic, and structural tree generation entirely 
+lock-free to prevent main-thread latency.
+"""
+
 # """
 from noise import noise2, noise3
 from random import random
-from settings import *
+from numba import njit
+from typing import Any, Tuple
+
+from settings import (
+    AIR, WATER, SAND, GRASS, DIRT, STONE, SNOW, WOOD, LEAVES,
+    CHUNK_SIZE, CHUNK_AREA, WORLD_H, CENTER_Y, WATER_LINE, STONE_LVL, 
+    TREE_HEIGHT, TREE_H_HEIGHT, TREE_H_WIDTH, GLASS
+)
 
 
 # Terrain generator with temperature, moisture, and continentalness to create distinct biomes and landforms.
 # Has Biome Dithering to create more natural transitions and less blocky borders.
 @njit(cache=True, fastmath=True, nogil=True)
-def get_biome(x, z, perm_array):
+def get_biome(x: float, z: float, perm_array: Any) -> Tuple[float, float]:
     """
     Evaluates Simplex noise to determine the overarching temperature and moisture
     levels of a specific vertical column, shaping its respective biome.
@@ -21,7 +38,7 @@ def get_biome(x, z, perm_array):
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def get_height(x, z, perm_array):
+def get_height(x: float, z: float, perm_array: Any) -> int:
     """
     Calculates the absolute maximum surface elevation of the terrain at a specific
     X,Z coordinate using fractional Brownian motion and continentalness modifiers.
@@ -74,7 +91,7 @@ def get_height(x, z, perm_array):
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def get_index(x, y, z):
+def get_index(x: int, y: int, z: int) -> int:
     """
     Translates a localized 3D chunk coordinate (x, y, z) into a flattened
     1D array index for highly optimized, contiguous memory access.
@@ -83,7 +100,7 @@ def get_index(x, y, z):
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
+def set_voxel_column(voxels: Any, x: int, z: int, cx: int, cy: int, cz: int, perm_array: Any, perm_grad_array: Any) -> None:
     """
     Procedurally generates a single vertical column of blocks within a chunk.
     Applies complex biome mapping, depth stratification, and 3D cave carving logic.
@@ -201,7 +218,7 @@ def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array):
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def place_tree(voxels, x, y, z, voxel_id, tree_prob):
+def place_tree(voxels: Any, x: int, y: int, z: int, voxel_id: int, tree_prob: float) -> None:
     """
     Constructs a localized tree structure (wood trunk and spherical leaf crown)
     within the chunk volume if probability and physical boundaries allow for it.
@@ -244,7 +261,7 @@ def place_tree(voxels, x, y, z, voxel_id, tree_prob):
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array):
+def fill_initial_sunlight(voxels: Any, lightmap: Any, cx: int, cy: int, cz: int, perm_array: Any) -> None:
     """
     Initializes a newly generated chunk's lightmap by simulating direct,
     overhead sunlight falling vertically onto the procedural terrain layout.

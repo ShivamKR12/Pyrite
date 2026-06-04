@@ -1,7 +1,19 @@
-from settings import *
+"""
+Frustum culling for efficient 3D rendering.
+
+This module provides both an object-oriented Frustum class for individual 
+tests and a highly optimized, Numba-compiled vectorized function for 
+testing thousands of chunks simultaneously against the camera's view frustum.
+"""
+
 from numba import njit, prange
+import math
 import numpy as np
 from pyglm import glm
+from typing import Any
+from numpy.typing import NDArray
+
+from settings import CHUNK_SPHERE_RADIUS, NEAR, FAR, V_FOV, H_FOV
 from profiler import global_profiler
 
 
@@ -9,14 +21,21 @@ class Frustum:
     """
     Calculates the camera's viewing frustum planes and boundaries dynamically 
     based on the Field of View and Aspect Ratio.
+    
+    Args:
+        camera (Any): The main camera instance tracking the player's perspective.
     """
     @global_profiler.profile_func("Frustum_Init")
-    def __init__(self, camera):
-        self.cam: Camera = camera # type: ignore
+    def __init__(self, camera: Any) -> None:
+        self.cam: Any = camera
+        self.factor_y: float = 0.0
+        self.tan_y: float = 0.0
+        self.factor_x: float = 0.0
+        self.tan_x: float = 0.0
         self.update_factors(V_FOV, H_FOV)
         
     @global_profiler.profile_func("Frustum_UpdateFactors")
-    def update_factors(self, v_fov, h_fov):
+    def update_factors(self, v_fov: float, h_fov: float) -> None:
         self.factor_y = 1.0 / math.cos(half_y := v_fov * 0.5)
         self.tan_y = math.tan(half_y)
 
@@ -24,7 +43,7 @@ class Frustum:
         self.tan_x = math.tan(half_x)
 
     @global_profiler.profile_func("Frustum_IsOnFrustum")
-    def is_on_frustum(self, chunk):
+    def is_on_frustum(self, chunk: Any) -> bool:
         # vector to sphere center
         sphere_vec = chunk.center - self.cam.position
 
@@ -48,8 +67,8 @@ class Frustum:
         return True
 
 
-@njit(cache=True, fastmath=True)
-def frustum_cull_fast(chunk_centers, out_mask, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x):
+@njit(cache=True, fastmath=True, parallel=True, nogil=True)
+def frustum_cull_fast(chunk_centers: Any, out_mask: Any, cam_pos: Any, cam_forward: Any, cam_right: Any, cam_up: Any, tan_y: float, tan_x: float, factor_y: float, factor_x: float) -> Any:
     """
     Numba-optimized vectorized frustum culling.
     Rapidly tests an array of chunk centers against the camera's view frustum planes.

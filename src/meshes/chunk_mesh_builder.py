@@ -1,8 +1,24 @@
-from settings import *
+"""
+Numba-optimized Greedy Meshing algorithm and lighting evaluation.
+
+This module scans 3D voxel arrays and mathematically combines adjacent, coplanar 
+block faces into massive single polygons to drastically reduce GPU draw calls. 
+It evaluates Ambient Occlusion (AO) and volumetric Breadth-First Search (BFS) 
+lighting at every vertex lock-free across multiple CPU threads.
+"""
+
+from numba import njit
+import numpy as np
+from typing import Any, Tuple
+
+from settings import (
+    CHUNK_SIZE, CHUNK_AREA, CHUNK_VOL, WORLD_W, WORLD_H, 
+    WORLD_D, WORLD_AREA, AIR, WATER, GLASS, LEAVES
+)
 
 
 @njit(cache=True, nogil=True)
-def get_ao(local_pos, world_pos, chunk_voxels, world_voxels, chunk_positions, plane):
+def get_ao(local_pos: Tuple[int, int, int], world_pos: Tuple[int, int, int], chunk_voxels: Any, world_voxels: Any, chunk_positions: Any, plane: str) -> Tuple[int, int, int, int]:
     """
     Calculates the ambient occlusion (AO) value for a specific vertex on a block face.
     It checks the surrounding blocks in the specified plane to determine how occluded
@@ -46,7 +62,7 @@ def get_ao(local_pos, world_pos, chunk_voxels, world_voxels, chunk_positions, pl
 
 
 @njit(cache=True, nogil=True)
-def get_vertex_light(local_vertex_pos, world_vertex_pos, plane, face_light, chunk_voxels, chunk_lightmap, world_voxels, world_lightmaps, chunk_positions):
+def get_vertex_light(local_vertex_pos: Tuple[int, int, int], world_vertex_pos: Tuple[int, int, int], plane: str, face_light: int, chunk_voxels: Any, chunk_lightmap: Any, world_voxels: Any, world_lightmaps: Any, chunk_positions: Any) -> int:
     """
     Computes the smoothed lighting value for a specific vertex by sampling and averaging
     the sunlight and blocklight from the four surrounding blocks that share the vertex
@@ -99,7 +115,7 @@ def get_vertex_light(local_vertex_pos, world_vertex_pos, plane, face_light, chun
 
 
 @njit(cache=True, nogil=True)
-def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
+def pack_data(x: int, y: int, z: int, voxel_id: int, face_id: int, ao_id: int, flip_id: int, light_val: int) -> Tuple[int, int]:
     """
     Packs multiple pieces of vertex data (coordinates, voxel ID, face ID, AO ID, flip ID)
     into a single 32-bit unsigned integer to minimize memory usage and GPU bandwidth.
@@ -127,7 +143,7 @@ def pack_data(x, y, z, voxel_id, face_id, ao_id, flip_id, light_val):
 
 
 @njit(cache=True, nogil=True)
-def get_chunk_index(world_voxel_pos, chunk_positions):
+def get_chunk_index(world_voxel_pos: Tuple[int, int, int], chunk_positions: Any) -> int:
     """
     Calculates the 1D index of a chunk in the global world arrays based on an absolute
     world voxel coordinate. Returns -1 if the chunk is not currently loaded or out of bounds.
@@ -149,7 +165,7 @@ def get_chunk_index(world_voxel_pos, chunk_positions):
 
 
 @njit(cache=True, nogil=True)
-def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, chunk_voxels, world_voxels, chunk_positions):
+def get_neighbor_voxel_id(local_voxel_pos: Tuple[int, int, int], world_voxel_pos: Tuple[int, int, int], chunk_voxels: Any, world_voxels: Any, chunk_positions: Any) -> int:
     """
     Retrieves the voxel ID of a neighboring block given its local and world coordinates.
     Safely handles cross-chunk boundaries by looking up the appropriate chunk in the world arrays.
@@ -174,7 +190,7 @@ def get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, chunk_voxels, world_
 
 
 @njit(cache=True, nogil=True)
-def get_neighbor_light(local_voxel_pos, world_voxel_pos, chunk_lightmap, world_lightmaps, chunk_positions):
+def get_neighbor_light(local_voxel_pos: Tuple[int, int, int], world_voxel_pos: Tuple[int, int, int], chunk_lightmap: Any, world_lightmaps: Any, chunk_positions: Any) -> int:
     """
     Retrieves the packed lighting value (sunlight and blocklight) of a neighboring block
     given its local and world coordinates, safely crossing chunk boundaries if needed.
@@ -199,7 +215,7 @@ def get_neighbor_light(local_voxel_pos, world_voxel_pos, chunk_lightmap, world_l
 
 
 @njit(cache=True, nogil=True)
-def is_transparent(voxel_id):
+def is_transparent(voxel_id: int) -> bool:
     """
     Checks if a given voxel ID corresponds to a transparent block (like air, water, glass, or leaves).
     Transparent blocks do not cull adjacent faces and do not cast hard ambient occlusion shadows.
@@ -208,7 +224,7 @@ def is_transparent(voxel_id):
 
 
 @njit(cache=True, nogil=True)
-def is_void(local_voxel_pos, world_voxel_pos, chunk_voxels, world_voxels, chunk_positions):
+def is_void(local_voxel_pos: Tuple[int, int, int], world_voxel_pos: Tuple[int, int, int], chunk_voxels: Any, world_voxels: Any, chunk_positions: Any) -> bool:
     """
     Determines if a block at a given coordinate is empty or transparent, which is used
     specifically during the ambient occlusion calculation to see if a corner is occluded.
@@ -220,7 +236,7 @@ def is_void(local_voxel_pos, world_voxel_pos, chunk_voxels, world_voxels, chunk_
 
 
 @njit(cache=True, nogil=True)
-def add_data(vertex_data, index, *vertices):
+def add_data(vertex_data: Any, index: int, *vertices: Tuple[int, int]) -> int:
     """
     Appends newly packed vertex data and its associated lighting value into the main
     mesh arrays, advancing the current index counter.
@@ -234,7 +250,7 @@ def add_data(vertex_data, index, *vertices):
 
 
 @njit(cache=True, nogil=True)
-def build_chunk_mesh(chunk_voxels, chunk_lightmap, format_size, chunk_pos, world_voxels, world_lightmaps, chunk_positions):
+def build_chunk_mesh(chunk_voxels: Any, chunk_lightmap: Any, format_size: int, chunk_pos: Tuple[int, int, int], world_voxels: Any, world_lightmaps: Any, chunk_positions: Any) -> Tuple[Any, int, int]:
     """
     The core greedy meshing algorithm. It scans through a chunk's voxel data slice by slice
     along the X, Y, and Z planes. It groups adjacent, identical, and coplanar block faces

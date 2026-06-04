@@ -1,3 +1,11 @@
+"""
+High-performance thread-safe telemetry and profiling engine.
+
+The Profiler provides advanced metrics collection lock-free across all background 
+ThreadPool worker processes and the primary Pygame execution loop. It tracks function execution 
+times bound by strict memory caps to prevent tracking leaks and dumps fully aggregated JSON reports 
+upon safe shutdown or fatal application crashes.
+"""
 import time
 import json
 import threading
@@ -5,16 +13,26 @@ import numpy as np
 from collections import deque
 from contextlib import contextmanager
 from functools import wraps
+from typing import Any, Callable, Dict, Generator, List, Optional
+from numpy.typing import NDArray
 
 class ThreadSampleBuffer:
-    """Isolated, memory-bounded buffer dedicated to a specific thread's metrics."""
-    def __init__(self, max_samples):
-        self.max_samples = max_samples
-        self.categories = {}
+    """
+    Isolated, memory-bounded buffer dedicated to a specific thread's metrics.
+    
+    Prevents data contention between threads by allocating isolated Deques
+    for profiling categories. Ensures thread-safe metric aggregation.
+    
+    Args:
+        max_samples (int): The maximum number of profiling samples to retain per category.
+    """
+    def __init__(self, max_samples: int) -> None:
+        self.max_samples: int = max_samples
+        self.categories: Dict[str, deque[float]] = {}
         # Simple lock used *only* when adding a new category to prevent iteration crashes
-        self.lock = threading.Lock()
+        self.lock: threading.Lock = threading.Lock()
 
-    def record(self, category, elapsed_time):
+    def record(self, category: str, elapsed_time: float) -> None:
         if category not in self.categories:
             with self.lock:
                 if category not in self.categories:
@@ -26,24 +44,29 @@ class ThreadSampleBuffer:
 class Profiler:
     """
     Production-grade game telemetry system.
+    
+    Features:
     - Zero lock-contention during chunk generation/rendering.
     - No memory leaks (Bounded memory footprints).
     - Perfect multi-thread data aggregation (No data loss on thread exit).
     - Safe, synchronous, non-corrupting shutdown reports.
+    
+    Args:
+        max_samples_per_category (int): Limit on tracking samples to bound memory footprint.
     """
-    def __init__(self, max_samples_per_category=10000):
-        self.max_samples = max_samples_per_category
-        self.registry_lock = threading.Lock()
+    def __init__(self, max_samples_per_category: int = 10000) -> None:
+        self.max_samples: int = max_samples_per_category
+        self.registry_lock: threading.Lock = threading.Lock()
         
         # Maps Thread ID -> ThreadSampleBuffer
-        self.thread_buffers = {}
+        self.thread_buffers: Dict[int, ThreadSampleBuffer] = {}
         
         # Main-thread specific tracking for frame times
-        self.frame_start_time = 0
+        self.frame_start_time: float = 0.0
 
-    def _get_buffer(self):
+    def _get_buffer(self) -> ThreadSampleBuffer:
         """Retrieves or registers a dedicated data buffer for the calling thread."""
-        thread_id = threading.get_ident()
+        thread_id: int = threading.get_ident()
         # Fast look-up without locking if already registered
         if thread_id in self.thread_buffers:
             return self.thread_buffers[thread_id]
@@ -54,41 +77,41 @@ class Profiler:
                 self.thread_buffers[thread_id] = ThreadSampleBuffer(self.max_samples)
             return self.thread_buffers[thread_id]
 
-    def start_frame(self):
+    def start_frame(self) -> None:
         """Called exclusively on the main game loop thread."""
         self.frame_start_time = time.perf_counter()
 
-    def end_frame(self):
+    def end_frame(self) -> None:
         """Called exclusively on the main game loop thread."""
         if self.frame_start_time > 0:
             self.record("Frame_Total", time.perf_counter() - self.frame_start_time)
 
-    def record(self, category, elapsed_time):
+    def record(self, category: str, elapsed_time: float) -> None:
         """Records metrics completely lock-free relative to other concurrent threads."""
-        buf = self._get_buffer()
+        buf: ThreadSampleBuffer = self._get_buffer()
         buf.record(category, elapsed_time)
 
     @contextmanager
-    def measure(self, category):
+    def measure(self, category: str) -> Generator[None, None, None]:
         """Context manager for clean block profiling."""
-        start_time = time.perf_counter()
+        start_time: float = time.perf_counter()
         try:
             yield
         finally:
             self.record(category, time.perf_counter() - start_time)
 
-    def profile_func(self, category=None):
+    def profile_func(self, category: Optional[str] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Decorator to profile entire methods."""
-        def decorator(func):
-            cat = category or func.__name__
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            cat: str = category or func.__name__
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
                 with self.measure(cat):
                     return func(*args, **kwargs)
             return wrapper
         return decorator
 
-    def save_report(self, filename="profiling_results.json"):
+    def save_report(self, filename: str = "profiling_results.json") -> None:
         """
         Consolidates metrics across ALL active and dead background worker loops,
         and saves synchronously to prevent file corruption on application exit.
@@ -96,7 +119,7 @@ class Profiler:
         print(f"\n[TELEMETRY] Compiling engine metrics from all threads...")
         
         # Aggregated storage: Category -> Combined List of samples
-        master_records = {}
+        master_records: Dict[str, List[float]] = {}
 
         # Safely extract data from all registered thread buffers
         with self.registry_lock:
@@ -109,12 +132,12 @@ class Profiler:
                         master_records[category].extend(list(samples))
 
         # Calculate metrics
-        report = {}
+        report: Dict[str, Dict[str, Any]] = {}
         for category, times in master_records.items():
             if not times:
                 continue
                 
-            arr = np.array(times) * 1000  # Convert to milliseconds
+            arr: NDArray[np.float64] = np.array(times, dtype=np.float64) * 1000.0  # Convert to milliseconds
             report[category] = {
                 "Calls": len(arr),
                 "Avg_ms": round(float(np.mean(arr)), 3),
@@ -133,4 +156,4 @@ class Profiler:
         except Exception as e:
             print(f"[TELEMETRY] ERROR: Failed to write report file: {e}")
 
-global_profiler = Profiler()
+global_profiler: Profiler = Profiler()

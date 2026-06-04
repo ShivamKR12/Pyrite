@@ -1,83 +1,99 @@
-from settings import *
+"""
+UI Menu systems: Main Menu, Pause Menu, and Options Menu.
+
+This module manages the interactive overlays and state machines for the 
+game's user interfaces. It handles dynamic world saving/loading screens, 
+configuration binding for settings, and smooth animated transitions between states.
+"""
+
 import pygame as pg
 import moderngl as mgl
 from pyglm import glm
-from .components import Button, WorldButton, TextInput, Slider, Toggle, VBox, UINode
-from .meshes import UIColorMesh, UITextMesh
-from .text import TextRenderer
 import sqlite3
 import random
 import hashlib
+import os
+from typing import Any, Callable, List, Optional, Tuple
+
+from .components import Button, WorldButton, TextInput, Slider, Toggle, VBox, UINode
+from .meshes import UIColorMesh, UITextMesh
+from .text import TextRenderer
 from profiler import global_profiler
+from settings import ASPECT_RATIO, FONT_SIZE_TITLE, FONT_SIZE_PAUSED, get_path
 
 
 class MainMenu:
     """
     Manages the Main Menu, World Selection, and World Creation screens.
+    
     Handles smooth state transitions, dynamic world list loading from the 
     SQLite saves directory, and interaction events.
+    
+    Args:
+        app (Any): The main application context.
     """
     @global_profiler.profile_func("MainMenu_Init")
-    def __init__(self, app):
-        self.app = app
-        self.title_renderer = TextRenderer(app)
+    def __init__(self, app: Any) -> None:
+        self.app: Any = app
+        self.title_renderer: Any = TextRenderer(app)
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_TITLE, bold=True)
-        self.title_mesh = UITextMesh(app)
+        self.title_mesh: Any = UITextMesh(app)
 
         try:
-            img = pg.image.load(get_path('assets/pyrite.png')).convert_alpha()
-            self.title_tex = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
+            img: pg.Surface = pg.image.load(get_path('assets/textures/uis/pyrite-logo.png')).convert_alpha()
+            self.title_tex: Any = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
             self.title_tex.build_mipmaps()
             self.title_tex.filter = (mgl.LINEAR_MIPMAP_LINEAR, mgl.LINEAR)
         except Exception:
             self.title_tex = self.title_renderer.get_texture("Pyrite")
 
         try:
-            bg_img = pg.image.load(get_path('assets/background.jpg')).convert_alpha()
-            self.bg_tex = self.app.ctx.texture(bg_img.get_size(), 4, pg.image.tobytes(bg_img, 'RGBA', True))
+            bg_img: pg.Surface = pg.image.load(get_path('assets/textures/uis/background.jpg')).convert_alpha()
+            self.bg_tex: Any = self.app.ctx.texture(bg_img.get_size(), 4, pg.image.tobytes(bg_img, 'RGBA', True))
             self.bg_tex.filter = (mgl.LINEAR, mgl.LINEAR)
-            self.bg_tex_mesh = UITextMesh(app)
+            self.bg_tex_mesh: Any = UITextMesh(app)
         except Exception as e:
             print(f"Failed to load background: {e}")
             self.bg_tex = None
 
-        self.state = 'MAIN'
-        self.transition_state = 'IN' # 'IN', 'OUT', 'IDLE'
-        self.transition_progress = 0.0
-        self.pending_action = None
-        self.anim_dir = 1
-        self.world_buttons = []
-        self.delete_buttons = []
-        self.scroll_offset = 0.0
-        self.target_scroll_offset = 0.0
+        self.state: str = 'MAIN'
+        self.transition_state: str = 'IN' # 'IN', 'OUT', 'IDLE'
+        self.transition_progress: float = 0.0
+        self.pending_action: Optional[Callable[[], None]] = None
+        self.anim_dir: int = 1
+        self.world_buttons: List[Any] = []
+        self.delete_buttons: List[Any] = []
+        self.scroll_offset: float = 0.0
+        self.target_scroll_offset: float = 0.0
 
         # Main Menu
-        self.layout_main = VBox(pos=(0, 0.15), spacing=0.1)
+        self.layout_main: Any = VBox(pos=(0, 0.15), spacing=0.1)
         self.layout_main.add_child(Button(app, 'Play', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), -1)))
         self.layout_main.add_child(Button(app, 'Options', (0, 0), (0.2, 0.07), lambda: self.trigger_action(self.open_options, 1)))
         self.layout_main.add_child(Button(app, 'Quit', (0, 0), (0.2, 0.07), lambda: self.trigger_action(self.app.quit_game, 1)))
         self.layout_main.update_layout()
 
         # Create World
-        self.create_game_mode = 1 # 1 is SURVIVAL
-        self.layout_create = VBox(pos=(0, 0.25), spacing=0.2) # Master container gap
+        self.create_game_mode: int = 1 # 1 is SURVIVAL
+        self.layout_create: Any = VBox(pos=(0, 0.25), spacing=0.2) # Master container gap
         
-        config_group = self.layout_create.add_child(VBox(spacing=0.1)) # Tight grouping for inputs!
-        self.input_name = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), "World Name"))
-        self.input_seed = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), "Seed (Leave blank for random)"))
-        self.btn_game_mode = config_group.add_child(Button(app, 'Game Mode: Survival', (0, 0), (0.3, 0.05), self.toggle_game_mode))
+        config_group: Any = self.layout_create.add_child(VBox(spacing=0.1)) # Tight grouping for inputs!
+        self.input_name: Any = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), "World Name"))
+        self.input_seed: Any = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), "Seed (Leave blank for random)"))
+        self.btn_game_mode: Any = config_group.add_child(Button(app, 'Game Mode: Survival', (0, 0), (0.3, 0.05), self.toggle_game_mode))
         
-        action_group = self.layout_create.add_child(VBox(spacing=0.1)) # Normal spacing for buttons
-        self.btn_create = action_group.add_child(Button(app, 'Create New World', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1)))
-        self.btn_back_create = action_group.add_child(Button(app, 'Back', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1)))
+        action_group: Any = self.layout_create.add_child(VBox(spacing=0.1)) # Normal spacing for buttons
+        self.btn_create: Any = action_group.add_child(Button(app, 'Create New World', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1)))
+        self.btn_back_create: Any = action_group.add_child(Button(app, 'Back', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1)))
         self.layout_create.update_layout()
         
         # Select World (will be populated dynamically)
-        self.btn_new_world = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.trigger_action(lambda: self.set_state('CREATE_WORLD'), -1))
-        self.btn_back_select = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('MAIN'), 1))
+        self.btn_new_world: Any = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.trigger_action(lambda: self.set_state('CREATE_WORLD'), -1))
+        self.btn_back_select: Any = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('MAIN'), 1))
 
     @global_profiler.profile_func("MainMenu_TriggerAction")
-    def trigger_action(self, action, anim_dir=1):
+    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
+        """Initiates a smooth animation transition before executing a state-change callback."""
         if self.transition_state in ('IDLE', 'IN'):
             self.pending_action = action
             self.transition_state = 'OUT'
@@ -85,21 +101,24 @@ class MainMenu:
             self.anim_dir = anim_dir
 
     @global_profiler.profile_func("MainMenu_OpenOptions")
-    def open_options(self):
+    def open_options(self) -> None:
+        """Transitions to the Options Menu overlay."""
         self.app.options_menu.previous_state = 'MAIN_MENU'
         self.app.game_state = 'OPTIONS'
         self.app.options_menu.transition_state = 'IN'
         self.app.options_menu.transition_progress = 0.0
 
     @global_profiler.profile_func("MainMenu_ToggleGameMode")
-    def toggle_game_mode(self):
+    def toggle_game_mode(self) -> None:
+        """Toggles the selected creation game mode (Survival/Creative)."""
         self.create_game_mode = 0 if self.create_game_mode == 1 else 1
-        mode_text = "Survival" if self.create_game_mode == 1 else "Creative"
+        mode_text: str = "Survival" if self.create_game_mode == 1 else "Creative"
         self.btn_game_mode.text = f"Game Mode: {mode_text}"
         self.btn_game_mode.text_tex = self.btn_game_mode.text_renderer.get_texture(self.btn_game_mode.text)
 
     @global_profiler.profile_func("MainMenu_SetState")
-    def set_state(self, new_state):
+    def set_state(self, new_state: str) -> None:
+        """Switches the active Main Menu context and resets dynamic UI elements."""
         self.state = new_state
         
         if new_state == 'SELECT_WORLD':
@@ -117,7 +136,8 @@ class MainMenu:
         self.transition_progress = 0.0
 
     @global_profiler.profile_func("MainMenu_LoadWorldList")
-    def load_world_list(self):
+    def load_world_list(self) -> None:
+        """Queries the local `saves` directory and generates buttons for all existing databases."""
         for btn in self.world_buttons:
             if hasattr(btn, 'thumb_tex'):
                 btn.thumb_tex.release()
@@ -132,20 +152,24 @@ class MainMenu:
         
         os.makedirs('saves', exist_ok=True)
         # Sort by modification time (most recent first)
-        saves = sorted([f for f in os.listdir('saves') if f.endswith('.db')], 
-                       key=lambda x: os.path.getmtime(os.path.join('saves', x)), 
-                       reverse=True)
+        saves: List[str] = sorted([f for f in os.listdir('saves') if f.endswith('.db')], 
+                                  key=lambda x: os.path.getmtime(os.path.join('saves', x)), 
+                                  reverse=True)
         
-        y_offset = -0.05
+        y_offset: float = -0.05
         for save_file in saves: # Load all worlds dynamically
-            save_name = save_file[:-3]
-            display_name, seed, game_mode, creation_date, last_played = save_name, 0, 1, "Unknown", "Unknown"
+            save_name: str = save_file[:-3]
+            display_name: str = save_name
+            seed: int = 0
+            game_mode: int = 1
+            creation_date: str = "Unknown"
+            last_played: str = "Unknown"
             
             try:
-                connection = sqlite3.connect(f'saves/{save_file}')
-                cursor = connection.cursor()
+                connection: sqlite3.Connection = sqlite3.connect(f'saves/{save_file}')
+                cursor: sqlite3.Cursor = connection.cursor()
                 cursor.execute('SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1')
-                row = cursor.fetchone()
+                row: Any = cursor.fetchone()
                 
                 if row:
                     display_name = row[0]
@@ -159,16 +183,16 @@ class MainMenu:
             except:
                 pass
             
-            def load_and_reset(sn=save_name):
+            def load_and_reset(sn: str = save_name) -> None:
                 self.app.init_game_session(sn)
                 self.set_state('MAIN')
             
-            btn = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
+            btn: Any = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, 
                               (0, y_offset), (0.65, 0.12), lambda sn=save_name: self.trigger_action(lambda: load_and_reset(sn), -1))
             self.world_buttons.append(btn)
             
             # Create a small red 'X' button positioned right next to the WorldButton
-            del_btn = Button(self.app, 'X', (0.55, y_offset), (0.05, 0.08), lambda sn=save_name: self.delete_world(sn))
+            del_btn: Any = Button(self.app, 'X', (0.55, y_offset), (0.05, 0.08), lambda sn=save_name: self.delete_world(sn))
             del_btn.base_color = (0.4, 0.1, 0.1, 0.7)
             del_btn.hover_color = (0.8, 0.1, 0.1, 0.9)
             self.delete_buttons.append(del_btn)
@@ -176,7 +200,8 @@ class MainMenu:
             y_offset -= 0.26
 
     @global_profiler.profile_func("MainMenu_DeleteWorld")
-    def delete_world(self, save_name):
+    def delete_world(self, save_name: str) -> None:
+        """Deletes a saved world database and its thumbnail from the disk."""
         try:
             if os.path.exists(f'saves/{save_name}.db'):
                 os.remove(f'saves/{save_name}.db')
@@ -190,21 +215,23 @@ class MainMenu:
         self.load_world_list() # Refresh the UI list instantly!
 
     @global_profiler.profile_func("MainMenu_CreateWorld")
-    def create_world(self):
-        name = self.input_name.text.strip()
+    def create_world(self) -> None:
+        """Creates a new world database using the parameters from the input fields."""
+        name: str = self.input_name.text.strip()
         
         if not name:
             name = "New_World"
             
-        base_save_name = name.replace(" ", "_")
-        save_name = base_save_name
+        base_save_name: str = name.replace(" ", "_")
+        save_name: str = base_save_name
         
-        counter = 1
+        counter: int = 1
         while os.path.exists(f'saves/{save_name}.db'):
             save_name = f"{base_save_name}_{counter}"
             counter += 1
 
-        seed_str = self.input_seed.text.strip()
+        seed_str: str = self.input_seed.text.strip()
+        seed: int
         if not seed_str:
             seed = random.randint(100000, 999999999)
         
@@ -220,7 +247,8 @@ class MainMenu:
         self.set_state('MAIN')
 
     @global_profiler.profile_func("MainMenu_Update")
-    def update(self):
+    def update(self) -> None:
+        """Updates animations, scrolling, and distributes events to active UI components."""
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005 # ~200ms transitions
             
@@ -229,7 +257,7 @@ class MainMenu:
                 
                 if self.transition_state == 'OUT':
                     if self.pending_action:
-                        action = self.pending_action
+                        action: Callable[[], None] = self.pending_action
                         self.pending_action = None
                         action()
                     
@@ -240,7 +268,7 @@ class MainMenu:
                     self.transition_state = 'IDLE'
 
         if self.transition_state != 'IDLE':
-            mouse_pos = (-999, -999) # Lock interactions during animations
+            mouse_pos: Tuple[int, int] = (-999, -999) # Lock interactions during animations
         
         else:
             mouse_pos = pg.mouse.get_pos()
@@ -260,9 +288,9 @@ class MainMenu:
             self.btn_back_select.check_hover(mouse_pos)
             
             # Apply the scroll offset and disable hover interactions if the button goes out of bounds
-            base_y = -0.05
+            base_y: float = -0.05
             for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons)):
-                new_y = base_y - i * 0.26 + self.scroll_offset
+                new_y: float = base_y - i * 0.26 + self.scroll_offset
                 btn.local_pos = [0, new_y]
                 del_btn.local_pos = [0.55, new_y]
                 
@@ -283,7 +311,7 @@ class MainMenu:
             self.layout_create.update(mouse_pos)
 
     @global_profiler.profile_func("MainMenu_HandleEvent")
-    def handle_event(self, event):
+    def handle_event(self, event: Any) -> None:
         if self.transition_state != 'IDLE':
             return # Ignore inputs during transitions
 
@@ -307,14 +335,15 @@ class MainMenu:
                     self.target_scroll_offset = max(0.0, self.target_scroll_offset - 0.26)
 
                 elif event.button == 5: # Mouse Wheel Scroll Down
-                    max_scroll = max(0.0, (len(self.world_buttons) - 2) * 0.26)
+                    max_scroll: float = max(0.0, (len(self.world_buttons) - 2) * 0.26)
                     self.target_scroll_offset = min(max_scroll, self.target_scroll_offset + 0.26)        
 
     @global_profiler.profile_func("MainMenu_RenderBg")
-    def render_bg(self):
+    def render_bg(self) -> None:
+        """Renders the fullscreen background image dynamically scaled to the window aspect ratio."""
         if hasattr(self, 'bg_tex') and self.bg_tex:
             self.bg_tex.use(location=4)
-            img_aspect = self.bg_tex.width / self.bg_tex.height
+            img_aspect: float = self.bg_tex.width / self.bg_tex.height
             
             if img_aspect > ASPECT_RATIO:
                 scale_x, scale_y = img_aspect / ASPECT_RATIO, 1.0
@@ -330,11 +359,12 @@ class MainMenu:
             self.bg_tex_mesh.render()
 
     @global_profiler.profile_func("MainMenu_Render")
-    def render(self):
-        t = self.transition_progress
-        ease = 1.0 - (1.0 - t) ** 3
-        offset_y = 0.0
-        alpha = 1.0
+    def render(self) -> None:
+        """Issues draw calls for the title, current layout, and applies animated transition offsets."""
+        t: float = self.transition_progress
+        ease: float = 1.0 - (1.0 - t) ** 3
+        offset_y: float = 0.0
+        alpha: float = 1.0
         
         if self.transition_state == 'IN':
             offset_y = (1.0 - ease) * -0.5 * self.anim_dir
@@ -344,16 +374,17 @@ class MainMenu:
             offset_y = ease * 0.5 * self.anim_dir
             alpha = 1.0 - ease
             
-        offset = (0.0, offset_y)
+        offset: Tuple[float, float] = (0.0, offset_y)
         
         self.render_bg()
 
         # Render title
         self.title_tex.use(location=4)
         
-        tex_w, tex_h = self.title_tex.size
-        scale_y = 0.15
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        tex_w: int = self.title_tex.size[0]
+        tex_h: int = self.title_tex.size[1]
+        scale_y: float = 0.15
+        scale_x: float = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
         self.title_mesh.program['u_offset'] = (0.0, 0.5 + offset_y * 0.5) # Parallax!
@@ -398,23 +429,27 @@ class MainMenu:
 class PauseMenu:
     """
     Provides the in-game pause screen overlay.
+    
     Allows the player to resume the game, open options, or quit back to the Main Menu.
+    
+    Args:
+        app (Any): The main application context.
     """
     @global_profiler.profile_func("PauseMenu_Init")
-    def __init__(self, app):
-        self.app = app
-        self.title_renderer = TextRenderer(app)
+    def __init__(self, app: Any) -> None:
+        self.app: Any = app
+        self.title_renderer: Any = TextRenderer(app)
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
-        self.title_mesh = UITextMesh(app)
-        self.title_tex = self.title_renderer.get_texture("Game Paused")
-        self.bg_mesh = UIColorMesh(app)
+        self.title_mesh: Any = UITextMesh(app)
+        self.title_tex: Any = self.title_renderer.get_texture("Game Paused")
+        self.bg_mesh: Any = UIColorMesh(app)
 
-        self.transition_state = 'IN'
-        self.transition_progress = 0.0
-        self.pending_action = None
-        self.anim_dir = 1
+        self.transition_state: str = 'IN'
+        self.transition_progress: float = 0.0
+        self.pending_action: Optional[Callable[[], None]] = None
+        self.anim_dir: int = 1
 
-        self.layout = VBox(pos=(0, 0.15), spacing=0.1)
+        self.layout: Any = VBox(pos=(0, 0.15), spacing=0.1)
         self.layout.add_child(Button(app, 'Resume', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.resume_game, -1)))
         self.layout.add_child(Button(app, 'Options', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.open_options, 1)))
         self.layout.add_child(Button(app, 'Quit to Menu', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.quit_to_menu, 1)))
@@ -422,7 +457,8 @@ class PauseMenu:
         self.layout.update_layout()
 
     @global_profiler.profile_func("PauseMenu_TriggerAction")
-    def trigger_action(self, action, anim_dir=1):
+    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
+        """Triggers an out-transition before calling the specified action."""
         if self.transition_state in ('IDLE', 'IN'):
             self.pending_action = action
             self.transition_state = 'OUT'
@@ -430,20 +466,23 @@ class PauseMenu:
             self.anim_dir = anim_dir
 
     @global_profiler.profile_func("PauseMenu_OpenOptions")
-    def open_options(self):
+    def open_options(self) -> None:
+        """Transitions to the Options Menu."""
         self.app.options_menu.previous_state = 'PAUSED'
         self.app.game_state = 'OPTIONS'
         self.app.options_menu.transition_state = 'IN'
         self.app.options_menu.transition_progress = 0.0
 
     @global_profiler.profile_func("PauseMenu_ResumeGame")
-    def resume_game(self):
+    def resume_game(self) -> None:
+        """Hides the pause menu and re-captures the mouse for gameplay."""
         self.app.game_state = 'IN_GAME'
         pg.event.set_grab(True)
         pg.mouse.set_visible(False)
 
     @global_profiler.profile_func("PauseMenu_QuitToMenu")
-    def quit_to_menu(self):
+    def quit_to_menu(self) -> None:
+        """Unloads the game world and returns to the Main Menu."""
         self.app.game_state = 'MAIN_MENU'
         self.app.menu.state = 'MAIN'
         
@@ -452,7 +491,8 @@ class PauseMenu:
             self.app.scene = None # Unload the world to free memory
 
     @global_profiler.profile_func("PauseMenu_Update")
-    def update(self):
+    def update(self) -> None:
+        """Processes animations and propagates update events to children."""
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005
             
@@ -461,7 +501,7 @@ class PauseMenu:
                 
                 if self.transition_state == 'OUT':
                     if self.pending_action:
-                        action = self.pending_action
+                        action: Callable[[], None] = self.pending_action
                         self.pending_action = None
                         action()
                     
@@ -472,7 +512,7 @@ class PauseMenu:
                     self.transition_state = 'IDLE'
                     
         if self.transition_state != 'IDLE':
-            mouse_pos = (-999, -999)
+            mouse_pos: Tuple[int, int] = (-999, -999)
         
         else:
             mouse_pos = pg.mouse.get_pos()
@@ -480,18 +520,19 @@ class PauseMenu:
         self.layout.update(mouse_pos)
 
     @global_profiler.profile_func("PauseMenu_HandleEvent")
-    def handle_event(self, event):
+    def handle_event(self, event: Any) -> None:
         if self.transition_state != 'IDLE':
             return
         
         self.layout.handle_event(event)
 
     @global_profiler.profile_func("PauseMenu_Render")
-    def render(self):
-        t = self.transition_progress
-        ease = 1.0 - (1.0 - t) ** 3
-        offset_y = 0.0
-        alpha = 1.0
+    def render(self) -> None:
+        """Renders the dimming background and the menu elements with animation easing."""
+        t: float = self.transition_progress
+        ease: float = 1.0 - (1.0 - t) ** 3
+        offset_y: float = 0.0
+        alpha: float = 1.0
         
         if self.transition_state == 'IN':
             offset_y = (1.0 - ease) * -0.5 * self.anim_dir
@@ -501,19 +542,20 @@ class PauseMenu:
             offset_y = ease * 0.5 * self.anim_dir
             alpha = 1.0 - ease
             
-        offset = (0.0, offset_y)
-        bg_alpha = alpha if self.transition_state != 'IDLE' else 1.0
+        offset: Tuple[float, float] = (0.0, offset_y)
+        bg_alpha: float = alpha if self.transition_state != 'IDLE' else 1.0
         
         self.bg_mesh.program['u_scale'] = (1.0, 1.0)
         self.bg_mesh.program['u_offset'] = (0.0, 0.0)
         self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6 * bg_alpha)
         self.bg_mesh.render()
 
-        tex = self.title_tex
+        tex: Any = self.title_tex
         tex.use(location=4)
-        tex_w, tex_h = tex.size
-        scale_y = 0.08
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        tex_w: int = tex.size[0]
+        tex_h: int = tex.size[1]
+        scale_y: float = 0.08
+        scale_x: float = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
         self.title_mesh.program['u_offset'] = (0.0, 0.4 + offset_y * 0.5)
         
@@ -531,22 +573,26 @@ class PauseMenu:
 class OptionsMenu:
     """
     Manages the game settings screen.
+    
     Provides sliders and toggles for FOV, Mouse Sensitivity, Volume, Render Distance, 
     and Visual Tints. Handles serializing these settings to config.json.
+    
+    Args:
+        app (Any): The main application context.
     """
     @global_profiler.profile_func("OptionsMenu_Init")
-    def __init__(self, app):
-        self.app = app
-        self.title_renderer = TextRenderer(app)
+    def __init__(self, app: Any) -> None:
+        self.app: Any = app
+        self.title_renderer: Any = TextRenderer(app)
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
-        self.title_mesh = UITextMesh(app)
-        self.title_tex = self.title_renderer.get_texture("Options")
-        self.bg_mesh = UIColorMesh(app)
+        self.title_mesh: Any = UITextMesh(app)
+        self.title_tex: Any = self.title_renderer.get_texture("Options")
+        self.bg_mesh: Any = UIColorMesh(app)
 
-        self.transition_state = 'IN'
-        self.transition_progress = 0.0
-        self.pending_action = None
-        self.anim_dir = 1
+        self.transition_state: str = 'IN'
+        self.transition_progress: float = 0.0
+        self.pending_action: Optional[Callable[[], None]] = None
+        self.anim_dir: int = 1
 
         # Ensure config keys exist to prevent KeyError on old config.json files
         if 'music_volume' not in app.config:
@@ -555,7 +601,7 @@ class OptionsMenu:
         if 'sfx_volume' not in app.config:
             app.config['sfx_volume'] = 20
 
-        self.layout = VBox(pos=(0, 0.3), spacing=0.09)
+        self.layout: Any = VBox(pos=(0, 0.3), spacing=0.09)
         self.layout.add_child(Slider(app, 'FOV', (0, 0), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True))
         self.layout.add_child(Slider(app, 'Sensitivity', (0, 0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'))
         self.layout.add_child(Slider(app, 'Music Volume', (0, 0), (0.3, 0.05), 0, 100, 'music_volume', self.update_music_volume, is_int=True))
@@ -567,10 +613,11 @@ class OptionsMenu:
         
         self.layout.update_layout()
         
-        self.previous_state = 'MAIN_MENU'
+        self.previous_state: str = 'MAIN_MENU'
 
     @global_profiler.profile_func("OptionsMenu_TriggerAction")
-    def trigger_action(self, action, anim_dir=1):
+    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
+        """Initiates an animated transition out before running the requested action."""
         if self.transition_state in ('IDLE', 'IN'):
             self.pending_action = action
             self.transition_state = 'OUT'
@@ -578,20 +625,24 @@ class OptionsMenu:
             self.anim_dir = anim_dir
 
     @global_profiler.profile_func("OptionsMenu_UpdateFov")
-    def update_fov(self, val):
+    def update_fov(self, val: float) -> None:
+        """Applies the field-of-view setting instantly to the active player."""
         if self.app.scene:
             self.app.player.fov = glm.radians(val)
 
     @global_profiler.profile_func("OptionsMenu_UpdateMusicVolume")
-    def update_music_volume(self, val):
+    def update_music_volume(self, val: float) -> None:
+        """Adjusts the global Pygame mixer music volume."""
         pg.mixer.music.set_volume(val / 100.0)
 
     @global_profiler.profile_func("OptionsMenu_UpdateSfxVolume")
-    def update_sfx_volume(self, val):
+    def update_sfx_volume(self, val: float) -> None:
+        """Delegates sound effect volume changes to the central Sounds manager."""
         self.app.sounds.set_sfx_volume(val)
 
     @global_profiler.profile_func("OptionsMenu_GoBack")
-    def go_back(self):
+    def go_back(self) -> None:
+        """Returns to the menu that originally opened this options screen."""
         self.app.save_config()
         self.app.game_state = self.previous_state
         
@@ -604,7 +655,8 @@ class OptionsMenu:
             self.app.pause_menu.transition_progress = 0.0
 
     @global_profiler.profile_func("OptionsMenu_Update")
-    def update(self):
+    def update(self) -> None:
+        """Updates animations and cascades logic down to layout components."""
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005
             
@@ -613,7 +665,7 @@ class OptionsMenu:
                 
                 if self.transition_state == 'OUT':
                     if self.pending_action:
-                        action = self.pending_action
+                        action: Callable[[], None] = self.pending_action
                         self.pending_action = None
                         action()
                     
@@ -624,7 +676,7 @@ class OptionsMenu:
                     self.transition_state = 'IDLE'
                     
         if self.transition_state != 'IDLE':
-            mouse_pos = (-999, -999)
+            mouse_pos: Tuple[int, int] = (-999, -999)
         
         else:
             mouse_pos = pg.mouse.get_pos()
@@ -632,18 +684,19 @@ class OptionsMenu:
         self.layout.update(mouse_pos)
 
     @global_profiler.profile_func("OptionsMenu_HandleEvent")
-    def handle_event(self, event):
+    def handle_event(self, event: Any) -> None:
         if self.transition_state != 'IDLE':
             return
         
         self.layout.handle_event(event)
 
     @global_profiler.profile_func("OptionsMenu_Render")
-    def render(self):
-        t = self.transition_progress
-        ease = 1.0 - (1.0 - t) ** 3
-        offset_y = 0.0
-        alpha = 1.0
+    def render(self) -> None:
+        """Draws the options layout UI nodes alongside their animated transitions."""
+        t: float = self.transition_progress
+        ease: float = 1.0 - (1.0 - t) ** 3
+        offset_y: float = 0.0
+        alpha: float = 1.0
         
         if self.transition_state == 'IN':
             offset_y = (1.0 - ease) * -0.5 * self.anim_dir
@@ -653,8 +706,8 @@ class OptionsMenu:
             offset_y = ease * 0.5 * self.anim_dir
             alpha = 1.0 - ease
             
-        offset = (0.0, offset_y)
-        bg_alpha = alpha if self.transition_state != 'IDLE' else 1.0
+        offset: Tuple[float, float] = (0.0, offset_y)
+        bg_alpha: float = alpha if self.transition_state != 'IDLE' else 1.0
         
         if self.previous_state == 'PAUSED':
             self.bg_mesh.program['u_scale'] = (1.0, 1.0)
@@ -662,11 +715,12 @@ class OptionsMenu:
             self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8 * bg_alpha)
             self.bg_mesh.render()
 
-        tex = self.title_tex
+        tex: Any = self.title_tex
         tex.use(location=4)
-        tex_w, tex_h = tex.size
-        scale_y = 0.08
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        tex_w: int = tex.size[0]
+        tex_h: int = tex.size[1]
+        scale_y: float = 0.08
+        scale_x: float = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
         self.title_mesh.program['u_offset'] = (0.0, 0.55 + offset_y * 0.5)
         

@@ -1,30 +1,47 @@
+"""
+Sound and music management for the game.
+
+This module handles the loading, mixing, and playback of all audio assets,
+including background music tracks, block-specific interaction sounds (mining,
+placing, walking), and UI sound effects.
+"""
+
 import pygame as pg
 import random
-from settings import *
+from typing import Any, Dict, List
+
+from settings import (
+    SAND, GRASS, GRAVEL, STONE, SNOW, LEAVES, WOOD, DIRT, GLASS, WOOD_PLANKS,
+    COBBELSTONE, GLOWSTONE, CACTUS, STONE_BRICKS, CHUNK_SIZE, get_path
+)
 from profiler import global_profiler
 
 
 class Sounds:
     """
     Manages all audio assets, sound effects, and background music.
+    
     Handles loading sounds, randomizing playback for variety, and mapping specific
     blocks to their respective material sound effects.
+    
+    Args:
+        app (Any): The main application context.
     """
     @global_profiler.profile_func("Sounds_Init")
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         """
         Initializes the Pygame mixer, loads all block sounds, and starts the background music loop.
         """
-        self.app = app
+        self.app: Any = app
         
         pg.mixer.init()
         pg.mixer.set_num_channels(32)
 
-        def load(filename):
-            s = pg.mixer.Sound(get_path(f'assets/sounds/{filename}'))
+        def load(filename: str) -> pg.mixer.Sound:
+            s: pg.mixer.Sound = pg.mixer.Sound(get_path(f'assets/audio/blocks/{filename}'))
             return s
 
-        self.sounds = {}
+        self.sounds: Dict[int, Dict[str, List[pg.mixer.Sound]]] = {}
         
         # SAND
         self.sounds[SAND] = {
@@ -131,19 +148,19 @@ class Sounds:
         # STONE BRICKS
         self.sounds[STONE_BRICKS] = self.sounds[STONE]
 
-        self.hit_index = 0
-        self.last_hit_time = 0
-        self.mining_index = -1
+        self.hit_index: int = 0
+        self.last_hit_time: int = 0
+        self.mining_index: int = -1
         
-        self.pop_sound = pg.mixer.Sound(get_path('assets/sounds/others/pickup-sound.ogg'))
+        self.pop_sound: pg.mixer.Sound = pg.mixer.Sound(get_path('assets/audio/sfx/pickup-sound.ogg'))
         
         # Apply initial SFX volume
         self.set_sfx_volume(self.app.config.get('sfx_volume', 20))
         
         # Background Music
-        self.music_tracks = [
-            get_path('assets/sounds/background/c418-aria-math-(minecraft-volume-beta).ogg'),
-            get_path('assets/sounds/background/c418-minecraft.ogg')
+        self.music_tracks: List[str] = [
+            get_path('assets/audio/music/c418-aria-math-(minecraft-volume-beta).ogg'),
+            get_path('assets/audio/music/c418-minecraft.ogg')
         ]
         
         pg.mixer.music.load(random.choice(self.music_tracks))
@@ -151,9 +168,9 @@ class Sounds:
         pg.mixer.music.play(-1) # Loop forever in the background
 
     @global_profiler.profile_func("Sounds_SetSFXVolume")
-    def set_sfx_volume(self, val):
+    def set_sfx_volume(self, value: float) -> None:
         """Updates the volume for all loaded sound effects."""
-        vol = val / 100.0
+        vol: float = value / 100.0
         
         if hasattr(self, 'pop_sound'):
             self.pop_sound.set_volume(min(1.0, vol * 5.0))
@@ -164,18 +181,18 @@ class Sounds:
                     s.set_volume(vol)
 
     @global_profiler.profile_func("Sounds_PlayWalk")
-    def play_walk(self, voxel_id):
+    def play_walk(self, voxel_id: int) -> None:
         """
         Plays a walking footstep sound based on the material of the block the player is standing on.
         Automatically cycles through the available footstep variations.
         """
-        current_time = pg.time.get_ticks()
+        current_time: int = pg.time.get_ticks()
         
         if current_time - self.last_hit_time > 500: # Reset to 1 if you stop walking
             self.hit_index = 0
             
-        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
-        hits = s_dict['walk']
+        s_dict: Dict[str, List[pg.mixer.Sound]] = self.sounds.get(voxel_id, self.sounds[GRASS])
+        hits: List[pg.mixer.Sound] = s_dict['walk']
         
         if self.hit_index >= len(hits):
             self.hit_index = 0
@@ -185,43 +202,43 @@ class Sounds:
         self.last_hit_time = current_time
 
     @global_profiler.profile_func("Sounds_PlayBreak")
-    def play_break(self, voxel_id):
+    def play_break(self, voxel_id: int) -> None:
         """
         Plays a hard breaking sound when a block is fully destroyed.
         """
-        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        s_dict: Dict[str, List[pg.mixer.Sound]] = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['break']).play()
     
     @global_profiler.profile_func("Sounds_PlayPlace")
-    def play_place(self, voxel_id):
+    def play_place(self, voxel_id: int) -> None:
         """
         Plays a block placement sound when adding a new block to the world.
         """
-        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        s_dict: Dict[str, List[pg.mixer.Sound]] = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['place']).play()
 
     @global_profiler.profile_func("Sounds_PlayJump")
-    def play_jump(self, voxel_id):
+    def play_jump(self, voxel_id: int) -> None:
         """
         Plays a jump sound when the player jumps.
         """
-        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
+        s_dict: Dict[str, List[pg.mixer.Sound]] = self.sounds.get(voxel_id, self.sounds[GRASS])
         random.choice(s_dict['jump']).play()
         
     @global_profiler.profile_func("Sounds_PlayBreaking")
-    def play_breaking(self, voxel_id, mining_time, mining_duration):
+    def play_breaking(self, voxel_id: int, mining_time: float, mining_duration: float) -> None:
         """
         Plays a continuous sequence of hitting sounds mapped to the progress of mining a block.
         """
         if mining_time == 0.0:
             self.mining_index = -1
             
-        s_dict = self.sounds.get(voxel_id, self.sounds[GRASS])
-        mining_sounds = s_dict['breaking']
-        num_sounds = len(mining_sounds)
+        s_dict: Dict[str, List[pg.mixer.Sound]] = self.sounds.get(voxel_id, self.sounds[GRASS])
+        mining_sounds: List[pg.mixer.Sound] = s_dict['breaking']
+        num_sounds: int = len(mining_sounds)
         
-        progress = mining_time / mining_duration
-        target_index = int(progress * num_sounds)
+        progress: float = mining_time / mining_duration
+        target_index: int = int(progress * num_sounds)
         target_index = min(target_index, num_sounds - 1)
         
         if target_index > self.mining_index:
@@ -229,7 +246,7 @@ class Sounds:
             self.mining_index = target_index
 
     @global_profiler.profile_func("Sounds_PlayPlaceBlock")
-    def play_place_block(self):
+    def play_place_block(self) -> None:
         """
         Plays a pop sound effect when a dropped item entity is collected and added 
         to the player's inventory.

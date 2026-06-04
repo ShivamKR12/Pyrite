@@ -1,6 +1,11 @@
-"""Main application module for the Pyrite graphics engine."""
+"""
+Main application module and entry point for the Pyrite graphics engine.
 
-from settings import *
+This module contains the core `Pyrite` class which orchestrates the entire application.
+It manages the OS-level Pygame window, establishes the ModernGL hardware context,
+controls the primary execution loop, and routes inputs to the active game state.
+"""
+
 import moderngl as mgl
 import pygame as pg
 import json
@@ -9,6 +14,8 @@ import sqlite3
 from noise import set_seed
 import os
 import sys
+from typing import Any, Dict, Optional
+
 from shader_program import ShaderProgram
 from scene import Scene
 from player import Player
@@ -16,6 +23,10 @@ from sounds import Sounds
 from textures import Textures
 from ui import TextRenderer, UITextMesh, MainMenu, PauseMenu, OptionsMenu
 from profiler import global_profiler
+from settings import (
+    WIN_RES, ASPECT_RATIO, FOV_DEG, MOUSE_SENSITIVITY, BG_COLOR, FONT_SIZE_LOADING, 
+    FONT_SIZE_SUBTITLE, MAJOR_VER, MINOR_VER, DEPTH_SIZE, NUM_SAMPLES, get_path
+)
 
 
 class Pyrite:
@@ -25,7 +36,7 @@ class Pyrite:
     rendering and logic to the active game state (e.g., Menus vs In-Game).
     """
     @global_profiler.profile_func("Pyrite_Init")
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes Pygame, the OpenGL context, window settings, and prepares 
         global game state variables and configurations.
@@ -33,7 +44,7 @@ class Pyrite:
         pg.init()
         
         try:
-            icon_img = pg.image.load(get_path('assets/icon-nobg.png'))
+            icon_img: pg.Surface = pg.image.load(get_path('assets/icons/icon-nobg.png'))
             pg.display.set_icon(icon_img)
         except pg.error:
             pass
@@ -45,21 +56,21 @@ class Pyrite:
         pg.display.gl_set_attribute(pg.GL_MULTISAMPLESAMPLES, NUM_SAMPLES)
 
         pg.display.set_mode(WIN_RES, flags=pg.OPENGL | pg.DOUBLEBUF | pg.FULLSCREEN)
-        self.ctx = mgl.create_context()
+        self.ctx: Any = mgl.create_context()
 
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE | mgl.BLEND)
         self.ctx.gc_mode = 'auto'
 
-        self.clock = pg.time.Clock()
-        self.delta_time = 0
-        self.time = 0
-        self.world_session_time = 0.0 # New variable for in-game time
-        self.bg_color = BG_COLOR
+        self.clock: pg.time.Clock = pg.time.Clock()
+        self.delta_time: int = 0
+        self.time: float = 0.0
+        self.world_session_time: float = 0.0 # New variable for in-game time
+        self.bg_color: Any = BG_COLOR
 
-        self.is_running = True
-        self.game_state = 'MAIN_MENU'
+        self.is_running: bool = True
+        self.game_state: str = 'MAIN_MENU'
         
-        self.config = {
+        self.config: Dict[str, Any] = {
             'fov': FOV_DEG,
             'sensitivity': MOUSE_SENSITIVITY,
             'volume': 10,
@@ -69,16 +80,23 @@ class Pyrite:
         self.load_config()
         
         # Placeholders for game session objects
-        self.scene = None
-        self.menu = None
-        self.wireframe = False
-        self.freeze_culling = False
-        self.show_debug = False
+        self.scene: Any = None
+        self.menu: Any = None
+        self.wireframe: bool = False
+        self.freeze_culling: bool = False
+        self.show_debug: bool = False
+        
+        self.textures: Any = None
+        self.player: Any = None
+        self.sounds: Any = None
+        self.shader_program: Any = None
+        self.pause_menu: Any = None
+        self.options_menu: Any = None
 
         self.on_init()
 
     @global_profiler.profile_func("Load_Config")
-    def load_config(self):
+    def load_config(self) -> None:
         """
         Reads and applies engine settings from a local JSON configuration file.
         """
@@ -90,7 +108,7 @@ class Pyrite:
                     pass
 
     @global_profiler.profile_func("Save_Config")
-    def save_config(self):
+    def save_config(self) -> None:
         """
         Serializes and saves the active engine configuration to disk.
         """
@@ -98,7 +116,7 @@ class Pyrite:
             json.dump(self.config, f)
 
     @global_profiler.profile_func("On_Init")
-    def on_init(self):
+    def on_init(self) -> None:
         """
         Instantiates critical subsystems including UI menus, Shader programs, 
         Sound mixers, Textures, and the Player entity.
@@ -112,7 +130,7 @@ class Pyrite:
         self.options_menu = OptionsMenu(self)
 
     @global_profiler.profile_func("Init_Game_Session")
-    def init_game_session(self, save_name="Default_World", force_seed=None, game_mode=None):
+    def init_game_session(self, save_name: str = "Default_World", force_seed: Optional[int] = None, game_mode: Optional[int] = None) -> None:
         """
         Initializes a designated world session, seeding the procedural generator
         and executing a blocking load loop until the initial area is fully generated 
@@ -124,15 +142,15 @@ class Pyrite:
             self.player.game_mode = game_mode
 
         # Determine the seed BEFORE any world objects are created to prevent premature Numba compilation.
-        save_path = f'saves/{save_name}.db'
-        seed = 0
+        save_path: str = f'saves/{save_name}.db'
+        seed: int = 0
         
         if os.path.exists(save_path):
             try:
-                connection = sqlite3.connect(save_path)
-                cursor = connection.cursor()
+                connection: sqlite3.Connection = sqlite3.connect(save_path)
+                cursor: sqlite3.Cursor = connection.cursor()
                 cursor.execute('SELECT seed FROM world_meta WHERE id=1')
-                row = cursor.fetchone()
+                row: Any = cursor.fetchone()
                 if row:
                     seed = row[0]
                 connection.close()
@@ -154,16 +172,16 @@ class Pyrite:
         # Pre-load initial chunks
         self.scene.world.update()
         
-        loading_progress = 0
+        loading_progress: int = 0
         
         # Wait for all initial chunks to generate and mesh
         while self.scene.world.load_queue or self.scene.world.build_queue or self.scene.world.mesh_queue:
             self.scene.world.update()
             
-            active = len(self.scene.world.active_chunks)
-            queues = len(self.scene.world.load_queue) + len(self.scene.world.build_queue) + len(self.scene.world.mesh_queue)
-            ready = active - queues
-            progress = max(0, min(100, int((ready / active) * 100) if active > 0 else 0))
+            active: int = len(self.scene.world.active_chunks)
+            queues: int = len(self.scene.world.load_queue) + len(self.scene.world.build_queue) + len(self.scene.world.mesh_queue)
+            ready: int = active - queues
+            progress: int = max(0, min(100, int((ready / active) * 100) if active > 0 else 0))
             loading_progress = max(loading_progress, progress)
             
             self.render_loading_screen(f"GENERATING TERRAIN... {loading_progress}%")
@@ -177,7 +195,7 @@ class Pyrite:
         self.game_state = 'IN_GAME'
 
     @global_profiler.profile_func("Render_Loading_Screen")
-    def render_loading_screen(self, text="INITIALIZING..."):
+    def render_loading_screen(self, text: str = "INITIALIZING...") -> None:
         """
         Renders a minimal UI overlay during heavily blocking load operations, 
         ensuring Pygame's event queue is flushed so the operating system doesn't 
@@ -191,17 +209,18 @@ class Pyrite:
 
         self.ctx.clear(color=(0.1, 0.1, 0.1))
         
-        text_renderer = TextRenderer(self)
-        text_mesh = UITextMesh(self)
+        text_renderer: Any = TextRenderer(self)
+        text_mesh: Any = UITextMesh(self)
         
         # 1. Main Title
         text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_LOADING, bold=True)
-        tex = text_renderer.get_texture("LOADING WORLD...")
+        tex: Any = text_renderer.get_texture("LOADING WORLD...")
         tex.use(location=4)
         
-        tex_w, tex_h = tex.size
-        scale_y = 0.1
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        tex_w: int = tex.size[0]
+        tex_h: int = tex.size[1]
+        scale_y: float = 0.1
+        scale_x: float = scale_y * (tex_w / tex_h) / ASPECT_RATIO
         
         text_mesh.program['u_scale'] = (scale_x, scale_y)
         text_mesh.program['u_offset'] = (0.0, 0.1)
@@ -211,21 +230,22 @@ class Pyrite:
         
         # 2. Sub-status text
         text_renderer.font = pg.font.SysFont('arial', FONT_SIZE_SUBTITLE, bold=False)
-        tex_sub = text_renderer.get_texture(text)
+        tex_sub: Any = text_renderer.get_texture(text)
         tex_sub.use(location=4)
         
-        tex_w, tex_h = tex_sub.size
-        scale_y = 0.04
-        scale_x = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        tex_sub_w: int = tex_sub.size[0]
+        tex_sub_h: int = tex_sub.size[1]
+        scale_sub_y: float = 0.04
+        scale_sub_x: float = scale_sub_y * (tex_sub_w / tex_sub_h) / ASPECT_RATIO
         
-        text_mesh.program['u_scale'] = (scale_x, scale_y)
+        text_mesh.program['u_scale'] = (scale_sub_x, scale_sub_y)
         text_mesh.program['u_offset'] = (0.0, -0.15)
         text_mesh.render()
         
         pg.display.flip()
 
     @global_profiler.profile_func("Pyrite_Update")
-    def update(self):
+    def update(self) -> None:
         """
         Advances the central engine logic. Delegates to the active game state 
         (e.g., ticking the world simulation, evaluating UI animations).
@@ -258,7 +278,7 @@ class Pyrite:
             pg.display.set_caption('Pyrite')
 
     @global_profiler.profile_func("Pyrite_Render")
-    def render(self):
+    def render(self) -> None:
         """
         Clears the OpenGL framebuffer and issues draw instructions corresponding 
         to the active state, layering menus over 3D scenes when appropriate.
@@ -296,7 +316,7 @@ class Pyrite:
         pg.display.flip()
 
     @global_profiler.profile_func("Handle_Events")
-    def handle_events(self):
+    def handle_events(self) -> None:
         """
         Polls raw input events from the operating system and routes them 
         to the respective handlers (e.g., player movement, UI button clicks, 
@@ -317,10 +337,11 @@ class Pyrite:
                     
                     # Capture screen for thumbnail before UI draws over it!
                     try:
-                        data = self.ctx.screen.read(components=3)
-                        img = pg.image.frombuffer(data, (int(WIN_RES.x), int(WIN_RES.y)), 'RGB')
+                        data: Any = self.ctx.screen.read(components=3)
+                        img: pg.Surface = pg.image.frombuffer(data, (int(WIN_RES.x), int(WIN_RES.y)), 'RGB')
                         img = pg.transform.flip(img, False, True) # OpenGL renders bottom-up
-                        thumb_w, thumb_h = 320, int(320 / ASPECT_RATIO)
+                        thumb_w: int = 320
+                        thumb_h: int = int(320 / ASPECT_RATIO)
                         img = pg.transform.smoothscale(img, (thumb_w, thumb_h))
                         pg.image.save(img, f"saves/{self.scene.world.save_name}_thumb.png")
                     
@@ -379,14 +400,14 @@ class Pyrite:
                 self.options_menu.handle_event(event)
 
     @global_profiler.profile_func("Quit_Game")
-    def quit_game(self):
+    def quit_game(self) -> None:
         """
         Interrupts the primary application execution loop to safely shut down.
         """
         self.is_running = False
 
     @global_profiler.profile_func("Pyrite_Run")
-    def run(self):
+    def run(self) -> None:
         """
         The primary execution loop tracking logic updates, event polling, 
         and frame rendering until the application halts.
@@ -407,5 +428,5 @@ class Pyrite:
 
 
 if __name__ == '__main__':
-    app = Pyrite()
+    app: Any = Pyrite()
     app.run()

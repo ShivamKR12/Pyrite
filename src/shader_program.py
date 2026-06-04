@@ -1,49 +1,72 @@
-from settings import *
+"""
+GLSL Shader program compilation and uniform management.
+
+This module manages the ModernGL shader programs used for rendering the world,
+UI, and post-processing effects. It loads vertex and fragment shaders from disk,
+compiles them, and provides a central interface for updating dynamic uniforms 
+(like camera matrices, fog density, and time of day) every frame.
+"""
+
+import numpy as np
+from pyglm import glm
+from typing import Any
+from numpy.typing import NDArray
+
+from settings import (
+    BG_COLOR, FOG_DENSITY_BASE, CLOUD_FOG_DENSITY_BASE, DAY_NIGHT_SPEED,
+    UNDERWATER_FOG_COLOR, UNDERWATER_FOG_DENSITY, UNDERWATER_FOG_MAX_OPACITY, 
+    CLOUD_SCALE, CENTER_XZ, TEXTURE_MAP, get_path
+)
 from profiler import global_profiler
 
 
 class ShaderProgram:
     """
     Compiles, links, and manages all GLSL shader programs used by the engine.
-    Handles sending static and dynamic uniform data (view matrices, lighting, fog) to the GPU.
+    
+    Handles sending static and dynamic uniform data (view matrices, lighting, fog) 
+    to the GPU to ensure visuals react appropriately to player movement and time.
+    
+    Args:
+        app (Any): The main application context containing the ModernGL instance.
     """
     @global_profiler.profile_func("ShaderProgram_Init")
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         """
         Retrieves the GLSL source code for chunks, markers, UI elements, and environments,
         then registers them into ModernGL programs.
         """
-        self.app = app
-        self.ctx = app.ctx
-        self.player = app.player
+        self.app: Any = app
+        self.ctx: Any = app.ctx
+        self.player: Any = app.player
         
         # -------- shaders -------- #
-        self.chunk = self.get_program(shader_name='chunk')
-        self.voxel_marker = self.get_program(shader_name='voxel_marker')
-        self.clouds = self.get_program('clouds')
-        self.sky = self.get_program('sky')
-        self.quad = self.get_program('quad')
-        self.ui_block = self.get_program('ui_block')
-        self.ui_color = self.get_program('ui_color')
-        self.ui_text = self.get_program('ui_text')
-        self.item = self.get_program('item')
-        self.obj = self.get_program('obj')
+        self.chunk: Any = self.get_program(shader_name='chunk')
+        self.voxel_marker: Any = self.get_program(shader_name='voxel_marker')
+        self.clouds: Any = self.get_program('clouds')
+        self.sky: Any = self.get_program('sky')
+        self.quad: Any = self.get_program('quad')
+        self.ui_block: Any = self.get_program('ui_block')
+        self.ui_color: Any = self.get_program('ui_color')
+        self.ui_text: Any = self.get_program('ui_text')
+        self.item: Any = self.get_program('item')
+        self.obj: Any = self.get_program('obj')
         
         # ------------------------- #
         self.set_uniforms_on_init()
 
     @global_profiler.profile_func("ShaderProgram_SetUniformsOnInit")
-    def set_uniforms_on_init(self):
+    def set_uniforms_on_init(self) -> None:
         """
         Initializes static shader uniforms (like texture assignments, texture mapping arrays,
         and basic projection matrices) that only need to be uploaded once.
         """
         # Build the fast lookup array for the shaders
-        tex_map = np.zeros(256, dtype='int32')
+        tex_map: NDArray[np.int32] = np.zeros(256, dtype='int32')
         
         for uid, tex_id in TEXTURE_MAP.items():
             tex_map[uid] = tex_id
-        tex_map_bytes = tex_map.tobytes()
+        tex_map_bytes: bytes = tex_map.tobytes()
 
         # chunk
         self.chunk['m_proj'].write(self.player.m_proj)
@@ -110,7 +133,7 @@ class ShaderProgram:
         self.obj['bg_color'].write(BG_COLOR)
 
     @global_profiler.profile_func("ShaderProgram_Update")
-    def update(self):
+    def update(self) -> None:
         """
         Updates dynamic uniforms every frame. Sends the camera's view matrix, 
         calculates dynamic sun direction/fog density based on the day-night cycle,
@@ -138,10 +161,14 @@ class ShaderProgram:
         if 'u_time' in self.sky:
             self.sky['u_time'] = self.app.world_session_time
 
-        time_speed = DAY_NIGHT_SPEED # Adjust this to make the day longer or shorter based on world_session_time
-        sun_y = glm.cos(self.app.world_session_time * time_speed)
+        time_speed: float = DAY_NIGHT_SPEED # Adjust this to make the day longer or shorter based on world_session_time
+        sun_y: float = float(glm.cos(self.app.world_session_time * time_speed))
 
-        is_underwater = getattr(self.player, 'head_in_water', False)
+        is_underwater: bool = getattr(self.player, 'head_in_water', False)
+        bg_color: Any
+        fog_density: float
+        cloud_fog_density: float
+        fog_max_opacity: float
         
         if is_underwater:
             # Underwater fog!
@@ -152,7 +179,7 @@ class ShaderProgram:
         
         else:
             bg_color = BG_COLOR * max(0.05, sun_y + 0.2) # Sky gets dark when sun goes down
-            render_dist = max(1.0, float(self.app.config.get('render_distance', 6)))
+            render_dist: float = max(1.0, float(self.app.config.get('render_distance', 6)))
             fog_density = FOG_DENSITY_BASE / (render_dist ** 2)
             cloud_fog_density = CLOUD_FOG_DENSITY_BASE / (render_dist ** 2)
             fog_max_opacity = 1.0  # Fully hide chunk boundaries above water
@@ -184,11 +211,11 @@ class ShaderProgram:
         if 'u_underwater_tint' in self.chunk:
             self.chunk['u_underwater_tint'] = self.app.config.get('underwater_tint', False)
 
-        mining_progress = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
+        mining_progress: float = self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         self.voxel_marker['mining_progress'] = mining_progress
         
         # Day / Night Cycle Lighting
-        sun_dir = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.world_session_time * time_speed)))
+        sun_dir: Any = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.world_session_time * time_speed)))
         
         # Safely write sun direction only if the shader currently supports it
         if 'u_sun_direction' in self.chunk:
@@ -210,16 +237,16 @@ class ShaderProgram:
         self.sky['bg_color'].write(bg_color)
 
     @global_profiler.profile_func("ShaderProgram_GetProgram")
-    def get_program(self, shader_name):
+    def get_program(self, shader_name: str) -> Any:
         """
         Helper function to load and compile a matching pair of .vert and .frag shader files from disk.
         """
         with open(get_path(f'src/shaders/{shader_name}.vert')) as file:
-            vertex_shader = file.read()
+            vertex_shader: str = file.read()
         
         with open(get_path(f'src/shaders/{shader_name}.frag')) as file:
-            fragment_shader = file.read()
+            fragment_shader: str = file.read()
         
-        program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
+        program: Any = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
         
         return program

@@ -1,5 +1,14 @@
-from settings import *
+"""
+Main scene graph and render pipeline coordinator.
+
+This module defines the `Scene` class which acts as the primary game session container.
+It instantiates and manages the world environment, 3D items, UI components,
+and handles the overarching rendering pipeline for the in-game state.
+"""
+
 import moderngl as mgl
+from typing import Any
+
 from world import World
 from world_objects.voxel_marker import VoxelMarker
 from world_objects.clouds import Clouds
@@ -16,36 +25,42 @@ from profiler import global_profiler
 class Scene:
     """
     Acts as the primary game session container.
+    
     Instantiates and manages the world environment, 3D items, UI components,
     and handles the overarching rendering pipeline for the in-game state.
+    
+    Args:
+        app (Any): The main application context.
+        save_name (str): The filename/identifier for the world SQLite database.
+        seed (int): The deterministic seed for world generation.
     """
     @global_profiler.profile_func("Scene_Init")
-    def __init__(self, app, save_name, seed):
+    def __init__(self, app: Any, save_name: str, seed: int) -> None:
         """
         Initializes the scene components, including the terrain world,
         environment decorations (clouds/sky), 3D item entities, and HUD interfaces.
         """
-        self.app = app
-        self.world = World(self.app, save_name, seed)
+        self.app: Any = app
+        self.world: Any = World(self.app, save_name, seed)
         self.app.render_loading_screen("INITIALIZING MARKERS...")
-        self.voxel_marker = VoxelMarker(self.world.voxel_handler)
+        self.voxel_marker: Any = VoxelMarker(self.world.voxel_handler)
         self.app.render_loading_screen("INITIALIZING ENVIRONMENT...")
-        self.clouds = Clouds(app)
-        self.sky = Sky(app)
+        self.clouds: Any = Clouds(app)
+        self.sky: Any = Sky(app)
         self.app.render_loading_screen("INITIALIZING UI...")
-        self.crosshair = Crosshair(app)
-        self.hotbar = Hotbar(app)
-        self.inventory_ui = InventoryUI(app)
-        self.held_block = HeldBlock(app)
-        self.item_manager = ItemManager(app)
-        self.debug_overlay = DebugOverlay(app)
+        self.crosshair: Any = Crosshair(app)
+        self.hotbar: Any = Hotbar(app)
+        self.inventory_ui: Any = InventoryUI(app)
+        self.held_block: Any = HeldBlock(app)
+        self.item_manager: Any = ItemManager(app)
+        self.debug_overlay: Any = DebugOverlay(app)
         
         # Restore saved dropped items from the database
         for item_data in self.world.saved_dropped_items:
             self.item_manager.load_item(*item_data)
 
     @global_profiler.profile_func("Scene_Update")
-    def update(self):
+    def update(self) -> None:
         """
         Ticks the overarching logic of the scene, progressing the world state,
         updating environmental visuals, and tracking physics for active items.
@@ -56,7 +71,7 @@ class Scene:
         self.item_manager.update()
 
     @global_profiler.profile_func("Scene_Render")
-    def render(self):
+    def render(self) -> None:
         """
         Executes the multi-pass rendering pipeline.
         Draws the skybox, opaque chunks, entities, transparent layers (water/clouds), and UI.

@@ -1,46 +1,61 @@
-from settings import *
-from meshes.base_mesh import BaseMesh
-from noise import noise2
+"""
+Procedural cloud mesh generation and greedy meshing.
+
+This module manages the volumetric cloud layer by generating 2D noise-based 
+density maps and using a specialized 2D greedy meshing algorithm to compile 
+optimized, low-polygon chunks of clouds that scroll across the sky.
+"""
+
+import numpy as np
 from numba import prange, njit
+from typing import Any, Tuple
+from numpy.typing import NDArray
+
+from settings import WORLD_AREA, WORLD_W, WORLD_D, CHUNK_SIZE, CLOUD_HEIGHT, CHUNK_AREA
+from meshes.base_mesh import BaseMesh
 import noise
+from noise import noise2
 from profiler import global_profiler
 
 
 class CloudMesh(BaseMesh):
     """
     Generates the geometry for the procedural 3D cloud layer.
+    
     Utilizes simplex noise to map cloud density and a 2D greedy meshing algorithm 
     to create an optimized, low-polygon mesh of cloud blocks.
+    
+    Args:
+        app (Any): The main application instance providing the ModernGL context.
     """
     @global_profiler.profile_func("CloudMesh_Init")
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         """
         Initializes the cloud mesh, setting up the shader program and vertex buffer 
         configuration required to render the volumetric clouds.
         """
         super().__init__()
-        self.app = app
-
-        self.ctx = self.app.ctx
-        self.program = self.app.shader_program.clouds
-        self.vbo_format = '3u2'
-        self.attrs = ('in_position',)
-        self.vao = self.get_vao()
+        self.app: Any = app
+        self.ctx: Any = self.app.ctx
+        self.program: Any = self.app.shader_program.clouds
+        self.vbo_format: str = '3u2'
+        self.attrs: Tuple[str, ...] = ('in_position',)
+        self.vao: Any = self.get_vao()
 
     @global_profiler.profile_func("CloudMesh_GetVertexData")
-    def get_vertex_data(self):
+    def get_vertex_data(self) -> NDArray[np.uint16]:
         """
         Coordinates the generation of the raw cloud density data and subsequently 
         constructs the optimized 3D mesh vertex data required for rendering.
         """
-        cloud_data = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
+        cloud_data: Any = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
         self.gen_clouds(cloud_data, noise.perm)
 
         return self.build_mesh(cloud_data)
 
     @staticmethod
     @njit(cache=True, fastmath=True, parallel=True, nogil=True)
-    def gen_clouds(cloud_data, perm_array):
+    def gen_clouds(cloud_data: Any, perm_array: Any) -> None:
         """
         Populates a 2D density grid using multi-octave simplex noise to procedurally 
         determine the exact locations where clouds should form in the sky.
@@ -54,8 +69,8 @@ class CloudMesh(BaseMesh):
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
     @staticmethod
-    @njit(cache=True, fastmath=True, nogil=True)
-    def build_mesh(cloud_data):
+    @njit(cache=True, fastmath=True, parallel=True, nogil=True)
+    def build_mesh(cloud_data: Any) -> NDArray[np.uint16]:
         """
         A specialized 2D greedy meshing algorithm that scans the generated cloud density grid. 
         It mathematically combines adjacent, identical cloud blocks into massive single 

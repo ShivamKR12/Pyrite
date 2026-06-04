@@ -1,5 +1,16 @@
+"""
+Texture loading and OpenGL binding management.
+
+This module is responsible for loading 2D image assets via Pygame, applying transforms, 
+and safely mapping them into ModernGL `Texture` and `TextureArray` objects. 
+It enforces strict mipmap generation and anisotropic filtering to guarantee crisp 
+pixel art visuals across all rendering distances.
+"""
+
 import pygame as pg
 import moderngl as mgl
+from typing import Any
+
 from settings import get_path
 from profiler import global_profiler
 
@@ -7,23 +18,29 @@ from profiler import global_profiler
 class Textures:
     """
     Loads, configures, and binds OpenGL textures and texture arrays.
+    
     Handles mipmapping, anisotropic filtering, and texture units for crisp rendering.
+    It pre-loads all essential visual assets during initialization and assigns them
+    to specific texture binding locations for the GLSL shaders to sample from.
+    
+    Args:
+        app (Any): The main application instance containing the Pygame and ModernGL contexts.
     """
     @global_profiler.profile_func("Textures_Init")
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         """
         Instantiates and assigns the various textures to their respective OpenGL 
         texture locations so shaders can access them simultaneously.
         """
-        self.app = app
-        self.ctx = app.ctx
+        self.app: Any = app
+        self.ctx: Any = app.ctx
 
         # load textures
-        self.texture_0 = self.load('others/frame.png')
-        self.texture_array_0 = self.load('texture-arrays/tex_array_2.png', is_tex_array=True)
-        self.texture_breaking = self.load('others/block_breaking_texture.png')
-        self.texture_stick = self.load('stick/stick.png')
-        self.texture_pickaxe = self.load('wooden_pickaxe/wooden_pickaxe.png', rotation=-90)
+        self.texture_0: Any = self.load('textures/uis/frame.png')
+        self.texture_array_0: Any = self.load('textures/arrays/texture-array-2.png', is_tex_array=True)
+        self.texture_breaking: Any = self.load('textures/effects/block-breaking.png')
+        self.texture_stick: Any = self.load('models/items/stick/stick.png')
+        self.texture_pickaxe: Any = self.load('models/items/wooden-pickaxe/wooden_pickaxe.png', rotation=-90)
 
         # assign texture unit
         self.texture_0.use(location=0)
@@ -33,13 +50,13 @@ class Textures:
         self.texture_pickaxe.use(location=6)
 
     @global_profiler.profile_func("Textures_Load")
-    def load(self, file_name, is_tex_array=False, rotation=0, flip_x=True, flip_y=False):
+    def load(self, file_name: str, is_tex_array: bool = False, rotation: int = 0, flip_x: bool = True, flip_y: bool = False) -> Any:
         """
         Reads an image file and converts it into an OpenGL Texture or TextureArray.
         Applies requested rotations/flips and automatically calculates 3D texture array 
         dimensions if the image contains vertical strips.
         """
-        texture = pg.image.load(get_path(f'assets/{file_name}'))
+        texture: Any = pg.image.load(get_path(f'assets/{file_name}'))
         
         if rotation != 0:
             texture = pg.transform.rotate(texture, rotation)
