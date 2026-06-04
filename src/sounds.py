@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 from settings import (
     SAND, GRASS, GRAVEL, STONE, SNOW, LEAVES, WOOD, DIRT, GLASS, WOOD_PLANKS,
-    COBBELSTONE, GLOWSTONE, CACTUS, STONE_BRICKS, CHUNK_SIZE, get_path
+    COBBELSTONE, GLOWSTONE, CACTUS, STONE_BRICKS, get_path
 )
 from profiler import global_profiler
 

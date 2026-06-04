@@ -66,7 +66,7 @@ class ObjMesh(BaseMesh):
         current_material: Optional[str] = None
         
         try:
-            with open(mtl_path, 'r') as f:
+            with open(mtl_path, 'r', encoding='utf-8') as f:
                 for line in f:
         
                     if line.startswith('newmtl'):
@@ -97,7 +97,7 @@ class ObjMesh(BaseMesh):
         
         try:
             obj_dir: str = os.path.dirname(self.obj_path)
-            with open(self.obj_path, 'r') as f:
+            with open(self.obj_path, 'r', encoding='utf-8') as f:
                 for line in f:
         
                     if line.startswith('mtllib'):

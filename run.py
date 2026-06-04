@@ -21,7 +21,7 @@ if __name__ == '__main__':
         app: Any = Pyrite()
         app.run()
     except Exception as e:
-        with open("crash_log.txt", "w") as f:
+        with open("crash_log.txt", "w", encoding="utf-8") as f:
             traceback.print_exc(file=f)
         print("\n==================================================")
         print("CRASH DETECTED! Saved to crash_log.txt")

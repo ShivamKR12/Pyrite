@@ -8,10 +8,8 @@ testing thousands of chunks simultaneously against the camera's view frustum.
 
 from numba import njit, prange
 import math
-import numpy as np
 from pyglm import glm
 from typing import Any
-from numpy.typing import NDArray
 
 from settings import CHUNK_SPHERE_RADIUS, NEAR, FAR, V_FOV, H_FOV
 from profiler import global_profiler

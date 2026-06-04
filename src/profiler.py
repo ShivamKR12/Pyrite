@@ -116,7 +116,7 @@ class Profiler:
         Consolidates metrics across ALL active and dead background worker loops,
         and saves synchronously to prevent file corruption on application exit.
         """
-        print(f"\n[TELEMETRY] Compiling engine metrics from all threads...")
+        print("\n[TELEMETRY] Compiling engine metrics from all threads...")
         
         # Aggregated storage: Category -> Combined List of samples
         master_records: Dict[str, List[float]] = {}
@@ -150,7 +150,7 @@ class Profiler:
         # Write synchronously. Because this is executed on exit, blocking the main thread
         # for a few milliseconds is completely acceptable and prevents file corruption.
         try:
-            with open(filename, 'w') as f:
+            with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(report, f, indent=4)
             print(f"[TELEMETRY] Report successfully saved to {filename}")
         except Exception as e:

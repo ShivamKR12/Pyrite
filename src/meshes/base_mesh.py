@@ -7,7 +7,6 @@ of Vertex Array Objects (VAOs) and Vertex Buffer Objects (VBOs) through
 the ModernGL pipeline.
 """
 
-import numpy as np
 from typing import Any, Tuple
 
 
@@ -44,7 +43,7 @@ class BaseMesh:
         Abstract method to be overridden by subclasses. Should return a contiguous 
         Numpy array containing the vertex data formatted according to `self.vbo_format`.
         """
-        ...
+        pass
 
     def get_vao(self) -> Any:
         """

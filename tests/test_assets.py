@@ -39,7 +39,7 @@ def test_obj_models_format() -> None:
         
     for filename in os.listdir(models_dir):
         if filename.endswith('.obj'):
-            with open(os.path.join(models_dir, filename), 'r') as f:
+            with open(os.path.join(models_dir, filename), 'r', encoding='utf-8') as f:
                 content = f.read()
                 
                 assert 'v ' in content, f"OBJ model '{filename}' contains no vertex data."
