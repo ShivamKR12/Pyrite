@@ -84,8 +84,9 @@ def get_height(x: float, z: float, perm_array: Any) -> int:
 
     height = max(height,  noise2(x * f8, z * f8, perm_array) + 2)
     
-    # Absolute safety net: prevent terrain from ever exceeding the top chunk's limit
+    # Absolute safety nets: prevent terrain from ever exceeding the chunk limits
     height = min(height, WORLD_H * CHUNK_SIZE - 2)
+    height = max(height, 2.0)
 
     return int(height)
 
