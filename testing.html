@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Testing and Profiling &mdash; Pyrite 1.0.0 documentation</title>
+  <title>Testing &mdash; Pyrite 1.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -228,10 +228,11 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Testing and Profiling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#testing-framework-setup">Testing Framework Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#engine-tests">Engine Tests</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#continuous-integration">Continuous Integration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quickstart">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#useful-options">Useful options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#notes">Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
@@ -262,7 +263,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Testing and Profiling</li>
+      <li class="breadcrumb-item active">Testing</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/testing.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -272,60 +273,57 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="testing-and-profiling">
-<span id="testing"></span><h1>Testing and Profiling<a class="headerlink" href="#testing-and-profiling" title="Link to this heading"></a></h1>
-<p>This chapter covers unit testing, integration testing, and performance profiling strategies for Pyrite.</p>
-<section id="testing-framework-setup">
-<h2>Testing Framework Setup<a class="headerlink" href="#testing-framework-setup" title="Link to this heading"></a></h2>
-<p>Pyrite uses <strong>pytest</strong> for automated testing. Install with:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">pytest</span> <span class="n">pytest</span><span class="o">-</span><span class="n">cov</span> <span class="n">pytest</span><span class="o">-</span><span class="n">xdist</span>
-</pre></div>
-</div>
-<p>Create a test file structure in <code class="docutils literal notranslate"><span class="pre">tests/</span></code> directory:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tests</span><span class="o">/</span>
-    <span class="n">test_engine</span><span class="o">.</span><span class="n">py</span>
-</pre></div>
-</div>
-<p>Run tests with:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pytest</span> <span class="n">tests</span><span class="o">/</span> <span class="o">-</span><span class="n">v</span>                    <span class="c1"># Verbose output</span>
-<span class="n">pytest</span> <span class="n">tests</span><span class="o">/</span> <span class="o">-</span><span class="n">v</span> <span class="o">--</span><span class="n">cov</span><span class="o">=</span><span class="n">src</span>          <span class="c1"># With coverage report</span>
-<span class="n">pytest</span> <span class="n">tests</span><span class="o">/</span> <span class="o">-</span><span class="n">v</span> <span class="o">-</span><span class="n">n</span> <span class="mi">4</span>               <span class="c1"># Parallel (4 workers)</span>
-</pre></div>
-</div>
+  <section id="testing">
+<span id="id1"></span><h1>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h1>
+<p>This project uses pytest. The repository includes a minimal test in <code class="docutils literal notranslate"><span class="pre">tests/test_engine.py</span></code> that imports top-level modules, so run tests from the repository root.</p>
+<section id="quickstart">
+<h2>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading"></a></h2>
+<ul>
+<li><p>Create and activate a virtual environment:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`powershell</span>
+<span class="pre">python</span> <span class="pre">-m</span> <span class="pre">venv</span> <span class="pre">.venv</span>
+<span class="pre">.\.venv\Scripts\Activate.ps1</span>&#160;&#160; <span class="pre">#</span> <span class="pre">PowerShell</span> <span class="pre">(Windows)</span>
+<span class="pre">source</span> <span class="pre">.venv/bin/activate</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">macOS</span> <span class="pre">/</span> <span class="pre">Linux</span>
+<span class="pre">`</span></code></p>
+</li>
+<li><p>Install test dependencies:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`bash</span>
+<span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements-dev.txt</span>
+<span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements.txt</span>
+<span class="pre">`</span></code></p>
+</li>
+<li><p>Run the full test suite:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`bash</span>
+<span class="pre">pytest</span> <span class="pre">-q</span>
+<span class="pre">`</span></code></p>
+</li>
+<li><p>Run a single test file:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`bash</span>
+<span class="pre">pytest</span> <span class="pre">-q</span> <span class="pre">tests/test_engine.py</span>
+<span class="pre">`</span></code></p>
+</li>
+</ul>
 </section>
-<section id="engine-tests">
-<h2>Engine Tests<a class="headerlink" href="#engine-tests" title="Link to this heading"></a></h2>
-<p>Currently, Pyrite includes basic initialization and state tests within <code class="docutils literal notranslate"><span class="pre">test_engine.py</span></code>. As the test suite grows, additional tests will be added to this directory.</p>
+<section id="useful-options">
+<h2>Useful options<a class="headerlink" href="#useful-options" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><cite>-q</cite> : quiet output (use <cite>-v</cite> for verbose)</p></li>
+<li><p><cite>–maxfail=1</cite> : stop on first failure</p></li>
+<li><p><cite>–cov=src</cite> : require <cite>pytest-cov</cite> to collect coverage</p></li>
+<li><p><cite>-n auto</cite> : run tests in parallel with <cite>pytest-xdist</cite> installed</p></li>
+</ul>
 </section>
 <section id="continuous-integration">
-<h2>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Link to this heading"></a></h2>
-<p><strong>GitHub Actions Workflow Example</strong></p>
-<p>Refer to <code class="docutils literal notranslate"><span class="pre">.github/workflows/test.yml</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">name</span><span class="p">:</span> <span class="n">Tests</span>
-
-<span class="n">on</span><span class="p">:</span>
-  <span class="n">push</span><span class="p">:</span>
-    <span class="n">branches</span><span class="p">:</span> <span class="p">[</span> <span class="n">master</span><span class="p">,</span> <span class="n">main</span> <span class="p">]</span>
-  <span class="n">pull_request</span><span class="p">:</span>
-    <span class="n">branches</span><span class="p">:</span> <span class="p">[</span> <span class="n">master</span><span class="p">,</span> <span class="n">main</span> <span class="p">]</span>
-
-<span class="n">jobs</span><span class="p">:</span>
-  <span class="n">test</span><span class="p">:</span>
-    <span class="n">runs</span><span class="o">-</span><span class="n">on</span><span class="p">:</span> <span class="n">ubuntu</span><span class="o">-</span><span class="n">latest</span>
-
-    <span class="n">steps</span><span class="p">:</span>
-    <span class="o">-</span> <span class="n">uses</span><span class="p">:</span> <span class="n">actions</span><span class="o">/</span><span class="n">checkout</span><span class="nd">@v4</span>
-    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">Set</span> <span class="n">up</span> <span class="n">Python</span>
-      <span class="n">uses</span><span class="p">:</span> <span class="n">actions</span><span class="o">/</span><span class="n">setup</span><span class="o">-</span><span class="n">python</span><span class="nd">@v5</span>
-      <span class="k">with</span><span class="p">:</span>
-        <span class="n">python</span><span class="o">-</span><span class="n">version</span><span class="p">:</span> <span class="s1">&#39;3.13&#39;</span>
-
-    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">Install</span> <span class="n">dependencies</span> <span class="ow">and</span> <span class="n">test</span>
-      <span class="n">run</span><span class="p">:</span> <span class="o">|</span>
-        <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span> <span class="n">pytest</span>
-        <span class="n">pytest</span> <span class="n">tests</span><span class="o">/</span>
-</pre></div>
-</div>
+<h2>Continuous integration<a class="headerlink" href="#continuous-integration" title="Link to this heading"></a></h2>
+<p>There is a GitHub Actions workflow at <code class="docutils literal notranslate"><span class="pre">.github/workflows/test.yml</span></code> that runs the test job on push and pull requests. The workflow uses <cite>actions/setup-python</cite> and currently specifies Python 3.13; adjust the workflow if you need a different Python version (the code targets Python 3.9+).</p>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run tests from the repository root so imports like <cite>from settings import …</cite> work correctly.</p></li>
+<li><p>If tests fail due to missing native extensions, ensure the development environment has required build tools and that <cite>requirements-dev.txt</cite> is installed.</p></li>
+<li><p>For profiling, use <cite>pytest –durations=10</cite> or Python profilers directly; profiling guidance belongs in a separate section when needed.</p></li>
+</ul>
 </section>
 </section>
 

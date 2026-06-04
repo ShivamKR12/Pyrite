@@ -96,11 +96,9 @@ Detailed State Machine
 
       GameOpens --> MAIN_MENU
 
-      MAIN_MENU --> WORLD_SELECT : Play
+      MAIN_MENU --> LOADING : Play (world selected)
       MAIN_MENU --> OPTIONS : Settings
       MAIN_MENU --> GameCloses : Quit
-
-      WORLD_SELECT --> LOADING : Load/Create World
 
       state LOADING {
          [*] --> GenerateChunks
@@ -117,6 +115,12 @@ Detailed State Machine
 
       PAUSED --> IN_GAME : Resume
       PAUSED --> OPTIONS : Settings
+      PAUSED --> MAIN_MENU : Quit to Main Menu
+
+      OPTIONS --> MAIN_MENU : Exit
+      OPTIONS --> PAUSED : Exit (from pause)
+
+      GameCloses
 
       OPTIONS --> PAUSED : Back
 

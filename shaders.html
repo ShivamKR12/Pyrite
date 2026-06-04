@@ -228,10 +228,11 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#notes">Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
@@ -277,7 +278,7 @@
 <p>This document provides detailed explanations of Pyrite’s OpenGL shaders (GLSL 3.3), including vertex and fragment processing, uniform bindings, and lighting integration. All shaders are located in <code class="docutils literal notranslate"><span class="pre">src/shaders/</span></code>.</p>
 <section id="shader-architecture-overview">
 <h2>Shader Architecture Overview<a class="headerlink" href="#shader-architecture-overview" title="Link to this heading"></a></h2>
-<p>Pyrite uses 8 distinct shader pairs (vertex + fragment), each rendering a specific component:</p>
+<p>Pyrite uses 10 distinct shader pairs (vertex + fragment), each rendering a specific component:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1. chunk.vert / chunk.frag       → Voxel terrain (main geometry)
 2. item.vert / item.frag         → Dropped items
 3. obj.vert / obj.frag           → Wavefront .obj models (trees, structures)
@@ -285,8 +286,9 @@
 5. clouds.vert / clouds.frag     → Procedural clouds
 6. ui_block.vert / ui_block.frag → UI block icons (inventory, hotbar)
 7. ui_color.vert / ui_color.frag → UI colored quads (backgrounds, menus)
-8. ui_text.vert / ui_text.frag   → Text rendering (not detailed; uses glyph atlas)
-9. quad.vert / quad.frag         → Debug wireframes (frustum bounds, voxel markers)
+8. ui_text.vert / ui_text.frag   → Text rendering (glyph atlas)
+9. voxel_marker.vert / voxel_marker.frag → Block selection highlight (mining indicator)
+10. quad.vert / quad.frag         → 2D rendering (debug, UI geometry)
 </pre></div>
 </div>
 </section>
@@ -322,12 +324,12 @@
 <span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">ao_values</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="mi">4</span><span class="p">](</span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.25</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
 
 <span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">face_normals</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">[</span><span class="mi">6</span><span class="p">](</span>
-<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">),</span><span class="w">  </span><span class="c1">// +X face</span>
-<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">),</span><span class="w">  </span><span class="c1">// -X face</span>
-<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">),</span><span class="w">  </span><span class="c1">// +Y face</span>
-<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mo">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">),</span><span class="w">  </span><span class="c1">// -Y face</span>
-<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mi">1</span><span class="p">),</span><span class="w">  </span><span class="c1">// +Z face</span>
-<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w">   </span><span class="c1">// -Z face</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w">  </span><span class="mf">1.0</span><span class="p">,</span><span class="w">  </span><span class="mf">0.0</span><span class="p">),</span><span class="w"> </span><span class="c1">// 0: top (+Y face)</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="w">  </span><span class="mf">0.0</span><span class="p">),</span><span class="w"> </span><span class="c1">// 1: bottom (-Y face)</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w">  </span><span class="mf">0.0</span><span class="p">,</span><span class="w">  </span><span class="mf">0.0</span><span class="p">),</span><span class="w"> </span><span class="c1">// 2: right (+X face)</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="w">  </span><span class="mf">0.0</span><span class="p">,</span><span class="w">  </span><span class="mf">0.0</span><span class="p">),</span><span class="w"> </span><span class="c1">// 3: left (-X face)</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w">  </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="c1">// 4: back (-Z face)</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="p">(</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w">  </span><span class="mf">0.0</span><span class="p">,</span><span class="w">  </span><span class="mf">1.0</span><span class="p">)</span><span class="w">  </span><span class="c1">// 5: front (+Z face)</span>
 <span class="p">);</span>
 </pre></div>
 </div>

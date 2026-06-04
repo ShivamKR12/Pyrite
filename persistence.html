@@ -228,10 +228,11 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#notes">Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
@@ -294,10 +295,8 @@
 <span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
 <span class="w">    </span><span class="n">y</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
 <span class="w">    </span><span class="n">z</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
-<span class="w">    </span><span class="n">voxel_data</span><span class="w"> </span><span class="nb">BLOB</span><span class="p">,</span><span class="w">        </span><span class="c1">-- Compressed 1D uint8 array</span>
-<span class="w">    </span><span class="n">lightmap_data</span><span class="w"> </span><span class="nb">BLOB</span><span class="p">,</span><span class="w">     </span><span class="c1">-- Compressed 1D uint8 array</span>
-<span class="w">    </span><span class="k">generated</span><span class="w"> </span><span class="nb">BOOLEAN</span><span class="p">,</span><span class="w">      </span><span class="c1">-- Whether terrain was procedurally generated</span>
-<span class="w">    </span><span class="k">timestamp</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span><span class="w">      </span><span class="c1">-- Unix timestamp of last save</span>
+<span class="w">    </span><span class="k">data</span><span class="w"> </span><span class="nb">BLOB</span><span class="p">,</span><span class="w">              </span><span class="c1">-- Compressed 1D uint8 array (voxel IDs)</span>
+<span class="w">    </span><span class="n">lightmap</span><span class="w"> </span><span class="nb">BLOB</span><span class="p">,</span><span class="w">          </span><span class="c1">-- Compressed 1D uint8 array (light data)</span>
 
 <span class="w">    </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">z</span><span class="p">)</span>
 <span class="p">)</span>
@@ -306,11 +305,10 @@
 <p><strong>Row Structure:</strong></p>
 <ul class="simple">
 <li><p><strong>x, y, z:</strong> Chunk coordinates (e.g., chunk at x=0, y=0, z=0 covers world voxels 0-47 in each axis)</p></li>
-<li><p><strong>voxel_data:</strong> Compressed blob of shape (CHUNK_VOL,) = (110592,) uint8 values</p></li>
-<li><p><strong>lightmap_data:</strong> Compressed blob of shape (CHUNK_VOL,) containing packed sunlight+blocklight (4 bits each)</p></li>
-<li><p><strong>generated:</strong> True if chunk was procedurally generated (not hand-edited)</p></li>
-<li><p><strong>timestamp:</strong> Used for cleanup/optimization later</p></li>
+<li><p><strong>data:</strong> Compressed blob of shape (CHUNK_VOL,) = (110592,) uint8 values (voxel IDs)</p></li>
+<li><p><strong>lightmap:</strong> Compressed blob of shape (CHUNK_VOL,) containing packed sunlight+blocklight (4 bits each)</p></li>
 </ul>
+<p><strong>Note:</strong> The <cite>lightmap</cite> column was added via schema migration (<cite>ALTER TABLE chunks ADD COLUMN lightmap BLOB</cite>) to support lightmap caching in existing worlds.</p>
 <p><strong>Chunk Coordinate Mapping:</strong></p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>World voxel (x, y, z) → Chunk coordinate
 chunk_x = floor(x / CHUNK_SIZE)     # CHUNK_SIZE = 48
@@ -322,25 +320,15 @@ local_index = (x % 48) + (z % 48) * 48 + (y % 48) * 48² = flat_index
 </pre></div>
 </div>
 <p><strong>2. Player Data Table</strong></p>
-<p>Stores player position, inventory, and survival stats.</p>
+<p>Stores player position, inventory, and survival stats as serialized JSON.</p>
 <div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">player_data</span><span class="w"> </span><span class="p">(</span>
 <span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
-<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                         </span><span class="c1">-- Position X</span>
-<span class="w">    </span><span class="n">y</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                         </span><span class="c1">-- Position Y</span>
-<span class="w">    </span><span class="n">z</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                         </span><span class="c1">-- Position Z</span>
-<span class="w">    </span><span class="n">yaw</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                       </span><span class="c1">-- Rotation angle (radians)</span>
-<span class="w">    </span><span class="n">pitch</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                     </span><span class="c1">-- Rotation angle (radians)</span>
-<span class="w">    </span><span class="n">health</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                    </span><span class="c1">-- 0-20</span>
-<span class="w">    </span><span class="n">hunger</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                    </span><span class="c1">-- 0-20</span>
-<span class="w">    </span><span class="n">oxygen</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                    </span><span class="c1">-- 0-20</span>
-<span class="w">    </span><span class="n">inventory</span><span class="w"> </span><span class="n">JSON</span><span class="p">,</span><span class="w">                 </span><span class="c1">-- JSON array of voxel IDs</span>
-<span class="w">    </span><span class="n">inventory_counts</span><span class="w"> </span><span class="n">JSON</span><span class="p">,</span><span class="w">          </span><span class="c1">-- JSON array of stack sizes</span>
-<span class="w">    </span><span class="n">hotbar_index</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span><span class="w">           </span><span class="c1">-- Selected slot</span>
-<span class="w">    </span><span class="k">timestamp</span><span class="w"> </span><span class="nb">INTEGER</span>
+<span class="w">    </span><span class="k">data</span><span class="w"> </span><span class="nb">TEXT</span><span class="w">                </span><span class="c1">-- JSON serialized player state</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>Storage Format:</strong></p>
+<p>The <cite>data</cite> column stores a JSON string containing all player information:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;x&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">128.5</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;y&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">64.0</span><span class="p">,</span>
@@ -351,28 +339,53 @@ local_index = (x % 48) + (z % 48) * 48 + (y % 48) * 48² = flat_index
 <span class="w">    </span><span class="nt">&quot;hunger&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;oxygen&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;inventory&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;inventory_counts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">64</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span>
+<span class="w">    </span><span class="nt">&quot;inventory_counts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">64</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;hotbar_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p><strong>3. World Meta Table</strong></p>
-<p>Stores world-level metadata (seed, difficulty, game mode).</p>
+<p>Stores world-level metadata (seed, game mode, creation date).</p>
 <div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">world_meta</span><span class="w"> </span><span class="p">(</span>
-<span class="w">    </span><span class="k">key</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
-<span class="w">    </span><span class="n">value</span><span class="w"> </span><span class="nb">TEXT</span><span class="w">              </span><span class="c1">-- JSON serialized</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">world_name</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">seed</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
+<span class="w">    </span><span class="n">game_mode</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
+<span class="w">    </span><span class="n">creation_date</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">last_played</span><span class="w"> </span><span class="nb">TEXT</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Stored Keys:</strong></p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>seed:               Integer seed (or MD5 hash of string seed)
-difficulty:        String (&#39;PEACEFUL&#39;, &#39;EASY&#39;, &#39;NORMAL&#39;, &#39;HARD&#39;)
-game_mode:         String (&#39;SURVIVAL&#39;, &#39;CREATIVE&#39;)
-created_time:      Unix timestamp of world creation
-last_played:       Unix timestamp of last save
-player_name:       Player name/UUID
-spawn_x, spawn_y, spawn_z: Spawn location
+<p><strong>Stored Fields:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>id:                 Primary key (typically 1 for single world)
+world_name:         Name of the world/save
+seed:               Integer seed used for procedural generation
+game_mode:          0=CREATIVE, 1=SURVIVAL
+creation_date:      ISO format timestamp of world creation
+last_played:        ISO format timestamp of last play session
 </pre></div>
 </div>
+<p><strong>4. Dropped Items Table</strong></p>
+<p>Stores data for items dropped in the world.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">dropped_items</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="n">AUTOINCREMENT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">voxel_id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
+<span class="w">    </span><span class="n">px</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                        </span><span class="c1">-- Position X</span>
+<span class="w">    </span><span class="n">py</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                        </span><span class="c1">-- Position Y</span>
+<span class="w">    </span><span class="n">pz</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                        </span><span class="c1">-- Position Z</span>
+<span class="w">    </span><span class="n">vx</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                        </span><span class="c1">-- Velocity X</span>
+<span class="w">    </span><span class="n">vy</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span><span class="w">                        </span><span class="c1">-- Velocity Y</span>
+<span class="w">    </span><span class="n">vz</span><span class="w"> </span><span class="nb">REAL</span><span class="w">                         </span><span class="c1">-- Velocity Z</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Row Structure:</strong></p>
+<ul class="simple">
+<li><p><strong>id:</strong> Unique item identifier</p></li>
+<li><p><strong>voxel_id:</strong> Block/item type ID</p></li>
+<li><p><strong>px, py, pz:</strong> World position of the item</p></li>
+<li><p><strong>vx, vy, vz:</strong> Velocity vector for physics simulation</p></li>
+</ul>
 </section>
 <section id="serialization-and-compression">
 <h2>Serialization and Compression<a class="headerlink" href="#serialization-and-compression" title="Link to this heading"></a></h2>
@@ -389,9 +402,9 @@ spawn_x, spawn_y, spawn_z: Spawn location
     <span class="n">voxel_bytes</span> <span class="o">=</span> <span class="n">voxel_array</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>      <span class="c1"># 110592 bytes</span>
     <span class="n">lightmap_bytes</span> <span class="o">=</span> <span class="n">lightmap_array</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
 
-    <span class="c1"># Compress with zlib (level 6 default)</span>
-    <span class="n">voxel_compressed</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">voxel_bytes</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
-    <span class="n">lightmap_compressed</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">lightmap_bytes</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+    <span class="c1"># Compress with zlib (default level)</span>
+    <span class="n">voxel_compressed</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">voxel_bytes</span><span class="p">)</span>
+    <span class="n">lightmap_compressed</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">lightmap_bytes</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span>
 
@@ -400,8 +413,8 @@ spawn_x, spawn_y, spawn_z: Spawn location
     <span class="n">voxel_bytes</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">voxel_compressed</span><span class="p">)</span>
     <span class="n">lightmap_bytes</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">lightmap_compressed</span><span class="p">)</span>
 
-    <span class="n">voxel_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">voxel_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">110592</span><span class="p">,))</span>
-    <span class="n">lightmap_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">lightmap_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">110592</span><span class="p">,))</span>
+    <span class="n">voxel_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">voxel_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">lightmap_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">lightmap_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">voxel_array</span><span class="p">,</span> <span class="n">lightmap_array</span>
 </pre></div>
@@ -425,8 +438,8 @@ Compressed:   1,440 * 25 KB average ≈ 36 MB
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create_world_database</span><span class="p">(</span><span class="n">world_name</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize new world database&quot;&quot;&quot;</span>
-    <span class="n">db_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">.db&#39;</span>
-    <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+    <span class="n">db_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">.db&#39;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db_path</span><span class="p">,</span> <span class="n">check_same_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
 
     <span class="c1"># Enable WAL mode for performance</span>
@@ -435,39 +448,113 @@ Compressed:   1,440 * 25 KB average ≈ 36 MB
 
     <span class="c1"># Create tables</span>
     <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
-<span class="s1">        CREATE TABLE chunks (</span>
+<span class="s1">        CREATE TABLE IF NOT EXISTS chunks (</span>
 <span class="s1">            x INTEGER, y INTEGER, z INTEGER,</span>
-<span class="s1">            voxel_data BLOB, lightmap_data BLOB,</span>
-<span class="s1">            generated BOOLEAN, timestamp INTEGER,</span>
+<span class="s1">            data BLOB, lightmap BLOB,</span>
 <span class="s1">            PRIMARY KEY (x, y, z)</span>
 <span class="s1">        )</span>
 <span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
 
     <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
-<span class="s1">        CREATE TABLE player_data (</span>
+<span class="s1">        CREATE TABLE IF NOT EXISTS player_data (</span>
 <span class="s1">            id INTEGER PRIMARY KEY,</span>
-<span class="s1">            x REAL, y REAL, z REAL,</span>
-<span class="s1">            yaw REAL, pitch REAL,</span>
-<span class="s1">            health REAL, hunger REAL, oxygen REAL,</span>
-<span class="s1">            inventory TEXT, inventory_counts TEXT,</span>
-<span class="s1">            hotbar_index INTEGER, timestamp INTEGER</span>
+<span class="s1">            data TEXT</span>
 <span class="s1">        )</span>
 <span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
 
     <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
-<span class="s1">        CREATE TABLE world_meta (</span>
-<span class="s1">            key TEXT PRIMARY KEY,</span>
-<span class="s1">            value TEXT</span>
+<span class="s1">        CREATE TABLE IF NOT EXISTS world_meta (</span>
+<span class="s1">            id INTEGER PRIMARY KEY,</span>
+<span class="s1">            world_name TEXT,</span>
+<span class="s1">            seed INTEGER,</span>
+<span class="s1">            game_mode INTEGER,</span>
+<span class="s1">            creation_date TEXT,</span>
+<span class="s1">            last_played TEXT</span>
 <span class="s1">        )</span>
 <span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
 
-    <span class="c1"># Store metadata</span>
-    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO world_meta VALUES (?, ?)&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="p">))</span>
-    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO world_meta VALUES (?, ?)&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;created_time&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())))</span>
-    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO world_meta VALUES (?, ?)&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;game_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;SURVIVAL&quot;</span><span class="p">))</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        CREATE TABLE IF NOT EXISTS dropped_items (</span>
+<span class="s1">            id INTEGER PRIMARY KEY AUTOINCREMENT,</span>
+<span class="s1">            voxel_id INTEGER,</span>
+<span class="s1">            px REAL, py REAL, pz REAL,</span>
+<span class="s1">            vx REAL, vy REAL, vz REAL</span>
+<span class="s1">        )</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
 
     <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">conn</span>
+</pre></div>
+</div>
+<p><strong>Save Chunk:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">save_chunk_to_db</span><span class="p">(</span><span class="n">cursor</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compress and store chunk data&quot;&quot;&quot;</span>
+    <span class="n">voxel_data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">voxels</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">lightmap_data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">lightmap</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span> <span class="k">if</span> <span class="n">lightmap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="s1">&#39;INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)&#39;</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">voxel_data</span><span class="p">,</span> <span class="n">lightmap_data</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Load Chunk:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_chunk_from_db</span><span class="p">(</span><span class="n">cursor</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve and decompress chunk data&quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
+        <span class="n">voxel_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">lightmap_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">voxel_data</span><span class="p">,</span> <span class="n">lightmap_data</span>
+
+    <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+</pre></div>
+</div>
+<p><strong>Save Player Data:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">save_player_data</span><span class="p">(</span><span class="n">cursor</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">player_state_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save player state as JSON&quot;&quot;&quot;</span>
+    <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">player_state_dict</span><span class="p">)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;INSERT OR REPLACE INTO player_data (id, data) VALUES (1, ?)&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">json_data</span><span class="p">,))</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Load Player Data:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_player_data</span><span class="p">(</span><span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load and deserialize player state&quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT data FROM player_data WHERE id=1&#39;</span><span class="p">)</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">CREATE</span> <span class="n">TABLE</span> <span class="n">player_data</span> <span class="p">(</span>
+            <span class="nb">id</span> <span class="n">INTEGER</span> <span class="n">PRIMARY</span> <span class="n">KEY</span><span class="p">,</span>
+            <span class="n">x</span> <span class="n">REAL</span><span class="p">,</span> <span class="n">y</span> <span class="n">REAL</span><span class="p">,</span> <span class="n">z</span> <span class="n">REAL</span><span class="p">,</span>
+            <span class="n">yaw</span> <span class="n">REAL</span><span class="p">,</span> <span class="n">pitch</span> <span class="n">REAL</span><span class="p">,</span>
+            <span class="n">health</span> <span class="n">REAL</span><span class="p">,</span> <span class="n">hunger</span> <span class="n">REAL</span><span class="p">,</span> <span class="n">oxygen</span> <span class="n">REAL</span><span class="p">,</span>
+            <span class="n">inventory</span> <span class="n">TEXT</span><span class="p">,</span> <span class="n">inventory_counts</span> <span class="n">TEXT</span><span class="p">,</span>
+            <span class="n">hotbar_index</span> <span class="n">INTEGER</span><span class="p">,</span> <span class="n">timestamp</span> <span class="n">INTEGER</span>
+        <span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;)</span>
+
+<span class="sd">    cursor.execute(&#39;&#39;&#39;</span>
+        <span class="n">CREATE</span> <span class="n">TABLE</span> <span class="n">world_meta</span> <span class="p">(</span>
+            <span class="n">key</span> <span class="n">TEXT</span> <span class="n">PRIMARY</span> <span class="n">KEY</span><span class="p">,</span>
+            <span class="n">value</span> <span class="n">TEXT</span>
+        <span class="p">)</span>
+    <span class="s1">&#39;&#39;&#39;)</span>
+
+<span class="s1">    # Store metadata</span>
+<span class="s1">    cursor.execute(&quot;INSERT INTO world_meta VALUES (?, ?)&quot;, (&quot;seed&quot;, seed))</span>
+<span class="s1">    cursor.execute(&quot;INSERT INTO world_meta VALUES (?, ?)&quot;, (&quot;created_time&quot;, int(time.time())))</span>
+<span class="s1">    cursor.execute(&quot;INSERT INTO world_meta VALUES (?, ?)&quot;, (&quot;game_mode&quot;, &quot;SURVIVAL&quot;))</span>
+
+<span class="s1">    conn.commit()</span>
+<span class="s1">    conn.close()</span>
 </pre></div>
 </div>
 <p><strong>Save Chunk:</strong></p>
@@ -482,155 +569,59 @@ Compressed:   1,440 * 25 KB average ≈ 36 MB
     <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
 <span class="s1">        INSERT OR REPLACE INTO chunks</span>
 <span class="s1">        (x, y, z, voxel_data, lightmap_data, generated, timestamp)</span>
-<span class="s1">        VALUES (?, ?, ?, ?, ?, ?, ?)</span>
-<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">))</span>
-
-    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-</pre></div>
-</div>
-<p><strong>Load Chunk:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_chunk_from_db</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load chunk from database&quot;&quot;&quot;</span>
-    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
-
-    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
-<span class="s1">        SELECT voxel_data, lightmap_data</span>
-<span class="s1">        FROM chunks</span>
-<span class="s1">        WHERE x=? AND y=? AND z=?</span>
-<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">))</span>
-
-    <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># Chunk not in database</span>
-
-    <span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span> <span class="o">=</span> <span class="n">row</span>
-    <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span> <span class="o">=</span> <span class="n">deserialize_chunk</span><span class="p">(</span><span class="n">voxel_compressed</span><span class="p">,</span> <span class="n">lightmap_compressed</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span>
-</pre></div>
-</div>
-<p><strong>Save Player Data:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">save_player_data</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">player</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save player position, inventory, stats&quot;&quot;&quot;</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-
-    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
-
-    <span class="n">player_data</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
-        <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
-        <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
-        <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">yaw</span><span class="p">),</span>
-        <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">pitch</span><span class="p">),</span>
-        <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">health</span><span class="p">),</span>
-        <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">hunger</span><span class="p">),</span>
-        <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">oxygen</span><span class="p">),</span>
-        <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">,</span>
-        <span class="s1">&#39;inventory_counts&#39;</span><span class="p">:</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">,</span>
-        <span class="s1">&#39;hotbar_index&#39;</span><span class="p">:</span> <span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">,</span>
-    <span class="p">}</span>
-
-    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
-<span class="s1">        INSERT OR REPLACE INTO player_data</span>
-<span class="s1">        (id, x, y, z, yaw, pitch, health, hunger, oxygen, inventory, inventory_counts, hotbar_index, timestamp)</span>
-<span class="s1">        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)</span>
-<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="p">(</span>
-        <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">],</span>
-        <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;yaw&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;pitch&#39;</span><span class="p">],</span>
-        <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;health&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;hunger&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;oxygen&#39;</span><span class="p">],</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;inventory&#39;</span><span class="p">]),</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;inventory_counts&#39;</span><span class="p">]),</span>
-        <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;hotbar_index&#39;</span><span class="p">],</span>
-        <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
-    <span class="p">))</span>
-
-    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-</pre></div>
-</div>
-<p><strong>Load Player Data:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_player_data</span><span class="p">(</span><span class="n">conn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load player from database&quot;&quot;&quot;</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-
-    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
-    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM player_data WHERE id=1&#39;</span><span class="p">)</span>
-    <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-    <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># New world: return spawn point</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
-            <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span><span class="p">,</span>
-            <span class="s1">&#39;inventory_counts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span><span class="p">,</span>
-            <span class="s1">&#39;hotbar_index&#39;</span><span class="p">:</span> <span class="mi">0</span>
-        <span class="p">}</span>
-
-    <span class="c1"># Parse from database</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
-        <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
-        <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
-        <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">9</span><span class="p">]),</span>
-        <span class="s1">&#39;inventory_counts&#39;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">10</span><span class="p">]),</span>
-        <span class="s1">&#39;hotbar_index&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>
-    <span class="p">}</span>
 </pre></div>
 </div>
 </section>
 <section id="asynchronous-i-o-and-threading">
 <h2>Asynchronous I/O and Threading<a class="headerlink" href="#asynchronous-i-o-and-threading" title="Link to this heading"></a></h2>
-<p><strong>Background Save Queue:</strong></p>
+<p><strong>Background Save Operations:</strong></p>
+<p>Pyrite uses a ThreadPoolExecutor to handle database saves asynchronously, preventing the main game loop from blocking:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">Queue</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">WorldPersistence</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world_name</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">world_name</span><span class="si">}</span><span class="s1">.db&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>  <span class="c1"># (chunk_x, chunk_y, chunk_z, voxels, lightmap)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">executor</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">World</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executor</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="ow">or</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">check_same_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">queue_chunk_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Queue chunk for background save&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">))</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unload_chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Queue chunk save to background thread&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">:</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">process_save_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Called from background thread&quot;&quot;&quot;</span>
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="o">.</span><span class="n">is_empty</span> <span class="ow">and</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Submit save task to thread pool</span>
+                <span class="n">lightmap_copy</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">lightmap</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">lightmap</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">save_chunk_to_db</span><span class="p">,</span>
+                    <span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                    <span class="n">lightmap_copy</span>
+                <span class="p">)</span>
 
-                <span class="k">with</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">():</span>  <span class="c1"># Thread-safe DB access</span>
-                    <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span>
-                    <span class="n">save_chunk_to_db</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">)</span>
-                    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="k">pass</span>  <span class="c1"># Timeout, continue</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_chunk_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thread-safe chunk save&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">voxels</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+        <span class="n">l_data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">lightmap</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span> <span class="k">if</span> <span class="n">lightmap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flush all queued saves before closing&quot;&quot;&quot;</span>
-        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
-            <span class="n">chunk_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-            <span class="c1"># Synchronously save remaining chunks</span>
-            <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span>
-            <span class="n">save_chunk_to_db</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="o">*</span><span class="n">chunk_data</span><span class="p">)</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="s1">&#39;INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">l_data</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
 </pre></div>
 </div>
 <p><strong>Main Thread Integration:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># On world load</span>
-<span class="n">persistence</span> <span class="o">=</span> <span class="n">WorldPersistence</span><span class="p">(</span><span class="n">world_name</span><span class="p">)</span>
-<span class="n">save_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">persistence</span><span class="o">.</span><span class="n">process_save_queue</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">save_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># On world init</span>
+<span class="n">world</span> <span class="o">=</span> <span class="n">World</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">save_name</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
 
-<span class="c1"># On chunk unload (main thread)</span>
-<span class="n">persistence</span><span class="o">.</span><span class="n">queue_chunk_save</span><span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">)</span>
+<span class="c1"># On chunk unload (main thread queues, background thread handles)</span>
+<span class="n">world</span><span class="o">.</span><span class="n">unload_chunk</span><span class="p">(</span><span class="n">chunk_position</span><span class="p">)</span>
 
 <span class="c1"># On application quit</span>
-<span class="n">persistence</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>  <span class="c1"># Block until all chunks saved</span>
+<span class="n">world</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>  <span class="c1"># Block until all chunks flushed</span>
 </pre></div>
 </div>
 </section>

@@ -30,10 +30,8 @@ Stores terrain voxel data and lightmaps for each chunk.
         x INTEGER,
         y INTEGER,
         z INTEGER,
-        voxel_data BLOB,        -- Compressed 1D uint8 array
-        lightmap_data BLOB,     -- Compressed 1D uint8 array
-        generated BOOLEAN,      -- Whether terrain was procedurally generated
-        timestamp INTEGER,      -- Unix timestamp of last save
+        data BLOB,              -- Compressed 1D uint8 array (voxel IDs)
+        lightmap BLOB,          -- Compressed 1D uint8 array (light data)
         
         PRIMARY KEY (x, y, z)
     )
@@ -41,10 +39,10 @@ Stores terrain voxel data and lightmaps for each chunk.
 **Row Structure:**
 
 - **x, y, z:** Chunk coordinates (e.g., chunk at x=0, y=0, z=0 covers world voxels 0-47 in each axis)
-- **voxel_data:** Compressed blob of shape (CHUNK_VOL,) = (110592,) uint8 values
-- **lightmap_data:** Compressed blob of shape (CHUNK_VOL,) containing packed sunlight+blocklight (4 bits each)
-- **generated:** True if chunk was procedurally generated (not hand-edited)
-- **timestamp:** Used for cleanup/optimization later
+- **data:** Compressed blob of shape (CHUNK_VOL,) = (110592,) uint8 values (voxel IDs)
+- **lightmap:** Compressed blob of shape (CHUNK_VOL,) containing packed sunlight+blocklight (4 bits each)
+
+**Note:** The `lightmap` column was added via schema migration (`ALTER TABLE chunks ADD COLUMN lightmap BLOB`) to support lightmap caching in existing worlds.
 
 **Chunk Coordinate Mapping:**
 
@@ -60,27 +58,18 @@ Stores terrain voxel data and lightmaps for each chunk.
 
 **2. Player Data Table**
 
-Stores player position, inventory, and survival stats.
+Stores player position, inventory, and survival stats as serialized JSON.
 
 .. code-block:: sql
 
     CREATE TABLE player_data (
         id INTEGER PRIMARY KEY,
-        x REAL,                         -- Position X
-        y REAL,                         -- Position Y
-        z REAL,                         -- Position Z
-        yaw REAL,                       -- Rotation angle (radians)
-        pitch REAL,                     -- Rotation angle (radians)
-        health REAL,                    -- 0-20
-        hunger REAL,                    -- 0-20
-        oxygen REAL,                    -- 0-20
-        inventory JSON,                 -- JSON array of voxel IDs
-        inventory_counts JSON,          -- JSON array of stack sizes
-        hotbar_index INTEGER,           -- Selected slot
-        timestamp INTEGER
+        data TEXT                -- JSON serialized player state
     )
 
 **Storage Format:**
+
+The `data` column stores a JSON string containing all player information:
 
 .. code-block:: json
 
@@ -94,31 +83,59 @@ Stores player position, inventory, and survival stats.
         "hunger": 15,
         "oxygen": 20,
         "inventory": [1, 5, 0, 0, 2, 0, 0, 0, 0, 0],
-        "inventory_counts": [64, 32, 0, 0, 1, 0, 0, 0, 0, 0]
+        "inventory_counts": [64, 32, 0, 0, 1, 0, 0, 0, 0, 0],
+        "hotbar_index": 0
     }
 
 **3. World Meta Table**
 
-Stores world-level metadata (seed, difficulty, game mode).
+Stores world-level metadata (seed, game mode, creation date).
 
 .. code-block:: sql
 
     CREATE TABLE world_meta (
-        key TEXT PRIMARY KEY,
-        value TEXT              -- JSON serialized
+        id INTEGER PRIMARY KEY,
+        world_name TEXT,
+        seed INTEGER,
+        game_mode INTEGER,
+        creation_date TEXT,
+        last_played TEXT
     )
 
-**Stored Keys:**
+**Stored Fields:**
 
 .. code-block:: text
 
-    seed:               Integer seed (or MD5 hash of string seed)
-    difficulty:        String ('PEACEFUL', 'EASY', 'NORMAL', 'HARD')
-    game_mode:         String ('SURVIVAL', 'CREATIVE')
-    created_time:      Unix timestamp of world creation
-    last_played:       Unix timestamp of last save
-    player_name:       Player name/UUID
-    spawn_x, spawn_y, spawn_z: Spawn location
+    id:                 Primary key (typically 1 for single world)
+    world_name:         Name of the world/save
+    seed:               Integer seed used for procedural generation
+    game_mode:          0=CREATIVE, 1=SURVIVAL
+    creation_date:      ISO format timestamp of world creation
+    last_played:        ISO format timestamp of last play session
+
+**4. Dropped Items Table**
+
+Stores data for items dropped in the world.
+
+.. code-block:: sql
+
+    CREATE TABLE dropped_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        voxel_id INTEGER,
+        px REAL,                        -- Position X
+        py REAL,                        -- Position Y
+        pz REAL,                        -- Position Z
+        vx REAL,                        -- Velocity X
+        vy REAL,                        -- Velocity Y
+        vz REAL                         -- Velocity Z
+    )
+
+**Row Structure:**
+
+- **id:** Unique item identifier
+- **voxel_id:** Block/item type ID
+- **px, py, pz:** World position of the item
+- **vx, vy, vz:** Velocity vector for physics simulation
 
 Serialization and Compression
 ------------------------------
@@ -139,9 +156,9 @@ Serialization and Compression
         voxel_bytes = voxel_array.tobytes()      # 110592 bytes
         lightmap_bytes = lightmap_array.tobytes()
         
-        # Compress with zlib (level 6 default)
-        voxel_compressed = zlib.compress(voxel_bytes, level=6)
-        lightmap_compressed = zlib.compress(lightmap_bytes, level=6)
+        # Compress with zlib (default level)
+        voxel_compressed = zlib.compress(voxel_bytes)
+        lightmap_compressed = zlib.compress(lightmap_bytes)
         
         return voxel_compressed, lightmap_compressed
     
@@ -150,8 +167,8 @@ Serialization and Compression
         voxel_bytes = zlib.decompress(voxel_compressed)
         lightmap_bytes = zlib.decompress(lightmap_compressed)
         
-        voxel_array = np.frombuffer(voxel_bytes, dtype=np.uint8).reshape((110592,))
-        lightmap_array = np.frombuffer(lightmap_bytes, dtype=np.uint8).reshape((110592,))
+        voxel_array = np.frombuffer(voxel_bytes, dtype=np.uint8).copy()
+        lightmap_array = np.frombuffer(lightmap_bytes, dtype=np.uint8).copy()
         
         return voxel_array, lightmap_array
 
@@ -179,8 +196,8 @@ Database Operations
     
     def create_world_database(world_name, seed):
         """Initialize new world database"""
-        db_path = f'saves/{world_name}/{world_name}.db'
-        conn = sqlite3.connect(db_path)
+        db_path = f'saves/{world_name}.db'
+        conn = sqlite3.connect(db_path, check_same_thread=False)
         cursor = conn.cursor()
         
         # Enable WAL mode for performance
@@ -189,15 +206,97 @@ Database Operations
         
         # Create tables
         cursor.execute('''
-            CREATE TABLE chunks (
+            CREATE TABLE IF NOT EXISTS chunks (
                 x INTEGER, y INTEGER, z INTEGER,
-                voxel_data BLOB, lightmap_data BLOB,
-                generated BOOLEAN, timestamp INTEGER,
+                data BLOB, lightmap BLOB,
                 PRIMARY KEY (x, y, z)
             )
         ''')
         
         cursor.execute('''
+            CREATE TABLE IF NOT EXISTS player_data (
+                id INTEGER PRIMARY KEY,
+                data TEXT
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS world_meta (
+                id INTEGER PRIMARY KEY,
+                world_name TEXT,
+                seed INTEGER,
+                game_mode INTEGER,
+                creation_date TEXT,
+                last_played TEXT
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS dropped_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                voxel_id INTEGER,
+                px REAL, py REAL, pz REAL,
+                vx REAL, vy REAL, vz REAL
+            )
+        ''')
+        
+        conn.commit()
+        return conn
+
+**Save Chunk:**
+
+.. code-block:: python
+
+    def save_chunk_to_db(cursor, conn, x, y, z, voxels, lightmap):
+        """Compress and store chunk data"""
+        voxel_data = zlib.compress(voxels.tobytes())
+        lightmap_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
+        
+        cursor.execute(
+            'INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)',
+            (x, y, z, voxel_data, lightmap_data)
+        )
+        conn.commit()
+
+**Load Chunk:**
+
+.. code-block:: python
+
+    def load_chunk_from_db(cursor, x, y, z):
+        """Retrieve and decompress chunk data"""
+        cursor.execute('SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
+        row = cursor.fetchone()
+        
+        if row:
+            voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8').copy()
+            lightmap_data = np.frombuffer(zlib.decompress(row[1]), dtype='uint8').copy() if row[1] else None
+            return voxel_data, lightmap_data
+        
+        return None, None
+
+**Save Player Data:**
+
+.. code-block:: python
+
+    def save_player_data(cursor, conn, player_state_dict):
+        """Save player state as JSON"""
+        json_data = json.dumps(player_state_dict)
+        cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (1, ?)', (json_data,))
+        conn.commit()
+
+**Load Player Data:**
+
+.. code-block:: python
+
+    def load_player_data(cursor):
+        """Load and deserialize player state"""
+        cursor.execute('SELECT data FROM player_data WHERE id=1')
+        row = cursor.fetchone()
+        
+        if row:
+            return json.loads(row[0])
+        
+        return None
             CREATE TABLE player_data (
                 id INTEGER PRIMARY KEY,
                 x REAL, y REAL, z REAL,
@@ -238,165 +337,64 @@ Database Operations
         cursor.execute('''
             INSERT OR REPLACE INTO chunks 
             (x, y, z, voxel_data, lightmap_data, generated, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (chunk_x, chunk_y, chunk_z, voxel_compressed, lightmap_compressed, True, timestamp))
-        
-        conn.commit()
-
-**Load Chunk:**
-
-.. code-block:: python
-
-    def load_chunk_from_db(conn, chunk_x, chunk_y, chunk_z):
-        """Load chunk from database"""
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT voxel_data, lightmap_data 
-            FROM chunks 
-            WHERE x=? AND y=? AND z=?
-        ''', (chunk_x, chunk_y, chunk_z))
-        
-        row = cursor.fetchone()
-        if row is None:
-            return None  # Chunk not in database
-        
-        voxel_compressed, lightmap_compressed = row
-        voxels, lightmap = deserialize_chunk(voxel_compressed, lightmap_compressed)
-        
-        return voxels, lightmap
-
-**Save Player Data:**
-
-.. code-block:: python
-
-    def save_player_data(conn, player):
-        """Save player position, inventory, stats"""
-        import json
-        
-        cursor = conn.cursor()
-        
-        player_data = {
-            'x': float(player.feet_pos.x),
-            'y': float(player.feet_pos.y),
-            'z': float(player.feet_pos.z),
-            'yaw': float(player.yaw),
-            'pitch': float(player.pitch),
-            'health': float(player.health),
-            'hunger': float(player.hunger),
-            'oxygen': float(player.oxygen),
-            'inventory': player.inventory,
-            'inventory_counts': player.inventory_counts,
-            'hotbar_index': player.hotbar_index,
-        }
-        
-        cursor.execute('''
-            INSERT OR REPLACE INTO player_data 
-            (id, x, y, z, yaw, pitch, health, hunger, oxygen, inventory, inventory_counts, hotbar_index, timestamp)
-            VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            player_data['x'], player_data['y'], player_data['z'],
-            player_data['yaw'], player_data['pitch'],
-            player_data['health'], player_data['hunger'], player_data['oxygen'],
-            json.dumps(player_data['inventory']),
-            json.dumps(player_data['inventory_counts']),
-            player_data['hotbar_index'],
-            int(time.time())
-        ))
-        
-        conn.commit()
-
-**Load Player Data:**
-
-.. code-block:: python
-
-    def load_player_data(conn):
-        """Load player from database"""
-        import json
-        
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM player_data WHERE id=1')
-        row = cursor.fetchone()
-        
-        if row is None:
-            # New world: return spawn point
-            return {
-                'x': 0, 'y': 64, 'z': 0,
-                'yaw': 0, 'pitch': 0,
-                'health': 20, 'hunger': 20, 'oxygen': 20,
-                'inventory': [0] * 41,
-                'inventory_counts': [0] * 41,
-                'hotbar_index': 0
-            }
-        
-        # Parse from database
-        return {
-            'x': row[1], 'y': row[2], 'z': row[3],
-            'yaw': row[4], 'pitch': row[5],
-            'health': row[6], 'hunger': row[7], 'oxygen': row[8],
-            'inventory': json.loads(row[9]),
-            'inventory_counts': json.loads(row[10]),
-            'hotbar_index': row[11]
-        }
 
 Asynchronous I/O and Threading
 -------------------------------
 
-**Background Save Queue:**
+**Background Save Operations:**
+
+Pyrite uses a ThreadPoolExecutor to handle database saves asynchronously, preventing the main game loop from blocking:
 
 .. code-block:: python
 
     from concurrent.futures import ThreadPoolExecutor
-    from queue import Queue
     import threading
     
-    class WorldPersistence:
-        def __init__(self, world_name):
-            self.db_path = f'saves/{world_name}/{world_name}.db'
-            self.save_queue = Queue()  # (chunk_x, chunk_y, chunk_z, voxels, lightmap)
-            self.executor = ThreadPoolExecutor(max_workers=2)
-            self.lock = threading.Lock()
+    class World:
+        def __init__(self):
+            self.executor = ThreadPoolExecutor(max_workers=max(4, (os.cpu_count() or 5) - 1))
+            self.db_lock = threading.Lock()
+            self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
         
-        def queue_chunk_save(self, chunk_x, chunk_y, chunk_z, voxels, lightmap):
-            """Queue chunk for background save"""
-            self.save_queue.put((chunk_x, chunk_y, chunk_z, voxels, lightmap))
+        def unload_chunk(self, pos):
+            """Queue chunk save to background thread"""
+            if pos in self.active_chunks:
+                chunk = self.active_chunks.pop(pos)
+                
+                if not chunk.is_empty and chunk.voxels is not None:
+                    # Submit save task to thread pool
+                    lightmap_copy = chunk.lightmap.copy() if chunk.lightmap else None
+                    self.executor.submit(
+                        self.save_chunk_to_db,
+                        pos[0], pos[1], pos[2],
+                        chunk.voxels.copy(),
+                        lightmap_copy
+                    )
         
-        def process_save_queue(self):
-            """Called from background thread"""
-            while True:
-                try:
-                    chunk_x, chunk_y, chunk_z, voxels, lightmap = self.save_queue.get(timeout=1)
-                    
-                    with threading.Lock():  # Thread-safe DB access
-                        conn = sqlite3.connect(self.db_path)
-                        save_chunk_to_db(conn, chunk_x, chunk_y, chunk_z, voxels, lightmap)
-                        conn.close()
-                except:
-                    pass  # Timeout, continue
-        
-        def shutdown(self):
-            """Flush all queued saves before closing"""
-            while not self.save_queue.empty():
-                chunk_data = self.save_queue.get()
-                # Synchronously save remaining chunks
-                conn = sqlite3.connect(self.db_path)
-                save_chunk_to_db(conn, *chunk_data)
-                conn.close()
+        def save_chunk_to_db(self, x, y, z, voxels, lightmap):
+            """Thread-safe chunk save"""
+            data = zlib.compress(voxels.tobytes())
+            l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
+            
+            with self.db_lock:
+                self.cursor.execute(
+                    'INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)',
+                    (x, y, z, data, l_data)
+                )
+                self.connection.commit()
 
 **Main Thread Integration:**
 
 .. code-block:: python
 
-    # On world load
-    persistence = WorldPersistence(world_name)
-    save_thread = threading.Thread(target=persistence.process_save_queue, daemon=True)
-    save_thread.start()
+    # On world init
+    world = World(app, save_name, seed)
     
-    # On chunk unload (main thread)
-    persistence.queue_chunk_save(chunk_x, chunk_y, chunk_z, voxels, lightmap)
+    # On chunk unload (main thread queues, background thread handles)
+    world.unload_chunk(chunk_position)
     
     # On application quit
-    persistence.shutdown()  # Block until all chunks saved
+    world.save()  # Block until all chunks flushed
 
 World Management (File System)
 ------------------------------

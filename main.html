@@ -664,10 +664,11 @@ window.runMermaid = runMermaid;</script>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#notes">Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
@@ -797,11 +798,9 @@ window.runMermaid = runMermaid;</script>
 
    GameOpens --&gt; MAIN_MENU
 
-   MAIN_MENU --&gt; WORLD_SELECT : Play
+   MAIN_MENU --&gt; LOADING : Play (world selected)
    MAIN_MENU --&gt; OPTIONS : Settings
    MAIN_MENU --&gt; GameCloses : Quit
-
-   WORLD_SELECT --&gt; LOADING : Load/Create World
 
    state LOADING {
       [*] --&gt; GenerateChunks
@@ -818,6 +817,12 @@ window.runMermaid = runMermaid;</script>
 
    PAUSED --&gt; IN_GAME : Resume
    PAUSED --&gt; OPTIONS : Settings
+   PAUSED --&gt; MAIN_MENU : Quit to Main Menu
+
+   OPTIONS --&gt; MAIN_MENU : Exit
+   OPTIONS --&gt; PAUSED : Exit (from pause)
+
+   GameCloses
 
    OPTIONS --&gt; PAUSED : Back
     </pre><p><strong>State Handler Pseudocode:</strong></p>

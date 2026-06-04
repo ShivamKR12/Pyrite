@@ -228,10 +228,11 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Profiling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#testing-framework-setup">Testing Framework Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#engine-tests">Engine Tests</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#notes">Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
@@ -590,7 +591,7 @@ Bits 3-0 (4 bits): Blocklight (0-15)
 <li><p><strong>Mesh Build (Background Thread via ThreadPoolExecutor):</strong></p>
 <ul class="simple">
 <li><p>Pop chunk from <code class="docutils literal notranslate"><span class="pre">load_queue</span></code></p></li>
-<li><p>Run greedy meshing: <code class="docutils literal notranslate"><span class="pre">build_chunk_mesh(chunk_voxels,</span> <span class="pre">chunk_lightmap)</span></code></p></li>
+<li><p>Run greedy meshing: <code class="docutils literal notranslate"><span class="pre">build_chunk_mesh(chunk_voxels,</span> <span class="pre">chunk_lightmap,</span> <span class="pre">format_size,</span> <span class="pre">chunk_pos,</span> <span class="pre">world_voxels,</span> <span class="pre">world_lightmaps,</span> <span class="pre">chunk_positions)</span></code></p></li>
 <li><p>Output: <code class="docutils literal notranslate"><span class="pre">vertex_data</span></code> (flat uint32 array), <code class="docutils literal notranslate"><span class="pre">light_data</span></code> (flat uint32 array)</p></li>
 <li><p>Place in <code class="docutils literal notranslate"><span class="pre">build_queue</span></code></p></li>
 </ul>
