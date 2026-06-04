@@ -1,10 +1,14 @@
 <div align="center">
-  <img src="assets/new-label.png" alt="Pyrite Logo" width="600"/>
+  <img src="assets/icons/icon+logo.png" alt="Pyrite Logo" width="600"/>
   <br>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/build.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/build.yml/badge.svg" alt="Build Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/test.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/test.yml/badge.svg" alt="Test Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/ruff.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/ruff.yml/badge.svg" alt="Ruff Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/mypy.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/mypy.yml/badge.svg" alt="Mypy Status"></a>
+  <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/pylint.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/pylint.yml/badge.svg" alt="Pylint Status"></a>
+  <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/glsl_validate.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/glsl_validate.yml/badge.svg" alt="GLSL Validation Status"></a>
+  <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/mutation.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/mutation.yml/badge.svg" alt="Mutation Testing Status"></a>
+  <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/docs.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/docs.yml/badge.svg" alt="Docs Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/releases/latest"><img src="https://img.shields.io/github/v/release/ShivamKR12/Pyrite?label=Download%20Latest%20Release&color=success" alt="Latest Release"></a>
 </div>
 
