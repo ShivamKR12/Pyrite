@@ -84,11 +84,13 @@ Chunk generation, lighting BFS queues, and database reads are offloaded to a `Th
 
 We use **Ruff** for hyper-fast formatting/linting and **Mypy** for strict static type checking. Continuous Integration (CI) via GitHub Actions will automatically reject code that fails these checks.
 
-Before committing, run the following commands in the root directory:
+To ensure your code complies with our style rules (such as using double quotes and a 120-character line limit) and to automatically correct code that is failing the CI tests, run the following commands in the root directory before committing:
 
-1. **Format**: `ruff format .`
-2. **Lint**: `ruff check --fix .`
-3. **Type Hint**: `mypy src/`
+1. **Format**: `ruff format .` (Automatically fixes quote styles, spacing, and line wrapping)
+2. **Lint**: `ruff check --fix .` (Automatically fixes unused imports and basic stylistic errors)
+3. **Type Hint**: `mypy src/` (Validates your static typing)
+
+If your Pull Request fails the automated Ruff tests, simply running the formatting commands above will usually correct the code for you.
 
 *Note: Due to our use of highly optimized C-extensions (`pyglm`, `moderngl`), `Any` may be used as a type hint exclusively when interacting directly with OpenGL contexts or PyGLM matrices.*
 
