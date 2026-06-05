@@ -1,9 +1,9 @@
 """
 Unit tests for validating 2D User Interface mesh generation.
 
-This test module mocks the main ModernGL context to safely execute UI mesh 
-constructors without needing a window. It rigorously checks the exact shape, 
-data types, and dimensions of the resulting vertex, UV, and color Numpy arrays 
+This test module mocks the main ModernGL context to safely execute UI mesh
+constructors without needing a window. It rigorously checks the exact shape,
+data types, and dimensions of the resulting vertex, UV, and color Numpy arrays
 dispatched to the GPU for rendering.
 """
 
@@ -33,11 +33,11 @@ def test_crosshair_mesh_vertex_data(mock_app: Any) -> None:
     mock_app.ctx.vertex_array.assert_called()
 
     data = mesh.get_vertex_data()
-    
-    assert isinstance(data, np.ndarray), "Crosshair data must be a numpy array."
-    assert data.dtype == np.float32, "Crosshair data must be float32 for ModernGL."
+
+    assert isinstance(data, np.ndarray), 'Crosshair data must be a numpy array.'
+    assert data.dtype == np.float32, 'Crosshair data must be float32 for ModernGL.'
     # 12 vertices x 6 attributes (3 pos + 3 color)
-    assert data.shape == (12, 6), f"Expected shape (12, 6), got {data.shape}"
+    assert data.shape == (12, 6), f'Expected shape (12, 6), got {data.shape}'
 
 
 def test_block_icon_mesh_vertex_data(mock_app: Any) -> None:
@@ -47,9 +47,9 @@ def test_block_icon_mesh_vertex_data(mock_app: Any) -> None:
     mock_app.ctx.vertex_array.assert_called()
 
     data = mesh.get_vertex_data()
-    
+
     # 6 vertices x 4 attributes (2 pos + 2 uv)
-    assert data.shape == (6, 4), f"Expected shape (6, 4), got {data.shape}"
+    assert data.shape == (6, 4), f'Expected shape (6, 4), got {data.shape}'
 
 
 def test_ui_color_mesh_vertex_data(mock_app: Any) -> None:
@@ -59,9 +59,9 @@ def test_ui_color_mesh_vertex_data(mock_app: Any) -> None:
     mock_app.ctx.vertex_array.assert_called()
 
     data = mesh.get_vertex_data()
-    
+
     # 6 vertices x 2 attributes (2 pos)
-    assert data.shape == (6, 2), f"Expected shape (6, 2), got {data.shape}"
+    assert data.shape == (6, 2), f'Expected shape (6, 2), got {data.shape}'
 
 
 def test_ui_text_mesh_vertex_data(mock_app: Any) -> None:
@@ -71,5 +71,5 @@ def test_ui_text_mesh_vertex_data(mock_app: Any) -> None:
     mock_app.ctx.vertex_array.assert_called()
 
     data = mesh.get_vertex_data()
-    
-    assert data.shape == (6, 4), f"Expected shape (6, 4), got {data.shape}"
+
+    assert data.shape == (6, 4), f'Expected shape (6, 4), got {data.shape}'

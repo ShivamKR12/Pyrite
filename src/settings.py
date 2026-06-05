@@ -1,7 +1,7 @@
 """
 Global settings and configuration constants for the Pyrite voxel engine.
 
-This module acts as the central repository for engine configurations, including 
+This module acts as the central repository for engine configurations, including
 OpenGL parameters, camera constraints, player physics, terrain thresholds, block IDs,
 color palettes, and performance caps (e.g., ThreadPool limits and VRAM pool sizes).
 It also provides a helper for resolving absolute asset paths in bundled PyInstaller builds.
@@ -17,8 +17,10 @@ from typing import Any, Dict, Set, Tuple
 
 def get_path(relative_path: str) -> str:
     """Get absolute path to resource"""
-    try: base_path: str = sys._MEIPASS  # type: ignore[attr-defined]
-    except AttributeError: base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    try:
+        base_path: str = sys._MEIPASS  # type: ignore[attr-defined]
+    except AttributeError:
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     return os.path.join(base_path, relative_path)
 
 
@@ -170,7 +172,7 @@ TEXTURE_MAP: Dict[int, int] = {
     GLOWSTONE: 12,
     GLASS: 13,
     CACTUS: 14,
-    STONE_BRICKS: 15
+    STONE_BRICKS: 15,
 }
 
 # terrain levels
@@ -196,11 +198,11 @@ BLOCK_HARDNESS: Dict[int, int] = {
     SNOW: 200,
     LEAVES: 150,
     WOOD: 1000,
-    WATER: 0, # Water can't be normally mined
+    WATER: 0,  # Water can't be normally mined
     GLOWSTONE: 100,
     GLASS: 100,
     CACTUS: 150,
-    STONE_BRICKS: 1500
+    STONE_BRICKS: 1500,
 }
 
 # game modes
@@ -208,7 +210,7 @@ CREATIVE: int = 0
 SURVIVAL: int = 1
 
 # player interaction
-INTERACTION_DELAY: int = 150 # ms delay for continuous mining/placing
+INTERACTION_DELAY: int = 150  # ms delay for continuous mining/placing
 
 # ui
 HOTBAR_SCALE: float = 0.045
@@ -224,7 +226,7 @@ WATER_AREA: int = 5 * CHUNK_SIZE * WORLD_W
 CLOUD_SCALE: int = 25
 CLOUD_HEIGHT: int = 200
 
-PLAYER_WIDTH: float  = 0.6
+PLAYER_WIDTH: float = 0.6
 PLAYER_HEIGHT: float = 1.8
 PLAYER_HALF_W: float = PLAYER_WIDTH / 2
 PLAYER_EYE_HEIGHT: float = 1.6
@@ -246,7 +248,7 @@ OXYGEN_LOSE_TIMER: int = 1000
 OXYGEN_GAIN_TIMER: int = 200
 
 # inventory
-INVENTORY_SIZE: int = 41 # 36 main + 4 crafting grid + 1 output
+INVENTORY_SIZE: int = 41  # 36 main + 4 crafting grid + 1 output
 HOTBAR_SIZE: int = 9
 
 # item drops
@@ -266,8 +268,8 @@ FONT_SIZE_DEBUG: int = 18
 
 UI_BG_COLOR: Tuple[float, float, float, float] = (0.85, 0.85, 0.85, 0.5)
 # UI_BG_COLOR = (0.1, 0.12, 0.15, 0.7)
-UI_HOVER_COLOR: Tuple[float, float, float, float] = (0.85, 0.65, 0.13, 0.9)     # Pyrite Gold
-UI_BUTTON_COLOR: Tuple[float, float, float, float] = (0.15, 0.20, 0.25, 0.9)    # Slate Blue
+UI_HOVER_COLOR: Tuple[float, float, float, float] = (0.85, 0.65, 0.13, 0.9)  # Pyrite Gold
+UI_BUTTON_COLOR: Tuple[float, float, float, float] = (0.15, 0.20, 0.25, 0.9)  # Slate Blue
 UI_SLOT_BG_COLOR: Tuple[float, float, float, float] = (0.2, 0.2, 0.2, 0.6)
 UI_SLOT_HOVER_COLOR: Tuple[float, float, float, float] = (0.9, 0.9, 0.9, 0.5)
 UI_SLOT_SELECTED_FRAME_COLOR: Tuple[float, float, float, float] = (0.9, 0.9, 0.9, 0.9)

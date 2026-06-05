@@ -2,8 +2,8 @@
 Procedural noise generation and deterministic seeding.
 
 This module provides Numba-optimized wrappers around OpenSimplex noise functions.
-It manages the global permutation arrays and ensures that both standard Python 
-random and Numba's internal RNG are perfectly synchronized to the world seed 
+It manages the global permutation arrays and ensures that both standard Python
+random and Numba's internal RNG are perfectly synchronized to the world seed
 for 100% deterministic terrain generation.
 """
 

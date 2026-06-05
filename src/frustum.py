@@ -1,8 +1,8 @@
 """
 Frustum culling for efficient 3D rendering.
 
-This module provides both an object-oriented Frustum class for individual 
-tests and a highly optimized, Numba-compiled vectorized function for 
+This module provides both an object-oriented Frustum class for individual
+tests and a highly optimized, Numba-compiled vectorized function for
 testing thousands of chunks simultaneously against the camera's view frustum.
 """
 
@@ -17,13 +17,14 @@ from profiler import global_profiler
 
 class Frustum:
     """
-    Calculates the camera's viewing frustum planes and boundaries dynamically 
+    Calculates the camera's viewing frustum planes and boundaries dynamically
     based on the Field of View and Aspect Ratio.
-    
+
     Args:
         camera (Any): The main camera instance tracking the player's perspective.
     """
-    @global_profiler.profile_func("Frustum_Init")
+
+    @global_profiler.profile_func('Frustum_Init')
     def __init__(self, camera: Any) -> None:
         self.cam: Any = camera
         self.factor_y: float = 0.0
@@ -31,8 +32,8 @@ class Frustum:
         self.factor_x: float = 0.0
         self.tan_x: float = 0.0
         self.update_factors(V_FOV, H_FOV)
-        
-    @global_profiler.profile_func("Frustum_UpdateFactors")
+
+    @global_profiler.profile_func('Frustum_UpdateFactors')
     def update_factors(self, v_fov: float, h_fov: float) -> None:
         """
         Recalculates the tangent and factor values based on the camera's FOV.
@@ -43,7 +44,7 @@ class Frustum:
         self.factor_x = 1.0 / math.cos(half_x := h_fov * 0.5)
         self.tan_x = math.tan(half_x)
 
-    @global_profiler.profile_func("Frustum_IsOnFrustum")
+    @global_profiler.profile_func('Frustum_IsOnFrustum')
     def is_on_frustum(self, chunk: Any) -> bool:
         """
         Tests if a chunk's bounding sphere is within the camera's view frustum.
@@ -72,7 +73,18 @@ class Frustum:
 
 
 @njit(cache=True, fastmath=True, parallel=True, nogil=True)
-def frustum_cull_fast(chunk_centers: Any, out_mask: Any, cam_pos: Any, cam_forward: Any, cam_right: Any, cam_up: Any, tan_y: float, tan_x: float, factor_y: float, factor_x: float) -> Any:
+def frustum_cull_fast(
+    chunk_centers: Any,
+    out_mask: Any,
+    cam_pos: Any,
+    cam_forward: Any,
+    cam_right: Any,
+    cam_up: Any,
+    tan_y: float,
+    tan_x: float,
+    factor_y: float,
+    factor_x: float,
+) -> Any:
     """
     Numba-optimized vectorized frustum culling.
     Rapidly tests an array of chunk centers against the camera's view frustum planes.
@@ -91,8 +103,8 @@ def frustum_cull_fast(chunk_centers: Any, out_mask: Any, cam_pos: Any, cam_forwa
         svx = chunk_centers[i, 0] - cpx
         svy = chunk_centers[i, 1] - cpy
         svz = chunk_centers[i, 2] - cpz
-        
-        dist_sq = svx*svx + svy*svy + svz*svz
+
+        dist_sq = svx * svx + svy * svy + svz * svz
         if dist_sq < radius_sq:
             out_mask[i] = True
             continue
@@ -101,7 +113,7 @@ def frustum_cull_fast(chunk_centers: Any, out_mask: Any, cam_pos: Any, cam_forwa
         if not (NEAR - CHUNK_SPHERE_RADIUS <= sz <= FAR + CHUNK_SPHERE_RADIUS):
             out_mask[i] = False
             continue
-            
+
         sz = max(0.0, sz)
 
         sy = svx * cux + svy * cuy + svz * cuz
@@ -115,7 +127,7 @@ def frustum_cull_fast(chunk_centers: Any, out_mask: Any, cam_pos: Any, cam_forwa
         if not (-dist_x <= sx <= dist_x):
             out_mask[i] = False
             continue
-            
+
         out_mask[i] = True
-            
+
     return out_mask

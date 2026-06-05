@@ -1,6 +1,7 @@
 """
 Unit tests for the settings module.
 """
+
 import os
 import sys
 from unittest.mock import patch

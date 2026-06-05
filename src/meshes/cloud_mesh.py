@@ -1,8 +1,8 @@
 """
 Procedural cloud mesh generation and greedy meshing.
 
-This module manages the volumetric cloud layer by generating 2D noise-based 
-density maps and using a specialized 2D greedy meshing algorithm to compile 
+This module manages the volumetric cloud layer by generating 2D noise-based
+density maps and using a specialized 2D greedy meshing algorithm to compile
 optimized, low-polygon chunks of clouds that scroll across the sky.
 """
 
@@ -21,17 +21,18 @@ from profiler import global_profiler
 class CloudMesh(BaseMesh):
     """
     Generates the geometry for the procedural 3D cloud layer.
-    
-    Utilizes simplex noise to map cloud density and a 2D greedy meshing algorithm 
+
+    Utilizes simplex noise to map cloud density and a 2D greedy meshing algorithm
     to create an optimized, low-polygon mesh of cloud blocks.
-    
+
     Args:
         app (Any): The main application instance providing the ModernGL context.
     """
-    @global_profiler.profile_func("CloudMesh_Init")
+
+    @global_profiler.profile_func('CloudMesh_Init')
     def __init__(self, app: Any) -> None:
         """
-        Initializes the cloud mesh, setting up the shader program and vertex buffer 
+        Initializes the cloud mesh, setting up the shader program and vertex buffer
         configuration required to render the volumetric clouds.
         """
         super().__init__()
@@ -42,13 +43,13 @@ class CloudMesh(BaseMesh):
         self.attrs: Tuple[str, ...] = ('in_position',)
         self.vao: Any = self.get_vao()
 
-    @global_profiler.profile_func("CloudMesh_GetVertexData")
+    @global_profiler.profile_func('CloudMesh_GetVertexData')
     def get_vertex_data(self) -> NDArray[np.uint16]:
         """
-        Coordinates the generation of the raw cloud density data and subsequently 
+        Coordinates the generation of the raw cloud density data and subsequently
         constructs the optimized 3D mesh vertex data required for rendering.
         """
-        cloud_data: Any = np.zeros(WORLD_AREA * CHUNK_SIZE ** 2, dtype='uint8')
+        cloud_data: Any = np.zeros(WORLD_AREA * CHUNK_SIZE**2, dtype='uint8')
         self.gen_clouds(cloud_data, noise.perm)
 
         return self.build_mesh(cloud_data)  # type: ignore[no-any-return]
@@ -57,23 +58,22 @@ class CloudMesh(BaseMesh):
     @njit(cache=True, fastmath=True, parallel=True, nogil=True)
     def gen_clouds(cloud_data: Any, perm_array: Any) -> None:
         """
-        Populates a 2D density grid using multi-octave simplex noise to procedurally 
+        Populates a 2D density grid using multi-octave simplex noise to procedurally
         determine the exact locations where clouds should form in the sky.
         """
         for x in prange(WORLD_W * CHUNK_SIZE):
             for z in range(WORLD_D * CHUNK_SIZE):
-
                 if noise2(0.13 * x, 0.13 * z, perm_array) < 0.2:
                     continue
-                
+
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
     @staticmethod
     @njit(cache=True, fastmath=True, parallel=True, nogil=True)
     def build_mesh(cloud_data: Any) -> NDArray[np.uint16]:
         """
-        A specialized 2D greedy meshing algorithm that scans the generated cloud density grid. 
-        It mathematically combines adjacent, identical cloud blocks into massive single 
+        A specialized 2D greedy meshing algorithm that scans the generated cloud density grid.
+        It mathematically combines adjacent, identical cloud blocks into massive single
         polygonal faces, drastically reducing the total number of vertices sent to the GPU.
         """
         mesh = np.empty(WORLD_AREA * CHUNK_AREA * 6 * 3, dtype='uint16')
@@ -86,7 +86,6 @@ class CloudMesh(BaseMesh):
 
         for z in range(depth):
             for x in range(width):
-
                 idx = x + width * z
                 if not cloud_data[idx] or idx in visited:
                     continue
@@ -94,22 +93,22 @@ class CloudMesh(BaseMesh):
                 # find number of continuous quads along x
                 x_count = 1
                 idx = (x + x_count) + width * z
-                
+
                 while x + x_count < width and cloud_data[idx] and idx not in visited:
                     x_count += 1
                     idx = (x + x_count) + width * z
 
                 # find the number of continuous quads along z for each x
                 z_count_list = []
-                
+
                 for ix in range(x_count):
                     z_count = 1
                     idx = (x + ix) + width * (z + z_count)
-                
+
                     while (z + z_count) < depth and cloud_data[idx] and idx not in visited:
                         z_count += 1
                         idx = (x + ix) + width * (z + z_count)
-                
+
                     z_count_list.append(z_count)
 
                 # find min count z to form a large quad
@@ -130,6 +129,6 @@ class CloudMesh(BaseMesh):
                         mesh[index] = attr
                         index += 1
 
-        mesh = mesh[:index + 1]
-        
+        mesh = mesh[: index + 1]
+
         return mesh

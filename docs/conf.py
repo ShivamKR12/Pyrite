@@ -49,7 +49,7 @@ autodoc_typehints = 'description'
 autodoc_member_order = 'bysource'
 
 # Mermaid version for GitHub Pages compatibility
-mermaid_version = "10.9.0"
+mermaid_version = '10.9.0'
 
 # Intersphinx mapping for external documentation
 intersphinx_mapping = {

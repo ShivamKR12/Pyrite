@@ -1,13 +1,14 @@
 """
 Unit tests to enforce documentation standards.
 
-This ensures that all modules within the source directory strictly adhere 
+This ensures that all modules within the source directory strictly adhere
 to the CONTRIBUTING.md guidelines by containing valid module-level docstrings.
 """
 
 import os
 import ast
 import pytest
+
 
 def test_module_docstrings() -> None:
     """
@@ -16,10 +17,10 @@ def test_module_docstrings() -> None:
     """
     src_dir = 'src'
     if not os.path.exists(src_dir):
-        pytest.skip("Source directory not found. Skipping docstring tests.")
-        
+        pytest.skip('Source directory not found. Skipping docstring tests.')
+
     missing_docstrings = []
-    
+
     for root, _, files in os.walk(src_dir):
         for file in files:
             if file.endswith('.py') and file != '__init__.py':
@@ -27,5 +28,7 @@ def test_module_docstrings() -> None:
                     tree = ast.parse(f.read(), filename=file)
                     if not ast.get_docstring(tree):
                         missing_docstrings.append(file)
-                        
-    assert not missing_docstrings, f"Docstring Guideline Violation: The following modules are missing module-level docstrings: {', '.join(missing_docstrings)}"
+
+    assert not missing_docstrings, (
+        f'Docstring Guideline Violation: The following modules are missing module-level docstrings: {", ".join(missing_docstrings)}'
+    )
