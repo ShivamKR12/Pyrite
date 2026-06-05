@@ -19,6 +19,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
+    'sphinx.ext.intersphinx',
     'sphinxcontrib.mermaid',
     'sphinx.ext.graphviz',
     'sphinxcontrib.plantuml',
@@ -49,3 +50,10 @@ autodoc_member_order = 'bysource'
 
 # Mermaid version for GitHub Pages compatibility
 mermaid_version = "10.9.0"
+
+# Intersphinx mapping for external documentation
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'pygame': ('https://www.pyga.me/docs/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+}

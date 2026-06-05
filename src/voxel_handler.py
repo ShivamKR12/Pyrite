@@ -107,9 +107,6 @@ class VoxelHandler:
     @global_profiler.profile_func("VoxelHandler_RebuildAdjacentChunks")
     def rebuild_adjacent_chunks(self, world_pos: Any, is_light_update: bool = True) -> None:
         """
-        Queues adjacent chunks for remeshing if a block modification occurs near a border.
-        """
-        """
         Automatically queues neighboring chunks for mesh regeneration if a block 
         modification occurs near a chunk border, or if it creates a large lighting 
         update requiring neighbors to recalculate their block/sunlight visuals.
