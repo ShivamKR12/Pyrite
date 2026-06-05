@@ -26,3 +26,6 @@ jobs:
         
     - name: Run Mutmut on Core Logic
       run: mutmut run
+
+    - name: Summarize Mutmut Results
+      run: mutmut results
