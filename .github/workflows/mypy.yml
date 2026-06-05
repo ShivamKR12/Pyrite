@@ -4,13 +4,10 @@ on:
   push:
     paths:
       - '**.py'
-      - 'pyproject.toml'
-      - 'requirements*.txt'
   pull_request:
     paths:
       - '**.py'
-      - 'pyproject.toml'
-      - 'requirements*.txt'
+  workflow_dispatch: # Allows you to manually click a "Run Mypy" button on GitHub!
 
 jobs:
   mypy:

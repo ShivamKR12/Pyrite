@@ -7,8 +7,13 @@ on:
       - master
     paths:
       - 'docs/**'
-      - 'README.md'
-      - 'requirements-dev.txt'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - 'docs/**'
       - '.github/workflows/docs.yml'
 
 permissions:

@@ -2,21 +2,20 @@ name: Engine Tests
 
 on:
   push:
-    branches: [ master, main ]
+    branches:
+      - master
+      - main
     paths:
       - 'src/**'
       - 'tests/**'
-      - 'pyproject.toml'
-      - 'pytest.ini'
-      - 'requirements*.txt'
   pull_request:
-    branches: [ master, main ]
+    branches:
+      - master
+      - main
     paths:
       - 'src/**'
       - 'tests/**'
-      - 'pyproject.toml'
-      - 'pytest.ini'
-      - 'requirements*.txt'
+  workflow_dispatch:
 
 jobs:
   test:
@@ -29,7 +28,10 @@ jobs:
       with:
         python-version: '3.13'
         
-    - name: Install dependencies and test
+    - name: Install dependencies
       run: |
         pip install -r requirements-dev.txt
+
+    - name: Run Tests
+      run: |
         pytest --cov=src --cov-report=term-missing tests/

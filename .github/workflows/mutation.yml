@@ -1,7 +1,13 @@
 name: Mutation Testing
 
 on:
-  workflow_dispatch: # Manual trigger only, as mutation testing is resource-heavy
+  push:
+    paths:
+      - '**.py'
+  pull_request:
+    paths:
+      - '**.py'
+  workflow_dispatch:
 
 jobs:
   mutation-test:
@@ -19,5 +25,4 @@ jobs:
         pip install -r requirements-dev.txt
         
     - name: Run Mutmut on Core Logic
-      # We target the player and terrain logic specifically for mutation injections
-      run: mutmut run "src/player.py" "src/terrain_gen.py"
+      run: mutmut run "*.py"
