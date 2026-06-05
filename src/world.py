@@ -62,21 +62,21 @@ class World:
         self.world_seed: int = world_seed
         self.app: Any = app
         self.app.render_loading_screen("ALLOCATING MEMORY...")
-        self.chunks: List[Optional[Any]] = [None for _ in range(WORLD_VOL)]
-        self.active_chunks: Dict[Tuple[int, int, int], Any] = {}
+        self.chunks: List[Optional[Chunk]] = [None for _ in range(WORLD_VOL)]
+        self.active_chunks: Dict[Tuple[int, int, int], Chunk] = {}
         self.chunk_positions: NDArray[np.int32] = np.full((WORLD_VOL, 3), -999, dtype='int32')
         
         self.executor: concurrent.futures.ThreadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=max(4, (os.cpu_count() or 5) - 1))
-        self.mesh_queue: List[Tuple[Any, concurrent.futures.Future[Any]]] = []
-        self.build_queue: List[Any] = []
-        self.load_queue: List[Tuple[Any, concurrent.futures.Future[Any]]] = []
+        self.mesh_queue: List[Tuple[Optional[Chunk], concurrent.futures.Future[Any]]] = []
+        self.build_queue: List[Chunk] = []
+        self.load_queue: List[Tuple[Optional[Chunk], concurrent.futures.Future[Any]]] = []
         
         self.voxels: NDArray[np.uint8] = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
         self.lightmaps: NDArray[np.uint8] = np.full([WORLD_VOL, CHUNK_VOL], 255, dtype='uint8')
         self.voxel_handler: Any = VoxelHandler(self)
         self.vbo_pool: deque[Tuple[Any, Any]] = deque()
         self.last_player_chunk_pos: Optional[Tuple[int, int]] = None
-        self.sorted_chunks: List[Any] = []
+        self.sorted_chunks: List[Chunk] = []
         self.last_active_chunk_count: int = 0
         self.chunk_centers: NDArray[np.float32] = np.empty((0, 3), dtype='float32')
         self.frustum_mask: NDArray[np.bool_] = np.empty(0, dtype=np.bool_)
