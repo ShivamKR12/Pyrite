@@ -217,7 +217,7 @@ class MainMenu:
 
                 connection.close()
 
-            except:
+            except Exception:
                 pass
 
             def load_and_reset(sn: str = save_name) -> None:
@@ -340,7 +340,7 @@ class MainMenu:
 
             # Apply the scroll offset and disable hover interactions if the button goes out of bounds
             base_y: float = -0.05
-            for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons)):
+            for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons, strict=False)):
                 new_y: float = base_y - i * 0.26 + self.scroll_offset
                 btn.local_pos = [0, new_y]
                 del_btn.local_pos = [0.55, new_y]
@@ -376,7 +376,7 @@ class MainMenu:
             self.btn_new_world.handle_event(event)
             self.btn_back_select.handle_event(event)
 
-            for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
+            for btn, del_btn in zip(self.world_buttons, self.delete_buttons, strict=False):
                 if -0.45 < btn.local_pos[1] < 0.02:
                     btn.handle_event(event)
                     del_btn.handle_event(event)
@@ -460,7 +460,7 @@ class MainMenu:
             if 'u_clip' in self.app.shader_program.ui_text:
                 self.app.shader_program.ui_text['u_clip'] = (-2.0, -0.55, 2.0, 0.1)
 
-            for btn, del_btn in zip(self.world_buttons, self.delete_buttons):
+            for btn, del_btn in zip(self.world_buttons, self.delete_buttons, strict=False):
                 btn.render(offset, alpha)
                 del_btn.render(offset, alpha)
 

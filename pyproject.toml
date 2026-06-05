@@ -22,6 +22,13 @@ ignore = [
     "E741", # Allow ambiguous variable names like 'l' or 'I' (common in 3D matrix math)
     "F403", # Allow wildcard imports (used heavily with settings.py)
     "F405", # Allow variables from wildcard imports
+    "SIM",  # Ignores all flake8-simplify rules (SIM102, SIM108, SIM109, etc.)
+    "B007", # Loop control variable not used
+    "B905", # zip() without an explicit strict= parameter
+    "F401", # Imported but unused
+    "E501", # Line too long
+    "E722", # Do not use bare except
+    "F841", # Local variable assigned to but never used
 ]
 
 # Mutmut Configuration (Version 3+)

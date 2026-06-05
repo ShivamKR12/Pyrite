@@ -171,9 +171,6 @@ class VoxelHandler:
     @global_profiler.profile_func('VoxelHandler_RemoveVoxel')
     def remove_voxel(self) -> None:
         """
-        Breaks the targeted voxel and triggers lighting/meshing updates.
-        """
-        """
         Breaks the targeted voxel, updates local block lighting (stripping or 
         letting sunlight in), spawns a dropped item entity in Survival mode, 
         and queues chunks for remeshing.

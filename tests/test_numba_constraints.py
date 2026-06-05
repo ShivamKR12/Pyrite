@@ -23,8 +23,6 @@ def test_numba_parallel_constraints() -> None:
     if not os.path.exists(src_dir):
         pytest.skip('Source directory not found. Skipping constraint tests.')
 
-    violations = []
-
     for root, _, files in os.walk(src_dir):
         for file in files:
             if not file.endswith('.py'):
