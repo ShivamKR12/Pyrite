@@ -21,3 +21,5 @@ sphinxcontrib-plantuml==0.31
 # Code Quality & Formatting Guardrails
 ruff==0.15.16
 mypy==2.1.0
+
+pre-commit==4.6.0
