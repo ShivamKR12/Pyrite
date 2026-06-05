@@ -37,13 +37,13 @@ jobs:
 
     - name: Run Tests
       run: |
-        pytest --cov=src --cov-report=term-missing tests/
+        pytest --cov=src --cov-report=term-missing --cov-report=xml tests/
 
     - name: Generate Coverage Badge
       if: github.event_name != 'pull_request'
       run: |
-        pip install coverage-badge
-        coverage-badge -o coverage.svg -f
+        pip install genbadge[coverage]
+        genbadge coverage -i coverage.xml -o coverage.svg
 
     - name: Commit Coverage Badge
       if: github.event_name != 'pull_request'
