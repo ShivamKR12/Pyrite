@@ -25,4 +25,4 @@ jobs:
         pip install -r requirements-dev.txt
         
     - name: Run Mutmut on Core Logic
-      run: mutmut run "*.py"
+      run: mutmut run
