@@ -11,11 +11,7 @@ from typing import Any
 import moderngl as mgl
 
 from profiler import global_profiler
-from ui.hud import Crosshair
-from ui.hud import DebugOverlay
-from ui.hud import HeldBlock
-from ui.hud import Hotbar
-from ui.hud import InventoryUI
+from ui.hud import Crosshair, DebugOverlay, HeldBlock, Hotbar, InventoryUI
 from world import World
 from world_objects.clouds import Clouds
 from world_objects.item import ItemManager

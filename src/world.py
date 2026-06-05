@@ -112,7 +112,7 @@ class World:
         self.cursor: sqlite3.Cursor = self.connection.cursor()
 
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS chunks (
-                                x INTEGER, y INTEGER, z INTEGER, 
+                                x INTEGER, y INTEGER, z INTEGER,
                                 data BLOB,
                                 PRIMARY KEY (x, y, z))""")
 

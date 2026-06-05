@@ -37,11 +37,8 @@ from settings import (
 from shader_program import ShaderProgram
 from sounds import Sounds
 from textures import Textures
-from ui.components import TextRenderer
-from ui.components import UITextMesh
-from ui.menus import MainMenu
-from ui.menus import OptionsMenu
-from ui.menus import PauseMenu
+from ui.components import TextRenderer, UITextMesh
+from ui.menus import MainMenu, OptionsMenu, PauseMenu
 
 
 class Pyrite:
