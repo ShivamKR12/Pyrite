@@ -7,14 +7,14 @@ Utilizes Numba and 64-bit integer bit-packing to achieve near-native C++
 speeds lock-free across background CPU threads.
 """
 
-from numba import njit
-import numpy as np
 from typing import Any
 
-from settings import AIR, WATER, GLASS, LEAVES, GLOWSTONE, CHUNK_SIZE, CHUNK_AREA, WORLD_H, LIGHTING_QUEUE_SIZE
+import numpy as np
+from numba import njit
+
 from meshes.chunk_mesh_builder import get_chunk_index
 from profiler import global_profiler
-
+from settings import AIR, CHUNK_AREA, CHUNK_SIZE, GLASS, GLOWSTONE, LEAVES, LIGHTING_QUEUE_SIZE, WATER, WORLD_H
 
 # Pre-allocated global memory queues to prevent massive GC churn per interaction
 GLOBAL_QUEUE_A: Any = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)

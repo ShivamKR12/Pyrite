@@ -6,9 +6,10 @@ canvas for the sky shader. The shader itself handles rendering the dynamic
 day/night cycle, sun, moon, and stars directly behind all other 3D geometry.
 """
 
-import numpy as np
-import moderngl as mgl
 from typing import Any, Tuple
+
+import moderngl as mgl
+import numpy as np
 from numpy.typing import NDArray
 
 from meshes.base_mesh import BaseMesh

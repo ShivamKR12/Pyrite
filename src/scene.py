@@ -6,20 +6,17 @@ It instantiates and manages the world environment, 3D items, UI components,
 and handles the overarching rendering pipeline for the in-game state.
 """
 
-import moderngl as mgl
 from typing import Any
 
-from world import World
-from world_objects.voxel_marker import VoxelMarker
-from world_objects.clouds import Clouds
-from world_objects.sky import Sky
-from ui import Crosshair
-from ui import Hotbar
-from ui import HeldBlock
-from ui import InventoryUI
-from ui import DebugOverlay
-from world_objects.item import ItemManager
+import moderngl as mgl
+
 from profiler import global_profiler
+from ui import Crosshair, DebugOverlay, HeldBlock, Hotbar, InventoryUI
+from world import World
+from world_objects.clouds import Clouds
+from world_objects.item import ItemManager
+from world_objects.sky import Sky
+from world_objects.voxel_marker import VoxelMarker
 
 
 class Scene:

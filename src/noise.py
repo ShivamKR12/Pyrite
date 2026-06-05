@@ -7,12 +7,12 @@ random and Numba's internal RNG are perfectly synchronized to the world seed
 for 100% deterministic terrain generation.
 """
 
-from numba import njit
-from opensimplex.internals import _noise2, _noise3, _init
-import numpy as np
 import random
 from typing import Any
 
+import numpy as np
+from numba import njit
+from opensimplex.internals import _init, _noise2, _noise3
 
 # Pre-allocate the arrays with a default seed. Numba will hardcode the memory pointers to these arrays.
 perm: Any

@@ -7,8 +7,9 @@ It maps the faces explicitly so the shader can sample the correct block textures
 from the global atlas.
 """
 
-import numpy as np
 from typing import Any, Tuple
+
+import numpy as np
 from numpy.typing import NDArray
 
 from meshes.base_mesh import BaseMesh

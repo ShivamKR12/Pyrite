@@ -8,6 +8,7 @@ one attached to a targeted face.
 """
 
 from typing import Any
+
 from pyglm import glm
 
 from meshes.cube_mesh import CubeMesh

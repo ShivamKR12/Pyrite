@@ -6,10 +6,11 @@ matrices required by OpenGL to render the world. It provides movement vectors
 and rotational controls for exploring the 3D voxel space.
 """
 
-from settings import glm, V_FOV, ASPECT_RATIO, NEAR, FAR, PITCH_MAX
+from typing import Any
+
 from frustum import Frustum
 from profiler import global_profiler
-from typing import Any
+from settings import ASPECT_RATIO, FAR, NEAR, PITCH_MAX, V_FOV, glm
 
 
 class Camera:

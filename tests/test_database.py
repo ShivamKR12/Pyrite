@@ -6,9 +6,9 @@ that the initialization of world storage tables and the execution of
 safe-upgrade ALTER TABLE strategies (like the lightmap column) function perfectly.
 """
 
+import os
 import sqlite3
 import tempfile
-import os
 from typing import List
 
 

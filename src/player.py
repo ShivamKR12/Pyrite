@@ -7,63 +7,64 @@ inventory state, and survival statistics (health, hunger, oxygen). It acts as
 the primary interface between user input and the 3D voxel world.
 """
 
-import pygame as pg
-from pyglm import glm
 import math
 from typing import Any, List, Optional, Tuple
 
+import pygame as pg
+from pyglm import glm
+
+import noise
+from camera import Camera
+from profiler import global_profiler
 from settings import (
-    SURVIVAL,
-    CREATIVE,
+    ASPECT_RATIO,
+    BAREHAND_MINING_PENALTY,
+    BLOCK_HARDNESS,
     CENTER_XZ,
-    SPAWN_SEARCH_RADIUS,
-    WATER_LINE,
-    PLAYER_POS,
+    COBBELSTONE,
+    CREATIVE,
+    FALL_DAMAGE_THRESHOLD,
+    FAR,
+    GRASS,
+    GRAVITY,
+    HOTBAR_SIZE,
+    HUNGER_DRAIN_SPRINT,
+    HUNGER_DRAIN_WALK,
     INTERACTION_DELAY,
     INVENTORY_SIZE,
+    JUMP_VELOCITY,
     MAX_HEALTH,
     MAX_HUNGER,
     MAX_OXYGEN,
-    PLAYER_EYE_HEIGHT,
-    VIEW_BOBBING_STEP_FREQUENCY,
-    VIEW_BOBBING_AMPLITUDE,
-    SPRINT_FOV_BOOST,
-    SPRINT_FOV_LERP_SPEED,
-    ASPECT_RATIO,
     NEAR,
-    FAR,
-    GRAVITY,
-    PLAYER_UNDERWATER_GRAVITY_MULTIPLIER,
-    PLAYER_VERTICAL_WATER_DRAG,
-    PLAYER_SPEED,
-    PLAYER_SPRINT_MULTIPLIER,
-    JUMP_VELOCITY,
-    PLAYER_WATER_DRAG_MULTIPLIER,
-    PLAYER_DOLPHIN_LEAP_MULTIPLIER,
-    HUNGER_DRAIN_WALK,
-    HUNGER_DRAIN_SPRINT,
-    FALL_DAMAGE_THRESHOLD,
-    VOID_DEATH_Y,
-    VOID_DAMAGE_INTERVAL,
-    VOID_DAMAGE,
-    STONE,
-    COBBELSTONE,
-    GRASS,
-    WATER,
-    WOODEN_PICKAXE,
-    BLOCK_HARDNESS,
+    OXYGEN_GAIN_TIMER,
+    OXYGEN_LOSE_TIMER,
     PICKAXE_MINING_MULTIPLIER,
-    BAREHAND_MINING_PENALTY,
-    HOTBAR_SIZE,
+    PLAYER_DOLPHIN_LEAP_MULTIPLIER,
+    PLAYER_EYE_HEIGHT,
     PLAYER_HALF_W,
     PLAYER_HEIGHT,
-    OXYGEN_LOSE_TIMER,
-    OXYGEN_GAIN_TIMER,
+    PLAYER_POS,
+    PLAYER_SPEED,
+    PLAYER_SPRINT_MULTIPLIER,
+    PLAYER_UNDERWATER_GRAVITY_MULTIPLIER,
+    PLAYER_VERTICAL_WATER_DRAG,
+    PLAYER_WATER_DRAG_MULTIPLIER,
+    SPAWN_SEARCH_RADIUS,
+    SPRINT_FOV_BOOST,
+    SPRINT_FOV_LERP_SPEED,
+    STONE,
+    SURVIVAL,
+    VIEW_BOBBING_AMPLITUDE,
+    VIEW_BOBBING_STEP_FREQUENCY,
+    VOID_DAMAGE,
+    VOID_DAMAGE_INTERVAL,
+    VOID_DEATH_Y,
+    WATER,
+    WATER_LINE,
+    WOODEN_PICKAXE,
 )
-from camera import Camera
 from terrain_gen import get_height
-import noise
-from profiler import global_profiler
 
 
 class Player(Camera):
@@ -243,10 +244,7 @@ class Player(Camera):
                 self.highest_y = self.position.y
 
             # Update highest Y for fall damage
-            if self.velocity.y > 0 or self.in_water:
-                self.highest_y = self.position.y
-
-            elif self.position.y > self.highest_y:
+            if self.velocity.y > 0 or self.in_water or self.position.y > self.highest_y:
                 self.highest_y = self.position.y
 
             # View Bobbing

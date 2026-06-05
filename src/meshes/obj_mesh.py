@@ -7,11 +7,13 @@ It automatically triangulates polygons and centers the resulting geometry
 for rendering custom 3D tools and entities in the world.
 """
 
-import numpy as np
-from typing import Any, Dict, List, Optional, Tuple
-from numpy.typing import NDArray
-from meshes.base_mesh import BaseMesh
 import os
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+from numpy.typing import NDArray
+
+from meshes.base_mesh import BaseMesh
 from profiler import global_profiler
 
 

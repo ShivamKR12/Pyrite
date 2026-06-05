@@ -7,12 +7,13 @@ Simplex noise outputs for biome determination, and the structural integrity
 of Numba-compiled tree placements within chunk boundaries.
 """
 
-import pytest
-import numpy as np
 from typing import Any
 
+import numpy as np
+import pytest
+
+from settings import CHUNK_AREA, CHUNK_SIZE, DIRT, WOOD, WORLD_H
 from terrain_gen import get_biome, get_height, get_index, place_tree
-from settings import CHUNK_SIZE, CHUNK_AREA, WOOD, DIRT, WORLD_H
 
 
 @pytest.fixture

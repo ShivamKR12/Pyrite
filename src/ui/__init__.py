@@ -1,5 +1,5 @@
-from .meshes import CrosshairMesh, BlockIconMesh, UIColorMesh, UITextMesh
+from .components import Button, Slider, TextInput, WorldButton
+from .hud import Crosshair, DebugOverlay, HeldBlock, Hotbar, InventoryUI
+from .menus import MainMenu, OptionsMenu, PauseMenu
+from .meshes import BlockIconMesh, CrosshairMesh, UIColorMesh, UITextMesh
 from .text import TextRenderer
-from .components import Button, WorldButton, TextInput, Slider
-from .menus import MainMenu, PauseMenu, OptionsMenu
-from .hud import Crosshair, Hotbar, HeldBlock, InventoryUI, DebugOverlay

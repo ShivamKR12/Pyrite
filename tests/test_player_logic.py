@@ -6,13 +6,14 @@ user inputs and verify the underlying data structures (inventory, health,
 game state) in complete isolation from the Pygame/OpenGL rendering loops.
 """
 
-import pytest
-import pygame as pg
-from pyglm import glm
 from unittest.mock import MagicMock
 
+import pygame as pg
+import pytest
+from pyglm import glm
+
 from player import Player
-from settings import MAX_HEALTH, SURVIVAL, CREATIVE
+from settings import CREATIVE, MAX_HEALTH, SURVIVAL
 
 
 @pytest.fixture

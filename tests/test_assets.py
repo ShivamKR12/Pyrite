@@ -7,8 +7,9 @@ contribution guidelines, such as ensuring texture atlases perfectly conform to
 """
 
 import os
-import pytest
+
 import pygame as pg
+import pytest
 
 
 def test_texture_atlas_dimensions() -> None:

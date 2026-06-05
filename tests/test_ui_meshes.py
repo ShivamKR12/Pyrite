@@ -7,12 +7,13 @@ data types, and dimensions of the resulting vertex, UV, and color Numpy arrays
 dispatched to the GPU for rendering.
 """
 
-import pytest
-import numpy as np
-from unittest.mock import MagicMock
 from typing import Any
+from unittest.mock import MagicMock
 
-from ui.meshes import CrosshairMesh, BlockIconMesh, UIColorMesh, UITextMesh
+import numpy as np
+import pytest
+
+from ui.meshes import BlockIconMesh, CrosshairMesh, UIColorMesh, UITextMesh
 
 
 @pytest.fixture

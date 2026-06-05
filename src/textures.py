@@ -7,12 +7,13 @@ It enforces strict mipmap generation and anisotropic filtering to guarantee cris
 pixel art visuals across all rendering distances.
 """
 
-import pygame as pg
-import moderngl as mgl
 from typing import Any
 
-from settings import get_path
+import moderngl as mgl
+import pygame as pg
+
 from profiler import global_profiler
+from settings import get_path
 
 
 class Textures:

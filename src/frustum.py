@@ -6,13 +6,14 @@ tests and a highly optimized, Numba-compiled vectorized function for
 testing thousands of chunks simultaneously against the camera's view frustum.
 """
 
-from numba import njit, prange
 import math
-from pyglm import glm
 from typing import Any
 
-from settings import CHUNK_SPHERE_RADIUS, NEAR, FAR, V_FOV, H_FOV
+from numba import njit, prange
+from pyglm import glm
+
 from profiler import global_profiler
+from settings import CHUNK_SPHERE_RADIUS, FAR, H_FOV, NEAR, V_FOV
 
 
 class Frustum:

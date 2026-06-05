@@ -6,16 +6,17 @@ density maps and using a specialized 2D greedy meshing algorithm to compile
 optimized, low-polygon chunks of clouds that scroll across the sky.
 """
 
-import numpy as np
-from numba import prange, njit
 from typing import Any, Tuple
+
+import numpy as np
+from numba import njit, prange
 from numpy.typing import NDArray
 
-from settings import WORLD_AREA, WORLD_W, WORLD_D, CHUNK_SIZE, CLOUD_HEIGHT, CHUNK_AREA
-from meshes.base_mesh import BaseMesh
 import noise
+from meshes.base_mesh import BaseMesh
 from noise import noise2
 from profiler import global_profiler
+from settings import CHUNK_AREA, CHUNK_SIZE, CLOUD_HEIGHT, WORLD_AREA, WORLD_D, WORLD_W
 
 
 class CloudMesh(BaseMesh):

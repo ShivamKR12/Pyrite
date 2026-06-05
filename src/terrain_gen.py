@@ -9,31 +9,32 @@ lock-free to prevent main-thread latency.
 """
 
 # """
-from noise import noise2, noise3
 from random import random
-from numba import njit
 from typing import Any, Tuple
 
+from numba import njit
+
+from noise import noise2, noise3
 from settings import (
     AIR,
-    WATER,
-    SAND,
-    GRASS,
-    DIRT,
-    STONE,
-    SNOW,
-    WOOD,
-    LEAVES,
-    CHUNK_SIZE,
-    CHUNK_AREA,
-    WORLD_H,
     CENTER_Y,
-    WATER_LINE,
+    CHUNK_AREA,
+    CHUNK_SIZE,
+    DIRT,
+    GLASS,
+    GRASS,
+    LEAVES,
+    SAND,
+    SNOW,
+    STONE,
     STONE_LVL,
-    TREE_HEIGHT,
     TREE_H_HEIGHT,
     TREE_H_WIDTH,
-    GLASS,
+    TREE_HEIGHT,
+    WATER,
+    WATER_LINE,
+    WOOD,
+    WORLD_H,
 )
 
 
@@ -151,11 +152,7 @@ def set_voxel_column(
     is_beach = world_height <= WATER_LINE + 2 and not is_underwater
 
     # Exactly as requested: Sand ONLY in deserts, lakes, oceans, and beaches!
-    if is_underwater or is_beach:
-        surface_id = SAND
-        subsurface_id = SAND
-
-    elif is_desert:
+    if is_underwater or is_beach or is_desert:
         surface_id = SAND
         subsurface_id = SAND
 

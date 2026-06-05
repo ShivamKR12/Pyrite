@@ -8,8 +8,9 @@ how many blocks are exploded concurrently.
 """
 
 import random
-import pygame as pg
 from typing import Any, List
+
+import pygame as pg
 from pyglm import glm
 
 from meshes.item_mesh import ItemMesh
@@ -17,12 +18,12 @@ from meshes.obj_mesh import ObjMesh
 from profiler import global_profiler
 from settings import (
     GRAVITY,
+    ITEM_ENTITY_CAP,
     ITEM_PICKUP_DELAY,
     ITEM_PICKUP_RADIUS,
+    ITEM_RENDER_DISTANCE_SQUARED,
     ITEM_SCALE,
     ITEM_SPAWN_VELOCITY_MULTIPLIER,
-    ITEM_ENTITY_CAP,
-    ITEM_RENDER_DISTANCE_SQUARED,
     STICK,
     WOODEN_PICKAXE,
     get_path,

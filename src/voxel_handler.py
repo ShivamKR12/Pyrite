@@ -7,22 +7,23 @@ the 3D chunk grid. It triggers multithreaded lighting and meshing updates
 whenever the player adds or destroys blocks in the world.
 """
 
-from pyglm import glm
 from typing import Any, Tuple
 
+from pyglm import glm
+
+from lighting import place_torch, update_light_place_block, update_light_remove_block
+from profiler import global_profiler
 from settings import (
-    CHUNK_SIZE,
     CHUNK_AREA,
+    CHUNK_SIZE,
+    GLOWSTONE,
     MAX_RAY_DIST,
     NON_PLACEABLE,
-    GLOWSTONE,
     STONE,
-    WOODEN_PICKAXE,
-    WATER,
     SURVIVAL,
+    WATER,
+    WOODEN_PICKAXE,
 )
-from lighting import update_light_place_block, place_torch, update_light_remove_block
-from profiler import global_profiler
 
 
 class VoxelHandler:

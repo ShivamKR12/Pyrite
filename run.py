@@ -7,8 +7,8 @@ Upon a hard crash, it safely dumps stack traces and triggers the asynchronous
 profiler to save its telemetry data to disk for deep debugging.
 """
 
-import sys
 import os
+import sys
 import traceback
 from typing import Any
 
@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
         app: Any = Pyrite()
         app.run()
-    except Exception as e:
+    except Exception:
         with open('crash_log.txt', 'w', encoding='utf-8') as f:
             traceback.print_exc(file=f)
         print('\n==================================================')

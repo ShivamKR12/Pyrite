@@ -6,8 +6,9 @@ utilized for rendering the wireframe voxel marker that highlights targeted
 blocks in the world, ensuring the player knows exactly where they are aiming.
 """
 
-import numpy as np
 from typing import Any, List, Tuple
+
+import numpy as np
 from numpy.typing import NDArray
 
 from meshes.base_mesh import BaseMesh

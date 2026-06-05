@@ -8,6 +8,7 @@ that compose the Pyrite game overlay.
 """
 
 from typing import Any, Tuple
+
 import numpy as np
 from numpy.typing import NDArray
 

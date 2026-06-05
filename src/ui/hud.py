@@ -6,62 +6,64 @@ interactive drag-and-drop inventory, the hotbar with survival statistics,
 the 3D view-bobbing held item, and the F3 debug screen.
 """
 
+from typing import Any, Dict, List, Tuple
+
 import moderngl as mgl
 import pygame as pg
 from pyglm import glm
-from typing import Any, Dict, List, Tuple
 
 from meshes.item_mesh import ItemMesh
 from meshes.obj_mesh import ObjMesh
-from .meshes import CrosshairMesh, BlockIconMesh, UIColorMesh, UITextMesh
-from .text import TextRenderer
 from profiler import global_profiler
 from settings import (
     ASPECT_RATIO,
-    HOTBAR_SIZE,
-    HOTBAR_SCALE,
-    SLOT_SCALE,
-    HOTBAR_Y,
-    HELD_ITEM_POS,
-    HELD_ITEM_BOB_OFFSET_Y_MULT,
-    HELD_ITEM_BOB_OFFSET_X_MULT,
-    HELD_ITEM_SWING_OFFSET_Y,
-    HELD_ITEM_SWING_OFFSET_Z,
-    HELD_ITEM_SWING_ROT_X,
-    HELD_ITEM_PLACE_SWING_OFFSET_Y,
-    HELD_ITEM_PLACE_SWING_ROTATION_X,
+    CHUNK_SIZE,
+    FONT_SIZE_DEBUG,
+    GLASS,
+    GLOWSTONE,
     HELD_BLOCK_ROT_X,
     HELD_BLOCK_ROT_Y,
     HELD_BLOCK_SCALE,
-    HELD_STICK_POS_OFFSET,
-    HELD_STICK_ROT_X,
-    HELD_STICK_ROT_Z,
-    HELD_STICK_SCALE,
+    HELD_ITEM_BOB_OFFSET_X_MULT,
+    HELD_ITEM_BOB_OFFSET_Y_MULT,
+    HELD_ITEM_PLACE_SWING_OFFSET_Y,
+    HELD_ITEM_PLACE_SWING_ROTATION_X,
+    HELD_ITEM_POS,
+    HELD_ITEM_SWING_OFFSET_Y,
+    HELD_ITEM_SWING_OFFSET_Z,
+    HELD_ITEM_SWING_ROT_X,
     HELD_PICKAXE_POS_OFFSET,
     HELD_PICKAXE_ROT_X,
     HELD_PICKAXE_ROT_Z,
     HELD_PICKAXE_SCALE,
-    UI_SLOT_BG_COLOR,
-    UI_SLOT_SELECTED_FRAME_COLOR,
-    UI_SLOT_SELECTED_BG_COLOR,
-    UI_SLOT_HOVER_COLOR,
-    UI_BG_COLOR,
-    WIN_RES,
-    SURVIVAL,
+    HELD_STICK_POS_OFFSET,
+    HELD_STICK_ROT_X,
+    HELD_STICK_ROT_Z,
+    HELD_STICK_SCALE,
+    HOTBAR_SCALE,
+    HOTBAR_SIZE,
+    HOTBAR_Y,
     INVENTORY_SIZE,
-    WOOD,
-    WOOD_PLANKS,
-    STICK,
-    WOODEN_PICKAXE,
     SAND,
-    GLASS,
-    GLOWSTONE,
+    SLOT_SCALE,
+    STICK,
     STONE,
     STONE_BRICKS,
-    CHUNK_SIZE,
-    FONT_SIZE_DEBUG,
+    SURVIVAL,
+    UI_BG_COLOR,
+    UI_SLOT_BG_COLOR,
+    UI_SLOT_HOVER_COLOR,
+    UI_SLOT_SELECTED_BG_COLOR,
+    UI_SLOT_SELECTED_FRAME_COLOR,
+    WIN_RES,
+    WOOD,
+    WOOD_PLANKS,
+    WOODEN_PICKAXE,
     get_path,
 )
+
+from .meshes import BlockIconMesh, CrosshairMesh, UIColorMesh, UITextMesh
+from .text import TextRenderer
 
 
 class Crosshair:

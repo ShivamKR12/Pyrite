@@ -7,17 +7,18 @@ for a specific 3D region of the world. It manages the chunk's Numpy arrays
 between the Numba terrain generation and the OpenGL mesh builders.
 """
 
-import numpy as np
 import random
-from pyglm import glm
-from numba import njit
 from typing import Any, Optional, Tuple
+
+import numpy as np
+from numba import njit
 from numpy.typing import NDArray
+from pyglm import glm
 
 from meshes.chunk_mesh import ChunkMesh
-from terrain_gen import set_voxel_column, fill_initial_sunlight
 from profiler import global_profiler
 from settings import CHUNK_SIZE, CHUNK_VOL
+from terrain_gen import fill_initial_sunlight, set_voxel_column
 
 
 class Chunk:

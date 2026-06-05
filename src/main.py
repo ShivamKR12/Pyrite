@@ -6,37 +6,38 @@ It manages the OS-level Pygame window, establishes the ModernGL hardware context
 controls the primary execution loop, and routes inputs to the active game state.
 """
 
-import moderngl as mgl
-import pygame as pg
 import json
+import os
 import random
 import sqlite3
-from noise import set_seed
-import os
 import sys
 from typing import Any, Dict, Optional
 
-from shader_program import ShaderProgram
-from scene import Scene
+import moderngl as mgl
+import pygame as pg
+
+from noise import set_seed
 from player import Player
-from sounds import Sounds
-from textures import Textures
-from ui import TextRenderer, UITextMesh, MainMenu, PauseMenu, OptionsMenu
 from profiler import global_profiler
+from scene import Scene
 from settings import (
-    WIN_RES,
     ASPECT_RATIO,
-    FOV_DEG,
-    MOUSE_SENSITIVITY,
     BG_COLOR,
+    DEPTH_SIZE,
     FONT_SIZE_LOADING,
     FONT_SIZE_SUBTITLE,
+    FOV_DEG,
     MAJOR_VER,
     MINOR_VER,
-    DEPTH_SIZE,
+    MOUSE_SENSITIVITY,
     NUM_SAMPLES,
+    WIN_RES,
     get_path,
 )
+from shader_program import ShaderProgram
+from sounds import Sounds
+from textures import Textures
+from ui import MainMenu, OptionsMenu, PauseMenu, TextRenderer, UITextMesh
 
 
 class Pyrite:

@@ -7,9 +7,10 @@ ModernGL textures. It supports both caching for static text and immediate
 generation for dynamic, single-frame text.
 """
 
+from typing import Any, Dict
+
 import moderngl as mgl
 import pygame as pg
-from typing import Any, Dict
 
 from profiler import global_profiler
 from settings import FONT_SIZE_STATS, UI_SHADOW_COLOR, UI_TEXT_COLOR

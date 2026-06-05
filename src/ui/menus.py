@@ -6,20 +6,22 @@ game's user interfaces. It handles dynamic world saving/loading screens,
 configuration binding for settings, and smooth animated transitions between states.
 """
 
-import pygame as pg
-import moderngl as mgl
-from pyglm import glm
-import sqlite3
-import random
 import hashlib
 import os
+import random
+import sqlite3
 from typing import Any, Callable, List, Optional, Tuple
 
-from .components import Button, WorldButton, TextInput, Slider, Toggle, VBox, UINode
+import moderngl as mgl
+import pygame as pg
+from pyglm import glm
+
+from profiler import global_profiler
+from settings import ASPECT_RATIO, FONT_SIZE_PAUSED, FONT_SIZE_TITLE, get_path
+
+from .components import Button, Slider, TextInput, Toggle, UINode, VBox, WorldButton
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
-from profiler import global_profiler
-from settings import ASPECT_RATIO, FONT_SIZE_TITLE, FONT_SIZE_PAUSED, get_path
 
 
 class MainMenu:

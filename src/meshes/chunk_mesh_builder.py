@@ -7,11 +7,12 @@ It evaluates Ambient Occlusion (AO) and volumetric Breadth-First Search (BFS)
 lighting at every vertex lock-free across multiple CPU threads.
 """
 
-from numba import njit
-import numpy as np
 from typing import Any, Tuple
 
-from settings import CHUNK_SIZE, CHUNK_AREA, CHUNK_VOL, WORLD_W, WORLD_H, WORLD_D, WORLD_AREA, AIR, WATER, GLASS, LEAVES
+import numpy as np
+from numba import njit
+
+from settings import AIR, CHUNK_AREA, CHUNK_SIZE, CHUNK_VOL, GLASS, LEAVES, WATER, WORLD_AREA, WORLD_D, WORLD_H, WORLD_W
 
 
 @njit(cache=True, nogil=True)

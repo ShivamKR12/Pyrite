@@ -7,16 +7,17 @@ includes a lazy-loading resource manager (`get_shared_resource`) to efficiently
 share and reuse heavy objects like fonts and meshes, preventing VRAM bloat.
 """
 
+import os
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 import moderngl as mgl
 import pygame as pg
-import os
-from typing import Any, Callable, List, Dict, Optional, Tuple
 
-from .meshes import UIColorMesh, UITextMesh
-from .text import TextRenderer
 from profiler import global_profiler
 from settings import ASPECT_RATIO, FONT_SIZE_BUTTONS, FONT_SIZE_SLIDERS, UI_BUTTON_COLOR, UI_HOVER_COLOR, WIN_RES
 
+from .meshes import UIColorMesh, UITextMesh
+from .text import TextRenderer
 
 _shared_ui_resources: Dict[str, Any] = {}
 

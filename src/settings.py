@@ -7,12 +7,13 @@ color palettes, and performance caps (e.g., ThreadPool limits and VRAM pool size
 It also provides a helper for resolving absolute asset paths in bundled PyInstaller builds.
 """
 
-from pyglm import glm
 import math
-import pygame
 import os
 import sys
 from typing import Any, Dict, Set, Tuple
+
+import pygame
+from pyglm import glm
 
 
 def get_path(relative_path: str) -> str:

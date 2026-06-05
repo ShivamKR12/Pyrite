@@ -6,28 +6,29 @@ including background music tracks, block-specific interaction sounds (mining,
 placing, walking), and UI sound effects.
 """
 
-import pygame as pg
 import random
 from typing import Any, Dict, List
 
+import pygame as pg
+
+from profiler import global_profiler
 from settings import (
-    SAND,
-    GRASS,
-    GRAVEL,
-    STONE,
-    SNOW,
-    LEAVES,
-    WOOD,
+    CACTUS,
+    COBBELSTONE,
     DIRT,
     GLASS,
-    WOOD_PLANKS,
-    COBBELSTONE,
     GLOWSTONE,
-    CACTUS,
+    GRASS,
+    GRAVEL,
+    LEAVES,
+    SAND,
+    SNOW,
+    STONE,
     STONE_BRICKS,
+    WOOD,
+    WOOD_PLANKS,
     get_path,
 )
-from profiler import global_profiler
 
 
 class Sounds:

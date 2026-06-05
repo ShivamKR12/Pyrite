@@ -8,51 +8,52 @@ GPU dispatch via hardware occlusion queries and dynamic vectorized frustum culli
 """
 
 import concurrent.futures
-from pyglm import glm
-import numpy as np
+import datetime
+import json
 import os
 import sqlite3
-import zlib
 import threading
-from collections import deque
-import json
 import time
-import moderngl as mgl
-import datetime
+import zlib
+from collections import deque
 from typing import Any, Dict, List, Optional, Tuple
-from numpy.typing import NDArray
 
-from settings import (
-    WORLD_VOL,
-    CHUNK_VOL,
-    CHUNK_SIZE,
-    WORLD_W,
-    WORLD_H,
-    WORLD_D,
-    WORLD_AREA,
-    PLAYER_EYE_HEIGHT,
-    MESH_BUILD_LIMIT_INGAME,
-    MESH_BUILD_LIMIT_LOADING,
-    MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME,
-    MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING,
-    MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME,
-    MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING,
-    VBO_POOL_CAP,
-)
-from world_objects.chunk import Chunk
-from meshes.cube_mesh import CubeMesh
-from voxel_handler import VoxelHandler
+import moderngl as mgl
+import numpy as np
+from numpy.typing import NDArray
+from pyglm import glm
+
+import noise
 from frustum import frustum_cull_fast
-from meshes.chunk_mesh_builder import build_chunk_mesh
 from lighting import (
     init_chunk_lighting,
+    place_torch,
     stitch_chunk_lighting,
     update_light_place_block,
     update_light_remove_block,
-    place_torch,
 )
-import noise
+from meshes.chunk_mesh_builder import build_chunk_mesh
+from meshes.cube_mesh import CubeMesh
 from profiler import global_profiler
+from settings import (
+    CHUNK_SIZE,
+    CHUNK_VOL,
+    MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME,
+    MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING,
+    MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME,
+    MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING,
+    MESH_BUILD_LIMIT_INGAME,
+    MESH_BUILD_LIMIT_LOADING,
+    PLAYER_EYE_HEIGHT,
+    VBO_POOL_CAP,
+    WORLD_AREA,
+    WORLD_D,
+    WORLD_H,
+    WORLD_VOL,
+    WORLD_W,
+)
+from voxel_handler import VoxelHandler
+from world_objects.chunk import Chunk
 
 
 class World:
@@ -298,7 +299,7 @@ class World:
         while self.build_queue and len(self.mesh_queue) < mesh_limit:
             chunk = self.build_queue.pop()
             nl = getattr(chunk, 'pending_lighting', False)
-            setattr(chunk, 'pending_lighting', False)
+            chunk.pending_lighting = False
 
             def build_task(c: Any = chunk, needs_light: bool = nl) -> Any:
                 cx, cy, cz = c.position
@@ -409,7 +410,7 @@ class World:
                     self.chunk_positions[chunk_index] = chunk.position
 
                     if needs_lighting:
-                        setattr(chunk, 'pending_lighting', True)
+                        chunk.pending_lighting = True
 
                     chunk.build_mesh()
                     self.build_queue.append(chunk)

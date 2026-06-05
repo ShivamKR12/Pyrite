@@ -7,25 +7,26 @@ compiles them, and provides a central interface for updating dynamic uniforms
 (like camera matrices, fog density, and time of day) every frame.
 """
 
-import numpy as np
-from pyglm import glm
 from typing import Any
-from numpy.typing import NDArray
 
+import numpy as np
+from numpy.typing import NDArray
+from pyglm import glm
+
+from profiler import global_profiler
 from settings import (
     BG_COLOR,
-    FOG_DENSITY_BASE,
+    CENTER_XZ,
     CLOUD_FOG_DENSITY_BASE,
+    CLOUD_SCALE,
     DAY_NIGHT_SPEED,
+    FOG_DENSITY_BASE,
+    TEXTURE_MAP,
     UNDERWATER_FOG_COLOR,
     UNDERWATER_FOG_DENSITY,
     UNDERWATER_FOG_MAX_OPACITY,
-    CLOUD_SCALE,
-    CENTER_XZ,
-    TEXTURE_MAP,
     get_path,
 )
-from profiler import global_profiler
 
 
 class ShaderProgram:
