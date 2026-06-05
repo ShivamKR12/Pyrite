@@ -269,7 +269,7 @@ class World:
         while self.build_queue and len(self.mesh_queue) < mesh_limit:
             chunk = self.build_queue.pop()
             nl = getattr(chunk, 'pending_lighting', False)
-            chunk.pending_lighting = False
+            setattr(chunk, 'pending_lighting', False)
             
             def build_task(c: Any = chunk, needs_light: bool = nl) -> Any:
                 cx, cy, cz = c.position
@@ -302,20 +302,21 @@ class World:
             
             if future.done():
                 result = future.result()
-                chunk.mesh.vertex_data = result[0]
-                chunk.mesh.opaque_count = result[1]
-                chunk.mesh.water_count = result[2]
-                
-                # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
-                if chunk.mesh.vao and chunk.mesh.vbo:
-                    self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                if chunk.mesh:
+                    chunk.mesh.vertex_data = result[0]
+                    chunk.mesh.opaque_count = result[1]
+                    chunk.mesh.water_count = result[2]
                     
-                    while len(self.vbo_pool) > VBO_POOL_CAP:
-                        p_vbo, p_vao = self.vbo_pool.popleft()
-                        p_vbo.release()
-                        p_vao.release()
-                    
-                chunk.mesh.vao = chunk.mesh.get_vao()
+                    # Recycle the old VBO/VAO to prevent memory leaks during chunk remeshing
+                    if chunk.mesh.vao and chunk.mesh.vbo:
+                        self.vbo_pool.append((chunk.mesh.vbo, chunk.mesh.vao))
+                        
+                        while len(self.vbo_pool) > VBO_POOL_CAP:
+                            p_vbo, p_vao = self.vbo_pool.popleft()
+                            p_vbo.release()
+                            p_vao.release()
+                        
+                    chunk.mesh.vao = chunk.mesh.get_vao()
                 self.mesh_queue.remove(item)
                 ready_count += 1
                 limit = MAIN_THREAD_MESH_PROCESS_LIMIT_LOADING if self.app.game_state == 'LOADING' else MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME
@@ -362,7 +363,7 @@ class World:
                     self.chunk_positions[chunk_index] = chunk.position
                     
                     if needs_lighting:
-                        chunk.pending_lighting = True
+                        setattr(chunk, 'pending_lighting', True)
                     
                     chunk.build_mesh()
                     self.build_queue.append(chunk)
@@ -718,13 +719,13 @@ class World:
         
         self.vbo_pool.clear()
         
-        for chunk in self.chunks:
-            if chunk:
-                if chunk.mesh:
-                    if chunk.mesh.vao:
-                        chunk.mesh.vao.release()
+        for ch in self.chunks:
+            if ch:
+                if ch.mesh:
+                    if ch.mesh.vao:
+                        ch.mesh.vao.release()
                     
-                    if chunk.mesh.vbo:
-                        chunk.mesh.vbo.release()
+                    if ch.mesh.vbo:
+                        ch.mesh.vbo.release()
         
         self.bbox_mesh.vao.release()
