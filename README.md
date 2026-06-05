@@ -3,6 +3,7 @@
   <br>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/build.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/build.yml/badge.svg" alt="Build Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/test.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/test.yml/badge.svg" alt="Test Status"></a>
+  <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/test.yml"><img src="coverage.svg" alt="Coverage Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/ruff.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/ruff.yml/badge.svg" alt="Ruff Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/mypy.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/mypy.yml/badge.svg" alt="Mypy Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/pylint.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/pylint.yml/badge.svg" alt="Pylint Status"></a>

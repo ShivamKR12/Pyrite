@@ -17,6 +17,9 @@ on:
       - 'tests/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -35,3 +38,16 @@ jobs:
     - name: Run Tests
       run: |
         pytest --cov=src --cov-report=term-missing tests/
+
+    - name: Generate Coverage Badge
+      if: github.event_name != 'pull_request'
+      run: |
+        pip install coverage-badge
+        coverage-badge -o coverage.svg -f
+
+    - name: Commit Coverage Badge
+      if: github.event_name != 'pull_request'
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "docs(readme): update test coverage badge"
+        file_pattern: coverage.svg
