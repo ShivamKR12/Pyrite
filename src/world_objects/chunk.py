@@ -54,6 +54,8 @@ class Chunk:
         self.center: Any = (glm.vec3(self.position) + 0.5) * CHUNK_SIZE
         self.is_on_frustum: Any = self.app.player.frustum.is_on_frustum
 
+        self.pending_lighting: bool = False
+
     @global_profiler.profile_func('Chunk_GetModelMatrix')
     def get_model_matrix(self) -> Any:
         """
