@@ -1,0 +1,53 @@
+ui package
+==========
+
+Submodules
+----------
+
+ui.components module
+--------------------
+
+.. automodule:: ui.components
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+ui.hud module
+-------------
+
+.. automodule:: ui.hud
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+ui.menus module
+---------------
+
+.. automodule:: ui.menus
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+ui.meshes module
+----------------
+
+.. automodule:: ui.meshes
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+ui.text module
+--------------
+
+.. automodule:: ui.text
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: ui
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,53 @@
+world\_objects package
+======================
+
+Submodules
+----------
+
+world\_objects.chunk module
+---------------------------
+
+.. automodule:: world_objects.chunk
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+world\_objects.clouds module
+----------------------------
+
+.. automodule:: world_objects.clouds
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+world\_objects.item module
+--------------------------
+
+.. automodule:: world_objects.item
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+world\_objects.sky module
+-------------------------
+
+.. automodule:: world_objects.sky
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+world\_objects.voxel\_marker module
+-----------------------------------
+
+.. automodule:: world_objects.voxel_marker
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: world_objects
+   :members:
+   :show-inheritance:
+   :undoc-members:

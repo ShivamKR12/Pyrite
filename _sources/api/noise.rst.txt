@@ -1,0 +1,7 @@
+noise module
+============
+
+.. automodule:: noise
+   :members:
+   :show-inheritance:
+   :undoc-members:

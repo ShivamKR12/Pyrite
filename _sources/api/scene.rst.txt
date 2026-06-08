@@ -1,0 +1,7 @@
+scene module
+============
+
+.. automodule:: scene
+   :members:
+   :show-inheritance:
+   :undoc-members:

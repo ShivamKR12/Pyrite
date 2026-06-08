@@ -1,0 +1,69 @@
+meshes package
+==============
+
+Submodules
+----------
+
+meshes.base\_mesh module
+------------------------
+
+.. automodule:: meshes.base_mesh
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+meshes.chunk\_mesh module
+-------------------------
+
+.. automodule:: meshes.chunk_mesh
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+meshes.chunk\_mesh\_builder module
+----------------------------------
+
+.. automodule:: meshes.chunk_mesh_builder
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+meshes.cloud\_mesh module
+-------------------------
+
+.. automodule:: meshes.cloud_mesh
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+meshes.cube\_mesh module
+------------------------
+
+.. automodule:: meshes.cube_mesh
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+meshes.item\_mesh module
+------------------------
+
+.. automodule:: meshes.item_mesh
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+meshes.obj\_mesh module
+-----------------------
+
+.. automodule:: meshes.obj_mesh
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: meshes
+   :members:
+   :show-inheritance:
+   :undoc-members:

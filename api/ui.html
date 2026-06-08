@@ -1,0 +1,1881 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ui package &mdash; Pyrite 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=922250f3" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="voxel_handler module" href="voxel_handler.html" />
+    <link rel="prev" title="textures module" href="textures.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Pyrite
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">Installation and Setup Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#python-dependencies">Python Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#installation-steps">Installation Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#running-the-engine">Running the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#building-the-engine">Building the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#documentation-building">Documentation Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setup.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../main.html">Core Engine Flow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#engine-initialization">Engine Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#state-management">State Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#world-generation-and-sessions">World Generation and Sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#the-main-loop">The Main Loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#application-control">Application Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#detailed-state-machine">Detailed State Machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#detailed-event-handling">Detailed Event Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#detailed-render-step">Detailed Render Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#scene-rendering-pipeline">Scene Rendering Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#world-session-initialization-loading-state">World Session Initialization (LOADING state)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture and Rendering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html#engine-architecture">Engine Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../architecture.html#the-queue-system">The Queue System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../architecture.html#world-data-persistence">World &amp; Data Persistence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../architecture.html#sqlite-write-ahead-logging-wal">SQLite Write-Ahead Logging (WAL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../architecture.html#memory-management-1d-vs-3d-arrays">Memory Management (1D vs 3D Arrays)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../rendering.html">Rendering Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../rendering.html#greedy-meshing">Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rendering.html#texture-atlases">Texture Atlases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rendering.html#render-flow-summary">Render Flow Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../lighting.html">Lighting System:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#integration-with-rendering">Integration with Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lighting.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../shaders.html">Shader Systems and GLSL Breakdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#shader-architecture-overview">Shader Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#chunk-shader-main-terrain-rendering">Chunk Shader (Main Terrain Rendering)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#item-shader-dropped-items">Item Shader (Dropped Items)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#sky-shader-procedural-atmosphere">Sky Shader (Procedural Atmosphere)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#clouds-shader-procedural">Clouds Shader (Procedural)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#ui-block-shader-inventory-icons">UI Block Shader (Inventory Icons)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#ui-color-shader-backgrounds-ui-quads">UI Color Shader (Backgrounds, UI Quads)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#uniform-management">Uniform Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#texture-atlas-binding">Texture Atlas Binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shaders.html#debugging-tips">Debugging Tips</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../meshes.html">Mesh Systems and Vertex Packing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#vertex-packing-32-bit-format">Vertex Packing: 32-Bit Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#greedy-meshing-algorithm">Greedy Meshing Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#vertex-light-smoothing">Vertex Light Smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#ambient-occlusion-ao-calculation">Ambient Occlusion (AO) Calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#flip-detection-diagonal-flip-for-lighting">Flip Detection (Diagonal Flip for Lighting)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#water-faces-handling">Water Faces Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#data-flow-example">Data Flow Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#custom-mesh-variants">Custom Mesh Variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshes.html#replication-guide">Replication Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../terrain.html">Procedural Terrain Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#biome-topography-system">Biome &amp; Topography System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#cave-carving">Cave Carving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#tree-flora-generation">Tree &amp; Flora Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#height-generation-algorithm">Height Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#biome-selection-algorithm">Biome Selection Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#tree-placement-and-structure">Tree Placement and Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#ore-generation">Ore Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#column-generation-sequence">Column Generation Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../terrain.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../player.html">Player Systems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#player-class-hierarchy">Player Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#coordinate-system">Coordinate System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#controls-and-input-handling">Controls and Input Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#physics-gravity-and-velocity">Physics: Gravity and Velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#aabb-collision-detection">AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#water-physics">Water Physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#survival-stats-management">Survival Stats Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#inventory-management">Inventory Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#mining-and-placing">Mining and Placing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#view-bobbing-and-hand-animation">View Bobbing and Hand Animation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#dynamic-fov-during-sprint">Dynamic FOV During Sprint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html#integration-with-game-loop">Integration with Game Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ui.html">User Interface Systems and Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../ui.html#ui-architecture-overview">UI Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ui.html#core-ui-component-base-class">Core UI Component Base Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ui.html#in-game-hud-components">In-Game HUD Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ui.html#menu-system">Menu System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ui.html#layout-metrics-slot-grid">Layout Metrics (Slot Grid)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ui.html#button-and-component-library">Button and Component Library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ui.html#transition-animations">Transition Animations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ui.html#integration-with-main-loop">Integration with Main Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../persistence.html">World Persistence and Data Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../persistence.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../persistence.html#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../persistence.html#serialization-and-compression">Serialization and Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../persistence.html#database-operations">Database Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../persistence.html#world-management-file-system">World Management (File System)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../persistence.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../survival.html">Survival &amp; Physics Mechanics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../survival.html#d-item-entities">3D Item Entities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../assets.html">Assets (Textures, Models, Icons)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../assets.html#folder-layout">Folder layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assets.html#primary-tooling">Primary tooling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assets.html#texture-conventions">Texture conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assets.html#models">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assets.html#icons-ui-images">Icons &amp; UI images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assets.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../audio.html">Audio System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#primary-implementation">Primary implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#key-concepts">Key concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#api-usage">API usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#debugging">Debugging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../audio.html#see-also">See also</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../testing.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../testing.html#quickstart">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../testing.html#useful-options">Useful options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../testing.html#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../testing.html#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../deployment.html">Deployment and Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#version-management">Version Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#launch-checklist">Launch Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#distribution-platforms">Distribution Platforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment.html#replication-checklist">Replication Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../profiling.html">Profiling &amp; Performance Diagnostics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../profiling.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../profiling.html#primary-implementation">Primary implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../profiling.html#how-to-enable">How to enable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../profiling.html#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../profiling.html#exporting-reports">Exporting reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../profiling.html#interpreting-results">Interpreting results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../profiling.html#best-practices">Best practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../profiling.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="camera.html">camera module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="camera.html#camera.Camera"><code class="docutils literal notranslate"><span class="pre">Camera</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.update"><code class="docutils literal notranslate"><span class="pre">Camera.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.update_view_matrix"><code class="docutils literal notranslate"><span class="pre">Camera.update_view_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.update_vectors"><code class="docutils literal notranslate"><span class="pre">Camera.update_vectors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.rotate_pitch"><code class="docutils literal notranslate"><span class="pre">Camera.rotate_pitch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.rotate_yaw"><code class="docutils literal notranslate"><span class="pre">Camera.rotate_yaw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.move_left"><code class="docutils literal notranslate"><span class="pre">Camera.move_left()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.move_right"><code class="docutils literal notranslate"><span class="pre">Camera.move_right()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.move_up"><code class="docutils literal notranslate"><span class="pre">Camera.move_up()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.move_down"><code class="docutils literal notranslate"><span class="pre">Camera.move_down()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.move_forward"><code class="docutils literal notranslate"><span class="pre">Camera.move_forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camera.html#camera.Camera.move_back"><code class="docutils literal notranslate"><span class="pre">Camera.move_back()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="frustum.html">frustum module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="frustum.html#frustum.Frustum"><code class="docutils literal notranslate"><span class="pre">Frustum</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="frustum.html#frustum.Frustum.update_factors"><code class="docutils literal notranslate"><span class="pre">Frustum.update_factors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="frustum.html#frustum.Frustum.is_on_frustum"><code class="docutils literal notranslate"><span class="pre">Frustum.is_on_frustum()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="frustum.html#frustum.frustum_cull_fast"><code class="docutils literal notranslate"><span class="pre">frustum_cull_fast()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html">lighting module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.get_voxel_fast"><code class="docutils literal notranslate"><span class="pre">get_voxel_fast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.get_light_fast"><code class="docutils literal notranslate"><span class="pre">get_light_fast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.set_light_fast"><code class="docutils literal notranslate"><span class="pre">set_light_fast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.propagate_light_queue"><code class="docutils literal notranslate"><span class="pre">propagate_light_queue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.init_chunk_lighting"><code class="docutils literal notranslate"><span class="pre">init_chunk_lighting()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.stitch_chunk_lighting"><code class="docutils literal notranslate"><span class="pre">stitch_chunk_lighting()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.remove_light_node"><code class="docutils literal notranslate"><span class="pre">remove_light_node()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.update_light_place_block"><code class="docutils literal notranslate"><span class="pre">update_light_place_block()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.update_light_remove_block"><code class="docutils literal notranslate"><span class="pre">update_light_remove_block()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.place_torch"><code class="docutils literal notranslate"><span class="pre">place_torch()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="main.html">main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="main.html#main.Pyrite"><code class="docutils literal notranslate"><span class="pre">Pyrite</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.load_config"><code class="docutils literal notranslate"><span class="pre">Pyrite.load_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.save_config"><code class="docutils literal notranslate"><span class="pre">Pyrite.save_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.on_init"><code class="docutils literal notranslate"><span class="pre">Pyrite.on_init()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.init_game_session"><code class="docutils literal notranslate"><span class="pre">Pyrite.init_game_session()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.render_loading_screen"><code class="docutils literal notranslate"><span class="pre">Pyrite.render_loading_screen()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.update"><code class="docutils literal notranslate"><span class="pre">Pyrite.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.render"><code class="docutils literal notranslate"><span class="pre">Pyrite.render()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.handle_events"><code class="docutils literal notranslate"><span class="pre">Pyrite.handle_events()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.quit_game"><code class="docutils literal notranslate"><span class="pre">Pyrite.quit_game()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.run"><code class="docutils literal notranslate"><span class="pre">Pyrite.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html">meshes package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.base_mesh">meshes.base_mesh module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.base_mesh.BaseMesh"><code class="docutils literal notranslate"><span class="pre">BaseMesh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.chunk_mesh">meshes.chunk_mesh module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh.ChunkMesh"><code class="docutils literal notranslate"><span class="pre">ChunkMesh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.chunk_mesh_builder">meshes.chunk_mesh_builder module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.get_ao"><code class="docutils literal notranslate"><span class="pre">get_ao()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.get_vertex_light"><code class="docutils literal notranslate"><span class="pre">get_vertex_light()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.pack_data"><code class="docutils literal notranslate"><span class="pre">pack_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.get_chunk_index"><code class="docutils literal notranslate"><span class="pre">get_chunk_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.get_neighbor_voxel_id"><code class="docutils literal notranslate"><span class="pre">get_neighbor_voxel_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.get_neighbor_light"><code class="docutils literal notranslate"><span class="pre">get_neighbor_light()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.is_transparent"><code class="docutils literal notranslate"><span class="pre">is_transparent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.is_void"><code class="docutils literal notranslate"><span class="pre">is_void()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.add_data"><code class="docutils literal notranslate"><span class="pre">add_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.build_chunk_mesh"><code class="docutils literal notranslate"><span class="pre">build_chunk_mesh()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.cloud_mesh">meshes.cloud_mesh module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.cloud_mesh.CloudMesh"><code class="docutils literal notranslate"><span class="pre">CloudMesh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.cube_mesh">meshes.cube_mesh module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.cube_mesh.CubeMesh"><code class="docutils literal notranslate"><span class="pre">CubeMesh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.item_mesh">meshes.item_mesh module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.item_mesh.ItemMesh"><code class="docutils literal notranslate"><span class="pre">ItemMesh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.obj_mesh">meshes.obj_mesh module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.obj_mesh.ObjMesh"><code class="docutils literal notranslate"><span class="pre">ObjMesh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">noise module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="noise.html#noise.set_seed"><code class="docutils literal notranslate"><span class="pre">set_seed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="noise.html#noise.noise2"><code class="docutils literal notranslate"><span class="pre">noise2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="noise.html#noise.noise3"><code class="docutils literal notranslate"><span class="pre">noise3()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="player.html">player module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="player.html#player.Player"><code class="docutils literal notranslate"><span class="pre">Player</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.find_spawn_position"><code class="docutils literal notranslate"><span class="pre">Player.find_spawn_position()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.update"><code class="docutils literal notranslate"><span class="pre">Player.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.handle_event"><code class="docutils literal notranslate"><span class="pre">Player.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.mouse_control"><code class="docutils literal notranslate"><span class="pre">Player.mouse_control()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.handle_interaction"><code class="docutils literal notranslate"><span class="pre">Player.handle_interaction()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.keyboard_control"><code class="docutils literal notranslate"><span class="pre">Player.keyboard_control()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.apply_gravity"><code class="docutils literal notranslate"><span class="pre">Player.apply_gravity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.move_and_collide"><code class="docutils literal notranslate"><span class="pre">Player.move_and_collide()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.resolve_axis"><code class="docutils literal notranslate"><span class="pre">Player.resolve_axis()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.get_aabb"><code class="docutils literal notranslate"><span class="pre">Player.get_aabb()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.aabb_intersect"><code class="docutils literal notranslate"><span class="pre">Player.aabb_intersect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.add_item"><code class="docutils literal notranslate"><span class="pre">Player.add_item()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.take_damage"><code class="docutils literal notranslate"><span class="pre">Player.take_damage()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.respawn"><code class="docutils literal notranslate"><span class="pre">Player.respawn()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="profiler.html">profiler module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="profiler.html#profiler.ThreadSampleBuffer"><code class="docutils literal notranslate"><span class="pre">ThreadSampleBuffer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="profiler.html#profiler.ThreadSampleBuffer.record"><code class="docutils literal notranslate"><span class="pre">ThreadSampleBuffer.record()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="profiler.html#profiler.Profiler"><code class="docutils literal notranslate"><span class="pre">Profiler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="profiler.html#profiler.Profiler.start_frame"><code class="docutils literal notranslate"><span class="pre">Profiler.start_frame()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="profiler.html#profiler.Profiler.end_frame"><code class="docutils literal notranslate"><span class="pre">Profiler.end_frame()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="profiler.html#profiler.Profiler.record"><code class="docutils literal notranslate"><span class="pre">Profiler.record()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="profiler.html#profiler.Profiler.measure"><code class="docutils literal notranslate"><span class="pre">Profiler.measure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="profiler.html#profiler.Profiler.profile_func"><code class="docutils literal notranslate"><span class="pre">Profiler.profile_func()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="profiler.html#profiler.Profiler.save_report"><code class="docutils literal notranslate"><span class="pre">Profiler.save_report()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="scene.html">scene module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="scene.html#scene.Scene"><code class="docutils literal notranslate"><span class="pre">Scene</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="scene.html#scene.Scene.update"><code class="docutils literal notranslate"><span class="pre">Scene.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="scene.html#scene.Scene.render"><code class="docutils literal notranslate"><span class="pre">Scene.render()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html">settings module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="settings.html#settings.get_path"><code class="docutils literal notranslate"><span class="pre">get_path()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shader_program.html">shader_program module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shader_program.html#shader_program.ShaderProgram"><code class="docutils literal notranslate"><span class="pre">ShaderProgram</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shader_program.html#shader_program.ShaderProgram.set_uniforms_on_init"><code class="docutils literal notranslate"><span class="pre">ShaderProgram.set_uniforms_on_init()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shader_program.html#shader_program.ShaderProgram.update"><code class="docutils literal notranslate"><span class="pre">ShaderProgram.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shader_program.html#shader_program.ShaderProgram.get_program"><code class="docutils literal notranslate"><span class="pre">ShaderProgram.get_program()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sounds.html">sounds module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sounds.html#sounds.Sounds"><code class="docutils literal notranslate"><span class="pre">Sounds</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.set_sfx_volume"><code class="docutils literal notranslate"><span class="pre">Sounds.set_sfx_volume()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.play_walk"><code class="docutils literal notranslate"><span class="pre">Sounds.play_walk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.play_break"><code class="docutils literal notranslate"><span class="pre">Sounds.play_break()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.play_place"><code class="docutils literal notranslate"><span class="pre">Sounds.play_place()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.play_jump"><code class="docutils literal notranslate"><span class="pre">Sounds.play_jump()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.play_breaking"><code class="docutils literal notranslate"><span class="pre">Sounds.play_breaking()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.play_place_block"><code class="docutils literal notranslate"><span class="pre">Sounds.play_place_block()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="terrain_gen.html">terrain_gen module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.random"><code class="docutils literal notranslate"><span class="pre">random()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.get_biome"><code class="docutils literal notranslate"><span class="pre">get_biome()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.get_height"><code class="docutils literal notranslate"><span class="pre">get_height()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.get_index"><code class="docutils literal notranslate"><span class="pre">get_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.set_voxel_column"><code class="docutils literal notranslate"><span class="pre">set_voxel_column()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.place_tree"><code class="docutils literal notranslate"><span class="pre">place_tree()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.fill_initial_sunlight"><code class="docutils literal notranslate"><span class="pre">fill_initial_sunlight()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="textures.html">textures module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="textures.html#textures.Textures"><code class="docutils literal notranslate"><span class="pre">Textures</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="textures.html#textures.Textures.load"><code class="docutils literal notranslate"><span class="pre">Textures.load()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ui package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-ui.components">ui.components module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ui.components.get_shared_resource"><code class="docutils literal notranslate"><span class="pre">get_shared_resource()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.components.UINode"><code class="docutils literal notranslate"><span class="pre">UINode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.components.VBox"><code class="docutils literal notranslate"><span class="pre">VBox</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.components.Button"><code class="docutils literal notranslate"><span class="pre">Button</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.components.WorldButton"><code class="docutils literal notranslate"><span class="pre">WorldButton</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.components.TextInput"><code class="docutils literal notranslate"><span class="pre">TextInput</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.components.Slider"><code class="docutils literal notranslate"><span class="pre">Slider</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.components.Toggle"><code class="docutils literal notranslate"><span class="pre">Toggle</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-ui.hud">ui.hud module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ui.hud.Crosshair"><code class="docutils literal notranslate"><span class="pre">Crosshair</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.hud.Hotbar"><code class="docutils literal notranslate"><span class="pre">Hotbar</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.hud.HeldBlock"><code class="docutils literal notranslate"><span class="pre">HeldBlock</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.hud.InventoryUI"><code class="docutils literal notranslate"><span class="pre">InventoryUI</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.hud.DebugOverlay"><code class="docutils literal notranslate"><span class="pre">DebugOverlay</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-ui.menus">ui.menus module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ui.menus.MainMenu"><code class="docutils literal notranslate"><span class="pre">MainMenu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.menus.PauseMenu"><code class="docutils literal notranslate"><span class="pre">PauseMenu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.menus.OptionsMenu"><code class="docutils literal notranslate"><span class="pre">OptionsMenu</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-ui.meshes">ui.meshes module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ui.meshes.CrosshairMesh"><code class="docutils literal notranslate"><span class="pre">CrosshairMesh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.meshes.BlockIconMesh"><code class="docutils literal notranslate"><span class="pre">BlockIconMesh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.meshes.UIColorMesh"><code class="docutils literal notranslate"><span class="pre">UIColorMesh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ui.meshes.UITextMesh"><code class="docutils literal notranslate"><span class="pre">UITextMesh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-ui.text">ui.text module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ui.text.TextRenderer"><code class="docutils literal notranslate"><span class="pre">TextRenderer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-ui">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="voxel_handler.html">voxel_handler module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler"><code class="docutils literal notranslate"><span class="pre">VoxelHandler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.add_voxel"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.add_voxel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.rebuild_adjacent_chunks"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.rebuild_adjacent_chunks()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.remove_voxel"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.remove_voxel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.set_voxel"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.set_voxel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.update"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.ray_cast"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.ray_cast()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.get_voxel_id"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.get_voxel_id()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="world.html">world module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="world.html#world.World"><code class="docutils literal notranslate"><span class="pre">World</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.update"><code class="docutils literal notranslate"><span class="pre">World.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.process_mesh_queue"><code class="docutils literal notranslate"><span class="pre">World.process_mesh_queue()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.process_load_queue"><code class="docutils literal notranslate"><span class="pre">World.process_load_queue()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.stream_chunks"><code class="docutils literal notranslate"><span class="pre">World.stream_chunks()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.load_chunk"><code class="docutils literal notranslate"><span class="pre">World.load_chunk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.save_chunk_to_db"><code class="docutils literal notranslate"><span class="pre">World.save_chunk_to_db()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.unload_chunk"><code class="docutils literal notranslate"><span class="pre">World.unload_chunk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.render"><code class="docutils literal notranslate"><span class="pre">World.render()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.render_water"><code class="docutils literal notranslate"><span class="pre">World.render_water()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world.html#world.World.save"><code class="docutils literal notranslate"><span class="pre">World.save()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="world_objects.html">world_objects package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.chunk">world_objects.chunk module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.chunk.Chunk"><code class="docutils literal notranslate"><span class="pre">Chunk</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.clouds">world_objects.clouds module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.clouds.Clouds"><code class="docutils literal notranslate"><span class="pre">Clouds</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.item">world_objects.item module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.item.Item"><code class="docutils literal notranslate"><span class="pre">Item</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.item.ItemManager"><code class="docutils literal notranslate"><span class="pre">ItemManager</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.sky">world_objects.sky module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.sky.SkyMesh"><code class="docutils literal notranslate"><span class="pre">SkyMesh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.sky.Sky"><code class="docutils literal notranslate"><span class="pre">Sky</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.voxel_marker">world_objects.voxel_marker module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.voxel_marker.VoxelMarker"><code class="docutils literal notranslate"><span class="pre">VoxelMarker</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pyrite</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">ui package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/ui.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ui-package">
+<h1>ui package<a class="headerlink" href="#ui-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-ui.components">
+<span id="ui-components-module"></span><h2>ui.components module<a class="headerlink" href="#module-ui.components" title="Link to this heading"></a></h2>
+<p>Reusable UI component classes for building complex, hierarchical game menus.</p>
+<p>This module provides a node-based scene graph system (<cite>UINode</cite>, <cite>VBox</cite>) and a
+suite of interactive widgets (<cite>Button</cite>, <cite>Slider</cite>, <cite>TextInput</cite>, <cite>Toggle</cite>). It also
+includes a lazy-loading resource manager (<cite>get_shared_resource</cite>) to efficiently
+share and reuse heavy objects like fonts and meshes, preventing VRAM bloat.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="ui.components.get_shared_resource">
+<span class="sig-prename descclassname"><span class="pre">ui.components.</span></span><span class="sig-name descname"><span class="pre">get_shared_resource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res_type</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#get_shared_resource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.get_shared_resource" title="Link to this definition"></a></dt>
+<dd><p>Lazily loads and shares UI meshes, fonts, and textures to prevent VRAM and CPU bloat.</p>
+<p>This function acts as a singleton factory, ensuring that expensive resources like
+text renderers or button mask textures are only created once and then reused
+across all UI components that request them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+<li><p><strong>res_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.components.UINode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.components.</span></span><span class="sig-name descname"><span class="pre">UINode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#UINode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.UINode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Base class for all UI elements in the hierarchical layout system.</p>
+<p>This class forms the foundation of the scene graph, allowing UI elements
+to be nested within each other. It handles the recursive calculation of
+global positions and the propagation of update, event, and render calls.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>size</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The normalized width and height of the node.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.UINode.add_child">
+<span class="sig-name descname"><span class="pre">add_child</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#UINode.add_child"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.UINode.add_child" title="Link to this definition"></a></dt>
+<dd><p>Adds a child node to this node’s list of children and sets its parent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>child</strong> (<a class="reference internal" href="#ui.components.UINode" title="ui.components.UINode"><em>UINode</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#ui.components.UINode" title="ui.components.UINode"><em>UINode</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.UINode.get_global_pos">
+<span class="sig-name descname"><span class="pre">get_global_pos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#UINode.get_global_pos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.UINode.get_global_pos" title="Link to this definition"></a></dt>
+<dd><p>Recursively computes absolute screen position by climbing the scene graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.UINode.update_layout">
+<span class="sig-name descname"><span class="pre">update_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#UINode.update_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.UINode.update_layout" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>update_layout</cite> on all children.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.UINode.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#UINode.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.UINode.update" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>update</cite> on all children, passing down the mouse position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><em>None</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.UINode.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#UINode.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.UINode.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>handle_event</cite> on all children, passing down the Pygame event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.UINode.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#UINode.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.UINode.render" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>render</cite> on all children, passing down animation offsets and alpha.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.components.VBox">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.components.</span></span><span class="sig-name descname"><span class="pre">VBox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#VBox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.VBox" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ui.components.UINode" title="ui.components.UINode"><code class="xref py py-class docutils literal notranslate"><span class="pre">UINode</span></code></a></p>
+<p>Vertical stacking container that automatically arranges its children.</p>
+<p>This layout group simplifies menu creation by positioning child nodes one
+after another in a vertical column, with a configurable spacing between them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pos</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The normalized screen position of the container’s origin.</p></li>
+<li><p><strong>spacing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalized vertical gap to place between each child element.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.VBox.update_layout">
+<span class="sig-name descname"><span class="pre">update_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#VBox.update_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.VBox.update_layout" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>update_layout</cite> on all children.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.components.Button">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.components.</span></span><span class="sig-name descname"><span class="pre">Button</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">border_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Button" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ui.components.UINode" title="ui.components.UINode"><code class="xref py py-class docutils literal notranslate"><span class="pre">UINode</span></code></a></p>
+<p>Represents a clickable UI button with text, hover effects, and an assigned action.</p>
+<p>Features a pseudo-3D elevation effect that visually depresses when clicked.
+It lazily loads shared resources to minimize VRAM usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<em>Any</em>) – The main application instance.</p></li>
+<li><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The text label to display on the button.</p></li>
+<li><p><strong>pos</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The local normalized position.</p></li>
+<li><p><strong>size</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The normalized width and height.</p></li>
+<li><p><strong>action</strong> (<em>Callable</em><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The function to call when the button is clicked.</p></li>
+<li><p><strong>border_radius</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The pixel radius for the rounded corners.</p></li>
+<li><p><strong>elevation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The pixel height of the 3D elevation effect.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Button.check_hover">
+<span class="sig-name descname"><span class="pre">check_hover</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Button.check_hover"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Button.check_hover" title="Link to this definition"></a></dt>
+<dd><p>Checks if the mouse cursor is within the button’s bounding box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Button.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Button.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Button.update" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>update</cite> on all children, passing down the mouse position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><em>None</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Button.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Button.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Button.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>handle_event</cite> on all children, passing down the Pygame event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Button.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Button.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Button.render" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>render</cite> on all children, passing down animation offsets and alpha.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.components.WorldButton">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.components.</span></span><span class="sig-name descname"><span class="pre">WorldButton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">game_mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">creation_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_played</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">border_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#WorldButton"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.WorldButton" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ui.components.UINode" title="ui.components.UINode"><code class="xref py py-class docutils literal notranslate"><span class="pre">UINode</span></code></a></p>
+<p>A specialized button used in the World Selection menu to display rich information
+about a saved game world, including its thumbnail, seed, and playtime data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<em>Any</em>) – The main application instance.</p></li>
+<li><p><strong>save_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The raw filename of the save.</p></li>
+<li><p><strong>display_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The user-friendly world name.</p></li>
+<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The world’s procedural generation seed.</p></li>
+<li><p><strong>game_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The game mode (Survival/Creative).</p></li>
+<li><p><strong>creation_date</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – ISO format creation timestamp.</p></li>
+<li><p><strong>last_played</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – ISO format last played timestamp.</p></li>
+<li><p><strong>pos</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The local normalized position.</p></li>
+<li><p><strong>size</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The normalized width and height.</p></li>
+<li><p><strong>action</strong> (<em>Callable</em><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The function to call when clicked.</p></li>
+<li><p><strong>border_radius</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The pixel radius for the rounded corners.</p></li>
+<li><p><strong>elevation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The pixel height of the 3D elevation effect.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.WorldButton.check_hover">
+<span class="sig-name descname"><span class="pre">check_hover</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#WorldButton.check_hover"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.WorldButton.check_hover" title="Link to this definition"></a></dt>
+<dd><p>Checks if the mouse cursor is within the button’s bounding box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.WorldButton.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#WorldButton.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.WorldButton.update" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>update</cite> on all children, passing down the mouse position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><em>None</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.WorldButton.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#WorldButton.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.WorldButton.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>handle_event</cite> on all children, passing down the Pygame event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.WorldButton.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#WorldButton.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.WorldButton.render" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>render</cite> on all children, passing down animation offsets and alpha.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.components.TextInput">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.components.</span></span><span class="sig-name descname"><span class="pre">TextInput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#TextInput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.TextInput" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ui.components.UINode" title="ui.components.UINode"><code class="xref py py-class docutils literal notranslate"><span class="pre">UINode</span></code></a></p>
+<p>Provides a simple interactive text entry field for the UI.</p>
+<p>Captures keyboard input, renders a blinking cursor when active, and
+displays a placeholder label when empty.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<em>Any</em>) – The main application instance.</p></li>
+<li><p><strong>pos</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The local normalized position.</p></li>
+<li><p><strong>size</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The normalized width and height.</p></li>
+<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The placeholder text to show when the input is empty.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.TextInput.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#TextInput.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.TextInput.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>handle_event</cite> on all children, passing down the Pygame event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.TextInput.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#TextInput.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.TextInput.render" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>render</cite> on all children, passing down animation offsets and alpha.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.components.Slider">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.components.</span></span><span class="sig-name descname"><span class="pre">Slider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_int</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Slider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Slider" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ui.components.UINode" title="ui.components.UINode"><code class="xref py py-class docutils literal notranslate"><span class="pre">UINode</span></code></a></p>
+<p>An interactive UI slider component used to adjust numerical settings
+between a minimum and maximum value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<em>Any</em>) – The main application instance.</p></li>
+<li><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The text label to display next to the slider.</p></li>
+<li><p><strong>pos</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The local normalized position.</p></li>
+<li><p><strong>size</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The normalized width and height.</p></li>
+<li><p><strong>min_val</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The minimum value of the slider.</p></li>
+<li><p><strong>max_val</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The maximum value of the slider.</p></li>
+<li><p><strong>config_key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The key in <cite>app.config</cite> this slider controls.</p></li>
+<li><p><strong>action</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>None</em><em>]</em><em>]</em>) – An optional callback to run on value change.</p></li>
+<li><p><strong>is_int</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the slider value will be rounded to the nearest integer.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Slider.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Slider.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Slider.update" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>update</cite> on all children, passing down the mouse position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><em>None</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Slider.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Slider.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Slider.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>handle_event</cite> on all children, passing down the Pygame event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Slider.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Slider.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Slider.render" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>render</cite> on all children, passing down animation offsets and alpha.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.components.Toggle">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.components.</span></span><span class="sig-name descname"><span class="pre">Toggle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Toggle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Toggle" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ui.components.UINode" title="ui.components.UINode"><code class="xref py py-class docutils literal notranslate"><span class="pre">UINode</span></code></a></p>
+<p>A binary toggle switch component for the UI (e.g., for On/Off settings).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<em>Any</em>) – The main application instance.</p></li>
+<li><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The text label to display next to the toggle.</p></li>
+<li><p><strong>pos</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The local normalized position.</p></li>
+<li><p><strong>size</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The normalized width and height of the switch track.</p></li>
+<li><p><strong>config_key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The key in <cite>app.config</cite> this toggle controls.</p></li>
+<li><p><strong>action</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>]</em><em>, </em><em>None</em><em>]</em><em>]</em>) – An optional callback to run on value change.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Toggle.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Toggle.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Toggle.update" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>update</cite> on all children, passing down the mouse position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><em>None</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Toggle.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Toggle.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Toggle.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>handle_event</cite> on all children, passing down the Pygame event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.components.Toggle.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/components.html#Toggle.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.components.Toggle.render" title="Link to this definition"></a></dt>
+<dd><p>Recursively calls <cite>render</cite> on all children, passing down animation offsets and alpha.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-ui.hud">
+<span id="ui-hud-module"></span><h2>ui.hud module<a class="headerlink" href="#module-ui.hud" title="Link to this heading"></a></h2>
+<p>Heads-Up Display (HUD) elements and dynamic overlays for the game.</p>
+<p>This module constructs the in-game overlay, rendering the crosshair, the
+interactive drag-and-drop inventory, the hotbar with survival statistics,
+the 3D view-bobbing held item, and the F3 debug screen.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.hud.Crosshair">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.hud.</span></span><span class="sig-name descname"><span class="pre">Crosshair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#Crosshair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.Crosshair" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Renders a simple fixed crosshair at the center of the screen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.Crosshair.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#Crosshair.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.Crosshair.render" title="Link to this definition"></a></dt>
+<dd><p>Issues the draw call to render the crosshair mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.hud.Hotbar">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.hud.</span></span><span class="sig-name descname"><span class="pre">Hotbar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#Hotbar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.Hotbar" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Renders the bottom-screen hotbar, including the transparent slot backgrounds,
+active selection frame, 3D block/item icons, stack counts, and survival status bars.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.Hotbar.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#Hotbar.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.Hotbar.render" title="Link to this definition"></a></dt>
+<dd><p>Dynamically draws the hotbar slots, items, counts, and survival bars.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.hud.HeldBlock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.hud.</span></span><span class="sig-name descname"><span class="pre">HeldBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#HeldBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.HeldBlock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Renders the 3D model of the currently equipped item or block in the player’s hand.
+Includes procedural view bobbing and swinging animations for mining/placing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.HeldBlock.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#HeldBlock.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.HeldBlock.render" title="Link to this definition"></a></dt>
+<dd><p>Applies transformation matrices to simulate hand movement and renders the item.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.hud.InventoryUI">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.hud.</span></span><span class="sig-name descname"><span class="pre">InventoryUI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#InventoryUI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.InventoryUI" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages the full player inventory and crafting grid interface.
+Handles drag-and-drop item management, stack splitting, and crafting matrix evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.InventoryUI.update_crafting">
+<span class="sig-name descname"><span class="pre">update_crafting</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#InventoryUI.update_crafting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.InventoryUI.update_crafting" title="Link to this definition"></a></dt>
+<dd><p>Evaluates the 2x2 crafting grid and updates the output slot if a valid recipe matches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.InventoryUI.get_slot_pos">
+<span class="sig-name descname"><span class="pre">get_slot_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#InventoryUI.get_slot_pos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.InventoryUI.get_slot_pos" title="Link to this definition"></a></dt>
+<dd><p>Calculates and caches the 2D screen coordinate for a specific inventory slot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.InventoryUI.get_slot_at_mouse">
+<span class="sig-name descname"><span class="pre">get_slot_at_mouse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#InventoryUI.get_slot_at_mouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.InventoryUI.get_slot_at_mouse" title="Link to this definition"></a></dt>
+<dd><p>Returns the ID of the inventory slot currently hovered by the mouse cursor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.InventoryUI.get_closest_valid_slot">
+<span class="sig-name descname"><span class="pre">get_closest_valid_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drag_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drag_count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#InventoryUI.get_closest_valid_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.InventoryUI.get_closest_valid_slot" title="Link to this definition"></a></dt>
+<dd><p>Finds the closest valid drop target slot during a drag-and-drop operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mouse_pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>drag_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>drag_count</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.InventoryUI.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#InventoryUI.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.InventoryUI.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Processes left/right mouse clicks for selecting, splitting, and merging item stacks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.InventoryUI.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#InventoryUI.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.InventoryUI.close" title="Link to this definition"></a></dt>
+<dd><p>Cleans up the inventory screen, ejecting active crafting items back into the world.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.InventoryUI.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#InventoryUI.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.InventoryUI.render" title="Link to this definition"></a></dt>
+<dd><p>Issues draw calls for the entire inventory UI, background, and floating tooltip items.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.hud.DebugOverlay">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.hud.</span></span><span class="sig-name descname"><span class="pre">DebugOverlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#DebugOverlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.DebugOverlay" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Displays an on-screen overlay with performance metrics, player coordinates,
+targeted block info, and current game mode (F3 menu).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.hud.DebugOverlay.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/hud.html#DebugOverlay.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.hud.DebugOverlay.render" title="Link to this definition"></a></dt>
+<dd><p>Compiles and renders the performance statistics and positional data overlay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-ui.menus">
+<span id="ui-menus-module"></span><h2>ui.menus module<a class="headerlink" href="#module-ui.menus" title="Link to this heading"></a></h2>
+<p>UI Menu systems: Main Menu, Pause Menu, and Options Menu.</p>
+<p>This module manages the interactive overlays and state machines for the
+game’s user interfaces. It handles dynamic world saving/loading screens,
+configuration binding for settings, and smooth animated transitions between states.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.menus.MainMenu">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.menus.</span></span><span class="sig-name descname"><span class="pre">MainMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages the Main Menu, World Selection, and World Creation screens.</p>
+<p>Handles smooth state transitions, dynamic world list loading from the
+SQLite saves directory, and interaction events.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.trigger_action">
+<span class="sig-name descname"><span class="pre">trigger_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anim_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.trigger_action"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.trigger_action" title="Link to this definition"></a></dt>
+<dd><p>Initiates a smooth animation transition before executing a state-change callback.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>action</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>)</p></li>
+<li><p><strong>anim_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.open_options">
+<span class="sig-name descname"><span class="pre">open_options</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.open_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.open_options" title="Link to this definition"></a></dt>
+<dd><p>Transitions to the Options Menu overlay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.toggle_game_mode">
+<span class="sig-name descname"><span class="pre">toggle_game_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.toggle_game_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.toggle_game_mode" title="Link to this definition"></a></dt>
+<dd><p>Toggles the selected creation game mode (Survival/Creative).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.set_state">
+<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.set_state" title="Link to this definition"></a></dt>
+<dd><p>Switches the active Main Menu context and resets dynamic UI elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>new_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.load_world_list">
+<span class="sig-name descname"><span class="pre">load_world_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.load_world_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.load_world_list" title="Link to this definition"></a></dt>
+<dd><p>Queries the local <cite>saves</cite> directory and generates buttons for all existing databases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.delete_world">
+<span class="sig-name descname"><span class="pre">delete_world</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.delete_world"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.delete_world" title="Link to this definition"></a></dt>
+<dd><p>Deletes a saved world database and its thumbnail from the disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>save_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.create_world">
+<span class="sig-name descname"><span class="pre">create_world</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.create_world"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.create_world" title="Link to this definition"></a></dt>
+<dd><p>Creates a new world database using the parameters from the input fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.update" title="Link to this definition"></a></dt>
+<dd><p>Updates animations, scrolling, and distributes events to active UI components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.handle_event" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.render_bg">
+<span class="sig-name descname"><span class="pre">render_bg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.render_bg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.render_bg" title="Link to this definition"></a></dt>
+<dd><p>Renders the fullscreen background image dynamically scaled to the window aspect ratio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.MainMenu.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#MainMenu.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.MainMenu.render" title="Link to this definition"></a></dt>
+<dd><p>Issues draw calls for the title, current layout, and applies animated transition offsets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.menus.PauseMenu">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.menus.</span></span><span class="sig-name descname"><span class="pre">PauseMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#PauseMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.PauseMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Provides the in-game pause screen overlay.</p>
+<p>Allows the player to resume the game, open options, or quit back to the Main Menu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.PauseMenu.trigger_action">
+<span class="sig-name descname"><span class="pre">trigger_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anim_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#PauseMenu.trigger_action"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.PauseMenu.trigger_action" title="Link to this definition"></a></dt>
+<dd><p>Triggers an out-transition before calling the specified action.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>action</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>)</p></li>
+<li><p><strong>anim_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.PauseMenu.open_options">
+<span class="sig-name descname"><span class="pre">open_options</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#PauseMenu.open_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.PauseMenu.open_options" title="Link to this definition"></a></dt>
+<dd><p>Transitions to the Options Menu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.PauseMenu.resume_game">
+<span class="sig-name descname"><span class="pre">resume_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#PauseMenu.resume_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.PauseMenu.resume_game" title="Link to this definition"></a></dt>
+<dd><p>Hides the pause menu and re-captures the mouse for gameplay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.PauseMenu.quit_to_menu">
+<span class="sig-name descname"><span class="pre">quit_to_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#PauseMenu.quit_to_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.PauseMenu.quit_to_menu" title="Link to this definition"></a></dt>
+<dd><p>Unloads the game world and returns to the Main Menu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.PauseMenu.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#PauseMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.PauseMenu.update" title="Link to this definition"></a></dt>
+<dd><p>Processes animations and propagates update events to children.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.PauseMenu.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#PauseMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.PauseMenu.handle_event" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.PauseMenu.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#PauseMenu.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.PauseMenu.render" title="Link to this definition"></a></dt>
+<dd><p>Renders the dimming background and the menu elements with animation easing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.menus.</span></span><span class="sig-name descname"><span class="pre">OptionsMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages the game settings screen.</p>
+<p>Provides sliders and toggles for FOV, Mouse Sensitivity, Volume, Render Distance,
+and Visual Tints. Handles serializing these settings to config.json.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu.trigger_action">
+<span class="sig-name descname"><span class="pre">trigger_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anim_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu.trigger_action"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu.trigger_action" title="Link to this definition"></a></dt>
+<dd><p>Initiates an animated transition out before running the requested action.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>action</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>)</p></li>
+<li><p><strong>anim_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu.update_fov">
+<span class="sig-name descname"><span class="pre">update_fov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu.update_fov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu.update_fov" title="Link to this definition"></a></dt>
+<dd><p>Applies the field-of-view setting instantly to the active player.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>val</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu.update_music_volume">
+<span class="sig-name descname"><span class="pre">update_music_volume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu.update_music_volume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu.update_music_volume" title="Link to this definition"></a></dt>
+<dd><p>Adjusts the global Pygame mixer music volume.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>val</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu.update_sfx_volume">
+<span class="sig-name descname"><span class="pre">update_sfx_volume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu.update_sfx_volume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu.update_sfx_volume" title="Link to this definition"></a></dt>
+<dd><p>Delegates sound effect volume changes to the central Sounds manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>val</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu.go_back">
+<span class="sig-name descname"><span class="pre">go_back</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu.go_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu.go_back" title="Link to this definition"></a></dt>
+<dd><p>Returns to the menu that originally opened this options screen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu.update" title="Link to this definition"></a></dt>
+<dd><p>Updates animations and cascades logic down to layout components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu.handle_event" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.menus.OptionsMenu.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/menus.html#OptionsMenu.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.menus.OptionsMenu.render" title="Link to this definition"></a></dt>
+<dd><p>Draws the options layout UI nodes alongside their animated transitions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-ui.meshes">
+<span id="ui-meshes-module"></span><h2>ui.meshes module<a class="headerlink" href="#module-ui.meshes" title="Link to this heading"></a></h2>
+<p>ModernGL definitions for 2D User Interface element geometries.</p>
+<p>This module implements the underlying mathematical layouts (vertices and UV coordinates)
+for generating screen-space flat meshes. It provides the geometry structures for rendering
+the crosshair, the 2D scaled block inventory icons, text fonts, and solid-color backgrounds
+that compose the Pyrite game overlay.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.meshes.CrosshairMesh">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.meshes.</span></span><span class="sig-name descname"><span class="pre">CrosshairMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/meshes.html#CrosshairMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.meshes.CrosshairMesh" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="meshes.html#meshes.base_mesh.BaseMesh" title="meshes.base_mesh.BaseMesh"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMesh</span></code></a></p>
+<p>Generates the geometry for the on-screen crosshair.</p>
+<p>Draws a simple ‘+’ sign directly in the center of the player’s view,
+utilizing aspect-ratio scaling to remain perfectly proportioned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context containing shaders and window properties.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.meshes.CrosshairMesh.get_vertex_data">
+<span class="sig-name descname"><span class="pre">get_vertex_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/meshes.html#CrosshairMesh.get_vertex_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.meshes.CrosshairMesh.get_vertex_data" title="Link to this definition"></a></dt>
+<dd><p>Calculates the vertex coordinates and color data needed to form the
+horizontal and vertical lines of the crosshair, scaling it properly
+to match the window’s aspect ratio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.4)"><em>dtype</em></a>[<em>float32</em>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.meshes.BlockIconMesh">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.meshes.</span></span><span class="sig-name descname"><span class="pre">BlockIconMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/meshes.html#BlockIconMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.meshes.BlockIconMesh" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="meshes.html#meshes.base_mesh.BaseMesh" title="meshes.base_mesh.BaseMesh"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMesh</span></code></a></p>
+<p>Handles the rendering geometry for 2D flat representations of 3D blocks.</p>
+<p>Used extensively in the Hotbar and Inventory UI slots. Produces a basic
+texture-mapped quad that the shader transforms dynamically into slots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.meshes.BlockIconMesh.get_vertex_data">
+<span class="sig-name descname"><span class="pre">get_vertex_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/meshes.html#BlockIconMesh.get_vertex_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.meshes.BlockIconMesh.get_vertex_data" title="Link to this definition"></a></dt>
+<dd><p>Returns the vertices and texture coordinates for a standard full-screen quad,
+which is later scaled and positioned by the shader based on uniform offsets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.4)"><em>dtype</em></a>[<em>float32</em>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.meshes.UIColorMesh">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.meshes.</span></span><span class="sig-name descname"><span class="pre">UIColorMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/meshes.html#UIColorMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.meshes.UIColorMesh" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="meshes.html#meshes.base_mesh.BaseMesh" title="meshes.base_mesh.BaseMesh"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMesh</span></code></a></p>
+<p>Provides the geometry for rendering solid-color geometric elements in the UI.</p>
+<p>Used for rendering non-textured components such as backgrounds, frames,
+selection highlights, and dimming overlays using flat-color shaders.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.meshes.UIColorMesh.get_vertex_data">
+<span class="sig-name descname"><span class="pre">get_vertex_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/meshes.html#UIColorMesh.get_vertex_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.meshes.UIColorMesh.get_vertex_data" title="Link to this definition"></a></dt>
+<dd><p>Returns the raw vertex positions for a 2D quad without texture coordinates,
+as the shape relies solely on color uniforms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.4)"><em>dtype</em></a>[<em>float32</em>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.meshes.UITextMesh">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.meshes.</span></span><span class="sig-name descname"><span class="pre">UITextMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/meshes.html#UITextMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.meshes.UITextMesh" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="meshes.html#meshes.base_mesh.BaseMesh" title="meshes.base_mesh.BaseMesh"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMesh</span></code></a></p>
+<p>Generates the geometry required to display text strings on the screen.</p>
+<p>Acts as a surface to map dynamically generated text textures onto, utilizing
+alpha-blended shaders to properly draw fonts over the background elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.meshes.UITextMesh.get_vertex_data">
+<span class="sig-name descname"><span class="pre">get_vertex_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/meshes.html#UITextMesh.get_vertex_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.meshes.UITextMesh.get_vertex_data" title="Link to this definition"></a></dt>
+<dd><p>Returns the standard set of vertices and UV coordinates mapping a full
+texture onto a simple 2D rectangular quad.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.4)"><em>dtype</em></a>[<em>float32</em>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-ui.text">
+<span id="ui-text-module"></span><h2>ui.text module<a class="headerlink" href="#module-ui.text" title="Link to this heading"></a></h2>
+<p>Text rendering and caching for OpenGL textures.</p>
+<p>This module provides the TextRenderer class, which converts strings into
+Pygame surfaces with drop shadows, and then uploads them to the GPU as
+ModernGL textures. It supports both caching for static text and immediate
+generation for dynamic, single-frame text.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ui.text.TextRenderer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ui.text.</span></span><span class="sig-name descname"><span class="pre">TextRenderer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/text.html#TextRenderer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.text.TextRenderer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Handles the rendering of text strings into OpenGL textures.</p>
+<p>Provides methods for caching static text and generating single-frame dynamic text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>Any</em>) – The main application context.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.text.TextRenderer.get_texture">
+<span class="sig-name descname"><span class="pre">get_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/text.html#TextRenderer.get_texture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.text.TextRenderer.get_texture" title="Link to this definition"></a></dt>
+<dd><p>Generates and returns an OpenGL texture for the specified text string.
+Caches the generated texture so subsequent requests for the same text
+are returned instantly without re-rendering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ui.text.TextRenderer.get_dynamic_texture">
+<span class="sig-name descname"><span class="pre">get_dynamic_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ui/text.html#TextRenderer.get_dynamic_texture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ui.text.TextRenderer.get_dynamic_texture" title="Link to this definition"></a></dt>
+<dd><p>Generates and returns an OpenGL texture for text that changes frequently.
+Does not cache the texture or build mipmaps, saving memory and processing
+time for single-frame usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-ui">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-ui" title="Link to this heading"></a></h2>
+<p>UI package: High-level UI components, HUD, and menu systems.</p>
+<p>This package contains UI widgets and rendering helpers used by the engine’s
+menus, HUD overlay, and in-world item UI. Submodules provide discrete
+components such as <cite>components</cite>, <cite>hud</cite>, <cite>menus</cite>, and <cite>meshes</cite> used by the
+application to compose screen-space interfaces.</p>
+<p>Public objects are re-exported here for easier autodoc consumption.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="textures.html" class="btn btn-neutral float-left" title="textures module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="voxel_handler.html" class="btn btn-neutral float-right" title="voxel_handler module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, ShivamKR12.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+lighting module
+===============
+
+.. automodule:: lighting
+   :members:
+   :show-inheritance:
+   :undoc-members:
