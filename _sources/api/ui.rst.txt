@@ -1,53 +1,64 @@
-ui package
-==========
-
-Submodules
-----------
-
-ui.components module
---------------------
-
-.. automodule:: ui.components
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-ui.hud module
--------------
-
-.. automodule:: ui.hud
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-ui.menus module
----------------
-
-.. automodule:: ui.menus
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-ui.meshes module
-----------------
-
-.. automodule:: ui.meshes
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-ui.text module
---------------
-
-.. automodule:: ui.text
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
----------------
+ui
+==
 
 .. automodule:: ui
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+components
+----------
+
+
+.. automodule:: ui.components
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+hud
+---
+
+
+.. automodule:: ui.hud
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+menus
+-----
+
+
+.. automodule:: ui.menus
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+meshes
+------
+
+
+.. automodule:: ui.meshes
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+text
+----
+
+
+.. automodule:: ui.text
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+

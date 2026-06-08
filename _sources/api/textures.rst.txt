@@ -1,7 +1,7 @@
-textures module
-===============
+textures
+========
 
 .. automodule:: textures
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

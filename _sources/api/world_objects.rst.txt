@@ -1,53 +1,64 @@
-world\_objects package
-======================
-
-Submodules
-----------
-
-world\_objects.chunk module
----------------------------
-
-.. automodule:: world_objects.chunk
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-world\_objects.clouds module
-----------------------------
-
-.. automodule:: world_objects.clouds
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-world\_objects.item module
---------------------------
-
-.. automodule:: world_objects.item
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-world\_objects.sky module
--------------------------
-
-.. automodule:: world_objects.sky
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-world\_objects.voxel\_marker module
------------------------------------
-
-.. automodule:: world_objects.voxel_marker
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
----------------
+world\_objects
+==============
 
 .. automodule:: world_objects
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+chunk
+-----
+
+
+.. automodule:: world_objects.chunk
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+clouds
+------
+
+
+.. automodule:: world_objects.clouds
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+item
+----
+
+
+.. automodule:: world_objects.item
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+sky
+---
+
+
+.. automodule:: world_objects.sky
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+voxel\_marker
+-------------
+
+
+.. automodule:: world_objects.voxel_marker
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>camera module &mdash; Pyrite 1.0.0 documentation</title>
+  <title>camera &mdash; Pyrite 1.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -21,7 +21,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="frustum module" href="frustum.html" />
+    <link rel="next" title="frustum" href="frustum.html" />
     <link rel="prev" title="API Reference" href="modules.html" /> 
 </head>
 
@@ -267,7 +267,7 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">API Reference</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">camera module</a><ul>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">camera</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#camera.Camera"><code class="docutils literal notranslate"><span class="pre">Camera</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#camera.Camera.update"><code class="docutils literal notranslate"><span class="pre">Camera.update()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#camera.Camera.update_view_matrix"><code class="docutils literal notranslate"><span class="pre">Camera.update_view_matrix()</span></code></a></li>
@@ -284,7 +284,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="frustum.html">frustum module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="frustum.html">frustum</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="frustum.html#frustum.Frustum"><code class="docutils literal notranslate"><span class="pre">Frustum</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="frustum.html#frustum.Frustum.update_factors"><code class="docutils literal notranslate"><span class="pre">Frustum.update_factors()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="frustum.html#frustum.Frustum.is_on_frustum"><code class="docutils literal notranslate"><span class="pre">Frustum.is_on_frustum()</span></code></a></li>
@@ -293,7 +293,7 @@
 <li class="toctree-l3"><a class="reference internal" href="frustum.html#frustum.frustum_cull_fast"><code class="docutils literal notranslate"><span class="pre">frustum_cull_fast()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html">lighting module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html">lighting</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.get_voxel_fast"><code class="docutils literal notranslate"><span class="pre">get_voxel_fast()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.get_light_fast"><code class="docutils literal notranslate"><span class="pre">get_light_fast()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.set_light_fast"><code class="docutils literal notranslate"><span class="pre">set_light_fast()</span></code></a></li>
@@ -306,7 +306,7 @@
 <li class="toctree-l3"><a class="reference internal" href="lighting.html#lighting.place_torch"><code class="docutils literal notranslate"><span class="pre">place_torch()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="main.html">main module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="main.html">main</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="main.html#main.Pyrite"><code class="docutils literal notranslate"><span class="pre">Pyrite</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.load_config"><code class="docutils literal notranslate"><span class="pre">Pyrite.load_config()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="main.html#main.Pyrite.save_config"><code class="docutils literal notranslate"><span class="pre">Pyrite.save_config()</span></code></a></li>
@@ -322,17 +322,16 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="meshes.html">meshes package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.base_mesh">meshes.base_mesh module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="meshes.html">meshes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.base_mesh">base_mesh</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.base_mesh.BaseMesh"><code class="docutils literal notranslate"><span class="pre">BaseMesh</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.chunk_mesh">meshes.chunk_mesh module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.chunk_mesh">chunk_mesh</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh.ChunkMesh"><code class="docutils literal notranslate"><span class="pre">ChunkMesh</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.chunk_mesh_builder">meshes.chunk_mesh_builder module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.chunk_mesh_builder">chunk_mesh_builder</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.get_ao"><code class="docutils literal notranslate"><span class="pre">get_ao()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.get_vertex_light"><code class="docutils literal notranslate"><span class="pre">get_vertex_light()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.pack_data"><code class="docutils literal notranslate"><span class="pre">pack_data()</span></code></a></li>
@@ -345,32 +344,31 @@
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.chunk_mesh_builder.build_chunk_mesh"><code class="docutils literal notranslate"><span class="pre">build_chunk_mesh()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.cloud_mesh">meshes.cloud_mesh module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.cloud_mesh">cloud_mesh</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.cloud_mesh.CloudMesh"><code class="docutils literal notranslate"><span class="pre">CloudMesh</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.cube_mesh">meshes.cube_mesh module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.cube_mesh">cube_mesh</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.cube_mesh.CubeMesh"><code class="docutils literal notranslate"><span class="pre">CubeMesh</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.item_mesh">meshes.item_mesh module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.item_mesh">item_mesh</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.item_mesh.ItemMesh"><code class="docutils literal notranslate"><span class="pre">ItemMesh</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.obj_mesh">meshes.obj_mesh module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes.obj_mesh">obj_mesh</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="meshes.html#meshes.obj_mesh.ObjMesh"><code class="docutils literal notranslate"><span class="pre">ObjMesh</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="meshes.html#module-meshes">Module contents</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="noise.html">noise module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">noise</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="noise.html#noise.set_seed"><code class="docutils literal notranslate"><span class="pre">set_seed()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="noise.html#noise.noise2"><code class="docutils literal notranslate"><span class="pre">noise2()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="noise.html#noise.noise3"><code class="docutils literal notranslate"><span class="pre">noise3()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="player.html">player module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="player.html">player</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="player.html#player.Player"><code class="docutils literal notranslate"><span class="pre">Player</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.find_spawn_position"><code class="docutils literal notranslate"><span class="pre">Player.find_spawn_position()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="player.html#player.Player.update"><code class="docutils literal notranslate"><span class="pre">Player.update()</span></code></a></li>
@@ -390,7 +388,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="profiler.html">profiler module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="profiler.html">profiler</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="profiler.html#profiler.ThreadSampleBuffer"><code class="docutils literal notranslate"><span class="pre">ThreadSampleBuffer</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="profiler.html#profiler.ThreadSampleBuffer.record"><code class="docutils literal notranslate"><span class="pre">ThreadSampleBuffer.record()</span></code></a></li>
 </ul>
@@ -406,7 +404,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="scene.html">scene module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scene.html">scene</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="scene.html#scene.Scene"><code class="docutils literal notranslate"><span class="pre">Scene</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="scene.html#scene.Scene.update"><code class="docutils literal notranslate"><span class="pre">Scene.update()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="scene.html#scene.Scene.render"><code class="docutils literal notranslate"><span class="pre">Scene.render()</span></code></a></li>
@@ -414,11 +412,11 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="settings.html">settings module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="settings.html">settings</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="settings.html#settings.get_path"><code class="docutils literal notranslate"><span class="pre">get_path()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="shader_program.html">shader_program module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shader_program.html">shader_program</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="shader_program.html#shader_program.ShaderProgram"><code class="docutils literal notranslate"><span class="pre">ShaderProgram</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="shader_program.html#shader_program.ShaderProgram.set_uniforms_on_init"><code class="docutils literal notranslate"><span class="pre">ShaderProgram.set_uniforms_on_init()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="shader_program.html#shader_program.ShaderProgram.update"><code class="docutils literal notranslate"><span class="pre">ShaderProgram.update()</span></code></a></li>
@@ -427,7 +425,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="sounds.html">sounds module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sounds.html">sounds</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="sounds.html#sounds.Sounds"><code class="docutils literal notranslate"><span class="pre">Sounds</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.set_sfx_volume"><code class="docutils literal notranslate"><span class="pre">Sounds.set_sfx_volume()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="sounds.html#sounds.Sounds.play_walk"><code class="docutils literal notranslate"><span class="pre">Sounds.play_walk()</span></code></a></li>
@@ -440,7 +438,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="terrain_gen.html">terrain_gen module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="terrain_gen.html">terrain_gen</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.random"><code class="docutils literal notranslate"><span class="pre">random()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.get_biome"><code class="docutils literal notranslate"><span class="pre">get_biome()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.get_height"><code class="docutils literal notranslate"><span class="pre">get_height()</span></code></a></li>
@@ -450,16 +448,15 @@
 <li class="toctree-l3"><a class="reference internal" href="terrain_gen.html#terrain_gen.fill_initial_sunlight"><code class="docutils literal notranslate"><span class="pre">fill_initial_sunlight()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="textures.html">textures module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="textures.html">textures</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="textures.html#textures.Textures"><code class="docutils literal notranslate"><span class="pre">Textures</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="textures.html#textures.Textures.load"><code class="docutils literal notranslate"><span class="pre">Textures.load()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="ui.html">ui package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="ui.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.components">ui.components module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ui.html">ui</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.components">components</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.components.get_shared_resource"><code class="docutils literal notranslate"><span class="pre">get_shared_resource()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.components.UINode"><code class="docutils literal notranslate"><span class="pre">UINode</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.components.VBox"><code class="docutils literal notranslate"><span class="pre">VBox</span></code></a></li>
@@ -470,7 +467,7 @@
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.components.Toggle"><code class="docutils literal notranslate"><span class="pre">Toggle</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.hud">ui.hud module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.hud">hud</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.hud.Crosshair"><code class="docutils literal notranslate"><span class="pre">Crosshair</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.hud.Hotbar"><code class="docutils literal notranslate"><span class="pre">Hotbar</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.hud.HeldBlock"><code class="docutils literal notranslate"><span class="pre">HeldBlock</span></code></a></li>
@@ -478,27 +475,26 @@
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.hud.DebugOverlay"><code class="docutils literal notranslate"><span class="pre">DebugOverlay</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.menus">ui.menus module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.menus">menus</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.menus.MainMenu"><code class="docutils literal notranslate"><span class="pre">MainMenu</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.menus.PauseMenu"><code class="docutils literal notranslate"><span class="pre">PauseMenu</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.menus.OptionsMenu"><code class="docutils literal notranslate"><span class="pre">OptionsMenu</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.meshes">ui.meshes module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.meshes">meshes</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.meshes.CrosshairMesh"><code class="docutils literal notranslate"><span class="pre">CrosshairMesh</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.meshes.BlockIconMesh"><code class="docutils literal notranslate"><span class="pre">BlockIconMesh</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.meshes.UIColorMesh"><code class="docutils literal notranslate"><span class="pre">UIColorMesh</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.meshes.UITextMesh"><code class="docutils literal notranslate"><span class="pre">UITextMesh</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.text">ui.text module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui.text">text</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="ui.html#ui.text.TextRenderer"><code class="docutils literal notranslate"><span class="pre">TextRenderer</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="ui.html#module-ui">Module contents</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="voxel_handler.html">voxel_handler module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="voxel_handler.html">voxel_handler</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler"><code class="docutils literal notranslate"><span class="pre">VoxelHandler</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.add_voxel"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.add_voxel()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="voxel_handler.html#voxel_handler.VoxelHandler.rebuild_adjacent_chunks"><code class="docutils literal notranslate"><span class="pre">VoxelHandler.rebuild_adjacent_chunks()</span></code></a></li>
@@ -511,7 +507,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="world.html">world module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="world.html">world</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="world.html#world.World"><code class="docutils literal notranslate"><span class="pre">World</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="world.html#world.World.update"><code class="docutils literal notranslate"><span class="pre">World.update()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="world.html#world.World.process_mesh_queue"><code class="docutils literal notranslate"><span class="pre">World.process_mesh_queue()</span></code></a></li>
@@ -527,31 +523,29 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="world_objects.html">world_objects package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="world_objects.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.chunk">world_objects.chunk module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="world_objects.html">world_objects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.chunk">chunk</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.chunk.Chunk"><code class="docutils literal notranslate"><span class="pre">Chunk</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.clouds">world_objects.clouds module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.clouds">clouds</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.clouds.Clouds"><code class="docutils literal notranslate"><span class="pre">Clouds</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.item">world_objects.item module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.item">item</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.item.Item"><code class="docutils literal notranslate"><span class="pre">Item</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.item.ItemManager"><code class="docutils literal notranslate"><span class="pre">ItemManager</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.sky">world_objects.sky module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.sky">sky</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.sky.SkyMesh"><code class="docutils literal notranslate"><span class="pre">SkyMesh</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.sky.Sky"><code class="docutils literal notranslate"><span class="pre">Sky</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.voxel_marker">world_objects.voxel_marker module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects.voxel_marker">voxel_marker</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="world_objects.html#world_objects.voxel_marker.VoxelMarker"><code class="docutils literal notranslate"><span class="pre">VoxelMarker</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="world_objects.html#module-world_objects">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -573,7 +567,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="modules.html">API Reference</a></li>
-      <li class="breadcrumb-item active">camera module</li>
+      <li class="breadcrumb-item active">camera</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/api/camera.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -584,7 +578,7 @@
            <div itemprop="articleBody">
              
   <section id="module-camera">
-<span id="camera-module"></span><h1>camera module<a class="headerlink" href="#module-camera" title="Link to this heading"></a></h1>
+<span id="camera"></span><h1>camera<a class="headerlink" href="#module-camera" title="Link to this heading"></a></h1>
 <p>3D Camera representation and mathematical matrix manipulation.</p>
 <p>This module handles the player’s perspective, generating the View and Projection
 matrices required by OpenGL to render the world. It provides movement vectors
@@ -760,7 +754,7 @@ derived from the current yaw and pitch.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="modules.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="frustum.html" class="btn btn-neutral float-right" title="frustum module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="frustum.html" class="btn btn-neutral float-right" title="frustum" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

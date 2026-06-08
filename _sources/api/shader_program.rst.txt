@@ -1,7 +1,7 @@
-shader\_program module
-======================
+shader\_program
+===============
 
 .. automodule:: shader_program
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

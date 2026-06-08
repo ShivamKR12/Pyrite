@@ -1,7 +1,7 @@
-sounds module
-=============
+sounds
+======
 
 .. automodule:: sounds
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

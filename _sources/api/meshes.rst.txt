@@ -1,69 +1,84 @@
-meshes package
-==============
-
-Submodules
-----------
-
-meshes.base\_mesh module
-------------------------
-
-.. automodule:: meshes.base_mesh
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-meshes.chunk\_mesh module
--------------------------
-
-.. automodule:: meshes.chunk_mesh
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-meshes.chunk\_mesh\_builder module
-----------------------------------
-
-.. automodule:: meshes.chunk_mesh_builder
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-meshes.cloud\_mesh module
--------------------------
-
-.. automodule:: meshes.cloud_mesh
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-meshes.cube\_mesh module
-------------------------
-
-.. automodule:: meshes.cube_mesh
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-meshes.item\_mesh module
-------------------------
-
-.. automodule:: meshes.item_mesh
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-meshes.obj\_mesh module
------------------------
-
-.. automodule:: meshes.obj_mesh
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
----------------
+meshes
+======
 
 .. automodule:: meshes
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+base\_mesh
+----------
+
+
+.. automodule:: meshes.base_mesh
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+chunk\_mesh
+-----------
+
+
+.. automodule:: meshes.chunk_mesh
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+chunk\_mesh\_builder
+--------------------
+
+
+.. automodule:: meshes.chunk_mesh_builder
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+cloud\_mesh
+-----------
+
+
+.. automodule:: meshes.cloud_mesh
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+cube\_mesh
+----------
+
+
+.. automodule:: meshes.cube_mesh
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+item\_mesh
+----------
+
+
+.. automodule:: meshes.item_mesh
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+obj\_mesh
+---------
+
+
+.. automodule:: meshes.obj_mesh
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+

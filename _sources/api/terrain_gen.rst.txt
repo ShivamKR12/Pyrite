@@ -1,7 +1,7 @@
-terrain\_gen module
-===================
+terrain\_gen
+============
 
 .. automodule:: terrain_gen
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

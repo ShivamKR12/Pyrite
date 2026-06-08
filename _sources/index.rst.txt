@@ -49,6 +49,6 @@ This documentation breaks down the core systems of the engine, explaining how te
    testing
    deployment
    profiling
-   api/modules
+   API Reference <api/modules>
 
 * :ref:`search`

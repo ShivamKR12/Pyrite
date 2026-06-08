@@ -1,7 +1,7 @@
-voxel\_handler module
-=====================
+voxel\_handler
+==============
 
 .. automodule:: voxel_handler
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
