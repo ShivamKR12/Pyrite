@@ -45,32 +45,6 @@ jobs:
         run: |
           sphinx-apidoc -o docs/api src -f
 
-      - name: Normalize API index title
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('docs/api/modules.rst')
-          if p.exists():
-              s = p.read_text(encoding='utf8').splitlines()
-              # find first non-empty line (title) and replace it
-              for i, line in enumerate(s):
-                  if line.strip():
-                      title_idx = i
-                      break
-              else:
-                  title_idx = None
-              if title_idx is not None:
-                  new_title = 'API Reference'
-                  s[title_idx] = new_title
-                  s[title_idx+1] = '=' * len(new_title)
-                  p.write_text('\n'.join(s) + '\n', encoding='utf8')
-                  print('Rewrote docs/api/modules.rst title to "API Reference"')
-              else:
-                  print('Could not find title in docs/api/modules.rst')
-          else:
-              print('docs/api/modules.rst not found; skipping title normalization')
-          PY
-
       - name: Build Sphinx Docs
         run: |
           cd docs
