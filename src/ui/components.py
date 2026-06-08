@@ -624,11 +624,6 @@ class TextInput(UINode):
 
         `label` is a placeholder string shown when the field is empty.
         """
-        """
-        Initialize a `TextInput` control for short text entry.
-
-        `label` is a placeholder string shown when the field is empty.
-        """
         super().__init__(size)
         self.app: Any = app
         self.local_pos: List[float] = list(pos)

@@ -14,7 +14,8 @@ def test_thread_sample_buffer() -> None:
     """Tests isolation and memory limits of thread-specific sample buffers."""
     buf = ThreadSampleBuffer(10)
     assert buf.max_samples == 10
-    assert buf.categories == {}
+
+    assert not buf.categories
 
     buf.record('test_cat', 0.5)
     assert 'test_cat' in buf.categories
@@ -36,7 +37,7 @@ def test_profiler_init() -> None:
     p = Profiler(max_samples_per_category=50)
     assert p.max_samples == 50
     assert p.frame_start_time == 0.0
-    assert p.thread_buffers == {}
+    assert not p.thread_buffers
 
 
 def test_profiler_get_buffer() -> None:

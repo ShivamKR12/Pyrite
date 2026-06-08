@@ -20,7 +20,7 @@ perm_grad_index3: Any
 perm, perm_grad_index3 = _init(seed=0)
 
 
-@njit(cache=True, fastmath=True, nogil=True)
+@njit(cache=True, nogil=True)
 def _seed_numba(new_seed: int) -> None:
     """
     Internal helper to seed Numba's random number generator and standard Python random.
