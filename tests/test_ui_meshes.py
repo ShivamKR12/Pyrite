@@ -29,11 +29,16 @@ def test_crosshair_mesh_vertex_data(mock_app: Any) -> None:
     """Tests the complex crosshair geometry (12 vertices with position + color data)."""
     mesh = CrosshairMesh(mock_app)
 
-    # Assert that the BaseMesh actually created the OpenGL buffers via the context
-    mock_app.ctx.buffer.assert_called()
-    mock_app.ctx.vertex_array.assert_called()
-
     data = mesh.get_vertex_data()
+
+    # Assert that the buffer was called with exactly our generated numpy array
+    assert mock_app.ctx.buffer.call_count == 1
+    args, _ = mock_app.ctx.buffer.call_args
+    np.testing.assert_array_equal(args[0], data)
+
+    mock_app.ctx.vertex_array.assert_called_once_with(
+        mesh.program, [(mock_app.ctx.buffer.return_value, mesh.vbo_format, *mesh.attrs)], skip_errors=True
+    )
 
     assert isinstance(data, np.ndarray), 'Crosshair data must be a numpy array.'
     assert data.dtype == np.float32, 'Crosshair data must be float32 for ModernGL.'
@@ -44,10 +49,15 @@ def test_crosshair_mesh_vertex_data(mock_app: Any) -> None:
 def test_block_icon_mesh_vertex_data(mock_app: Any) -> None:
     """Tests the block icon UI mesh (6 vertices with position + UV data)."""
     mesh = BlockIconMesh(mock_app)
-    mock_app.ctx.buffer.assert_called()
-    mock_app.ctx.vertex_array.assert_called()
-
     data = mesh.get_vertex_data()
+
+    assert mock_app.ctx.buffer.call_count == 1
+    args, _ = mock_app.ctx.buffer.call_args
+    np.testing.assert_array_equal(args[0], data)
+
+    mock_app.ctx.vertex_array.assert_called_once_with(
+        mesh.program, [(mock_app.ctx.buffer.return_value, mesh.vbo_format, *mesh.attrs)], skip_errors=True
+    )
 
     # 6 vertices x 4 attributes (2 pos + 2 uv)
     assert data.shape == (6, 4), f'Expected shape (6, 4), got {data.shape}'
@@ -56,10 +66,15 @@ def test_block_icon_mesh_vertex_data(mock_app: Any) -> None:
 def test_ui_color_mesh_vertex_data(mock_app: Any) -> None:
     """Tests the simple solid color UI mesh (6 vertices with position only)."""
     mesh = UIColorMesh(mock_app)
-    mock_app.ctx.buffer.assert_called()
-    mock_app.ctx.vertex_array.assert_called()
-
     data = mesh.get_vertex_data()
+
+    assert mock_app.ctx.buffer.call_count == 1
+    args, _ = mock_app.ctx.buffer.call_args
+    np.testing.assert_array_equal(args[0], data)
+
+    mock_app.ctx.vertex_array.assert_called_once_with(
+        mesh.program, [(mock_app.ctx.buffer.return_value, mesh.vbo_format, *mesh.attrs)], skip_errors=True
+    )
 
     # 6 vertices x 2 attributes (2 pos)
     assert data.shape == (6, 2), f'Expected shape (6, 2), got {data.shape}'
@@ -68,9 +83,14 @@ def test_ui_color_mesh_vertex_data(mock_app: Any) -> None:
 def test_ui_text_mesh_vertex_data(mock_app: Any) -> None:
     """Tests the text quad generator for font rendering."""
     mesh = UITextMesh(mock_app)
-    mock_app.ctx.buffer.assert_called()
-    mock_app.ctx.vertex_array.assert_called()
-
     data = mesh.get_vertex_data()
+
+    assert mock_app.ctx.buffer.call_count == 1
+    args, _ = mock_app.ctx.buffer.call_args
+    np.testing.assert_array_equal(args[0], data)
+
+    mock_app.ctx.vertex_array.assert_called_once_with(
+        mesh.program, [(mock_app.ctx.buffer.return_value, mesh.vbo_format, *mesh.attrs)], skip_errors=True
+    )
 
     assert data.shape == (6, 4), f'Expected shape (6, 4), got {data.shape}'
