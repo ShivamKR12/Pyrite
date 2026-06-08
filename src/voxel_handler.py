@@ -38,6 +38,12 @@ class VoxelHandler:
 
     @global_profiler.profile_func('VoxelHandler_Init')
     def __init__(self, world: Any) -> None:
+        """
+        Initialize the `VoxelHandler` for a world instance.
+
+        Args:
+            world: The world object that owns this handler (provides app, chunks, etc.).
+        """
         self.app: Any = world.app
         self.chunks: Any = world.chunks
 
@@ -234,6 +240,12 @@ class VoxelHandler:
 
     @global_profiler.profile_func('VoxelHandler_Update')
     def update(self) -> None:
+        """
+        Update per-frame voxel interaction state (casts the interaction ray).
+
+        This should be called from the main update loop to refresh the
+        targeted voxel based on the player's view.
+        """
         self.ray_cast()
 
     @global_profiler.profile_func('VoxelHandler_RayCast')
@@ -319,6 +331,19 @@ class VoxelHandler:
 
     @global_profiler.profile_func('VoxelHandler_GetVoxelId')
     def get_voxel_id(self, voxel_world_pos: Any) -> Tuple[int, int, Any, Any]:
+        """
+        Resolve a world-space voxel position to its chunk-local index and id.
+
+        Args:
+            voxel_world_pos: 3D position (vec-like) in world coordinates.
+
+        Returns:
+            A tuple of (voxel_id, voxel_index, voxel_local_pos, chunk) where
+            `voxel_id` is 0 for empty space, `voxel_index` is the linear index
+            inside the chunk voxel array, `voxel_local_pos` is the local 3D
+            integer coordinate within the chunk, and `chunk` is the chunk object
+            containing the voxel (or None if out of loaded range).
+        """
         cx: int = int(glm.floor(voxel_world_pos.x / CHUNK_SIZE))
         cy: int = int(glm.floor(voxel_world_pos.y / CHUNK_SIZE))
         cz: int = int(glm.floor(voxel_world_pos.z / CHUNK_SIZE))

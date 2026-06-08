@@ -37,6 +37,11 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_Init')
     def __init__(self, app: Any) -> None:
+        """
+        Initialize the `MainMenu`, including layouts and interactive buttons.
+
+        Prepares the main menu, create-world and select-world layouts and resources.
+        """
         self.app: Any = app
         self.title_renderer: Any = TextRenderer(app)
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_TITLE, bold=True)
@@ -126,7 +131,13 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_TriggerAction')
     def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
-        """Initiates a smooth animation transition before executing a state-change callback."""
+        """
+        Initiate an animated transition and schedule an action to run after it.
+
+        Args:
+            action: A callable to execute once the 'OUT' transition completes.
+            anim_dir: Animation direction multiplier; used for transition easing.
+        """
         if self.transition_state in ('IDLE', 'IN'):
             self.pending_action = action
             self.transition_state = 'OUT'
@@ -135,7 +146,12 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_OpenOptions')
     def open_options(self) -> None:
-        """Transitions to the Options Menu overlay."""
+        """
+        Transition from the current menu to the Options Menu.
+
+        This sets the application's menu state and initializes the options menu
+        transition parameters.
+        """
         self.app.options_menu.previous_state = 'MAIN_MENU'
         self.app.game_state = 'OPTIONS'
         self.app.options_menu.transition_state = 'IN'
@@ -143,7 +159,11 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_ToggleGameMode')
     def toggle_game_mode(self) -> None:
-        """Toggles the selected creation game mode (Survival/Creative)."""
+        """
+        Toggle the game-mode selection used when creating a new world.
+
+        Updates the visible button text to reflect the current selection.
+        """
         self.create_game_mode = 0 if self.create_game_mode == 1 else 1
         mode_text: str = 'Survival' if self.create_game_mode == 1 else 'Creative'
         self.btn_game_mode.text = f'Game Mode: {mode_text}'
@@ -151,7 +171,13 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_SetState')
     def set_state(self, new_state: str) -> None:
-        """Switches the active Main Menu context and resets dynamic UI elements."""
+        """
+        Switch the active menu state for the main menu and reset dynamic UI.
+
+        Args:
+            new_state: One of 'MAIN', 'SELECT_WORLD', 'CREATE_WORLD' representing
+                which menu view should be active.
+        """
         self.state = new_state
 
         if new_state == 'SELECT_WORLD':
@@ -170,7 +196,12 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_LoadWorldList')
     def load_world_list(self) -> None:
-        """Queries the local `saves` directory and generates buttons for all existing databases."""
+        """
+        Scan the local `saves` directory and populate the world selection UI.
+
+        This creates `WorldButton` instances for each found save database and
+        corresponding delete buttons.
+        """
         for btn in self.world_buttons:
             if hasattr(btn, 'thumb_tex'):
                 btn.thumb_tex.release()
@@ -250,7 +281,12 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_DeleteWorld')
     def delete_world(self, save_name: str) -> None:
-        """Deletes a saved world database and its thumbnail from the disk."""
+        """
+        Remove the saved world database file and its thumbnail (if present).
+
+        Args:
+            save_name: Base filename of the save (without extension).
+        """
         try:
             if os.path.exists(f'saves/{save_name}.db'):
                 os.remove(f'saves/{save_name}.db')
@@ -265,7 +301,12 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_CreateWorld')
     def create_world(self) -> None:
-        """Creates a new world database using the parameters from the input fields."""
+        """
+        Create a new world using form inputs from the 'Create World' UI.
+
+        Reads name and seed fields, sanitizes the name, and ensures the save
+        filename is unique before initializing the game session.
+        """
         name: str = self.input_name.text.strip()
 
         if not name:
@@ -297,7 +338,10 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_Update')
     def update(self) -> None:
-        """Updates animations, scrolling, and distributes events to active UI components."""
+        """
+        Advance menu animations, update scrolling state and dispatch updates
+        to active UI components depending on the current menu state.
+        """
         if self.transition_state != 'IDLE':
             self.transition_progress += self.app.delta_time * 0.005  # ~200ms transitions
 
@@ -363,6 +407,12 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_HandleEvent')
     def handle_event(self, event: Any) -> None:
+        """
+        Dispatch incoming Pygame events to the active menu UI elements.
+
+        Args:
+            event: Pygame event to process.
+        """
         if self.transition_state != 'IDLE':
             return  # Ignore inputs during transitions
 
@@ -391,7 +441,11 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_RenderBg')
     def render_bg(self) -> None:
-        """Renders the fullscreen background image dynamically scaled to the window aspect ratio."""
+        """
+        Render the menu background image, scaled to maintain aspect ratio.
+
+        This will skip rendering if no background texture is available.
+        """
         if hasattr(self, 'bg_tex') and self.bg_tex:
             self.bg_tex.use(location=4)
             img_aspect: float = self.bg_tex.width / self.bg_tex.height
@@ -411,7 +465,10 @@ class MainMenu:
 
     @global_profiler.profile_func('MainMenu_Render')
     def render(self) -> None:
-        """Issues draw calls for the title, current layout, and applies animated transition offsets."""
+        """
+        Render the active menu layout including title, background, and child
+        UI nodes, applying transition offsets and alpha blending.
+        """
         t: float = self.transition_progress
         ease: float = 1.0 - (1.0 - t) ** 3
         offset_y: float = 0.0
@@ -489,6 +546,11 @@ class PauseMenu:
 
     @global_profiler.profile_func('PauseMenu_Init')
     def __init__(self, app: Any) -> None:
+        """
+        Initialize the `PauseMenu` overlay and associated layout items.
+
+        Sets up resume/options/quit buttons and default transition state.
+        """
         self.app: Any = app
         self.title_renderer: Any = TextRenderer(app)
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
@@ -579,6 +641,12 @@ class PauseMenu:
 
     @global_profiler.profile_func('PauseMenu_HandleEvent')
     def handle_event(self, event: Any) -> None:
+        """
+        Handle incoming Pygame events while the pause menu is active.
+
+        Args:
+            event: Pygame event to process.
+        """
         if self.transition_state != 'IDLE':
             return
 
@@ -641,6 +709,11 @@ class OptionsMenu:
 
     @global_profiler.profile_func('OptionsMenu_Init')
     def __init__(self, app: Any) -> None:
+        """
+        Initialize the `OptionsMenu` with sliders and toggles bound to config keys.
+
+        Ensures backward-compatible config keys and prepares layout nodes.
+        """
         self.app: Any = app
         self.title_renderer: Any = TextRenderer(app)
         self.title_renderer.font = pg.font.SysFont('arial', FONT_SIZE_PAUSED, bold=True)
@@ -758,6 +831,12 @@ class OptionsMenu:
 
     @global_profiler.profile_func('OptionsMenu_HandleEvent')
     def handle_event(self, event: Any) -> None:
+        """
+        Handle incoming Pygame events while the options menu is active.
+
+        Args:
+            event: Pygame event to process.
+        """
         if self.transition_state != 'IDLE':
             return
 

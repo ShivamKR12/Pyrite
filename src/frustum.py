@@ -27,6 +27,12 @@ class Frustum:
 
     @global_profiler.profile_func('Frustum_Init')
     def __init__(self, camera: Any) -> None:
+        """
+        Initialize the Frustum for a given camera instance.
+
+        Computes and stores precomputed tangent/factor values used for
+        frustum checks and keeps a reference to the camera object.
+        """
         self.cam: Any = camera
         self.factor_y: float = 0.0
         self.tan_y: float = 0.0
@@ -37,7 +43,11 @@ class Frustum:
     @global_profiler.profile_func('Frustum_UpdateFactors')
     def update_factors(self, v_fov: float, h_fov: float) -> None:
         """
-        Recalculates the tangent and factor values based on the camera's FOV.
+        Recalculate cached tangent/factor values from vertical and horizontal FOV.
+
+        Args:
+            v_fov: Vertical field-of-view in radians.
+            h_fov: Horizontal field-of-view in radians.
         """
         self.factor_y = 1.0 / math.cos(half_y := v_fov * 0.5)
         self.tan_y = math.tan(half_y)
@@ -48,7 +58,13 @@ class Frustum:
     @global_profiler.profile_func('Frustum_IsOnFrustum')
     def is_on_frustum(self, chunk: Any) -> bool:
         """
-        Tests if a chunk's bounding sphere is within the camera's view frustum.
+        Determine whether the given chunk's bounding sphere intersects the view frustum.
+
+        Args:
+            chunk: Object with a `center` attribute representing 3D position.
+
+        Returns:
+            True if the chunk is (partially) inside the camera frustum, False otherwise.
         """
         # vector to sphere center
         sphere_vec = chunk.center - self.cam.position
@@ -88,8 +104,21 @@ def frustum_cull_fast(
 ) -> Any:
     """
     Numba-optimized vectorized frustum culling.
-    Rapidly tests an array of chunk centers against the camera's view frustum planes.
-    Populates a pre-allocated boolean array mask indicating which chunks are currently visible.
+
+    Args:
+        chunk_centers: Nx3 array of chunk center coordinates.
+        out_mask: Preallocated boolean array that will be written with visibility flags.
+        cam_pos: Camera position (3,) array.
+        cam_forward: Camera forward vector (3,) array.
+        cam_right: Camera right vector (3,) array.
+        cam_up: Camera up vector (3,) array.
+        tan_y: Tangent of half-vertical FOV.
+        tan_x: Tangent of half-horizontal FOV.
+        factor_y: Precomputed vertical factor used for bounds checks.
+        factor_x: Precomputed horizontal factor used for bounds checks.
+
+    Returns:
+        The `out_mask` array with booleans indicating visibility for each center.
     """
     n = len(chunk_centers)
 

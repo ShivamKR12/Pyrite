@@ -76,6 +76,11 @@ class Crosshair:
 
     @global_profiler.profile_func('Crosshair_Init')
     def __init__(self, app: Any) -> None:
+        """
+        Initialize the `Crosshair` renderer for the given app context.
+
+        Prepares the mesh used to draw the centered crosshair.
+        """
         self.app: Any = app
         self.mesh: Any = CrosshairMesh(app)
 
@@ -96,6 +101,11 @@ class Hotbar:
 
     @global_profiler.profile_func('Hotbar_Init')
     def __init__(self, app: Any) -> None:
+        """
+        Initialize the `Hotbar` HUD element and its rendering resources.
+
+        Pre-computes text textures for stack counts and caches rendering helpers.
+        """
         self.app: Any = app
         self.block_mesh: Any = BlockIconMesh(app)
         self.color_mesh: Any = UIColorMesh(app)
@@ -261,6 +271,11 @@ class HeldBlock:
 
     @global_profiler.profile_func('HeldBlock_Init')
     def __init__(self, app: Any) -> None:
+        """
+        Initialize the held item/block renderer and supporting meshes.
+
+        Loads meshes for stick and pickaxe models used for special-item rendering.
+        """
         self.app: Any = app
         self.mesh: Any = ItemMesh(app)
         self.stick_mesh: Any = ObjMesh(app, get_path('assets/models/items/stick/stick.obj'), tex_id=5)
@@ -361,6 +376,11 @@ class InventoryUI:
 
     @global_profiler.profile_func('InventoryUI_Init')
     def __init__(self, app: Any) -> None:
+        """
+        Initialize the full `InventoryUI` including crafting, slots and tooltips.
+
+        Caches geometry and text textures required for interactive inventory rendering.
+        """
         self.app: Any = app
         self.block_mesh: Any = BlockIconMesh(app)
         self.color_mesh: Any = UIColorMesh(app)
@@ -822,6 +842,11 @@ class DebugOverlay:
 
     @global_profiler.profile_func('DebugOverlay_Init')
     def __init__(self, app: Any) -> None:
+        """
+        Initialize the debug overlay that displays performance and positional info.
+
+        Sets up the debug font and texture caching used when updating the overlay.
+        """
         self.app: Any = app
         self.font: pg.font.Font = pg.font.SysFont('arial', FONT_SIZE_DEBUG, bold=True)
         self.text_mesh: Any = UITextMesh(app)

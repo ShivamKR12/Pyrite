@@ -31,6 +31,12 @@ class ThreadSampleBuffer:
     """
 
     def __init__(self, max_samples: int) -> None:
+        """
+        Create a ThreadSampleBuffer with a maximum per-category sample count.
+
+        Args:
+            max_samples: Maximum retained samples per profiling category.
+        """
         self.max_samples: int = max_samples
         self.categories: Dict[str, deque[float]] = {}
         # Simple lock used *only* when adding a new category to prevent iteration crashes
@@ -38,7 +44,11 @@ class ThreadSampleBuffer:
 
     def record(self, category: str, elapsed_time: float) -> None:
         """
-        Records a single profiling sample for a given category in a thread-safe manner.
+        Record a single profiling sample for the specified category.
+
+        Args:
+            category: Logical category name for the timing sample.
+            elapsed_time: Elapsed time in seconds to record.
         """
         if category not in self.categories:
             with self.lock:
@@ -63,6 +73,12 @@ class Profiler:
     """
 
     def __init__(self, max_samples_per_category: int = 10000) -> None:
+        """
+        Initialize the global `Profiler` instance.
+
+        Args:
+            max_samples_per_category: Limit on retained samples to bound memory usage.
+        """
         self.max_samples: int = max_samples_per_category
         self.registry_lock: threading.Lock = threading.Lock()
 
@@ -109,7 +125,16 @@ class Profiler:
             self.record(category, time.perf_counter() - start_time)
 
     def profile_func(self, category: Optional[str] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        """Decorator to profile entire methods."""
+        """
+        Return a decorator which profiles the wrapped function under `category`.
+
+        Args:
+            category: Optional category name override; when None the function
+                name will be used.
+
+        Returns:
+            A decorator that wraps callables and records timing samples.
+        """
 
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             cat: str = category or func.__name__

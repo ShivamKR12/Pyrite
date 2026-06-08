@@ -88,6 +88,11 @@ class UINode:
 
     @global_profiler.profile_func('UINode_Init')
     def __init__(self, size: Tuple[float, float] = (0, 0)) -> None:
+        """
+        Initialize a `UINode` container.
+
+        Sets up basic parent/children relationships and default local position/size.
+        """
         self.parent: Optional['UINode'] = None
         self.children: List['UINode'] = []
         self.local_pos: List[float] = [0.0, 0.0]  # Position relative to parent
@@ -162,12 +167,23 @@ class VBox(UINode):
 
     @global_profiler.profile_func('VBox_Init')
     def __init__(self, pos: Tuple[float, float] = (0, 0), spacing: float = 0.05) -> None:
+        """
+        Initialize a `VBox` layout container.
+
+        `pos` defines the local origin; `spacing` is the vertical gap between children.
+        """
         super().__init__()
         self.local_pos: List[float] = list(pos)
         self.spacing: float = spacing
 
     @global_profiler.profile_func('VBox_UpdateLayout')
     def update_layout(self) -> None:
+        """
+        Layout children vertically and update this container's size.
+
+        Arranges children with the configured spacing and computes the total
+        height for correct nesting in parent containers.
+        """
         current_y: float = 0.0
 
         for child in self.children:
@@ -209,6 +225,12 @@ class Button(UINode):
         border_radius: int = 12,
         elevation: int = 5,
     ) -> None:
+        """
+        Construct a clickable `Button` widget.
+
+        The constructor configures visual properties, shared resources and the
+        click `action` callback.
+        """
         super().__init__(size)
         self.app: Any = app
         self.text: str = text
@@ -231,7 +253,13 @@ class Button(UINode):
     @global_profiler.profile_func('Button_CheckHover')
     def check_hover(self, mouse_pos: Tuple[int, int]) -> bool:
         """
-        Checks if the mouse cursor is within the button's bounding box.
+        Check whether the mouse cursor is inside the button's bounding box.
+
+        Args:
+            mouse_pos: Mouse position in pixel coordinates as (x, y).
+
+        Returns:
+            True if the mouse is hovering the button, False otherwise.
         """
         global_pos: Tuple[float, float] = self.get_global_pos()
         x: float = global_pos[0]
@@ -262,6 +290,13 @@ class Button(UINode):
 
     @global_profiler.profile_func('Button_Update')
     def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
+        """
+        Update visual/interaction state for this button.
+
+        Args:
+            mouse_pos: Optional mouse position in pixels; when None the current
+                system mouse position is used.
+        """
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
 
@@ -269,6 +304,12 @@ class Button(UINode):
 
     @global_profiler.profile_func('Button_HandleEvent')
     def handle_event(self, event: Any) -> None:
+        """
+        Handle Pygame mouse button events and trigger the button's action.
+
+        Args:
+            event: Pygame event object to handle (mouse down/up).
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             if self.is_hovered:
                 self.is_pressed = True
@@ -284,6 +325,13 @@ class Button(UINode):
 
     @global_profiler.profile_func('Button_Render')
     def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
+        """
+        Render the button visuals including elevation, mask, and text.
+
+        Args:
+            offset: Render offset applied to the button position.
+            alpha: Opacity multiplier for rendering.
+        """
         global_pos: Tuple[float, float] = self.get_global_pos()
         px: float = global_pos[0]
         py: float = global_pos[1]
@@ -372,6 +420,11 @@ class WorldButton(UINode):
         border_radius: int = 12,
         elevation: int = 5,
     ) -> None:
+        """
+        Construct a `WorldButton` showing a world thumbnail and metadata.
+
+        This is used in the world-selection view to represent a saved world.
+        """
         super().__init__(size)
         self.app: Any = app
         self.save_name: str = save_name
@@ -415,7 +468,13 @@ class WorldButton(UINode):
     @global_profiler.profile_func('WorldButton_CheckHover')
     def check_hover(self, mouse_pos: Tuple[int, int]) -> bool:
         """
-        Checks if the mouse cursor is within the button's bounding box.
+        Check whether the mouse cursor is inside the world button's bounding box.
+
+        Args:
+            mouse_pos: Mouse position in pixel coordinates as (x, y).
+
+        Returns:
+            True if the mouse is hovering this world button, False otherwise.
         """
         global_pos: Tuple[float, float] = self.get_global_pos()
         x: float = global_pos[0]
@@ -442,6 +501,12 @@ class WorldButton(UINode):
 
     @global_profiler.profile_func('WorldButton_Update')
     def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
+        """
+        Update hover state for the world button.
+
+        Args:
+            mouse_pos: Optional mouse position; current mouse position is used when None.
+        """
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
 
@@ -449,6 +514,12 @@ class WorldButton(UINode):
 
     @global_profiler.profile_func('WorldButton_HandleEvent')
     def handle_event(self, event: Any) -> None:
+        """
+        Handle mouse events for clicking/pressing the world button.
+
+        Args:
+            event: Pygame event instance.
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             if self.is_hovered:
                 self.is_pressed = True
@@ -463,6 +534,13 @@ class WorldButton(UINode):
 
     @global_profiler.profile_func('WorldButton_Render')
     def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
+        """
+        Render the world button including thumbnail, title and details.
+
+        Args:
+            offset: Render offset applied to the button.
+            alpha: Opacity multiplier.
+        """
         global_pos: Tuple[float, float] = self.get_global_pos()
         px: float = global_pos[0]
         py: float = global_pos[1]
@@ -541,6 +619,16 @@ class TextInput(UINode):
 
     @global_profiler.profile_func('TextInput_Init')
     def __init__(self, app: Any, pos: Tuple[float, float], size: Tuple[float, float], label: str = '') -> None:
+        """
+        Initialize a `TextInput` control for short text entry.
+
+        `label` is a placeholder string shown when the field is empty.
+        """
+        """
+        Initialize a `TextInput` control for short text entry.
+
+        `label` is a placeholder string shown when the field is empty.
+        """
         super().__init__(size)
         self.app: Any = app
         self.local_pos: List[float] = list(pos)
@@ -556,6 +644,12 @@ class TextInput(UINode):
 
     @global_profiler.profile_func('TextInput_HandleEvent')
     def handle_event(self, event: Any) -> None:
+        """
+        Handle mouse and keyboard events for the text input control.
+
+        Args:
+            event: Pygame event instance to process.
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos: Tuple[int, int] = pg.mouse.get_pos()
             global_pos: Tuple[float, float] = self.get_global_pos()
@@ -589,6 +683,13 @@ class TextInput(UINode):
 
     @global_profiler.profile_func('TextInput_Render')
     def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
+        """
+        Render the input box, current text and blinking cursor.
+
+        Args:
+            offset: Render offset applied to the control position.
+            alpha: Opacity multiplier for rendering.
+        """
         w: float = self.size[0]
         h: float = self.size[1]
 
@@ -674,6 +775,11 @@ class Slider(UINode):
         action: Optional[Callable[[Any], None]] = None,
         is_int: bool = False,
     ) -> None:
+        """
+        Create a `Slider` used to adjust numerical settings.
+
+        Supports integer rounding and optional callback `action` on change.
+        """
         super().__init__(size)
         self.app: Any = app
         self.text: str = text
@@ -696,6 +802,12 @@ class Slider(UINode):
 
     @global_profiler.profile_func('Slider_Update')
     def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
+        """
+        Update the slider's hover/drag state and apply value changes.
+
+        Args:
+            mouse_pos: Optional mouse position in pixels; current mouse position used when None.
+        """
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
 
@@ -735,12 +847,25 @@ class Slider(UINode):
 
     @global_profiler.profile_func('Slider_HandleEvent')
     def handle_event(self, event: Any) -> None:
+        """
+        Handle mouse events to begin dragging the slider.
+
+        Args:
+            event: Pygame event object.
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             if self.is_hovered:
                 self.is_dragging = True
 
     @global_profiler.profile_func('Slider_Render')
     def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
+        """
+        Render the slider track, fill and value text.
+
+        Args:
+            offset: Render offset applied to the slider position.
+            alpha: Opacity multiplier for rendering.
+        """
         w: float = self.size[0]
         h: float = self.size[1]
         global_pos: Tuple[float, float] = self.get_global_pos()
@@ -846,6 +971,11 @@ class Toggle(UINode):
         config_key: str,
         action: Optional[Callable[[bool], None]] = None,
     ) -> None:
+        """
+        Initialize a binary `Toggle` control bound to a config key.
+
+        Toggling updates `app.config` and calls `action` if provided.
+        """
         super().__init__(size)
         self.app: Any = app
         self.text: str = text
@@ -863,6 +993,12 @@ class Toggle(UINode):
 
     @global_profiler.profile_func('Toggle_Update')
     def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
+        """
+        Update hover state for the toggle control.
+
+        Args:
+            mouse_pos: Optional mouse position in pixels; current mouse position used when None.
+        """
         if mouse_pos is None:
             mouse_pos = pg.mouse.get_pos()
 
@@ -884,6 +1020,12 @@ class Toggle(UINode):
 
     @global_profiler.profile_func('Toggle_HandleEvent')
     def handle_event(self, event: Any) -> None:
+        """
+        Handle mouse clicks to flip the toggle and persist to config.
+
+        Args:
+            event: Pygame event object.
+        """
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             if self.is_hovered:
                 val: bool = self.app.config.get(self.config_key, False)
@@ -895,6 +1037,13 @@ class Toggle(UINode):
 
     @global_profiler.profile_func('Toggle_Render')
     def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
+        """
+        Render the toggle control including track and thumb.
+
+        Args:
+            offset: Render offset applied to the toggle position.
+            alpha: Opacity multiplier for rendering.
+        """
         w: float = self.size[0]
         h: float = self.size[1]
         global_pos: Tuple[float, float] = self.get_global_pos()

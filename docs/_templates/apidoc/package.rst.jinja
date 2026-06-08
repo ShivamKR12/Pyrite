@@ -1,0 +1,37 @@
+{{ pkgname.split('.')[-1] | e | heading(1) }}
+
+.. automodule:: {{ pkgname }}
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+{% if subpackages %}
+.. toctree::
+   :maxdepth: {{ maxdepth }}
+
+{% for subpackage in subpackages %}
+   {{ subpackage }}
+{% endfor %}
+{% endif %}
+
+{% if submodules %}
+{% if separatemodules %}
+.. toctree::
+   :maxdepth: {{ maxdepth }}
+
+{% for submodule in submodules %}
+   {{ submodule }}
+{% endfor %}
+{% else %}
+{% for submodule in submodules %}
+{% if show_headings %}
+{{ submodule.split('.')[-1] | e | heading(2) }}
+{% endif %}
+
+.. automodule:: {{ submodule }}
+   :members:
+   :undoc-members:
+   :show-inheritance:
+{% endfor %}
+{% endif %}
+{% endif %}
