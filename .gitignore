@@ -11,6 +11,7 @@ extra/
 saves/
 build/
 dist/
+docs/api/
 docs/_build/
 command.txt
 convert_audio.ps1
@@ -24,3 +25,5 @@ diff.txt
 CODEBASE_ANALYSIS.md
 crash_profiling_results.json
 profiling_results.json
+DOCS_COVERAGE.md
+SYSTEMS_MAP.md

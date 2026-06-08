@@ -33,13 +33,14 @@ This documentation breaks down the core systems of the engine, explaining how te
    ui
    persistence
    survival
+   assets
+   audio
 
 .. toctree::
    :maxdepth: 2
    :caption: Learning and Reference:
 
    tutorials
-   api
 
 .. toctree::
    :maxdepth: 2
@@ -47,5 +48,7 @@ This documentation breaks down the core systems of the engine, explaining how te
 
    testing
    deployment
+   profiling
+   api/modules
 
 * :ref:`search`
