@@ -23,7 +23,7 @@ def test_base_mesh_init() -> None:
     assert bm.ctx is None
     assert bm.program is None
     assert bm.vbo_format == ''
-    assert not bm.attrs
+    assert bm.attrs == ()
     assert bm.vao is None
 
 

@@ -37,7 +37,11 @@ def test_profiler_init() -> None:
     p = Profiler(max_samples_per_category=50)
     assert p.max_samples == 50
     assert p.frame_start_time == 0.0
-    assert not p.thread_buffers
+    assert p.thread_buffers == {}
+
+    # Test default arguments
+    p_default = Profiler()
+    assert p_default.max_samples == 10000
 
 
 def test_profiler_get_buffer() -> None:
@@ -70,16 +74,23 @@ def test_profiler_record_and_frame() -> None:
     """Verifies frame timing mechanisms and direct sample recording."""
     p = Profiler(max_samples_per_category=5)
 
+    # Test end_frame protection against uninitialized start_frame
+    p.end_frame()
+    assert 'Frame_Total' not in p._get_buffer().categories
+
     p.start_frame()
     assert p.frame_start_time > 0.0
 
-    time.sleep(0.001)
+    # Busy loop to guarantee a measurable minimum elapsed time across all OSs
+    start_time = time.perf_counter()
+    while time.perf_counter() - start_time < 0.005:
+        pass
     p.end_frame()
 
     buf = p._get_buffer()
     assert 'Frame_Total' in buf.categories
     assert len(buf.categories['Frame_Total']) == 1
-    assert buf.categories['Frame_Total'][0] > 0.0
+    assert 0.004 < buf.categories['Frame_Total'][0] < 0.5
 
     p.record('Custom_Cat', 1.23)
     assert 'Custom_Cat' in buf.categories
@@ -116,27 +127,38 @@ def test_profiler_decorators() -> None:
     assert len(buf.categories['dummy_func2']) == 1
 
 
-def test_profiler_save_report(tmp_path: Any, capsys: Any) -> None:
+def test_profiler_save_report(tmp_path: Any, capsys: Any, monkeypatch: Any) -> None:
     """Tests compiling isolated multi-thread metrics into a JSON aggregate report."""
     p = Profiler(max_samples_per_category=5)
-    p.record('Report_Cat', 0.1)
-    p.record('Report_Cat', 0.2)
+
+    # Use highly specific decimals to strictly enforce the round(..., 3) logic
+    p.record('Report_Cat', 0.100123)
+    p.record('Report_Cat', 0.300345)
 
     filepath = tmp_path / 'profiling_results.json'
     p.save_report(filename=str(filepath))
 
     assert filepath.exists()
 
-    with open(filepath, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    # Catch string formatting and print mutations
+    captured = capsys.readouterr()
+    assert '\n[TELEMETRY] Compiling engine metrics from all threads...\n' in captured.out
+    assert f'[TELEMETRY] Report successfully saved to {filepath}\n' in captured.out
 
+    with open(filepath, 'r', encoding='utf-8') as f:
+        raw_text = f.read()
+        data = json.loads(raw_text)
+
+    # Enforce indent=4 mutation kill
+    assert '{\n    "Report_Cat": {' in raw_text
     assert 'Report_Cat' in data
     cat_data = data['Report_Cat']
     assert cat_data['Calls'] == 2
-    assert cat_data['Avg_ms'] == 150.0
-    assert cat_data['Min_ms'] == 100.0
-    assert cat_data['Max_ms'] == 200.0
-    assert cat_data['Total_Time_ms'] == 300.0
+    assert cat_data['Avg_ms'] == 200.234
+    assert cat_data['Min_ms'] == 100.123
+    assert cat_data['Max_ms'] == 300.345
+    assert cat_data['P99_ms'] == 298.343
+    assert cat_data['Total_Time_ms'] == 400.468
 
     # Test empty save
     p2 = Profiler()
@@ -148,7 +170,14 @@ def test_profiler_save_report(tmp_path: Any, capsys: Any) -> None:
         data2 = json.load(f)
     assert data2 == {}
 
+    # Test default filename argument mutation
+    monkeypatch.chdir(tmp_path)
+    p3 = Profiler()
+    p3.record('Default_File_Cat', 1.0)
+    p3.save_report()
+    assert (tmp_path / 'profiling_results.json').exists()
+
     # Test Error Handling
     p.save_report(filename='/invalid/path/that/doesnt/exist.json')
     captured = capsys.readouterr()
-    assert 'ERROR: Failed to write report file' in captured.out
+    assert '[TELEMETRY] ERROR: Failed to write report file:' in captured.out
