@@ -37,6 +37,8 @@ def set_seed(new_seed: int) -> None:
     global perm, perm_grad_index3
     perm, perm_grad_index3 = _init(seed=new_seed)
     _seed_numba(new_seed)
+    np.random.seed(new_seed)
+    random.seed(new_seed)
 
 
 @njit(cache=True, fastmath=True, nogil=True)
