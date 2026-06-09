@@ -38,6 +38,7 @@ def test_profiler_init() -> None:
     assert p.max_samples == 50
     assert p.frame_start_time == 0.0
     assert p.thread_buffers == {}
+    assert hasattr(p.registry_lock, 'acquire')
 
     # Test default arguments
     p_default = Profiler()
@@ -77,6 +78,12 @@ def test_profiler_record_and_frame() -> None:
     # Test end_frame protection against uninitialized start_frame
     p.end_frame()
     assert 'Frame_Total' not in p._get_buffer().categories
+
+    # Explicitly test boundary of frame_start_time > 0 mutation
+    p.frame_start_time = 0.5
+    p.end_frame()
+    assert 'Frame_Total' in p._get_buffer().categories
+    p._get_buffer().categories.pop('Frame_Total')
 
     p.start_frame()
     assert p.frame_start_time > 0.0
@@ -131,19 +138,23 @@ def test_profiler_save_report(tmp_path: Any, capsys: Any, monkeypatch: Any) -> N
     """Tests compiling isolated multi-thread metrics into a JSON aggregate report."""
     p = Profiler(max_samples_per_category=5)
 
-    # Use highly specific decimals to strictly enforce the round(..., 3) logic
-    p.record('Report_Cat', 0.100123)
-    p.record('Report_Cat', 0.300345)
+    # Use decimals that strictly enforce both rounding and percentile boundaries
+    p.record('Report_Cat', 0.10012345)
+    p.record('Report_Cat', 0.30034567)
+
+    # Ensure empty times lists are properly handled
+    p.record('Empty_Cat', 1.0)
+    p._get_buffer().categories['Empty_Cat'].clear()
 
     filepath = tmp_path / 'profiling_results.json'
     p.save_report(filename=str(filepath))
 
     assert filepath.exists()
 
-    # Catch string formatting and print mutations
     captured = capsys.readouterr()
-    assert '\n[TELEMETRY] Compiling engine metrics from all threads...\n' in captured.out
-    assert f'[TELEMETRY] Report successfully saved to {filepath}\n' in captured.out
+    out_lines = captured.out.strip().split('\n')
+    assert out_lines[0] == '[TELEMETRY] Compiling engine metrics from all threads...'
+    assert out_lines[1] == f'[TELEMETRY] Report successfully saved to {filepath}'
 
     with open(filepath, 'r', encoding='utf-8') as f:
         raw_text = f.read()
@@ -152,13 +163,15 @@ def test_profiler_save_report(tmp_path: Any, capsys: Any, monkeypatch: Any) -> N
     # Enforce indent=4 mutation kill
     assert '{\n    "Report_Cat": {' in raw_text
     assert 'Report_Cat' in data
+    assert 'Empty_Cat' not in data
+    assert len(data) == 1
     cat_data = data['Report_Cat']
     assert cat_data['Calls'] == 2
-    assert cat_data['Avg_ms'] == 200.234
+    assert cat_data['Avg_ms'] == 200.235
     assert cat_data['Min_ms'] == 100.123
-    assert cat_data['Max_ms'] == 300.345
+    assert cat_data['Max_ms'] == 300.346
     assert cat_data['P99_ms'] == 298.343
-    assert cat_data['Total_Time_ms'] == 400.468
+    assert cat_data['Total_Time_ms'] == 400.469
 
     # Test empty save
     p2 = Profiler()
@@ -177,7 +190,14 @@ def test_profiler_save_report(tmp_path: Any, capsys: Any, monkeypatch: Any) -> N
     p3.save_report()
     assert (tmp_path / 'profiling_results.json').exists()
 
+    out_lines2 = capsys.readouterr().out.strip().split('\n')
+    assert out_lines2[0] == '[TELEMETRY] Compiling engine metrics from all threads...'
+    assert out_lines2[1] == '[TELEMETRY] Report successfully saved to profiling_results.json'
+
     # Test Error Handling
     p.save_report(filename='/invalid/path/that/doesnt/exist.json')
     captured = capsys.readouterr()
-    assert '[TELEMETRY] ERROR: Failed to write report file:' in captured.out
+    err_lines = captured.out.strip().split('\n')
+    assert err_lines[0] == '[TELEMETRY] Compiling engine metrics from all threads...'
+    assert err_lines[1].startswith('[TELEMETRY] ERROR: Failed to write report file:')
+    assert 'XX' not in err_lines[1]
