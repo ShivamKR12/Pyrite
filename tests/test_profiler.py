@@ -184,6 +184,7 @@ def test_profiler_save_report(tmp_path: Any, capsys: Any, monkeypatch: Any) -> N
     assert data2 == {}
 
     # Test default filename argument mutation
+    capsys.readouterr()  # Clear standard output before next save
     monkeypatch.chdir(tmp_path)
     p3 = Profiler()
     p3.record('Default_File_Cat', 1.0)
