@@ -35,7 +35,7 @@ Before writing any code, please ensure there is an open issue for your planned w
 Pyrite achieves its performance through specific technical choices. Your contributions must not degrade these systems.
 
 ### 1. Numba JIT Compilation
-Performance-critical loops (greedy meshing, terrain generation, BFS light propagation) are compiled directly to LLVM using Numba. 
+Performance-critical loops (greedy meshing, terrain generation, BFS light propagation) are compiled directly to LLVM using Numba.
 * **Decorators**: All mathematical operations in these loops MUST use the `@njit(cache=True, nogil=True)` decorator. Use `fastmath=True` and `parallel=True` (with `prange`) only when vectorization and threading are mathematically safe and proven to provide a performance benefit without adding unnecessary overhead.
 * **No Python Objects**: Do NOT introduce standard Python objects (`list`, `dict`, `set`, objects) inside Numba-compiled functions. You must stick to primitive types (`int`, `float`) and flat Numpy arrays.
 * **Memory Allocation**: Never allocate large Numpy arrays *inside* a Numba loop. Pre-allocate arrays in Python and pass them into the `@njit` function by reference.
@@ -65,7 +65,7 @@ Do **not** attempt to force `parallel=True` by changing standard `range` loops t
 ### 2. Threading and Concurrency
 Chunk generation, lighting BFS queues, and database reads are offloaded to a `ThreadPoolExecutor`.
 * **Zero Blocking**: Never introduce a locking mechanism (`threading.Lock`) that stalls or halts the main Pygame render loop.
-* **Database Safety**: SQLite reads in the background MUST utilize `threading.local()` cursors to prevent connection overlap crashes. 
+* **Database Safety**: SQLite reads in the background MUST utilize `threading.local()` cursors to prevent connection overlap crashes.
 * **Batch Processing**: Ensure tasks submitted to the executor are batched appropriately. Avoid submitting thousands of micro-tasks.
 
 ### 3. Memory Management
@@ -74,8 +74,8 @@ Chunk generation, lighting BFS queues, and database reads are offloaded to a `Th
 * **Data Packing:** Maintain the 64-bit and 32-bit integer bit-packing logic for the BFS lighting queues to minimize memory bandwidth usage.
 
 ### 4. Asset Guidelines
-* **Retro Aesthetic**: All textures and UI elements must adhere to the engine's 16-bit retro visual style. 
-* **Texture Dimensions**: Base block textures must be exactly 16x16 pixels. 
+* **Retro Aesthetic**: All textures and UI elements must adhere to the engine's 16-bit retro visual style.
+* **Texture Dimensions**: Base block textures must be exactly 16x16 pixels.
 * **OBJ Models**: Custom `.obj` models must only contain vertex (`v`), UV (`vt`), normal (`vn`), and face (`f`) data. Quads are not supported; models must be triangulated.
 
 ---
@@ -146,11 +146,48 @@ Keep the repository clean by utilizing our standardized branch naming convention
 | **test/** | Adding or refactoring automated tests. | `test/ui-meshes` |
 
 ### 2. Conventional Commits
-Please format your commit messages using the Conventional Commits standard.
-* `feat: added dynamic FOV based on sprint speed`
-* `fix: resolved VRAM leak in text renderer textures`
-* `perf: optimized frustum culling by vectorizing chunk centers`
-* `docs: expanded contributing guidelines`
+Please format your commit messages using the Conventional Commits standard. A well-structured commit message is crucial for project maintainability.
+
+#### Anatomy of a Well-Structured Commit Message
+A professional commit is broken down into three key metadata fields:
+
+```text
+type(scope): subject
+
+body
+
+breakdown
+```
+
+*   **SUBJECT LINE:** A short summary (<50 chars) with a lowercase prefix `type` and an optional `(scope)`.
+*   **BODY:** (Optional) Provides deep technical context, explaining the "Why" and "What" of the change, rather than the "How".
+*   **BREAKDOWN:** (Optional) A detailed bulleted list of specific module side-effects or changes.
+
+**Example:**
+```
+test: expand test coverage and strengthen assertions
+
+- **UI Meshes**: Replaced loose `.assert_called()` checks with specific `assertEqual` validations for vertex data to catch rendering regressions.
+- **Base Mesh**: Added `test_base_mesh.py` to independently verify VBO/VAO lifecycle management and prevent VRAM leaks.
+- **Noise Engine**: Added `test_noise.py` to prove that OpenSimplex generates deterministic values from the same seed.
+- **Telemetry**: Added `test_profiler.py` to guarantee thread-safe report generation during crashes.
+```
+
+#### Commit Types
+The commit `type` in the subject line is mandatory and categorizes the change.
+
+| Type | Purpose | Example |
+| :--- | :--- | :--- |
+| **`feat`** | Introduces a brand new feature or component to the engine. | `feat(world): Implement persistence for dropped items` |
+| **`fix`** | Repairs a bug, memory leak, or crash. | `fix(typing): resolve Mypy attribute and module import errors` |
+| **`test`** | Adds new tests or hardens/refactors existing test coverage. | `test: clear capsys buffer between profiler report test cases` |
+| **`docs`** | Modifies documentation files, Readmes, or internal code docstrings. | `docs(readme): update test coverage badge` |
+| **`ci`** | Updates automated workflow configuration files (GitHub Actions). | `ci(workflows): add mutmut results summary to mutation workflow` |
+| **`perf`** | Code changes exclusively focused on improving runtime execution speed or memory footprint. | `perf: Optimize chunk loading, VBO pooling, and culling` |
+| **`style`** | Changes that do not affect the meaning of the code (whitespace, formatting, linter fixes). | `style(linting): resolve Ruff formatting and whitespace errors` |
+| **`refactor`** | A code change that neither fixes a bug nor adds a feature, but improves code cleanliness. | `refactor(assets): Reorganize asset directory structure` |
+| **`chore`** | Routine upkeep tasks like updating tooling configs or local dependencies. | `chore(tooling): implement pre-commit hooks for local code validation` |
+| **`build`** | Changes that affect the build system or external dependencies. | `build(deps): Bump Ruff and Mypy to latest versions...` |
 
 ### 3. Pull Request Requirements
 When opening a Pull Request, your description must include:
