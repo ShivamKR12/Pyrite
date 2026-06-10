@@ -1,5 +1,6 @@
 .. _player:
 
+==============
 Player Systems
 ==============
 
@@ -27,32 +28,32 @@ Architecture:
             # Inherited from Camera
             self.position: glm.vec3                    # Camera position (eye)
             self.yaw, self.pitch: float                # Rotation angles (radians)
-            
+
             # Physics state
             self.feet_pos: glm.vec3                    # Position at feet (for collisions)
             self.velocity: glm.vec3                    # Movement velocity
             self.on_ground: bool                       # Contact with solid block
             self.in_water: bool                        # Submerged
             self.head_in_water: bool                   # Head above surface
-            
+
             # Survival stats
             self.health: float                         # 0-20
             self.hunger: float                         # 0-20
             self.oxygen: float                         # 0-20
             self.highest_y: float                       # For fall damage calculation
-            
+
             # Inventory
             self.inventory: List[int]                  # 41 slots, voxel IDs
             self.inventory_counts: List[int]           # Stack sizes (1-64)
             self.hotbar_index: int                     # Selected slot (0-8)
-            
+
             # Mode
             self.game_mode: str                        # 'SURVIVAL' or 'CREATIVE'
-            
+
             # Animation
             self.step_counter: float                   # For view bobbing, footsteps
             self.held_item_swing: float                # 0-1, for swing animation
-            
+
             # Input state
             self.keys_pressed: dict                    # Keys currently held
 
@@ -70,7 +71,7 @@ Coordinate System
     PLAYER_HEIGHT = 1.8        # Total height
     PLAYER_HALF_W = 0.3        # Half-width for AABB
     PLAYER_EYE_HEIGHT = 1.6    # Distance from feet to eyes
-    
+
     # Calculate AABB
     def get_aabb():
         half_w = PLAYER_HALF_W
@@ -119,12 +120,12 @@ Controls and Input Handling
     def update_movement(delta_time):
         # Compute move direction (camera-relative)
         direction = glm.vec3(0)
-        
+
         if keys['W']: direction += get_forward_vector()
         if keys['S']: direction -= get_forward_vector()
         if keys['A']: direction -= get_right_vector()
         if keys['D']: direction += get_right_vector()
-        
+
         # Sprint multiplier
         if keys['LShift'] and on_ground:
             sprint_mult = PLAYER_SPRINT_MULTIPLIER  # 1.5
@@ -132,21 +133,21 @@ Controls and Input Handling
         else:
             sprint_mult = 1.0
             is_sprinting = False
-        
+
         # Apply movement speed
         if len(direction) > 0:
             direction = normalize(direction)
             velocity.x += direction.x * PLAYER_SPEED * sprint_mult * delta_time
             velocity.z += direction.z * PLAYER_SPEED * sprint_mult * delta_time
-            
+
             # View bobbing (sine wave based on distance traveled)
             step_counter += length(glm.vec2(velocity.x, velocity.z)) * delta_time
-        
+
         # Jump (only on ground)
         if keys['Space'] and on_ground:
             velocity.y = JUMP_VELOCITY
             on_ground = False
-        
+
         # Creative fly mode
         if game_mode == 'CREATIVE':
             if keys['Space']:
@@ -160,16 +161,16 @@ Controls and Input Handling
 
     def handle_mouse_motion(rel_x, rel_y, sensitivity):
         # rel_x, rel_y from pygame.mouse.get_rel()
-        
+
         # Yaw (left-right, X-axis rotation)
         self.yaw -= rel_x * sensitivity
-        
+
         # Pitch (up-down, Y-axis rotation)
         self.pitch -= rel_y * sensitivity
-        
+
         # Clamp pitch to ±90 degrees to prevent over-rotation
         self.pitch = glm.clamp(self.pitch, -glm.pi() / 2, glm.pi() / 2)
-        
+
         # Update camera view matrix accordingly
 
 Physics: Gravity and Velocity
@@ -183,13 +184,13 @@ Applied each update:
         if not on_ground:
             # Fall acceleration
             velocity.y += GRAVITY * delta_time  # GRAVITY = -0.000025
-        
+
         if in_water:
             # Water buoyancy (reduced gravity)
             velocity.y += GRAVITY * PLAYER_UNDERWATER_GRAVITY_MULTIPLIER * delta_time
             # Also apply drag to vertical movement
             velocity.y *= (1.0 - PLAYER_VERTICAL_WATER_DRAG)
-        
+
         # Terminal velocity (optional clamping to prevent extreme speeds)
         velocity.y = max(velocity.y, -0.1)
 
@@ -202,12 +203,12 @@ Movement is axis-separated to enable smooth wall-sliding:
     def move_and_collide(delta_time):
         # Apply velocity to get new position candidates
         new_pos = feet_pos + velocity * delta_time
-        
+
         # Resolve collisions per-axis
         resolve_axis('X', feet_pos, new_pos)
         resolve_axis('Y', feet_pos, new_pos)
         resolve_axis('Z', feet_pos, new_pos)
-        
+
         # Update final position
         feet_pos = new_pos
         position = feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT, 0)
@@ -222,20 +223,20 @@ AABB Collision Detection
     def resolve_axis(axis, current_pos, new_pos):
         # Get AABB after movement
         aabb_min, aabb_max = get_aabb_at(new_pos)
-        
+
         # Scan all voxels within and around AABB
         for vx in range(floor(aabb_min.x), ceil(aabb_max.x)):
             for vy in range(floor(aabb_min.y), ceil(aabb_max.y)):
                 for vz in range(floor(aabb_min.z), ceil(aabb_max.z)):
                     voxel_id = world.get_voxel(vx, vy, vz)
-                    
+
                     # Skip transparent voxels (water allows movement)
                     if is_transparent(voxel_id):
                         continue
-                    
+
                     # Check AABB intersection
                     voxel_box = (vx, vy, vz, vx+1, vy+1, vz+1)
-                    
+
                     if aabb_intersect(aabb_min, aabb_max, voxel_box):
                         # Collision: snap position to voxel boundary
                         if axis == 'X':
@@ -244,7 +245,7 @@ AABB Collision Detection
                             else:  # Moving -X
                                 new_pos.x = voxel_box[3] + (current_pos.x - aabb_min.x)
                             velocity.x = 0
-                        
+
                         elif axis == 'Y':
                             if velocity.y > 0:  # Moving +Y
                                 new_pos.y = voxel_box[1] - (aabb_max.y - current_pos.y)
@@ -252,7 +253,7 @@ AABB Collision Detection
                                 new_pos.y = voxel_box[4] + (current_pos.y - aabb_min.y)
                                 on_ground = True
                             velocity.y = 0
-                        
+
                         elif axis == 'Z':
                             if velocity.z > 0:  # Moving +Z
                                 new_pos.z = voxel_box[2] - (aabb_max.z - current_pos.z)
@@ -280,18 +281,18 @@ When in water:
     def update_in_water():
         # Check if feet_pos in water voxel
         voxel = world.get_voxel(int(feet_pos.x), int(feet_pos.y), int(feet_pos.z))
-        
+
         if voxel == WATER:
             in_water = True
-            
+
             # Check if head in water (for oxygen drain)
             head_voxel = world.get_voxel(int(position.x), int(position.y), int(position.z))
             head_in_water = (head_voxel == WATER)
-            
+
             # Horizontal drag
             velocity.x *= PLAYER_WATER_DRAG_MULTIPLIER  # 0.5
             velocity.z *= PLAYER_WATER_DRAG_MULTIPLIER
-            
+
             # Vertical drag
             velocity.y *= (1.0 - PLAYER_VERTICAL_WATER_DRAG)  # Additional damping
         else:
@@ -326,7 +327,7 @@ Survival Stats Management
     def apply_fall_damage(delta_time):
         if not on_ground:
             highest_y = max(highest_y, feet_pos.y)
-        
+
         if on_ground and feet_pos.y < highest_y - 3.0:
             # Fall distance > 3 blocks
             fall_distance = highest_y - feet_pos.y
@@ -343,13 +344,13 @@ Survival Stats Management
 
     HUNGER_DRAIN_SPRINT = 0.002       # per millisecond
     HUNGER_DRAIN_WALK = 0.0005
-    
+
     def update_hunger(delta_time):
         if is_sprinting:
             hunger -= HUNGER_DRAIN_SPRINT * delta_time
         elif is_moving:
             hunger -= HUNGER_DRAIN_WALK * delta_time
-        
+
         hunger = clamp(hunger, 0, MAX_HUNGER)
 
 **Oxygen** (0-20)
@@ -361,7 +362,7 @@ Survival Stats Management
 
     OXYGEN_LOSE_TIMER = 1000    # ms, depletes 1 oxygen per second
     OXYGEN_GAIN_TIMER = 200     # ms, regenerates 1 oxygen per 200ms
-    
+
     def update_oxygen(delta_time):
         if head_in_water:
             oxygen_drain_time += delta_time
@@ -373,9 +374,9 @@ Survival Stats Management
             if oxygen_refill_time >= OXYGEN_GAIN_TIMER:
                 oxygen += 1
                 oxygen_refill_time = 0
-        
+
         oxygen = clamp(oxygen, 0, MAX_OXYGEN)
-        
+
         # Drowned at 0 oxygen
         if oxygen == 0:
             take_damage(1)  # 1 damage per frame
@@ -387,7 +388,7 @@ Survival Stats Management
     VOID_DEATH_Y = -64
     VOID_DAMAGE = 1
     VOID_DAMAGE_INTERVAL = 500  # ms
-    
+
     def apply_void_damage(delta_time):
         if feet_pos.y < VOID_DEATH_Y:
             void_damage_time += delta_time
@@ -404,7 +405,7 @@ Inventory Management
 
     inventory = [0] * 41  # 41 slots, 0 = empty, 1-255 = voxel ID
     inventory_counts = [0] * 41  # Stack sizes (1-64)
-    
+
     # Slots breakdown:
     # 0-8:   Hotbar
     # 9-35:  Main storage (27 slots)
@@ -422,7 +423,7 @@ Inventory Management
                 space = 64 - inventory_counts[slot]
                 inventory_counts[slot] += 1
                 return
-        
+
         # Add to empty slot (hotbar first)
         for slot in range(41):
             if inventory[slot] == 0:
@@ -455,21 +456,21 @@ Mining and Placing
         GRASS: 300,
         ...
     }
-    
+
     TOOL_MULTIPLIER = {
         BARE_HAND: 1.0,
         WOODEN_PICKAXE: 0.2,   # 5x faster than bare hand
         STONE_PICKAXE: 0.1,
         ...
     }
-    
+
     def mine_block(target_block_id):
         hardness = BLOCK_HARDNESS.get(target_block_id, 1000)
         held_item = get_held_item()
         multiplier = TOOL_MULTIPLIER.get(held_item, 1.0)
-        
+
         break_time = hardness * multiplier  # ms
-        
+
         # Player holds LClick; after break_time, remove block
         if held_click_duration >= break_time:
             world.remove_voxel(target_pos)
@@ -488,15 +489,15 @@ Mining and Placing
     def place_block():
         target_face_normal = raycast_result.normal
         target_pos = raycast_result.pos
-        
+
         # Compute placement position (adjacent to target)
         place_pos = target_pos + target_face_normal
-        
+
         # Check empty and no player collision
         if not world.is_solid(place_pos) and not aabb_intersect_voxel(place_pos):
             voxel_id = get_held_item()
             world.place_voxel(place_pos, voxel_id)
-            
+
             if game_mode == 'SURVIVAL':
                 consume_inventory(hotbar_index, 1)
 
@@ -510,7 +511,7 @@ View Bobbing and Hand Animation
     def update_view_bobbing():
         # Sine wave based on step_counter
         bob_y = math.sin(step_counter * BOB_FREQ) * BOB_AMPLITUDE
-        
+
         # Vertical head offset
         position.y += bob_y
 
@@ -523,7 +524,7 @@ View Bobbing and Hand Animation
             # Decrease swing over time
             held_item_swing -= delta_time / SWING_DURATION  # e.g., 0.2 seconds
             held_item_swing = max(held_item_swing, 0)
-        
+
         # During swing, rotate/bob held item in camera space
         swing_rotation = held_item_swing * 45  # degrees
         swing_bob = sin(held_item_swing * PI) * 0.1
@@ -535,10 +536,10 @@ Dynamic FOV During Sprint
 
     def update_fov():
         target_fov = BASE_FOV  # e.g., 70 degrees
-        
+
         if is_sprinting:
             target_fov = BASE_FOV + 10  # Expand FOV while running
-        
+
         # Smooth lerp
         current_fov = lerp(current_fov, target_fov, 0.1 * delta_time)
 
@@ -559,4 +560,3 @@ Integration with Game Loop
         apply_void_damage(delta_time)
         update_held_item_animation()
         update_view_bobbing()
-

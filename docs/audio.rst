@@ -1,5 +1,6 @@
 .. _audio:
 
+============
 Audio System
 ============
 
@@ -57,9 +58,3 @@ Debugging
 
 - If a sound fails to play, verify the file path is correct and the format is supported by your platform's SDL mixer backend.
 - The engine logs missing mappings to the console during startup (see main logs).
-
-See also
---------
-
-- `docs/main.rst` (initialization mentions the audio mixer)
-- `src/sounds.py` (implementation and mappings)

@@ -1,5 +1,6 @@
 .. _main-engine:
 
+================
 Core Engine Flow
 ================
 
@@ -159,16 +160,16 @@ The Main Game Loop (Pseudocode)
 
     def run(self):
         running = True
-        
+
         while running:
             # 1. FRAME TIMING
             frame_start_time = time.time()
             delta_time = self.clock.tick(60) / 1000.0  # Cap at 60 FPS
             delta_time = min(delta_time, 0.033)  # Clamp to 33ms max to prevent physics explosion
-            
+
             # 2. EVENT HANDLING
             running = self.handle_events()  # Returns False if quit requested
-            
+
             # 3. STATE-SPECIFIC UPDATES
             if self.game_state == 'IN_GAME':
                 self.update_in_game(delta_time)
@@ -177,10 +178,10 @@ The Main Game Loop (Pseudocode)
                 pass
             elif self.game_state == 'LOADING':
                 self.update_loading(delta_time)
-            
+
             # 4. RENDER
             self.render()
-            
+
             # 5. DISPLAY
             pygame.display.flip()
 
@@ -195,20 +196,20 @@ Detailed Event Handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False  # Exit main loop
-            
+
             # Global events (all states)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F11:
                     self.toggle_fullscreen()
                 elif event.key == pygame.K_F3:
                     self.show_debug_overlay = not self.show_debug_overlay
-            
+
             # State-specific events
             if self.game_state == 'MAIN_MENU':
                 self.main_menu.handle_event(event)
             elif self.game_state == 'IN_GAME':
                 self.player.handle_event(event)
-                
+
                 # Pause or inventory
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
@@ -216,7 +217,7 @@ Detailed Event Handling
                     elif event.key == pygame.K_e:
                         # Toggle inventory (layer on top of IN_GAME)
                         self.show_inventory = not self.show_inventory
-                
+
                 # Mining/placing
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:  # LClick
@@ -226,13 +227,13 @@ Detailed Event Handling
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
                         self.stop_mining()
-            
+
             elif self.game_state == 'PAUSED':
                 self.pause_menu.handle_event(event)
-            
+
             elif self.game_state == 'OPTIONS':
                 self.options_menu.handle_event(event)
-        
+
         return True  # Continue main loop
 
 Detailed Update Step (In-Game)
@@ -245,29 +246,29 @@ Detailed Update Step (In-Game)
     def update_in_game(self, delta_time):
         # 1. PLAYER UPDATE
         self.player.update(delta_time)
-        
+
         # 2. WORLD STREAMING
         player_chunk = self.world.get_chunk_containing(self.player.position)
         self.world.update_loaded_chunks(player_chunk, RENDER_DISTANCE)
-        
+
         # 3. QUEUE PROCESSING (budgeted per frame)
         # Pull from load_queue, build_queue, mesh_queue
         self.process_mesh_queue(limit=MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME)
         self.process_chunk_queue(limit=MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME)
-        
+
         # 4. VOXEL INTERACTIONS (mining/placing results)
         if self.mining_duration > 0:
             self.mining_duration += delta_time
             if self.mining_duration >= self.current_block_hardness:
                 self.voxel_handler.remove_voxel(self.target_block_pos)
                 self.mining_duration = 0
-        
+
         # 5. SCENE UPDATE
         self.scene.update(delta_time)
-        
+
         # 6. LIGHTING UPDATES (from block changes)
         # Already queued during voxel_handler calls
-        
+
         # 7. UI ANIMATION
         self.hud.update(delta_time)
         if self.show_inventory:
@@ -284,43 +285,43 @@ Detailed Render Step
         # 1. CLEAR FRAMEBUFFER
         self.ctx.clear(0.53, 0.81, 0.92)  # Sky blue
         self.ctx.clear_depth(1.0)
-        
+
         # 2. IN-GAME RENDERING (if applicable)
         if self.game_state == 'IN_GAME':
             self.ctx.enable(moderngl.DEPTH_TEST)
             self.scene.render(self.ctx, self.shader_program)
-            
+
             # 3. DISABLE DEPTH FOR UI
             self.ctx.disable(moderngl.DEPTH_TEST)
-            
+
             # 4. RENDER HUD OVERLAY
             self.hud.render(self.ctx, self.shader_program)
-            
+
             # 5. RENDER INVENTORY (if open)
             if self.show_inventory:
                 self.inventory_ui.render(self.ctx, self.shader_program)
-            
+
             # 6. RENDER DEBUG OVERLAY
             if self.show_debug_overlay:
                 self.debug_overlay.render(self.ctx, self.shader_program)
-        
+
         # 3. MENU RENDERING
         elif self.game_state == 'MAIN_MENU':
             self.ctx.disable(moderngl.DEPTH_TEST)
             self.main_menu.render(self.ctx, self.shader_program)
-        
+
         elif self.game_state == 'PAUSED':
             # Render world darkened in background
             self.ctx.enable(moderngl.DEPTH_TEST)
             self.scene.render(self.ctx, self.shader_program)
-            
+
             # Dim overlay
             self.ctx.disable(moderngl.DEPTH_TEST)
             render_dim_quad((0, 0), (2, 2), (0, 0, 0, 0.5))
-            
+
             # Pause menu on top
             self.pause_menu.render(self.ctx, self.shader_program)
-        
+
         elif self.game_state == 'LOADING':
             self.ctx.disable(moderngl.DEPTH_TEST)
             render_loading_screen(self.loading_progress)
@@ -338,7 +339,7 @@ Scene Rendering Pipeline
             self.camera,
             self.world.active_chunks
         )
-        
+
         # 2. PREPARE SHADER UNIFORMS
         shader_program.bind_matrices(
             projection=self.camera.projection_matrix,
@@ -353,34 +354,34 @@ Scene Rendering Pipeline
             u_texture_map=self.textures.texture_map,
             bg_color=(0.53, 0.81, 0.92)  # Sky color
         )
-        
+
         # 3. RENDER OPAQUE CHUNKS (depth write enabled)
         ctx.enable(moderngl.DEPTH_TEST)
         for chunk in visible_chunks:
             if chunk.mesh and not chunk.mesh.is_hidden_by_occlusion_query:
                 chunk.mesh.render()  # Render opaque faces
-        
+
         # 4. RENDER WATER (transparency, depth write disabled)
         ctx.enable(moderngl.BLEND)
         for chunk in visible_chunks:
             if chunk.mesh:
                 chunk.mesh.render_water()  # Render water faces only
         ctx.disable(moderngl.BLEND)
-        
+
         # 5. RENDER SKY
         self.sky.render(ctx, shader_program)
-        
+
         # 6. RENDER CLOUDS
         self.clouds.render(ctx, shader_program)
-        
+
         # 7. RENDER ITEMS (dropped entities)
         for item in self.world.items:
             item.render(ctx, shader_program)
-        
+
         # 8. RENDER VOXEL MARKER (target block outline)
         if self.voxel_marker.visible:
             self.voxel_marker.render(ctx, shader_program)
-        
+
         # 9. RENDER HELD ITEM (in camera view)
         self.held_item_mesh.render(ctx, shader_program)
 
@@ -395,50 +396,50 @@ World Session Initialization (LOADING state)
         # 1. CLEAR PREVIOUS WORLD
         if self.world:
             self.world.unload_all_chunks()  # Flush to DB
-        
+
         # 2. LOAD/CREATE WORLD
         self.world = World(world_name)
         self.world.load_metadata()  # Load seed, spawn point
-        
+
         # 3. CREATE SCENE
         self.scene = Scene(self.world)
-        
+
         # 4. LOAD PLAYER
         player_data = self.world.load_player_data()
         self.player = Player(self.world)
         self.player.feet_pos = glm.vec3(player_data['x'], player_data['y'], player_data['z'])
         self.player.inventory = player_data['inventory']
         self.player.health = player_data['health']
-        
+
         # 5. INITIALIZE VOXEL HANDLER
         self.voxel_handler = VoxelHandler(self.world)
-        
+
         # 6. CHUNK PRELOADING (blocking loop)
         self.game_state = 'LOADING'
         initial_chunks_needed = (RENDER_DISTANCE * 2) ** 2
         chunks_loaded = 0
-        
+
         while chunks_loaded < initial_chunks_needed:
             # Request chunk loads
             for chunk_coord in self.world.get_chunks_near_player(self.player, RENDER_DISTANCE):
                 if not self.world.chunk_exists(chunk_coord) and not self.world.loading.contains(chunk_coord):
                     self.world.request_chunk_load(chunk_coord)
-            
+
             # Process queue (blocking)
             self.process_mesh_queue(limit=64)  # Load aggressively during init
             self.process_chunk_queue(limit=10)
-            
+
             chunks_loaded = len(self.world.active_chunks)
             loading_percent = int(100 * chunks_loaded / initial_chunks_needed)
-            
+
             # Render loading screen
             self.render_loading_screen(loading_percent)
             pygame.display.flip()
-        
+
         # 7. SAFETY FLUSH (clear buffered inputs)
         pygame.event.clear()
         pygame.mouse.get_rel()  # Consume any accumulated mouse movement
-        
+
         # 8. TRANSITION TO GAMEPLAY
         self.game_state = 'IN_GAME'
         self.player_ready = True
@@ -452,7 +453,7 @@ Shutdown and Cleanup
 
     def quit_game(self):
         print("Saving world...")
-        
+
         # 1. SAVE PLAYER STATE
         if self.player:
             player_data = {
@@ -468,25 +469,25 @@ Shutdown and Cleanup
                 'inventory_counts': self.player.inventory_counts,
             }
             self.world.save_player_data(player_data)
-        
+
         # 2. UNLOAD ALL CHUNKS (saves to DB)
         if self.world:
             self.world.unload_all_chunks()
-        
+
         # 3. CLOSE DATABASE
         if hasattr(self, 'db'):
             self.db.close()
-        
+
         # 4. RELEASE GPU RESOURCES
         if hasattr(self, 'vbo_pool'):
             for vbo in self.vbo_pool:
                 vbo.release()
-        
+
         # 5. CLEANUP AUDIO
         if hasattr(self, 'sounds'):
             pygame.mixer.stop()
-        
+
         # 6. CLOSE PYGAME
         pygame.quit()
-        
+
         print("World saved. Goodbye!")

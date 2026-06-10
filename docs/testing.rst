@@ -1,5 +1,6 @@
 .. _testing:
 
+=======
 Testing
 =======
 
@@ -10,30 +11,30 @@ Quickstart
 
 - Create and activate a virtual environment:
 
-  ```powershell
+  .. code-block:: powershell
+
   python -m venv .venv
   .\.venv\Scripts\Activate.ps1   # PowerShell (Windows)
   source .venv/bin/activate        # macOS / Linux
-  ```
 
 - Install test dependencies:
 
-  ```bash
+  .. code-block:: bash
+
   pip install -r requirements-dev.txt
   pip install -r requirements.txt
-  ```
 
 - Run the full test suite:
 
-  ```bash
+  .. code-block:: bash
+
   pytest -q
-  ```
 
 - Run a single test file:
 
-  ```bash
+  .. code-block:: bash
+
   pytest -q tests/test_engine.py
-  ```
 
 Useful options
 --------------
@@ -54,4 +55,3 @@ Notes
 - Run tests from the repository root so imports like `from settings import ...` work correctly.
 - If tests fail due to missing native extensions, ensure the development environment has required build tools and that `requirements-dev.txt` is installed.
 - For profiling, use `pytest --durations=10` or Python profilers directly; profiling guidance belongs in a separate section when needed.
-

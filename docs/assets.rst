@@ -1,7 +1,8 @@
 .. _assets:
 
+================================
 Assets (Textures, Models, Icons)
-=================================
+================================
 
 This guide explains the repository asset layout, texture atlas/array pipeline, model conventions, and recommended formats and sizes for artists and tools.
 
@@ -53,10 +54,3 @@ Versioning and artist workflow
 
 - Keep source PSD/EXR files (layered) outside `assets/` in an artist repo; commit generated atlases/arrays only when necessary.
 - Document texture IDs and changes in a simple manifest (e.g., `assets/textures/README.md`) for consistency between artists and engine.
-
-See also
---------
-
-- `docs/rendering.rst` — how the texture array is sampled in shaders.
-- `src/textures.py` — loader and texture map implementation.
-- `create_texture_array.py` — helper script used to build texture arrays.
