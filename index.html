@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to Pyrite’s Engine Documentation! &mdash; Pyrite 1.0.0 documentation</title>
+  <title>Introduction &mdash; Pyrite 1.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -43,7 +43,7 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Explanation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
@@ -75,11 +75,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture and Rendering</a></li>
-<li class="toctree-l1"><a class="reference internal" href="architecture.html#engine-architecture">Engine Architecture</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
@@ -98,7 +94,7 @@
 <li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System:</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
@@ -123,9 +119,6 @@
 <li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
-<ul>
 <li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
@@ -137,8 +130,6 @@
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#water-faces-handling">Water Faces Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="meshes.html#custom-mesh-variants">Custom Mesh Variants</a></li>
-<li class="toctree-l2"><a class="reference internal" href="meshes.html#replication-guide">Replication Guide</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
@@ -207,7 +198,6 @@
 <li class="toctree-l2"><a class="reference internal" href="assets.html#icons-ui-images">Icons &amp; UI images</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#see-also">See also</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="audio.html">Audio System</a><ul>
@@ -219,22 +209,8 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#api-usage">API usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#see-also">See also</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
-</ul>
-</li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
-<ul>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
@@ -244,14 +220,8 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling &amp; Performance Diagnostics</a><ul>
@@ -265,6 +235,9 @@
 <li class="toctree-l2"><a class="reference internal" href="profiling.html#see-also">See also</a></li>
 </ul>
 </li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="api/modules.html">API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/camera.html">camera</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/camera.html#camera.Camera"><code class="docutils literal notranslate"><span class="pre">Camera</span></code></a><ul>
@@ -565,7 +538,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Welcome to Pyrite’s Engine Documentation!</li>
+      <li class="breadcrumb-item active">Introduction</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -575,13 +548,47 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="welcome-to-pyrite-s-engine-documentation">
-<h1>Welcome to Pyrite’s Engine Documentation!<a class="headerlink" href="#welcome-to-pyrite-s-engine-documentation" title="Link to this heading"></a></h1>
-<p>Pyrite is a highly-optimized, procedural 3D Voxel Engine written entirely in Python.</p>
-<p>Unlike standard Python projects, Pyrite heavily utilizes Just-In-Time (JIT) LLVM compilation via Numba to bypass the Global Interpreter Lock (GIL) and achieve near C++ performance.</p>
-<p>This documentation breaks down the core systems of the engine, explaining how terrain is generated, how light propagates, and how millions of voxels are rendered smoothly at 60+ FPS.</p>
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h1>
+<p>Welcome to Pyrite’s Documentation!</p>
+<p>Pyrite is a highly-optimized, procedural 3D Voxel Engine written entirely in Python.
+This section provides a high-level overview of the engine, its underlying technologies, and its core systems.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Pyrite is built to bypass standard Python limitations, achieving near C++ speeds for complex tasks such as chunk generation, vectorized noise math, and frustum culling. The engine relies heavily on concurrency and Just-In-Time (JIT) compilation to maintain a stutter-free experience while managing massive amounts of 3D data.</p>
+</section>
+<section id="technologies">
+<h2>Technologies<a class="headerlink" href="#technologies" title="Link to this heading"></a></h2>
+<p>The engine leverages several key technologies to deliver its performance and visual fidelity:</p>
+<ul class="simple">
+<li><p><strong>Python:</strong> The core language used for all game logic and engine architecture.</p></li>
+<li><p><strong>Numba:</strong> A JIT compiler that translates Python functions to optimized machine code at runtime, utilizing LLVM. It is used extensively to bypass the Global Interpreter Lock (GIL) and vectorize math operations.</p></li>
+<li><p><strong>ModernGL:</strong> A high-performance Python binding for OpenGL 3.3+, responsible for hardware occlusion queries, custom shaders, and all GPU rendering pipelines.</p></li>
+<li><p><strong>PyGLM:</strong> A fast OpenGL Mathematics (GLM) library for matrix and vector operations.</p></li>
+<li><p><strong>SQLite:</strong> Used for persistent world storage with Write-Ahead Logging (WAL) for async-like high-performance disk writing.</p></li>
+<li><p><strong>Pygame:</strong> Handles window creation, input events, and audio playback.</p></li>
+</ul>
+</section>
+<section id="systems-and-sub-systems">
+<h2>Systems and Sub-systems<a class="headerlink" href="#systems-and-sub-systems" title="Link to this heading"></a></h2>
+<p>Pyrite is composed of several interdependent systems, each handling specific aspects of the engine’s functionality:</p>
+<ul class="simple">
+<li><p><strong>Engine Core:</strong> The foundational layer that initializes the application window, manages the game loop, and orchestrates the interaction between all other systems. It handles state transitions, configuration loading, and overall execution flow.</p></li>
+<li><p><strong>World Management:</strong> Responsible for the dynamic streaming of terrain chunks. This system monitors player movement and coordinates the loading of new chunks and the unloading of distant ones to manage memory footprint effectively.</p></li>
+<li><p><strong>Procedural Generation:</strong> Utilizes 3D Simplex noise to deterministically generate infinite terrain based on a seed. This system calculates heightmaps, biome structures, caves, and natural features like trees before any blocks are rendered.</p></li>
+<li><p><strong>Lighting Engine:</strong> A highly optimized Breadth-First Search (BFS) volumetric lighting system. It calculates sunlight propagation and block-light emissions (like torches), managing light spill across chunk boundaries using 64-bit integer bit-packing for speed.</p></li>
+<li><p><strong>Rendering Pipeline:</strong> Manages the transformation of voxel data into visual geometry. It employs Greedy Meshing to drastically reduce the number of polygons and GPU draw calls. Vectorized Frustum Culling and Hardware Occlusion Queries ensure that only visible terrain is drawn to the screen.</p></li>
+<li><p><strong>Multithreading and Concurrency:</strong> A ThreadPoolExecutor-based system that offloads heavy computations—such as terrain generation, lighting calculations, and database reads—to background CPU cores, keeping the main render thread smooth and responsive.</p></li>
+<li><p><strong>Storage and Persistence:</strong> Manages the saving and loading of the voxel world, player inventory, and metadata. By caching chunk data, lightmaps, and entities in an SQLite database, it skips expensive recalculations during subsequent load operations.</p></li>
+<li><p><strong>Survival and Physics:</strong> Handles the rules of the game world, including player health, hunger, oxygen, and inventory mechanics. It also manages entity physics, such as gravity, collisions, and the dropping of mined blocks as 3D items.</p></li>
+</ul>
+</section>
+</section>
+<section id="explanation">
+<h1>Explanation<a class="headerlink" href="#explanation" title="Link to this heading"></a></h1>
+<p>The following sections delve into how Pyrite achieves its high performance and manages its complex systems under the hood.</p>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Explanation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
@@ -613,13 +620,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
 </ul>
 </li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture and Rendering</a></li>
-<li class="toctree-l1"><a class="reference internal" href="architecture.html#engine-architecture">Engine Architecture</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
@@ -638,7 +639,7 @@
 <li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System:</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
@@ -663,11 +664,6 @@
 <li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
 </ul>
 </li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
-<ul>
 <li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
@@ -679,8 +675,6 @@
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#water-faces-handling">Water Faces Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="meshes.html#custom-mesh-variants">Custom Mesh Variants</a></li>
-<li class="toctree-l2"><a class="reference internal" href="meshes.html#replication-guide">Replication Guide</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
@@ -749,7 +743,6 @@
 <li class="toctree-l2"><a class="reference internal" href="assets.html#icons-ui-images">Icons &amp; UI images</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#see-also">See also</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="audio.html">Audio System</a><ul>
@@ -761,26 +754,8 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#api-usage">API usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#see-also">See also</a></li>
 </ul>
 </li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
-</ul>
-</li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
-<ul>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
@@ -790,14 +765,8 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling &amp; Performance Diagnostics</a><ul>
@@ -811,6 +780,15 @@
 <li class="toctree-l2"><a class="reference internal" href="profiling.html#see-also">See also</a></li>
 </ul>
 </li>
+</ul>
+</div>
+</section>
+<section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<p>The API documentation is automatically generated from the source code docstrings.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="api/modules.html">API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/camera.html">camera</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/frustum.html">frustum</a></li>
@@ -834,9 +812,6 @@
 </li>
 </ul>
 </div>
-<ul class="simple">
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
-</ul>
 </section>
 
 

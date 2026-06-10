@@ -1,7 +1,8 @@
 .. _setup:
 
+============================
 Installation and Setup Guide
-=============================
+============================
 
 This guide details how to set up Pyrite from scratch, including all dependencies, environment configuration, and build processes.
 
@@ -59,23 +60,23 @@ Installation Steps
    .. code-block:: bash
 
        python -m venv venv
-       
+
    Activate:
-   
+
    - **Windows (PowerShell):**
-   
+
    .. code-block:: powershell
 
        .\venv\Scripts\Activate.ps1
-   
+
    - **Windows (CMD):**
-   
+
    .. code-block:: batch
 
        venv\Scripts\activate.bat
-   
+
    - **macOS/Linux (Bash):**
-   
+
    .. code-block:: bash
 
        source venv/bin/activate
@@ -181,7 +182,7 @@ Compile to a standalone ``.exe`` (Windows) or app bundle:
            cipher=None,
            noarchive=False,
        )
-       
+
        exe = EXE(
            pyz,
            a.scripts,

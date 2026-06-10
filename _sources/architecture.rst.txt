@@ -1,6 +1,4 @@
-Architecture and Rendering
-==========================
-
+===================
 Engine Architecture
 ===================
 
@@ -45,7 +43,7 @@ Because Python's standard file handling can be slow for millions of blocks, Pyri
 
 The database caches three primary states:
 
-1. **The chunks Table:** 
+1. **The chunks Table:**
    Stores the absolute `x, y, z` chunk coordinates as the Primary Key. The chunk's 1D `uint8` Numpy arrays for Voxels and Lightmaps are compressed using `zlib.compress()` and stored as raw `BLOB` data.
 2. **The player_data Table:**
    Stores a serialized JSON string containing the player's exact `[x, y, z]` coordinates, camera angles (Yaw, Pitch), survival stats (Health, Hunger, Oxygen), and the exact state of the 41-slot inventory arrays.
@@ -54,7 +52,7 @@ The database caches three primary states:
 
 Memory Management (1D vs 3D Arrays)
 -----------------------------------
-Instead of storing chunks as slow, nested Python lists (e.g., `chunk[x][y][z]`), Pyrite flattens all volumetric data into 1D Numpy arrays. 
+Instead of storing chunks as slow, nested Python lists (e.g., `chunk[x][y][z]`), Pyrite flattens all volumetric data into 1D Numpy arrays.
 
 A block's specific index in the array is calculated using:
 

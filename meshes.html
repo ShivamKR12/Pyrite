@@ -44,8 +44,8 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
-<ul>
+              <p class="caption" role="heading"><span class="caption-text">Explanation:</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
@@ -76,11 +76,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture and Rendering</a></li>
-<li class="toctree-l1"><a class="reference internal" href="architecture.html#engine-architecture">Engine Architecture</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
@@ -99,7 +95,7 @@
 <li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System:</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
@@ -124,9 +120,6 @@
 <li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
-<ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Mesh Systems and Vertex Packing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
@@ -138,8 +131,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#water-faces-handling">Water Faces Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#data-flow-example">Data Flow Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#custom-mesh-variants">Custom Mesh Variants</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#replication-guide">Replication Guide</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
@@ -208,7 +199,6 @@
 <li class="toctree-l2"><a class="reference internal" href="assets.html#icons-ui-images">Icons &amp; UI images</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#see-also">See also</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="audio.html">Audio System</a><ul>
@@ -220,22 +210,8 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#api-usage">API usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#see-also">See also</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
-</ul>
-</li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
-<ul>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
@@ -245,14 +221,8 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling &amp; Performance Diagnostics</a><ul>
@@ -266,6 +236,9 @@
 <li class="toctree-l2"><a class="reference internal" href="profiling.html#see-also">See also</a></li>
 </ul>
 </li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="api/modules.html">API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/camera.html">camera</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/camera.html#camera.Camera"><code class="docutils literal notranslate"><span class="pre">Camera</span></code></a><ul>
@@ -593,48 +566,121 @@
 </section>
 <section id="mesh-classes-hierarchy">
 <h2>Mesh Classes Hierarchy<a class="headerlink" href="#mesh-classes-hierarchy" title="Link to this heading"></a></h2>
-<p><strong>BaseMesh</strong> (Core Abstract Class)</p>
-<p>Base class for all mesh types. Defines the interface:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>class BaseMesh:
-    __init__(self, ctx, program):
-        ctx: ModernGL context
-        program: Shader program to bind during render
-        self.vao: Vertex Array Object (initially None)
-        self.vbo: Vertex Buffer Object (initially None)
-        self.vertex_count: int
-        self.index_count: int
-        self.render_mode: GLenum (GL_TRIANGLES default)
-
-    render():
-        # Bind program, VAO, draw (implementation varies)
-
-    render_instanced():
-        # Render multiple instances
-
-    destroy():
-        # Release GPU resources
+<p>Pyrite implements 6 distinct mesh classes to handle rendering. Each extends a foundational base class and handles specific GPU data formatting.</p>
+<p><strong>1. BaseMesh (Core Abstract Class)</strong></p>
+<p>Handles standardizing the Vertex Array Objects (VAOs) and Vertex Buffer Objects (VBOs) through the ModernGL pipeline.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
 </pre></div>
 </div>
-<p><strong>ChunkMesh</strong> (Per-Chunk Geometry)</p>
-<p>Represents a single 48x48x48 chunk. Created during chunk building.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>class ChunkMesh(BaseMesh):
-    __init__(self, chunk_voxels, chunk_lightmap, chunk_pos, ctx, program, world_data):
-        # Greedy mesh the chunk and store vertex data
-        self.chunk_pos: (int, int, int)  # Chunk coordinates in world
-        self.vertex_data: np.ndarray (uint32, packed vertices)
-        self.light_data: np.ndarray (uint32, packed light)
-        self.opaque_count, self.water_count: Face counts
-
-    render():
-        # Render opaque faces, then water faces with separate passes
-</pre></div>
-</div>
-<p><strong>CloudMesh, CubeMesh, ItemMesh, ObjMesh</strong> (Specialized)</p>
 <ul class="simple">
-<li><p><strong>CloudMesh:</strong> Fixed 2D procedural clouds (sky)</p></li>
-<li><p><strong>CubeMesh:</strong> Renders static cubes (UI, debugging)</p></li>
-<li><p><strong>ItemMesh:</strong> Item entities dropped in world</p></li>
-<li><p><strong>ObjMesh:</strong> Wavefront .obj models (trees, items)</p></li>
+<li><p><strong>Format Mapping:</strong> Every mesh requires a format string telling ModernGL how to read the bytes (e.g., <code class="docutils literal notranslate"><span class="pre">'3f</span> <span class="pre">3f'</span></code> for two vec3s) and the exact variable names used in the GLSL shader (e.g., <code class="docutils literal notranslate"><span class="pre">'in_position',</span> <span class="pre">'in_color'</span></code>).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vbo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">vertex_data</span><span class="p">)</span>
+<span class="n">vao</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">vertex_array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">,</span> <span class="p">[(</span><span class="n">vbo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">)])</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>GPU Uploading:</strong> <code class="docutils literal notranslate"><span class="pre">get_vao()</span></code> takes the raw Numpy array generated by subclasses, pushes it to the GPU as a VBO, and binds it to a VAO mapped to the specific shader program.</p></li>
+</ul>
+<p><strong>2. ChunkMesh (Per-Chunk Geometry)</strong></p>
+<p>Manages the dense, greedy-meshed geometry for the voxel world.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;1u4 1u4&#39;</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;packed_data&#39;</span><span class="p">,</span> <span class="s1">&#39;light_data&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Data Payload:</strong> <code class="docutils literal notranslate"><span class="pre">1u4</span></code> means “one unsigned 4-byte integer” (uint32). The chunk mesh passes exactly two 32-bit integers per vertex to the shader: the bit-packed position/ID payload, and the packed sunlight/blocklight payload.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pool</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="n">best_i</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">vbo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vao</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">vbo</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vertex_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>VBO Pooling (Crucial Optimization):</strong> Instead of destroying and allocating new GPU memory every time a player moves, Pyrite searches the <code class="docutils literal notranslate"><span class="pre">world.vbo_pool</span></code> for an unused buffer that is large enough to fit the new chunk data. It re-writes the data over the old memory, completely eliminating VRAM leaks!</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">reserve_size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">byte_size</span><span class="p">))</span> <span class="k">if</span> <span class="n">byte_size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">vbo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">reserve</span><span class="o">=</span><span class="n">reserve_size</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Power-of-2 Allocation:</strong> If a new VBO must be created, Pyrite mathematically rounds the requested byte size up to the nearest power of 2 (e.g., 64KB, 128KB). This standardizes buffer sizes, making them highly reusable for future chunks.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">vertices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">water_count</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opaque_count</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Multi-Pass Rendering:</strong> Because opaque and transparent faces are packed into the <em>same</em> VBO buffer, <code class="docutils literal notranslate"><span class="pre">render_water()</span></code> tells the GPU to start drawing water faces exactly where the opaque vertices end.</p></li>
+</ul>
+<p><strong>3. CloudMesh (Procedural Clouds)</strong></p>
+<p>Generates the scrolling 3D cloud layer.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;3u2&#39;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>16-bit Precision:</strong> <code class="docutils literal notranslate"><span class="pre">3u2</span></code> means “three unsigned 2-byte integers” (uint16). Clouds only need basic X, Y, Z coordinates. Using 16-bit integers instead of 32-bit floats cuts cloud VRAM usage perfectly in half.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">x</span> <span class="o">+</span> <span class="n">x_count</span> <span class="o">&lt;</span> <span class="n">width</span> <span class="ow">and</span> <span class="n">cloud_data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="ow">and</span> <span class="n">idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+    <span class="n">x_count</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>2D Greedy Meshing:</strong> The clouds are generated as a flat 2D density map via Simplex Noise. The mesh builder scans along the X-axis, grouping adjacent cloud blocks into a single strip. It then extends that strip along the Z-axis to form a massive rectangular polygon, drastically reducing cloud draw calls.</p></li>
+</ul>
+<p><strong>4. CubeMesh (Voxel Marker)</strong></p>
+<p>Constructs a basic 1x1x1 cube used to highlight targeted blocks.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">vertices</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">triangle</span> <span class="ow">in</span> <span class="n">indices</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">triangle</span><span class="p">]</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Flattening:</strong> ModernGL requires flat 1D arrays. This list comprehension takes a hardcoded list of unique corner vertices and a list of triangle index pairs, and flattens them into a single contiguous array.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">combined_data</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float16</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">tex_coord_data</span><span class="p">,</span> <span class="n">vertex_data</span><span class="p">])</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Interleaving Data:</strong> <code class="docutils literal notranslate"><span class="pre">np.hstack</span></code> horizontally stacks the UV coordinates array and the 3D position array together so they interleave perfectly for the GPU.</p></li>
+</ul>
+<p><strong>5. ItemMesh (Dropped Items)</strong></p>
+<p>Builds standard cubes for dropped items with explicitly mapped face IDs.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;3f 2f 1f&#39;</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;in_position&#39;</span><span class="p">,</span> <span class="s1">&#39;in_tex_coord&#39;</span><span class="p">,</span> <span class="s1">&#39;in_face_id&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Standard Precision:</strong> Dropped items use standard 32-bit floats for position (<code class="docutils literal notranslate"><span class="pre">3f</span></code>), texture UVs (<code class="docutils literal notranslate"><span class="pre">2f</span></code>), and the face ID (<code class="docutils literal notranslate"><span class="pre">1f</span></code>).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># format: pos(3), uv(2), face_id(1)</span>
+<span class="c1"># Top: 0, 1, 1, 0, 1, 0...</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Explicit Mapping:</strong> The vertex data is entirely hardcoded. By explicitly tagging each vertex with a <code class="docutils literal notranslate"><span class="pre">face_id</span></code> (0 to 5), the item shader can dynamically calculate the correct texture layer and shading multipliers without needing greedy meshing algorithms.</p></li>
+</ul>
+<p><strong>6. ObjMesh (Wavefront Models)</strong></p>
+<p>Parses standard <code class="docutils literal notranslate"><span class="pre">.obj</span></code> files to render custom 3D tools in-hand.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;newmtl&#39;</span><span class="p">):</span>
+    <span class="n">current_material</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+<span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;Kd&#39;</span><span class="p">):</span>
+    <span class="n">materials</span><span class="p">[</span><span class="n">current_material</span><span class="p">][</span><span class="s1">&#39;Kd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]]</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Material Parsing:</strong> Parses the companion <code class="docutils literal notranslate"><span class="pre">.mtl</span></code> file. <code class="docutils literal notranslate"><span class="pre">Kd</span></code> represents the diffuse color vector. Pyrite extracts these RGB values to color the 3D model vertices naturally without requiring a UV texture map.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="p">(</span><span class="n">face_vertices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">face_vertices</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">face_vertices</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]):</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>N-Gon Triangulation:</strong> Standard OBJ files often contain Quads (4 vertices) or N-gons. Since OpenGL only draws triangles, this loop iterates through the polygon and connects the first vertex to every subsequent pair of vertices (Triangle Fan), safely triangulating complex faces on the fly.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">center_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x_coords</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x_coords</span><span class="p">))</span> <span class="o">/</span> <span class="mf">2.0</span>
+<span class="n">vd_array</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">11</span><span class="p">]</span> <span class="o">-=</span> <span class="n">center_x</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Auto-Centering:</strong> If a 3D model was exported from Blender with its origin point far away from the geometry, rotating it in-game would cause it to swing in massive, chaotic orbits. Pyrite finds the mathematical center of the bounding box and subtracts it from every vertex (using NumPy slicing <code class="docutils literal notranslate"><span class="pre">[0::11]</span></code> to hit just the X coordinates), perfectly centering the model at <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">0)</span></code>.</p></li>
 </ul>
 </section>
 <section id="vertex-packing-32-bit-format">
@@ -651,16 +697,19 @@ Bit  0     (1 bit):  Flip ID (0 or 1, diagonal flip flag)
 </pre></div>
 </div>
 <p><strong>Total:</strong> 32 bits = 4 bytes per vertex (vs. 16 bytes for traditional (x, y, z, id, face, ao, flip, light))</p>
-<p><strong>Packing Formula:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">packed_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">26</span> \
-            <span class="o">|</span> <span class="p">(</span><span class="n">y</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">20</span> \
-            <span class="o">|</span> <span class="p">(</span><span class="n">z</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">14</span> \
-            <span class="o">|</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span> \
-            <span class="o">|</span> <span class="p">(</span><span class="n">face_id</span> <span class="o">&amp;</span> <span class="mh">0x7</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span> \
-            <span class="o">|</span> <span class="p">(</span><span class="n">ao_id</span> <span class="o">&amp;</span> <span class="mh">0x3</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span> \
-            <span class="o">|</span> <span class="p">(</span><span class="n">flip_id</span> <span class="o">&amp;</span> <span class="mh">0x1</span><span class="p">)</span>
+<p><strong>Packing Formula Breakdown:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">x</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">26</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Coordinate Masking:</strong> The <code class="docutils literal notranslate"><span class="pre">&amp;</span> <span class="pre">0x3F</span></code> is a bitwise AND mask (63 in decimal) that strictly bounds the value to 6 bits (0-63). The <code class="docutils literal notranslate"><span class="pre">&lt;&lt;</span> <span class="pre">26</span></code> shifts these 6 bits all the way to the far left of the 32-bit integer.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">|</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Attribute Merging:</strong> The <code class="docutils literal notranslate"><span class="pre">|</span></code> (bitwise OR) securely merges this new value into the existing <code class="docutils literal notranslate"><span class="pre">packed_data</span></code> integer without overwriting the previously shifted coordinate bits. <code class="docutils literal notranslate"><span class="pre">0xFF</span></code> masks exactly 8 bits for the voxel ID (0-255).</p></li>
+</ul>
 <p><strong>Unpacking (in Vertex Shader):</strong></p>
 <div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="n">unpack</span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="n">packed_data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">packed_data</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">26</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3F</span><span class="p">);</span>
@@ -769,56 +818,44 @@ Bits 3-0 (4 bits): Blocklight (0-15)
 <p>Light values are interpolated to vertices for smooth shading. Each vertex is shared by up to 8 blocks; we sample light from the 4 (on a plane) or 8 blocks surrounding that vertex.</p>
 <p><strong>For X-Plane Face (perpendicular normal = +X):</strong></p>
 <p>Four corners of the quad correspond to YZ positions. For each corner, sample from 4 blocks:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_vertex_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">):</span>
-    <span class="c1"># plane=&#39;X&#39; means YZ quad; sample from 4 blocks around corner</span>
-
-    <span class="k">if</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;X&#39;</span><span class="p">:</span>
-        <span class="c1"># Corner at (x, y, z) in YZ space samples:</span>
-        <span class="n">l1</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>           <span class="c1"># Lower-left</span>
-        <span class="n">l2</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>         <span class="c1"># Upper-left</span>
-        <span class="n">l3</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>       <span class="c1"># Upper-right</span>
-        <span class="n">l4</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>         <span class="c1"># Lower-right</span>
-    <span class="k">elif</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;Y&#39;</span><span class="p">:</span>
-        <span class="c1"># Similar for XZ plane</span>
-        <span class="n">l1</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
-        <span class="n">l2</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
-        <span class="n">l3</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">l4</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="c1"># ... etc for Z plane</span>
-
-    <span class="c1"># Average light (simple mean, or weighted by AO)</span>
-    <span class="n">avg_sun</span> <span class="o">=</span> <span class="p">(</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">l4</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span>
-    <span class="n">avg_block</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l4</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">))</span> <span class="o">/</span> <span class="mi">4</span>
-
-    <span class="k">return</span> <span class="p">(</span><span class="n">avg_sun</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">avg_block</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">l1</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>           <span class="c1"># Lower-left</span>
+<span class="n">l2</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>         <span class="c1"># Upper-left</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Corner Sampling:</strong> A vertex is shared by up to 4 faces on a 2D plane. We retrieve the raw lighting integer for all 4 surrounding blocks.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">avg_sun</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l4</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">))</span> <span class="o">/</span> <span class="mi">4</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Extraction and Averaging:</strong> We bitshift right by 4 (<code class="docutils literal notranslate"><span class="pre">&gt;&gt;</span> <span class="pre">4</span></code>) to extract just the sunlight values (which occupy the upper 4 bits of the light byte) from the 4 surrounding blocks, then sum and divide by 4 to get a smooth average.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_sun</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="nb">int</span><span class="p">(</span><span class="n">avg_block</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Repacking:</strong> We shift the averaged sunlight back up by 4 bits (<code class="docutils literal notranslate"><span class="pre">&lt;&lt;</span> <span class="pre">4</span></code>) and use a bitwise OR <code class="docutils literal notranslate"><span class="pre">|</span></code> to securely pack it together with the averaged blocklight into a single, smoothed byte.</p></li>
+</ul>
 </section>
 <section id="ambient-occlusion-ao-calculation">
 <h2>Ambient Occlusion (AO) Calculation<a class="headerlink" href="#ambient-occlusion-ao-calculation" title="Link to this heading"></a></h2>
 <p>AO darkens corners where multiple solid blocks converge, simulating soft shadows.</p>
-<p><strong>Corner Occlusion (for X-plane, Y-Z corner):</strong></p>
+<p><strong>Corner Occlusion Breakdown:</strong></p>
 <p>For each of the 4 corners of a quad, check 2x2 adjacent blocks:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_ao</span><span class="p">(</span><span class="n">corner_y</span><span class="p">,</span> <span class="n">corner_z</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">):</span>
-    <span class="c1"># plane=&#39;X&#39;: Check blocks in YZ plane around corner</span>
-
-    <span class="c1"># Top-left, Top-right, Bottom-left, Bottom-right (relative to corner)</span>
-    <span class="n">ao_count</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">corner_z</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
-        <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="p">,</span> <span class="n">corner_z</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
-        <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">corner_z</span><span class="p">)):</span>
-        <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="p">,</span> <span class="n">corner_z</span><span class="p">)):</span>
-        <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
-
-    <span class="c1"># ao_count ranges 0-4, but we store only 0-3</span>
-    <span class="c1"># 0 = bright, 1 = slightly dark, 2 = moderately dark, 3 = very dark</span>
-    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">ao_count</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_at</span><span class="p">(</span><span class="n">corner_y</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">corner_z</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
+    <span class="n">ao_count</span> <span class="o">+=</span> <span class="mi">1</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Neighbor Checking:</strong> For a specific vertex corner, we check the 2x2 grid of neighboring blocks. If a neighbor is solid, it physically blocks light, so we increment the <code class="docutils literal notranslate"><span class="pre">ao_count</span></code> penalty.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">ao_count</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Overflow Prevention:</strong> The vertex format only has 2 bits allocated for AO, meaning it can only store values 0, 1, 2, or 3. Even though 4 neighbors could theoretically be solid, we use <code class="docutils literal notranslate"><span class="pre">min()</span></code> to clamp the count. This physically prevents the value from exceeding 3, guaranteeing we don’t accidentally overwrite neighboring bits during the bit-packing phase!</p></li>
+</ul>
 <p><strong>Transparency Check:</strong></p>
 <p>Transparent blocks (AIR, WATER, GLASS, LEAVES) do not cast AO shadows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
@@ -839,23 +876,19 @@ Bits 3-0 (4 bits): Blocklight (0-15)
 <section id="flip-detection-diagonal-flip-for-lighting">
 <h2>Flip Detection (Diagonal Flip for Lighting)<a class="headerlink" href="#flip-detection-diagonal-flip-for-lighting" title="Link to this heading"></a></h2>
 <p>When lighting is uneven across a quad, flipping the diagonal can improve visual appearance. This is determined by comparing lighting sums across the two diagonals.</p>
-<p><strong>Algorithm:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">should_flip_diagonal</span><span class="p">(</span><span class="n">l0</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">l3</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">ao3</span><span class="p">):</span>
-    <span class="c1"># l0, l1, l2, l3 = light at 4 corners (packed uint32)</span>
-    <span class="c1"># ao0, ao1, ao2, ao3 = AO at 4 corners</span>
-
-    <span class="c1"># Extract sun and block light</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">extract_light</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">l</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span>  <span class="c1"># sun + block (simplified)</span>
-
-    <span class="c1"># Diagonal 1: (0,2) and Diagonal 2: (1,3)</span>
-    <span class="n">diag1_brightness</span> <span class="o">=</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">+</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ao0</span> <span class="o">+</span> <span class="n">ao2</span><span class="p">)</span>
-    <span class="n">diag2_brightness</span> <span class="o">=</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span> <span class="o">+</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ao1</span> <span class="o">+</span> <span class="n">ao3</span><span class="p">)</span>
-
-    <span class="c1"># Flip if diagonal 1 is brighter (optimization: break ties toward standard diagonal)</span>
-    <span class="k">return</span> <span class="n">diag1_brightness</span> <span class="o">&gt;</span> <span class="n">diag2_brightness</span>
+<p><strong>Algorithm Breakdown:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">diag1_brightness</span> <span class="o">=</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">+</span> <span class="n">extract_light</span><span class="p">(</span><span class="n">l2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ao0</span> <span class="o">+</span> <span class="n">ao2</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Diagonal Summation:</strong> To find the smoothest lighting gradient across a square face, we calculate the combined brightness (Sunlight + Blocklight + AO) of the two opposite corners (Diagonal 1) and compare it against the remaining two opposite corners (Diagonal 2).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="n">diag1_brightness</span> <span class="o">&gt;</span> <span class="n">diag2_brightness</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Triangulation Flipping:</strong> We compare the two diagonals. If Diagonal 1 is brighter, we return <code class="docutils literal notranslate"><span class="pre">True</span></code> (1), signaling the mesh builder to “flip” the internal edge connecting the two triangles that make up the quad. This mathematically ensures the bright corners share a triangle face, creating a beautifully smooth visual shadow gradient rather than a harsh graphical line.</p></li>
+</ul>
 <p><strong>GPU Application:</strong></p>
 <p>During rendering, the vertex shader uses <code class="docutils literal notranslate"><span class="pre">flip_id</span></code> to adjust vertex positions or UV coordinates accordingly.</p>
 </section>
@@ -956,58 +989,6 @@ VBO/VAO allocated on GPU
 Vertices unpacked in Vertex Shader → Position + Attributes
          ↓
 Fragment Shader colors pixels
-</pre></div>
-</div>
-</section>
-<section id="custom-mesh-variants">
-<h2>Custom Mesh Variants<a class="headerlink" href="#custom-mesh-variants" title="Link to this heading"></a></h2>
-<p><strong>CloudMesh:</strong></p>
-<p>Fixed procedural clouds (no greedy meshing). Uses 2D Simplex noise to determine cloud density at each point. Emits simplified geometry.</p>
-<p><strong>ItemMesh:</strong></p>
-<p>Dropped items (pickaxe, stick, etc.) use simplified meshes. No greedy meshing; pre-defined vertex data per item type.</p>
-<p><strong>ObjMesh:</strong></p>
-<p>Loads Wavefront .obj files (trees, decorative structures). Parses vertices, UVs, normals. Stores as-is; no meshing.</p>
-</section>
-<section id="replication-guide">
-<h2>Replication Guide<a class="headerlink" href="#replication-guide" title="Link to this heading"></a></h2>
-<p><strong>To reimplement greedy meshing from scratch:</strong></p>
-<ol class="arabic simple">
-<li><p>Load voxel data into 3D array or flattened 1D array</p></li>
-<li><p>For each of 3 planes:
-a. Build 2D solid/empty mask (iterate through slice)
-b. Extract rectangles greedily (nested loop with width/height expansion)
-c. For each rectangle, calculate 4 corner lights and AO values
-d. Pack into 32-bit integers
-e. Emit 2 triangles (6 indices) for the quad</p></li>
-<li><p>Separate water faces from opaque</p></li>
-<li><p>Upload to GPU as VBO</p></li>
-<li><p>Render with phased passes (opaque → transparent)</p></li>
-</ol>
-<p><strong>Pseudocode:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_mesh</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">):</span>
-    <span class="n">vertex_data</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">light_data</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="c1"># Process each plane</span>
-    <span class="k">for</span> <span class="n">plane</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;Z&#39;</span><span class="p">]:</span>
-        <span class="k">for</span> <span class="n">slice_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">build_mask</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">plane</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">)</span>
-
-            <span class="n">processed</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span> <span class="ow">in</span> <span class="n">iterate_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">)</span> <span class="ow">in</span> <span class="n">processed</span><span class="p">:</span>
-                    <span class="k">continue</span>
-
-                <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">greedy_expand</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">,</span> <span class="n">processed</span><span class="p">)</span>
-
-                <span class="n">corners_light</span> <span class="o">=</span> <span class="n">sample_4_corners</span><span class="p">(</span><span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">)</span>
-                <span class="n">corners_ao</span> <span class="o">=</span> <span class="n">sample_4_corners_ao</span><span class="p">(</span><span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">)</span>
-                <span class="n">flip</span> <span class="o">=</span> <span class="n">compute_flip</span><span class="p">(</span><span class="n">corners_light</span><span class="p">,</span> <span class="n">corners_ao</span><span class="p">)</span>
-
-                <span class="n">packed</span> <span class="o">=</span> <span class="n">pack_vertices</span><span class="p">(</span><span class="n">slice_idx</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">start_z</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">flip</span><span class="p">)</span>
-                <span class="n">vertex_data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">packed</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vertex_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">light_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

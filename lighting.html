@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lighting System: &mdash; Pyrite 1.0.0 documentation</title>
+  <title>Lighting System &mdash; Pyrite 1.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -44,8 +44,8 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
-<ul>
+              <p class="caption" role="heading"><span class="caption-text">Explanation:</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
@@ -76,11 +76,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Engine Architecture:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture and Rendering</a></li>
-<li class="toctree-l1"><a class="reference internal" href="architecture.html#engine-architecture">Engine Architecture</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
@@ -99,7 +95,7 @@
 <li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Lighting System:</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Lighting System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#lightmap-data-structure">Lightmap Data Structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
@@ -124,9 +120,6 @@
 <li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Core Systems:</span></p>
-<ul>
 <li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
@@ -138,8 +131,6 @@
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#water-faces-handling">Water Faces Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-building-pipeline-cpu-to-gpu">Mesh Building Pipeline (CPU to GPU)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="meshes.html#custom-mesh-variants">Custom Mesh Variants</a></li>
-<li class="toctree-l2"><a class="reference internal" href="meshes.html#replication-guide">Replication Guide</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
@@ -208,7 +199,6 @@
 <li class="toctree-l2"><a class="reference internal" href="assets.html#icons-ui-images">Icons &amp; UI images</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#see-also">See also</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="audio.html">Audio System</a><ul>
@@ -220,22 +210,8 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#api-usage">API usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#see-also">See also</a></li>
 </ul>
 </li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Learning and Reference:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Implementation Tutorials and Replication Guides</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-1-build-a-terrain-generation-system">Tutorial 1: Build a Terrain Generation System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-2-implement-greedy-meshing">Tutorial 2: Implement Greedy Meshing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-3-implement-aabb-collision-detection">Tutorial 3: Implement AABB Collision Detection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorial-4-implement-inventory-and-crafting">Tutorial 4: Implement Inventory and Crafting</a></li>
-</ul>
-</li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Development:</span></p>
-<ul>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
@@ -245,14 +221,8 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#platform-specific-considerations">Platform-Specific Considerations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#launch-checklist">Launch Checklist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#distribution-platforms">Distribution Platforms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#troubleshooting-builds">Troubleshooting Builds</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#minimum-requirements">Minimum Requirements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#replication-checklist">Replication Checklist</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling &amp; Performance Diagnostics</a><ul>
@@ -266,6 +236,9 @@
 <li class="toctree-l2"><a class="reference internal" href="profiling.html#see-also">See also</a></li>
 </ul>
 </li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="api/modules.html">API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/camera.html">camera</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/camera.html#camera.Camera"><code class="docutils literal notranslate"><span class="pre">Camera</span></code></a><ul>
@@ -566,7 +539,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Lighting System:</li>
+      <li class="breadcrumb-item active">Lighting System</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/lighting.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -577,7 +550,7 @@
            <div itemprop="articleBody">
              
   <section id="lighting-system">
-<span id="lighting"></span><h1>Lighting System:<a class="headerlink" href="#lighting-system" title="Link to this heading"></a></h1>
+<span id="lighting"></span><h1>Lighting System<a class="headerlink" href="#lighting-system" title="Link to this heading"></a></h1>
 <p>This document provides a detailed replication guide for Pyrite’s dynamic voxel lighting system, including sunlight propagation, blocklight spreading, queue-based BFS, and lightmap packing.</p>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
@@ -716,19 +689,9 @@
 <span class="sd">        chunk_positions: Chunk position lookup table</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">DIRECTIONS</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">When</span> <span class="n">a</span> <span class="n">torch</span> <span class="ow">is</span> <span class="n">removed</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">block</span> <span class="ow">is</span> <span class="n">broken</span><span class="p">,</span> <span class="n">light</span> <span class="n">must</span> <span class="n">be</span> <span class="n">recalculated</span><span class="o">.</span> <span class="n">The</span> <span class="n">algorithm</span> <span class="n">uses</span> <span class="n">a</span> <span class="o">**</span><span class="n">Removal</span> <span class="n">Pass</span><span class="o">**</span> <span class="n">followed</span> <span class="n">by</span> <span class="n">a</span> <span class="o">**</span><span class="n">Refill</span> <span class="n">Pass</span><span class="o">**</span><span class="p">:</span>
+    <span class="n">DIRECTIONS</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)]</span>
 
-    <span class="o">..</span> <span class="n">code</span><span class="o">-</span><span class="n">block</span><span class="p">::</span> <span class="n">python</span>
-
-        <span class="c1"># Pseudo-code for light source removal (actual: update_light_remove_block in src/lighting.py)</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">remove_block_light_update</span><span class="p">(</span><span class="n">broken_x</span><span class="p">,</span> <span class="n">broken_y</span><span class="p">,</span> <span class="n">broken_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Recalculate lighting after a block is broken.</span>
-
-<span class="sd">            Two-pass algorithm:</span>
-<span class="sd">            1. Removal pass: Scan neighbors and decrement light if it came from broken light source</span>
-<span class="sd">            2. Refill pass: Propagate light from unaffected sources to refill dark areas</span>
-<span class="sd">            &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
         <span class="n">node</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">break</span>
@@ -746,31 +709,27 @@
             <span class="n">neighbor_z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="n">dz</span>
 
             <span class="c1"># Skip out-of-bounds</span>
-            <span class="k">if</span> <span class="n">neighbor_y</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">neighbor_y</span> <span class="o">&gt;=</span> <span class="n">WORLD_HEIGHT</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">neighbor_y</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">neighbor_y</span> <span class="o">&gt;=</span> <span class="mi">256</span><span class="p">:</span>
                 <span class="k">continue</span>
 
             <span class="c1"># Get neighbor voxel and light</span>
             <span class="n">neighbor_voxel</span> <span class="o">=</span> <span class="n">get_voxel_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">)</span>
-            <span class="n">neighbor_light</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">light_type</span><span class="p">)</span>
+            <span class="n">neighbor_light</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">is_sun</span><span class="p">)</span>
 
             <span class="c1"># Skip if solid</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_voxel</span><span class="p">):</span>
                 <span class="k">continue</span>
 
             <span class="c1"># Calculate diminished light</span>
-            <span class="k">if</span> <span class="n">light_type</span> <span class="o">==</span> <span class="n">SUNLIGHT</span> <span class="ow">and</span> <span class="n">dy</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">neighbor_voxel</span> <span class="o">==</span> <span class="n">AIR</span><span class="p">:</span>
-                <span class="c1"># Special case: downward through air keeps full level 15</span>
-                <span class="n">new_level</span> <span class="o">=</span> <span class="n">level</span>
+            <span class="k">if</span> <span class="n">is_sun</span> <span class="ow">and</span> <span class="n">dy</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">15</span> <span class="ow">and</span> <span class="n">neighbor_voxel</span> <span class="o">==</span> <span class="n">AIR</span><span class="p">:</span>
+                <span class="n">new_level</span> <span class="o">=</span> <span class="mi">15</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Standard: diminish by 1 (or 2 for water/leaves)</span>
-                <span class="n">diminish</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="k">if</span> <span class="n">neighbor_voxel</span> <span class="ow">in</span> <span class="p">[</span><span class="n">WATER</span><span class="p">,</span> <span class="n">LEAVES</span><span class="p">]:</span>
-                    <span class="n">diminish</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="n">diminish</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="p">(</span><span class="n">neighbor_voxel</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">neighbor_voxel</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
                 <span class="n">new_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">level</span> <span class="o">-</span> <span class="n">diminish</span><span class="p">)</span>
 
             <span class="c1"># Update if brighter</span>
             <span class="k">if</span> <span class="n">new_level</span> <span class="o">&gt;</span> <span class="n">neighbor_light</span><span class="p">:</span>
-                <span class="n">set_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">light_type</span><span class="p">,</span> <span class="n">new_level</span><span class="p">)</span>
+                <span class="n">set_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">is_sun</span><span class="p">,</span> <span class="n">new_level</span><span class="p">)</span>
                 <span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">new_level</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -810,7 +769,8 @@
 </pre></div>
 </div>
 <p><strong>Breaking a Torch (Removal Pass + Refill):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">remove_light_source</span><span class="p">(</span><span class="n">broken_x</span><span class="p">,</span> <span class="n">broken_y</span><span class="p">,</span> <span class="n">broken_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">queue</span><span class="p">):</span>
+<p>When a torch is removed or a block is broken, light must be recalculated. The algorithm uses a <strong>Removal Pass</strong> followed by a <strong>Refill Pass</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">remove_block_light_update</span><span class="p">(</span><span class="n">broken_x</span><span class="p">,</span> <span class="n">broken_y</span><span class="p">,</span> <span class="n">broken_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">queue</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove light from broken torch&quot;&quot;&quot;</span>
 
     <span class="c1"># Step 1: REMOVAL PASS - drain dependent light</span>

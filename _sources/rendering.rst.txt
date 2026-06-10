@@ -1,3 +1,4 @@
+==================
 Rendering Pipeline
 ==================
 
@@ -13,7 +14,7 @@ This is the most important rendering optimization in the engine because Python i
 
 **The 32-bit Vertex Payload:**
 To minimize GPU bandwidth, vertex data is heavily bit-packed into a single 32-bit integer:
-`x: 6-bit, y: 6-bit, z: 6-bit, voxel_id: 8-bit, face_id: 3-bit, ao_id: 2-bit, flip_id: 1-bit`
+``x: 6-bit, y: 6-bit, z: 6-bit, voxel_id: 8-bit, face_id: 3-bit, ao_id: 2-bit, flip_id: 1-bit``
 
 Because the mesh builder must still preserve per-face lighting and ambient occlusion, the packed vertex includes only the data needed to reconstruct face position and appearance in the vertex shader. This compact format lets Pyrite send large batches of geometry to the GPU without blowing up memory bandwidth.
 
