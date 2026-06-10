@@ -70,7 +70,7 @@ class CloudMesh(BaseMesh):
                 cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
 
     @staticmethod
-    @njit(cache=True, fastmath=True, parallel=True, nogil=True)
+    @njit(cache=True, fastmath=True, nogil=True)
     def build_mesh(cloud_data: Any) -> NDArray[np.uint16]:
         """
         A specialized 2D greedy meshing algorithm that scans the generated cloud density grid.
