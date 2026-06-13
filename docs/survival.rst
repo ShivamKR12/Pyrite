@@ -38,6 +38,13 @@ When blocks are mined, they are spawned into the world as independent `Item` ins
 
 When the player walks within the `ITEM_PICKUP_RADIUS`, the items are destroyed and injected into the player's inventory array. To protect CPU physics threads and GPU draw limits from entity overflow, the `ItemManager` enforces a hard FIFO (First-In-First-Out) cap of 256 items. If the 257th item drops, the oldest item is instantly despawned.
 
+.. code-block:: python
+
+    if len(self.items) > ITEM_ENTITY_CAP:
+        self.items.pop(0)
+
+* **Entity Cap:** The ItemManager enforces a hard FIFO limit to instantly despawn the oldest entities if too many blocks break concurrently.
+
 Next Steps
 ----------
 

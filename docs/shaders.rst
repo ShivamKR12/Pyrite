@@ -386,7 +386,7 @@ UI Color Shader (Backgrounds, UI Quads)
 
 * **Basic Shapes:** Used for rendering plain backgrounds, buttons, and selection frames.
 
-**ui_color.frag** - Output uniform color.
+``ui_color.frag`` - Output uniform color.
 
 **Fragment Processing:**
 
