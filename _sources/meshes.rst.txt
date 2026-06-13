@@ -232,62 +232,17 @@ Processing YZ-plane slices (X varying):
 
 .. code-block:: python
 
-    for x_slice in 0 to CHUNK_SIZE-1:
-        # Build 2D mask of YZ values (which are solid and exposed on +X face)
-        mask = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype=bool)
+    for x_slice in range(CHUNK_SIZE):
+        mask = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype=np.bool_)
 
-        for y in 0 to CHUNK_SIZE-1:
-            for z in 0 to CHUNK_SIZE-1:
-                voxel_id = chunk_voxels[x_slice, y, z]
+* **Mask Initialization:** The mesher iterates through flat 2D slices, creating a boolean tracking array to isolate exclusively solid and exposed voxel faces.
 
-                # Check if solid and has exposed +X face
-                if is_solid(voxel_id):
-                    if x_slice == CHUNK_SIZE-1 or not is_solid(chunk_voxels[x_slice+1, y, z]):
-                        mask[y, z] = True
+.. code-block:: python
 
-        # Greedy rectangle extraction from mask
-        for y in 0 to CHUNK_SIZE-1:
-            for z in 0 to CHUNK_SIZE-1:
-                if not mask[y, z]:
-                    continue
+    while z + width < CHUNK_SIZE and mask[y, z + width]:
+        width += 1
 
-                # Find greedy width (extend along z-axis)
-                width = 1
-                while z + width < CHUNK_SIZE and mask[y, z + width]:
-                    width += 1
-
-                # Find greedy height (extend along y-axis)
-                height = 1
-                valid = True
-                while y + height < CHUNK_SIZE and valid:
-                    for z_check in z to z + width - 1:
-                        if not mask[y + height, z_check]:
-                            valid = False
-                            break
-                    if valid:
-                        height += 1
-
-                # Mark processed to avoid overlap
-                for dy in 0 to height-1:
-                    for dz in 0 to width-1:
-                        mask[y + dy, z + dz] = False
-
-                # Get 4 corner light/AO values
-                l0 = get_vertex_light(x_slice, y, z)
-                l1 = get_vertex_light(x_slice, y+height, z)
-                l2 = get_vertex_light(x_slice, y+height, z+width)
-                l3 = get_vertex_light(x_slice, y, z+width)
-
-                ao0 = get_ao((x_slice, y, z))
-                ao1 = get_ao((x_slice, y+height, z))
-                ao2 = get_ao((x_slice, y+height, z+width))
-                ao3 = get_ao((x_slice, y, z+width))
-
-                # Flip detection (see section below)
-                flip_id = should_flip_diagonal(l0, l1, l2, l3, ao0, ao1, ao2, ao3)
-
-                # Emit 2 triangles (6 indices)
-                emit_quad(x_slice, y, z, width, height, flip_id, l0, l1, l2, l3)
+* **Greedy Expansion:** The algorithm continuously sweeps rightwards along the active axis, incrementing the geometric rectangle width perfectly flush as long as adjacent faces share identical properties.
 
 **Y and Z Plane Scanning** work similarly, iterating through XZ and XY slices respectively.
 
@@ -402,12 +357,6 @@ Water is rendered separately to allow transparency blending without depth-test c
 
 .. code-block:: python
 
-    # Opaque pass
-    ctx.enable(moderngl.DEPTH_TEST)
-    ctx.disable(moderngl.BLEND)
-    vao.render(mode=moderngl.TRIANGLES, vertices=opaque_count)
-
-    # Water pass
     ctx.enable(moderngl.BLEND)
     ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA)
     vao.render(mode=moderngl.TRIANGLES, vertices=water_count, first=opaque_count)
@@ -446,22 +395,11 @@ Mesh Building Pipeline (CPU to GPU)
 
 .. code-block:: python
 
-    vbo_pool = []  # List of unused VBOs
-    VBO_POOL_CAP = 150
+    if self.vbo_pool:
+        vbo = self.vbo_pool.pop()
+        vbo.write(data)
 
-    def get_or_create_vbo(ctx, data):
-        if vbo_pool:
-            vbo = vbo_pool.pop()
-            vbo.write(data)  # Overwrite with new data
-        else:
-            vbo = ctx.buffer(data)
-        return vbo
-
-    def release_vbo(vbo):
-        if len(vbo_pool) < VBO_POOL_CAP:
-            vbo_pool.append(vbo)
-        else:
-            vbo.release()  # Destroy GPU memory
+* **VBO Recycling:** The engine pops stale buffers off the deque queue and overwrites the exact memory addresses in VRAM instantaneously without expensive destructions natively.
 
 Data Flow Example
 -----------------

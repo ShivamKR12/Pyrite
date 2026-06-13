@@ -54,7 +54,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop">The Main Game Loop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
@@ -554,12 +554,7 @@
 <section id="lightmap-data-structure">
 <h2>Lightmap Data Structure<a class="headerlink" href="#lightmap-data-structure" title="Link to this heading"></a></h2>
 <p><strong>Packing Format:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Reference packing (actual engine uses compiled Numba for speed)</span>
-<span class="c1"># sunlight: 0-15 (upper 4 bits)</span>
-<span class="c1"># blocklight: 0-15 (lower 4 bits)</span>
-<span class="n">packed</span> <span class="o">=</span> <span class="p">(</span><span class="n">sunlight</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">blocklight</span>
-
-<span class="c1"># Unpacking</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">packed</span> <span class="o">=</span> <span class="p">(</span><span class="n">sunlight</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">blocklight</span>
 <span class="n">sunlight</span> <span class="o">=</span> <span class="p">(</span><span class="n">packed</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xF</span>
 <span class="n">blocklight</span> <span class="o">=</span> <span class="n">packed</span> <span class="o">&amp;</span> <span class="mh">0xF</span>
 </pre></div>
@@ -579,150 +574,71 @@
 <li><p>Maintain level 15 through air until hitting solid blocks</p></li>
 <li><p>Reduce by 2 through water/leaves, by 1 through other transparent blocks</p></li>
 </ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">init_chunk_sunlight</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">chunk_lightmap</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize sunlight for freshly loaded chunk&quot;&quot;&quot;</span>
-
-    <span class="c1"># Constants</span>
-    <span class="n">LIGHT_LEVEL_MAX</span> <span class="o">=</span> <span class="mi">15</span>
-    <span class="n">SUNLIGHT_QUEUE</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># BFS queue</span>
-
-    <span class="c1"># Step 1: Cast sunlight downward</span>
-    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
-            <span class="n">current_level</span> <span class="o">=</span> <span class="n">LIGHT_LEVEL_MAX</span>
-
-            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>  <span class="c1"># Top to bottom</span>
-                <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span><span class="p">]</span>
-
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
-                    <span class="c1"># Hit solid block, light propagates no further down this column</span>
-                    <span class="k">break</span>
-
-                <span class="c1"># Set sunlight for this air block</span>
-                <span class="n">lightmap_index</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span>
-                <span class="n">packed</span> <span class="o">=</span> <span class="n">chunk_lightmap</span><span class="p">[</span><span class="n">lightmap_index</span><span class="p">]</span>
-                <span class="n">blocklight</span> <span class="o">=</span> <span class="n">packed</span> <span class="o">&amp;</span> <span class="mh">0xF</span>
-                <span class="c1"># Pack into single byte: (sunlight &lt;&lt; 4) | blocklight</span>
-                <span class="n">chunk_lightmap</span><span class="p">[</span><span class="n">lightmap_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_level</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">blocklight</span>
-
-                <span class="c1"># Queue for horizontal spread</span>
-                <span class="n">SUNLIGHT_QUEUE</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">current_level</span><span class="p">,</span> <span class="n">SUNLIGHT</span><span class="p">))</span>
-
-                <span class="c1"># Reduce level through certain blocks</span>
-                <span class="k">if</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">:</span>
-                    <span class="n">current_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="n">voxel_id</span> <span class="ow">in</span> <span class="p">[</span><span class="n">GLASS</span><span class="p">]:</span>
-                    <span class="n">current_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-
-    <span class="c1"># Step 2: Propagate horizontally (BFS)</span>
-    <span class="n">propagate_light_bfs</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">chunk_lightmap</span><span class="p">,</span> <span class="n">SUNLIGHT_QUEUE</span><span class="p">,</span> <span class="n">SUNLIGHT</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span><span class="p">]</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Downward Raycast:</strong> The initialization loop scans from the top of the chunk to the bottom, checking the voxel ID at each height layer.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
+    <span class="k">break</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Collision Halting:</strong> If the downward ray encounters a solid, non-transparent block, sunlight is immediately stopped for that column.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">chunk_lightmap</span><span class="p">[</span><span class="n">lightmap_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_level</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">blocklight</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Data Packing:</strong> The active sunlight level is bitshifted left by 4 to occupy the upper 4 bits, then merged securely with the existing blocklight via bitwise OR.</p></li>
+</ul>
 <p><strong>O(1) Vertical Raycast Optimization:</strong></p>
 <p>When a block is mined exposing a hole to sunlight, instead of expensive 3D BFS:</p>
 <p>Vertical Raycast Optimization:</p>
 <p>When a block is mined exposing a hole to sunlight, an O(1) downward fill is more efficient than 3D BFS:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Pseudo-code: how vertical sunlight filling optimizes block breaking</span>
-<span class="c1"># (Actual implementation is inside update_light_remove_block in src/lighting.py)</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">quick_sunlight_fill</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">chunk_lightmap</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quick downward fill for exposed blocks&quot;&quot;&quot;</span>
-
-    <span class="n">LIGHT_LEVEL_MAX</span> <span class="o">=</span> <span class="mi">15</span>
-    <span class="n">current_level</span> <span class="o">=</span> <span class="n">LIGHT_LEVEL_MAX</span>
-
-    <span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">):</span>  <span class="c1"># Downward</span>
-        <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
-            <span class="k">break</span>  <span class="c1"># Hit solid, propagation stops</span>
-
-        <span class="c1"># Set light: (current_level &lt;&lt; 4) | blocklight</span>
-        <span class="n">lightmap_index</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">packed</span> <span class="o">=</span> <span class="n">chunk_lightmap</span><span class="p">[</span><span class="n">lightmap_index</span><span class="p">]</span>
-        <span class="n">blocklight</span> <span class="o">=</span> <span class="n">packed</span> <span class="o">&amp;</span> <span class="mh">0xF</span>
-        <span class="n">chunk_lightmap</span><span class="p">[</span><span class="n">lightmap_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_level</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">blocklight</span>
-
-        <span class="c1"># Apply diminishment</span>
-        <span class="k">if</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">:</span>
-            <span class="n">current_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
-
-    <span class="c1"># Queue neighboring blocks for BFS expansion</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">):</span>
+    <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span><span class="p">]</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>O(1) Downward Fill:</strong> When a block is broken, the engine casts a simple ray downwards from the broken block to instantly fill exposed air rather than launching an expensive 3D BFS.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">:</span>
+    <span class="n">current_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Light Diminishment:</strong> Even during quick fills, light is strictly reduced by 2 levels if it passes through semi-transparent blocks.</p></li>
+</ul>
 </section>
 <section id="bfs-light-propagation">
 <h2>BFS Light Propagation<a class="headerlink" href="#bfs-light-propagation" title="Link to this heading"></a></h2>
 <p><strong>Queue-Based Approach (CPU-efficient):</strong></p>
 <p>Instead of Python lists (slow), use preallocated NumPy arrays as ring buffers:</p>
-<p><strong>Queue-Based Approach (Actual Implementation):</strong></p>
-<p>The engine uses global pre-allocated NumPy arrays as ring buffers for efficiency:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Actual implementation in src/lighting.py uses:</span>
-<span class="c1"># - GLOBAL_QUEUE_A: numpy array storing (x, y, z, level) tuples</span>
-<span class="c1"># - GLOBAL_QUEUE_B: numpy array for secondary queue</span>
-<span class="c1"># - Head/tail pointers for ring buffer management</span>
-<span class="c1">#</span>
-<span class="c1"># See propagate_light_queue(queue, tail, is_sun, ...) in src/lighting.py</span>
+<p><strong>Queue-Based Approach:</strong></p>
+<p>The engine uses global pre-allocated NumPy arrays directly as ring buffers for efficiency:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">GLOBAL_QUEUE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+<span class="n">head</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
 </pre></div>
 </div>
 <p><strong>Main BFS Loop:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Pseudo-code for light propagation (actual: propagate_light_queue in src/lighting.py)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">propagate_light_queue</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">tail</span><span class="p">,</span> <span class="n">is_sun</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Propagate light using BFS queue.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        queue: Pre-allocated array of light nodes</span>
-<span class="sd">        tail: Current position in ring buffer</span>
-<span class="sd">        is_sun: True for sunlight, False for blocklight</span>
-<span class="sd">        world_voxels: All loaded chunk voxels</span>
-<span class="sd">        world_lightmaps: All loaded chunk lightmaps</span>
-<span class="sd">        chunk_positions: Chunk position lookup table</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">DIRECTIONS</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)]</span>
-
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">node</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">break</span>
-
-        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="n">node</span>
-
-        <span class="c1"># Skip if at lowest possible light level</span>
-        <span class="k">if</span> <span class="n">level</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">continue</span>
-
-        <span class="c1"># Check all 6 neighbors</span>
-        <span class="k">for</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span> <span class="ow">in</span> <span class="n">DIRECTIONS</span><span class="p">:</span>
-            <span class="n">neighbor_x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span>
-            <span class="n">neighbor_y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">dy</span>
-            <span class="n">neighbor_z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="n">dz</span>
-
-            <span class="c1"># Skip out-of-bounds</span>
-            <span class="k">if</span> <span class="n">neighbor_y</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">neighbor_y</span> <span class="o">&gt;=</span> <span class="mi">256</span><span class="p">:</span>
-                <span class="k">continue</span>
-
-            <span class="c1"># Get neighbor voxel and light</span>
-            <span class="n">neighbor_voxel</span> <span class="o">=</span> <span class="n">get_voxel_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">)</span>
-            <span class="n">neighbor_light</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">is_sun</span><span class="p">)</span>
-
-            <span class="c1"># Skip if solid</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_voxel</span><span class="p">):</span>
-                <span class="k">continue</span>
-
-            <span class="c1"># Calculate diminished light</span>
-            <span class="k">if</span> <span class="n">is_sun</span> <span class="ow">and</span> <span class="n">dy</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">15</span> <span class="ow">and</span> <span class="n">neighbor_voxel</span> <span class="o">==</span> <span class="n">AIR</span><span class="p">:</span>
-                <span class="n">new_level</span> <span class="o">=</span> <span class="mi">15</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">diminish</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="p">(</span><span class="n">neighbor_voxel</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">neighbor_voxel</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
-                <span class="n">new_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">level</span> <span class="o">-</span> <span class="n">diminish</span><span class="p">)</span>
-
-            <span class="c1"># Update if brighter</span>
-            <span class="k">if</span> <span class="n">new_level</span> <span class="o">&gt;</span> <span class="n">neighbor_light</span><span class="p">:</span>
-                <span class="n">set_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">is_sun</span><span class="p">,</span> <span class="n">new_level</span><span class="p">)</span>
-                <span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">new_level</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">break</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>BFS Ring Buffer Loop:</strong> A memory-efficient array dequeues active light nodes dynamically without instantiating slow Python lists.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">new_level</span> <span class="o">&gt;</span> <span class="n">neighbor_light</span><span class="p">:</span>
+    <span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">new_level</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Neighbor Expansion:</strong> For each of the 6 neighboring blocks, if the newly propagated light is brighter than the neighbor’s current light, it overwrites it and pushes the neighbor into the queue for further expansion.</p></li>
+</ul>
 <p><strong>Fast Voxel Access Helper:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_voxel_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get voxel ID with chunk boundary handling&quot;&quot;&quot;</span>
@@ -748,129 +664,52 @@
 <section id="blocklight-torch-propagation">
 <h2>Blocklight (Torch) Propagation<a class="headerlink" href="#blocklight-torch-propagation" title="Link to this heading"></a></h2>
 <p><strong>Torch Placement:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">place_torch</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">queue</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Place torch and start light propagation&quot;&quot;&quot;</span>
-
-    <span class="n">set_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
-    <span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>  <span class="c1"># Torch emits level 14</span>
-
-    <span class="c1"># Start BFS propagation</span>
-    <span class="n">propagate_light_bfs</span><span class="p">(</span><span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">set_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
+<span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Blocklight Seeding:</strong> A newly placed torch injects a maximum blocklight value of <cite>14</cite> directly into the chunk lightmap and starts expanding immediately.</p></li>
+</ul>
 <p><strong>Breaking a Torch (Removal Pass + Refill):</strong></p>
 <p>When a torch is removed or a block is broken, light must be recalculated. The algorithm uses a <strong>Removal Pass</strong> followed by a <strong>Refill Pass</strong>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">remove_block_light_update</span><span class="p">(</span><span class="n">broken_x</span><span class="p">,</span> <span class="n">broken_y</span><span class="p">,</span> <span class="n">broken_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">queue</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove light from broken torch&quot;&quot;&quot;</span>
-
-    <span class="c1"># Step 1: REMOVAL PASS - drain dependent light</span>
-    <span class="n">removal_queue</span> <span class="o">=</span> <span class="n">LightQueue</span><span class="p">()</span>
-    <span class="n">removal_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">broken_x</span><span class="p">,</span> <span class="n">broken_y</span><span class="p">,</span> <span class="n">broken_z</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
-
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">node</span> <span class="o">=</span> <span class="n">removal_queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">break</span>
-
-        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="n">node</span>
-
-        <span class="c1"># Check all 6 neighbors</span>
-        <span class="k">for</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span> <span class="ow">in</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)]:</span>
-            <span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">dy</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">dz</span>
-
-            <span class="n">neighbor_voxel</span> <span class="o">=</span> <span class="n">get_voxel_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_voxel</span><span class="p">):</span>
-                <span class="k">continue</span>
-
-            <span class="n">neighbor_light</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">)</span>
-
-            <span class="c1"># If neighbor was lit by broken torch, reduce its light</span>
-            <span class="k">if</span> <span class="n">neighbor_light</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">neighbor_light</span> <span class="o">&lt;</span> <span class="n">level</span><span class="p">:</span>
-                <span class="c1"># This light was dependent on broken torch</span>
-                <span class="n">set_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="n">removal_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">neighbor_light</span> <span class="o">&gt;=</span> <span class="n">level</span><span class="p">:</span>
-                <span class="c1"># This light is from another source (brighter neighbor)</span>
-                <span class="c1"># Capture for refill pass</span>
-                <span class="n">refill_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
-
-    <span class="c1"># Step 2: REFILL PASS - propagate light from surviving sources</span>
-    <span class="n">propagate_light_bfs</span><span class="p">(</span><span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">refill_queue</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">neighbor_light</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">neighbor_light</span> <span class="o">&lt;</span> <span class="n">level</span><span class="p">:</span>
+    <span class="n">set_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">removal_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Removal Pass:</strong> When a light source is destroyed, a negative BFS sweeps outward, aggressively setting all dependent light levels back to <cite>0</cite>.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">elif</span> <span class="n">neighbor_light</span> <span class="o">&gt;=</span> <span class="n">level</span><span class="p">:</span>
+    <span class="n">refill_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Refill Pass:</strong> If the removal pass hits a light level equal to or brighter than what it’s trying to erase, it stops and marks that border block as a seed to immediately refill the empty space.</p></li>
+</ul>
 </section>
 <section id="chunk-boundary-stitching">
 <h2>Chunk Boundary Stitching<a class="headerlink" href="#chunk-boundary-stitching" title="Link to this heading"></a></h2>
 <p>When chunks load/unload, light must be synchronized across boundaries:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">stitch_chunk_lighting</span><span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure light propagates correctly across chunk edges&quot;&quot;&quot;</span>
-
-    <span class="c1"># Check 6 neighbors of chunk</span>
-    <span class="n">neighbors</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">(</span><span class="n">chunk_x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">),</span>
-        <span class="p">(</span><span class="n">chunk_x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">),</span>
-        <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">),</span>
-        <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">),</span>
-        <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
-        <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-    <span class="p">]</span>
-
-    <span class="n">light_queue</span> <span class="o">=</span> <span class="n">LightQueue</span><span class="p">()</span>
-
-    <span class="k">for</span> <span class="n">neighbor_chunk</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">neighbor_chunk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">world_lightmaps</span><span class="p">:</span>
-            <span class="k">continue</span>
-
-        <span class="c1"># For each edge voxel of current chunk</span>
-        <span class="c1"># Check if neighbor has brighter light</span>
-        <span class="c1"># If so, start propagation from boundary</span>
-
-        <span class="c1"># Example: check +X boundary</span>
-        <span class="k">if</span> <span class="n">neighbor_chunk</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">chunk_x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
-                    <span class="c1"># Current chunk edge (x = 47)</span>
-                    <span class="n">current_light</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="mi">47</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">SUNLIGHT</span><span class="p">)</span>
-
-                    <span class="c1"># Neighbor edge (x = 0 in neighbor chunk)</span>
-                    <span class="n">neighbor_light</span> <span class="o">=</span> <span class="n">get_light</span><span class="p">(</span><span class="n">neighbor_chunk</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">SUNLIGHT</span><span class="p">)</span>
-
-                    <span class="k">if</span> <span class="n">neighbor_light</span> <span class="o">&gt;</span> <span class="n">current_light</span><span class="p">:</span>
-                        <span class="c1"># Neighbor is brighter, propagate inward</span>
-                        <span class="n">light_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">chunk_x</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="mi">47</span><span class="p">,</span> <span class="n">chunk_y</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">chunk_z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
-
-    <span class="c1"># Run BFS from boundaries</span>
-    <span class="k">if</span> <span class="n">light_queue</span><span class="o">.</span><span class="n">head</span> <span class="o">!=</span> <span class="n">light_queue</span><span class="o">.</span><span class="n">tail</span><span class="p">:</span>
-        <span class="n">propagate_light_bfs</span><span class="p">(</span><span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">light_queue</span><span class="p">,</span> <span class="n">SUNLIGHT</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">neighbor_light</span> <span class="o">&gt;</span> <span class="n">current_light</span><span class="p">:</span>
+    <span class="n">light_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">chunk_x</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="mi">47</span><span class="p">,</span> <span class="n">chunk_y</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">chunk_z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Chunk Seams:</strong> When adjacent chunks load, they sample the immediate edge boundaries of their neighbors. Brighter light is naturally enqueued to bleed seamlessly across the chunk boundaries.</p></li>
+</ul>
 </section>
 <section id="integration-with-rendering">
 <h2>Integration with Rendering<a class="headerlink" href="#integration-with-rendering" title="Link to this heading"></a></h2>
 <p><strong>Shader Light Application:</strong></p>
-<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="c1">// In chunk.frag</span>
-<span class="k">in</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sun_light</span><span class="p">;</span><span class="w">    </span><span class="c1">// Interpolated sunlight (0.0-1.0)</span>
-<span class="k">in</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">block_light</span><span class="p">;</span><span class="w">  </span><span class="c1">// Interpolated blocklight (0.0-1.0)</span>
-
-<span class="kt">void</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// Sample base color</span>
-<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">u_texture_array</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span><span class="w"> </span><span class="n">texLayer</span><span class="p">)).</span><span class="n">rgb</span><span class="p">;</span>
-
-<span class="w">    </span><span class="c1">// Apply day/night cycle to sunlight</span>
-<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">day_night</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">u_sun_direction</span><span class="p">.</span><span class="n">y</span><span class="p">;</span><span class="w">  </span><span class="c1">// -1 (night) to 1 (day)</span>
-<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">adjusted_sun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sun_light</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">day_night</span><span class="p">;</span>
-
-<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">adjusted_block</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">block_light</span><span class="p">;</span>
-
-<span class="w">    </span><span class="c1">// Combine lights (take maximum for natural look)</span>
-<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">final_light</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">adjusted_sun</span><span class="p">,</span><span class="w"> </span><span class="n">adjusted_block</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Apply to final color</span>
-<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">lit_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">final_light</span><span class="p">;</span>
-<span class="w">    </span><span class="n">fragColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">lit_color</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
-<span class="p">}</span>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="kt">float</span><span class="w"> </span><span class="n">final_light</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">sun_light</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">day_night</span><span class="p">,</span><span class="w"> </span><span class="n">block_light</span><span class="p">);</span>
+<span class="kt">vec3</span><span class="w"> </span><span class="n">lit_color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">final_light</span><span class="p">;</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Maximum Blending:</strong> To prevent blowouts, the fragment shader computes the final lighting multiplier by taking the maximum (not the sum) of the dynamically scaled sunlight and static blocklight.</p></li>
+</ul>
 </section>
 <section id="replication-checklist">
 <h2>Replication Checklist<a class="headerlink" href="#replication-checklist" title="Link to this heading"></a></h2>

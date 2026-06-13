@@ -490,7 +490,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l2"><a class="reference internal" href="#application-control">Application Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#detailed-state-machine">Detailed State Machine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-main-game-loop">The Main Game Loop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#detailed-event-handling">Detailed Event Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#detailed-render-step">Detailed Render Step</a></li>
@@ -1091,357 +1091,147 @@ window.runMermaid = runMermaid;</script>
    GameCloses
 
    OPTIONS --&gt; PAUSED : Back
-    </pre><p><strong>State Handler Pseudocode:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">handle_state</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;MAIN_MENU&#39;</span><span class="p">:</span>
-        <span class="n">main_menu</span><span class="o">.</span><span class="n">handle_events</span><span class="p">()</span>
-        <span class="n">main_menu</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
-    <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;LOADING&#39;</span><span class="p">:</span>
-        <span class="c1"># Blocking loop: load chunks until ready</span>
-        <span class="k">while</span> <span class="ow">not</span> <span class="n">loading_complete</span><span class="p">:</span>
-            <span class="c1"># Generate/fetch chunks</span>
-            <span class="c1"># Mesh chunks</span>
-            <span class="c1"># Render loading screen UI</span>
-            <span class="n">check_loading_progress</span><span class="p">()</span>
-    <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
-        <span class="n">player</span><span class="o">.</span><span class="n">handle_events</span><span class="p">()</span>
-        <span class="n">world</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
-        <span class="n">scene</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
-    <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;PAUSED&#39;</span><span class="p">:</span>
-        <span class="n">pause_menu</span><span class="o">.</span><span class="n">handle_events</span><span class="p">()</span>
-        <span class="n">pause_menu</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
-    <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;OPTIONS&#39;</span><span class="p">:</span>
-        <span class="n">options_menu</span><span class="o">.</span><span class="n">handle_events</span><span class="p">()</span>
-        <span class="n">options_menu</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    </pre><p><strong>State Handler Implementation:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;MAIN_MENU&#39;</span><span class="p">:</span>
+    <span class="n">main_menu</span><span class="o">.</span><span class="n">handle_events</span><span class="p">()</span>
+    <span class="n">main_menu</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>State Delegation:</strong> The engine acts as a pure router, dispatching logic and polling events directly to independent GUI instances or 3D scene objects based on the current finite state.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;LOADING&#39;</span><span class="p">:</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">loading_complete</span><span class="p">:</span>
+        <span class="n">check_loading_progress</span><span class="p">()</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Blocking Transitions:</strong> Specific intensive states, like chunk pre-loading, utilize blocking loops to dedicate entire CPU cycles before yielding control.</p></li>
+</ul>
 </section>
-<section id="the-main-game-loop-pseudocode">
-<h2>The Main Game Loop (Pseudocode)<a class="headerlink" href="#the-main-game-loop-pseudocode" title="Link to this heading"></a></h2>
+<section id="the-main-game-loop">
+<h2>The Main Game Loop<a class="headerlink" href="#the-main-game-loop" title="Link to this heading"></a></h2>
 <p><strong>High-Level Loop Structure:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
-
-    <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
-        <span class="c1"># 1. FRAME TIMING</span>
-        <span class="n">frame_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="n">delta_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1000.0</span>  <span class="c1"># Cap at 60 FPS</span>
-        <span class="n">delta_time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">delta_time</span><span class="p">,</span> <span class="mf">0.033</span><span class="p">)</span>  <span class="c1"># Clamp to 33ms max to prevent physics explosion</span>
-
-        <span class="c1"># 2. EVENT HANDLING</span>
-        <span class="n">running</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_events</span><span class="p">()</span>  <span class="c1"># Returns False if quit requested</span>
-
-        <span class="c1"># 3. STATE-SPECIFIC UPDATES</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">update_in_game</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;PAUSED&#39;</span><span class="p">:</span>
-            <span class="c1"># No logic updates while paused</span>
-            <span class="k">pass</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;LOADING&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">update_loading</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-
-        <span class="c1"># 4. RENDER</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-
-        <span class="c1"># 5. DISPLAY</span>
-        <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">delta_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1000.0</span>
+<span class="n">delta_time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">delta_time</span><span class="p">,</span> <span class="mf">0.033</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Timing and Clamping:</strong> The core execution loop is strictly regulated. To prevent devastating physics synchronization bugs during lag spikes, delta time is hard-capped to a maximum of 33ms.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">handle_events</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">update_in_game</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Synchronous Frame Dispatch:</strong> The render thread guarantees the sequence of user input, logical updates, and visual dispatching across every single pass.</p></li>
+</ul>
 </section>
 <section id="detailed-event-handling">
 <h2>Detailed Event Handling<a class="headerlink" href="#detailed-event-handling" title="Link to this heading"></a></h2>
 <p><strong>Event Loop:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">handle_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>  <span class="c1"># Exit main loop</span>
-
-        <span class="c1"># Global events (all states)</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F11</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">toggle_fullscreen</span><span class="p">()</span>
-            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F3</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">show_debug_overlay</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_debug_overlay</span>
-
-        <span class="c1"># State-specific events</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;MAIN_MENU&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">main_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-            <span class="c1"># Pause or inventory</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="s1">&#39;PAUSED&#39;</span>
-                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_e</span><span class="p">:</span>
-                    <span class="c1"># Toggle inventory (layer on top of IN_GAME)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">show_inventory</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_inventory</span>
-
-            <span class="c1"># Mining/placing</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># LClick</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">start_mining</span><span class="p">()</span>
-                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># RClick</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">place_block</span><span class="p">()</span>
-            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONUP</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">stop_mining</span><span class="p">()</span>
-
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;PAUSED&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pause_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;OPTIONS&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">options_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># Continue main loop</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span> <span class="k">return</span> <span class="kc">False</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Polling Inputs:</strong> Every frame, raw hardware events from the operating system are pulled and flushed through the <cite>pygame.event</cite> queue.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Targeted Dispatch:</strong> Keys and mouse inputs are tunneled immediately into the active <cite>game_state</cite>, preventing un-rendered UI elements from consuming inputs.</p></li>
+</ul>
 </section>
 <section id="detailed-update-step-in-game">
 <h2>Detailed Update Step (In-Game)<a class="headerlink" href="#detailed-update-step-in-game" title="Link to this heading"></a></h2>
 <p><strong>Update Sequence (per frame):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_in_game</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_time</span><span class="p">):</span>
-    <span class="c1"># 1. PLAYER UPDATE</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-
-    <span class="c1"># 2. WORLD STREAMING</span>
-    <span class="n">player_chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">get_chunk_containing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">update_loaded_chunks</span><span class="p">(</span><span class="n">player_chunk</span><span class="p">,</span> <span class="n">RENDER_DISTANCE</span><span class="p">)</span>
-
-    <span class="c1"># 3. QUEUE PROCESSING (budgeted per frame)</span>
-    <span class="c1"># Pull from load_queue, build_queue, mesh_queue</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">process_mesh_queue</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="n">MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">process_chunk_queue</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="n">MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME</span><span class="p">)</span>
-
-    <span class="c1"># 4. VOXEL INTERACTIONS (mining/placing results)</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mining_duration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mining_duration</span> <span class="o">+=</span> <span class="n">delta_time</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mining_duration</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_block_hardness</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">voxel_handler</span><span class="o">.</span><span class="n">remove_voxel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_block_pos</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mining_duration</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="c1"># 5. SCENE UPDATE</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-
-    <span class="c1"># 6. LIGHTING UPDATES (from block changes)</span>
-    <span class="c1"># Already queued during voxel_handler calls</span>
-
-    <span class="c1"># 7. UI ANIMATION</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_inventory</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">inventory_ui</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">update_loaded_chunks</span><span class="p">(</span><span class="n">player_chunk</span><span class="p">,</span> <span class="n">RENDER_DISTANCE</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Chunk Streaming:</strong> The logical step always calculates the player’s world position and commands the background pool to load or drop respective memory boundaries.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">process_mesh_queue</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="n">MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Budgeted Queues:</strong> Background workers execute heavily on CPU cores, but VAO/VBO OpenGL initialization is locked strictly to this primary thread and strictly limited per-frame to preserve FPS.</p></li>
+</ul>
 </section>
 <section id="detailed-render-step">
 <h2>Detailed Render Step<a class="headerlink" href="#detailed-render-step" title="Link to this heading"></a></h2>
 <p><strong>Render Sequence (per frame):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="c1"># 1. CLEAR FRAMEBUFFER</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">clear</span><span class="p">(</span><span class="mf">0.53</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">,</span> <span class="mf">0.92</span><span class="p">)</span>  <span class="c1"># Sky blue</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">clear_depth</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
-
-    <span class="c1"># 2. IN-GAME RENDERING (if applicable)</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shader_program</span><span class="p">)</span>
-
-        <span class="c1"># 3. DISABLE DEPTH FOR UI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
-
-        <span class="c1"># 4. RENDER HUD OVERLAY</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shader_program</span><span class="p">)</span>
-
-        <span class="c1"># 5. RENDER INVENTORY (if open)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_inventory</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">inventory_ui</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shader_program</span><span class="p">)</span>
-
-        <span class="c1"># 6. RENDER DEBUG OVERLAY</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_debug_overlay</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">debug_overlay</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shader_program</span><span class="p">)</span>
-
-    <span class="c1"># 3. MENU RENDERING</span>
-    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;MAIN_MENU&#39;</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">main_menu</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shader_program</span><span class="p">)</span>
-
-    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;PAUSED&#39;</span><span class="p">:</span>
-        <span class="c1"># Render world darkened in background</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shader_program</span><span class="p">)</span>
-
-        <span class="c1"># Dim overlay</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
-        <span class="n">render_dim_quad</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
-
-        <span class="c1"># Pause menu on top</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pause_menu</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shader_program</span><span class="p">)</span>
-
-    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;LOADING&#39;</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
-        <span class="n">render_loading_screen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loading_progress</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">clear</span><span class="p">(</span><span class="mf">0.53</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">,</span> <span class="mf">0.92</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">clear_depth</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Buffer Sweeping:</strong> The screen and depth layers are rigorously wiped clean on the graphics card prior to drawing the next visualization.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shader_program</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Z-Buffering Control:</strong> By disabling depth evaluations after geometry rendering, the 2D UI elements are mathematically drawn overtop the entire voxel environment without clipping.</p></li>
+</ul>
 </section>
 <section id="scene-rendering-pipeline">
 <h2>Scene Rendering Pipeline<a class="headerlink" href="#scene-rendering-pipeline" title="Link to this heading"></a></h2>
 <p><strong>Scene.render() Detail (in-game world rendering):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">shader_program</span><span class="p">):</span>
-    <span class="c1"># 1. FRUSTUM CULLING</span>
-    <span class="n">visible_chunks</span> <span class="o">=</span> <span class="n">shader_program</span><span class="o">.</span><span class="n">frustum_cull</span><span class="p">(</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">active_chunks</span>
-    <span class="p">)</span>
-
-    <span class="c1"># 2. PREPARE SHADER UNIFORMS</span>
-    <span class="n">shader_program</span><span class="o">.</span><span class="n">bind_matrices</span><span class="p">(</span>
-        <span class="n">projection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">projection_matrix</span><span class="p">,</span>
-        <span class="n">view</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">view_matrix</span><span class="p">,</span>
-        <span class="n">model</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">shader_program</span><span class="o">.</span><span class="n">bind_uniforms</span><span class="p">(</span>
-        <span class="n">u_sun_direction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">sun_direction</span><span class="p">,</span>
-        <span class="n">u_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">session_time</span><span class="p">,</span>
-        <span class="n">u_fog_density</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;render_distance&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">*</span> <span class="mf">0.7</span><span class="p">,</span>
-        <span class="n">u_texture_array</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="o">.</span><span class="n">texture_array</span><span class="p">,</span>
-        <span class="n">u_texture_map</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="o">.</span><span class="n">texture_map</span><span class="p">,</span>
-        <span class="n">bg_color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.53</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">,</span> <span class="mf">0.92</span><span class="p">)</span>  <span class="c1"># Sky color</span>
-    <span class="p">)</span>
-
-    <span class="c1"># 3. RENDER OPAQUE CHUNKS (depth write enabled)</span>
-    <span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">visible_chunks</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">mesh</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">chunk</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">is_hidden_by_occlusion_query</span><span class="p">:</span>
-            <span class="n">chunk</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>  <span class="c1"># Render opaque faces</span>
-
-    <span class="c1"># 4. RENDER WATER (transparency, depth write disabled)</span>
-    <span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">visible_chunks</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">mesh</span><span class="p">:</span>
-            <span class="n">chunk</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">render_water</span><span class="p">()</span>  <span class="c1"># Render water faces only</span>
-    <span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
-
-    <span class="c1"># 5. RENDER SKY</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">sky</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">shader_program</span><span class="p">)</span>
-
-    <span class="c1"># 6. RENDER CLOUDS</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">clouds</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">shader_program</span><span class="p">)</span>
-
-    <span class="c1"># 7. RENDER ITEMS (dropped entities)</span>
-    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
-        <span class="n">item</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">shader_program</span><span class="p">)</span>
-
-    <span class="c1"># 8. RENDER VOXEL MARKER (target block outline)</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_marker</span><span class="o">.</span><span class="n">visible</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">voxel_marker</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">shader_program</span><span class="p">)</span>
-
-    <span class="c1"># 9. RENDER HELD ITEM (in camera view)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">held_item_mesh</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">shader_program</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">visible_chunks</span> <span class="o">=</span> <span class="n">shader_program</span><span class="o">.</span><span class="n">frustum_cull</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Vectorized Frustum Culling:</strong> The scene strictly bounds rendering to only what physically fits within the player’s 3D cone-of-vision mathematically.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
+<span class="n">chunk</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">render_water</span><span class="p">()</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Multi-Pass Transparency:</strong> Water and leaves are rendered entirely on an isolated pass with alphablending to prevent Z-fighting.</p></li>
+</ul>
 </section>
 <section id="world-session-initialization-loading-state">
 <h2>World Session Initialization (LOADING state)<a class="headerlink" href="#world-session-initialization-loading-state" title="Link to this heading"></a></h2>
-<p><strong>init_game_session() Pseudocode:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">init_game_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world_name</span><span class="p">):</span>
-    <span class="c1"># 1. CLEAR PREVIOUS WORLD</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">unload_all_chunks</span><span class="p">()</span>  <span class="c1"># Flush to DB</span>
-
-    <span class="c1"># 2. LOAD/CREATE WORLD</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">world</span> <span class="o">=</span> <span class="n">World</span><span class="p">(</span><span class="n">world_name</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">load_metadata</span><span class="p">()</span>  <span class="c1"># Load seed, spawn point</span>
-
-    <span class="c1"># 3. CREATE SCENE</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">scene</span> <span class="o">=</span> <span class="n">Scene</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">)</span>
-
-    <span class="c1"># 4. LOAD PLAYER</span>
-    <span class="n">player_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">load_player_data</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">player</span> <span class="o">=</span> <span class="n">Player</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">])</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span> <span class="o">=</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;inventory&#39;</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">health</span> <span class="o">=</span> <span class="n">player_data</span><span class="p">[</span><span class="s1">&#39;health&#39;</span><span class="p">]</span>
-
-    <span class="c1"># 5. INITIALIZE VOXEL HANDLER</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">voxel_handler</span> <span class="o">=</span> <span class="n">VoxelHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">)</span>
-
-    <span class="c1"># 6. CHUNK PRELOADING (blocking loop)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="s1">&#39;LOADING&#39;</span>
-    <span class="n">initial_chunks_needed</span> <span class="o">=</span> <span class="p">(</span><span class="n">RENDER_DISTANCE</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-    <span class="n">chunks_loaded</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">while</span> <span class="n">chunks_loaded</span> <span class="o">&lt;</span> <span class="n">initial_chunks_needed</span><span class="p">:</span>
-        <span class="c1"># Request chunk loads</span>
-        <span class="k">for</span> <span class="n">chunk_coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">get_chunks_near_player</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="p">,</span> <span class="n">RENDER_DISTANCE</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">chunk_exists</span><span class="p">(</span><span class="n">chunk_coord</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">loading</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">chunk_coord</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">request_chunk_load</span><span class="p">(</span><span class="n">chunk_coord</span><span class="p">)</span>
-
-        <span class="c1"># Process queue (blocking)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">process_mesh_queue</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>  <span class="c1"># Load aggressively during init</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">process_chunk_queue</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-
-        <span class="n">chunks_loaded</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">)</span>
-        <span class="n">loading_percent</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">chunks_loaded</span> <span class="o">/</span> <span class="n">initial_chunks_needed</span><span class="p">)</span>
-
-        <span class="c1"># Render loading screen</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">render_loading_screen</span><span class="p">(</span><span class="n">loading_percent</span><span class="p">)</span>
-        <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
-
-    <span class="c1"># 7. SAFETY FLUSH (clear buffered inputs)</span>
-    <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-    <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_rel</span><span class="p">()</span>  <span class="c1"># Consume any accumulated mouse movement</span>
-
-    <span class="c1"># 8. TRANSITION TO GAMEPLAY</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="s1">&#39;IN_GAME&#39;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">player_ready</span> <span class="o">=</span> <span class="kc">True</span>
+<p><strong>init_game_session() Implementation:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">world</span> <span class="o">=</span> <span class="n">World</span><span class="p">(</span><span class="n">world_name</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">scene</span> <span class="o">=</span> <span class="n">Scene</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>System Sub-Allocation:</strong> Core session elements establish a pristine architectural tree.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_rel</span><span class="p">()</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Accumulated Safety Flushing:</strong> Discarding lingering hardware events prior to fully bridging <code class="docutils literal notranslate"><span class="pre">IN_GAME</span></code> prevents severe camera snapping.</p></li>
+</ul>
 </section>
 <section id="shutdown-and-cleanup">
 <h2>Shutdown and Cleanup<a class="headerlink" href="#shutdown-and-cleanup" title="Link to this heading"></a></h2>
-<p><strong>quit_game() Pseudocode:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">quit_game</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving world...&quot;</span><span class="p">)</span>
-
-    <span class="c1"># 1. SAVE PLAYER STATE</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="p">:</span>
-        <span class="n">player_data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
-            <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
-            <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span><span class="p">,</span>
-            <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">yaw</span><span class="p">,</span>
-            <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">pitch</span><span class="p">,</span>
-            <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">health</span><span class="p">,</span>
-            <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hunger</span><span class="p">,</span>
-            <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">oxygen</span><span class="p">,</span>
-            <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">,</span>
-            <span class="s1">&#39;inventory_counts&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">,</span>
-        <span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">save_player_data</span><span class="p">(</span><span class="n">player_data</span><span class="p">)</span>
-
-    <span class="c1"># 2. UNLOAD ALL CHUNKS (saves to DB)</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">unload_all_chunks</span><span class="p">()</span>
-
-    <span class="c1"># 3. CLOSE DATABASE</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;db&#39;</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-    <span class="c1"># 4. RELEASE GPU RESOURCES</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;vbo_pool&#39;</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">vbo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="p">:</span>
-            <span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
-
-    <span class="c1"># 5. CLEANUP AUDIO</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;sounds&#39;</span><span class="p">):</span>
-        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
-
-    <span class="c1"># 6. CLOSE PYGAME</span>
-    <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;World saved. Goodbye!&quot;</span><span class="p">)</span>
+<p><strong>quit_game() Implementation:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">unload_all_chunks</span><span class="p">()</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Data Evacuation:</strong> Forcefully drops active terrain sectors straight onto persistent SQLite disk memory prior to closing logic.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">vbo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="p">:</span>
+    <span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>VRAM Destruction:</strong> Caches pooled inside OpenGL bindings are permanently stripped off the system graphics.</p></li>
+</ul>
 </section>
 </section>
 

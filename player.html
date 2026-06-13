@@ -54,7 +54,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop">The Main Game Loop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
@@ -554,41 +554,21 @@
 <li><p>Inventory and held item</p></li>
 </ul>
 <p>Architecture:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>class Player(Camera):
-    __init__(self, world, start_pos=(0, 50, 0)):
-        # Inherited from Camera
-        self.position: glm.vec3                    # Camera position (eye)
-        self.yaw, self.pitch: float                # Rotation angles (radians)
-
-        # Physics state
-        self.feet_pos: glm.vec3                    # Position at feet (for collisions)
-        self.velocity: glm.vec3                    # Movement velocity
-        self.on_ground: bool                       # Contact with solid block
-        self.in_water: bool                        # Submerged
-        self.head_in_water: bool                   # Head above surface
-
-        # Survival stats
-        self.health: float                         # 0-20
-        self.hunger: float                         # 0-20
-        self.oxygen: float                         # 0-20
-        self.highest_y: float                       # For fall damage calculation
-
-        # Inventory
-        self.inventory: List[int]                  # 41 slots, voxel IDs
-        self.inventory_counts: List[int]           # Stack sizes (1-64)
-        self.hotbar_index: int                     # Selected slot (0-8)
-
-        # Mode
-        self.game_mode: str                        # &#39;SURVIVAL&#39; or &#39;CREATIVE&#39;
-
-        # Animation
-        self.step_counter: float                   # For view bobbing, footsteps
-        self.held_item_swing: float                # 0-1, for swing animation
-
-        # Input state
-        self.keys_pressed: dict                    # Keys currently held
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>self.feet_pos: glm.vec3
+self.velocity: glm.vec3
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Physics State:</strong> The player relies on a separate <cite>feet_pos</cite> for accurate AABB collision detection, while <cite>velocity</cite> governs movement directions independently of the camera’s true position.</p></li>
+</ul>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>self.health: float
+self.hunger: float
+self.oxygen: float
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Survival Metrics:</strong> Tracking variables process independent decrement logics per-update for standard mechanics.</p></li>
+</ul>
 </section>
 <section id="coordinate-system">
 <h2>Coordinate System<a class="headerlink" href="#coordinate-system" title="Link to this heading"></a></h2>
@@ -597,20 +577,14 @@
 <li><p><strong>feet_pos:</strong> Base of player bounding box (Y=0 of AABB)</p></li>
 <li><p><strong>position (inherited):</strong> Eye level = feet_pos.y + EYE_HEIGHT</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PLAYER_WIDTH</span> <span class="o">=</span> <span class="mf">0.6</span>         <span class="c1"># XZ diameter</span>
-<span class="n">PLAYER_HEIGHT</span> <span class="o">=</span> <span class="mf">1.8</span>        <span class="c1"># Total height</span>
-<span class="n">PLAYER_HALF_W</span> <span class="o">=</span> <span class="mf">0.3</span>        <span class="c1"># Half-width for AABB</span>
-<span class="n">PLAYER_EYE_HEIGHT</span> <span class="o">=</span> <span class="mf">1.6</span>    <span class="c1"># Distance from feet to eyes</span>
-
-<span class="c1"># Calculate AABB</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_aabb</span><span class="p">():</span>
-    <span class="n">half_w</span> <span class="o">=</span> <span class="n">PLAYER_HALF_W</span>
-    <span class="k">return</span> <span class="p">(</span>
-        <span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>     <span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">half_w</span><span class="p">,</span>  <span class="c1"># Min</span>
-        <span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">PLAYER_HEIGHT</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">half_w</span>  <span class="c1"># Max</span>
-    <span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_aabb</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">half_w</span><span class="p">,</span>  <span class="c1"># Min</span>
+            <span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">PLAYER_HEIGHT</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">half_w</span><span class="p">)</span>  <span class="c1"># Max</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>AABB Computation:</strong> The bounding geometry wraps identically relative strictly around the bottom-point geometry calculation.</p></li>
+</ul>
 </section>
 <section id="controls-and-input-handling">
 <h2>Controls and Input Handling<a class="headerlink" href="#controls-and-input-handling" title="Link to this heading"></a></h2>
@@ -674,188 +648,89 @@
 </tbody>
 </table>
 <p><strong>Movement Calculation (Survival Mode)</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_movement</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
-    <span class="c1"># Compute move direction (camera-relative)</span>
-    <span class="n">direction</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;W&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">+=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">-=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">-=</span> <span class="n">get_right_vector</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;D&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">+=</span> <span class="n">get_right_vector</span><span class="p">()</span>
-
-    <span class="c1"># Sprint multiplier</span>
-    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;LShift&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">on_ground</span><span class="p">:</span>
-        <span class="n">sprint_mult</span> <span class="o">=</span> <span class="n">PLAYER_SPRINT_MULTIPLIER</span>  <span class="c1"># 1.5</span>
-        <span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">sprint_mult</span> <span class="o">=</span> <span class="mf">1.0</span>
-        <span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">False</span>
-
-    <span class="c1"># Apply movement speed</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">direction</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">direction</span><span class="o">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="n">sprint_mult</span> <span class="o">*</span> <span class="n">delta_time</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">direction</span><span class="o">.</span><span class="n">z</span> <span class="o">*</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="n">sprint_mult</span> <span class="o">*</span> <span class="n">delta_time</span>
-
-        <span class="c1"># View bobbing (sine wave based on distance traveled)</span>
-        <span class="n">step_counter</span> <span class="o">+=</span> <span class="n">length</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">vec2</span><span class="p">(</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">velocity</span><span class="o">.</span><span class="n">z</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta_time</span>
-
-    <span class="c1"># Jump (only on ground)</span>
-    <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;Space&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">on_ground</span><span class="p">:</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">JUMP_VELOCITY</span>
-        <span class="n">on_ground</span> <span class="o">=</span> <span class="kc">False</span>
-
-    <span class="c1"># Creative fly mode</span>
-    <span class="k">if</span> <span class="n">game_mode</span> <span class="o">==</span> <span class="s1">&#39;CREATIVE&#39;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;Space&#39;</span><span class="p">]:</span>
-            <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="mi">5</span>  <span class="c1"># Upward</span>
-        <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;LShift&#39;</span><span class="p">]:</span>
-            <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="mi">5</span>  <span class="c1"># Downward</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;W&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">+=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">-=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Directional Vectors:</strong> Key matrices immediately transpose specific geometric coordinates normalized onto the velocity stack.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;Space&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">on_ground</span><span class="p">:</span>
+    <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">JUMP_VELOCITY</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Velocity Stacking:</strong> Vertical impulses manipulate specifically isolated single-axis floating calculations to resolve jumping.</p></li>
+</ul>
 <p><strong>Mouse Input (Camera Control)</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">handle_mouse_motion</span><span class="p">(</span><span class="n">rel_x</span><span class="p">,</span> <span class="n">rel_y</span><span class="p">,</span> <span class="n">sensitivity</span><span class="p">):</span>
-    <span class="c1"># rel_x, rel_y from pygame.mouse.get_rel()</span>
-
-    <span class="c1"># Yaw (left-right, X-axis rotation)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">yaw</span> <span class="o">-=</span> <span class="n">rel_x</span> <span class="o">*</span> <span class="n">sensitivity</span>
-
-    <span class="c1"># Pitch (up-down, Y-axis rotation)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">-=</span> <span class="n">rel_y</span> <span class="o">*</span> <span class="n">sensitivity</span>
-
-    <span class="c1"># Clamp pitch to ±90 degrees to prevent over-rotation</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">,</span> <span class="o">-</span><span class="n">glm</span><span class="o">.</span><span class="n">pi</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">pi</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-
-    <span class="c1"># Update camera view matrix accordingly</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">yaw</span> <span class="o">-=</span> <span class="n">rel_x</span> <span class="o">*</span> <span class="n">sensitivity</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">-=</span> <span class="n">rel_y</span> <span class="o">*</span> <span class="n">sensitivity</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">,</span> <span class="o">-</span><span class="n">glm</span><span class="o">.</span><span class="n">pi</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">pi</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Mouse Polling:</strong> Relative hardware motion continuously calculates yaw bounds alongside hard-clamped pitch maximums.</p></li>
+</ul>
 </section>
 <section id="physics-gravity-and-velocity">
 <h2>Physics: Gravity and Velocity<a class="headerlink" href="#physics-gravity-and-velocity" title="Link to this heading"></a></h2>
 <p>Applied each update:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_gravity</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">on_ground</span><span class="p">:</span>
-        <span class="c1"># Fall acceleration</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">GRAVITY</span> <span class="o">*</span> <span class="n">delta_time</span>  <span class="c1"># GRAVITY = -0.000025</span>
-
-    <span class="k">if</span> <span class="n">in_water</span><span class="p">:</span>
-        <span class="c1"># Water buoyancy (reduced gravity)</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">GRAVITY</span> <span class="o">*</span> <span class="n">PLAYER_UNDERWATER_GRAVITY_MULTIPLIER</span> <span class="o">*</span> <span class="n">delta_time</span>
-        <span class="c1"># Also apply drag to vertical movement</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">PLAYER_VERTICAL_WATER_DRAG</span><span class="p">)</span>
-
-    <span class="c1"># Terminal velocity (optional clamping to prevent extreme speeds)</span>
-    <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">on_ground</span><span class="p">:</span>
+    <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">GRAVITY</span> <span class="o">*</span> <span class="n">delta_time</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Falling Physics:</strong> Downward velocity accrues natively minus specific localized modifiers if swimming.</p></li>
+</ul>
 <p><strong>Movement and Collision Resolution:</strong></p>
 <p>Movement is axis-separated to enable smooth wall-sliding:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">move_and_collide</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
-    <span class="c1"># Apply velocity to get new position candidates</span>
-    <span class="n">new_pos</span> <span class="o">=</span> <span class="n">feet_pos</span> <span class="o">+</span> <span class="n">velocity</span> <span class="o">*</span> <span class="n">delta_time</span>
-
-    <span class="c1"># Resolve collisions per-axis</span>
-    <span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
-    <span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
-    <span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
-
-    <span class="c1"># Update final position</span>
-    <span class="n">feet_pos</span> <span class="o">=</span> <span class="n">new_pos</span>
-    <span class="n">position</span> <span class="o">=</span> <span class="n">feet_pos</span> <span class="o">+</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">PLAYER_EYE_HEIGHT</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
+<span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
+<span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Axis Separation:</strong> To permit fluid surface sliding instead of sharp halts, boundaries check independently per explicit dimension vector.</p></li>
+</ul>
 </section>
 <section id="aabb-collision-detection">
 <h2>AABB Collision Detection<a class="headerlink" href="#aabb-collision-detection" title="Link to this heading"></a></h2>
 <p><strong>Axis-Aligned Bounding Box (AABB)</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">resolve_axis</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">current_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">):</span>
-    <span class="c1"># Get AABB after movement</span>
-    <span class="n">aabb_min</span><span class="p">,</span> <span class="n">aabb_max</span> <span class="o">=</span> <span class="n">get_aabb_at</span><span class="p">(</span><span class="n">new_pos</span><span class="p">)</span>
-
-    <span class="c1"># Scan all voxels within and around AABB</span>
-    <span class="k">for</span> <span class="n">vx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="n">ceil</span><span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">x</span><span class="p">)):</span>
-        <span class="k">for</span> <span class="n">vy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="n">ceil</span><span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">y</span><span class="p">)):</span>
-            <span class="k">for</span> <span class="n">vz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">z</span><span class="p">),</span> <span class="n">ceil</span><span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">z</span><span class="p">)):</span>
-                <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">get_voxel</span><span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">)</span>
-
-                <span class="c1"># Skip transparent voxels (water allows movement)</span>
-                <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
-                    <span class="k">continue</span>
-
-                <span class="c1"># Check AABB intersection</span>
-                <span class="n">voxel_box</span> <span class="o">=</span> <span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">,</span> <span class="n">vx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">vy</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">vz</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-
-                <span class="k">if</span> <span class="n">aabb_intersect</span><span class="p">(</span><span class="n">aabb_min</span><span class="p">,</span> <span class="n">aabb_max</span><span class="p">,</span> <span class="n">voxel_box</span><span class="p">):</span>
-                    <span class="c1"># Collision: snap position to voxel boundary</span>
-                    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;X&#39;</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Moving +X</span>
-                            <span class="n">new_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">current_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Moving -X</span>
-                            <span class="n">new_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">current_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">aabb_min</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
-                        <span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
-
-                    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;Y&#39;</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Moving +Y</span>
-                            <span class="n">new_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">current_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Moving -Y</span>
-                            <span class="n">new_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">current_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">aabb_min</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-                            <span class="n">on_ground</span> <span class="o">=</span> <span class="kc">True</span>
-                        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
-
-                    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;Z&#39;</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Moving +Z</span>
-                            <span class="n">new_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">current_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Moving -Z</span>
-                            <span class="n">new_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">current_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">aabb_min</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
-                        <span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="mi">0</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">aabb_intersect</span><span class="p">(</span><span class="n">aabb_min</span><span class="p">,</span> <span class="n">aabb_max</span><span class="p">,</span> <span class="n">voxel_box</span><span class="p">):</span>
+    <span class="n">new_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">voxel_box</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">current_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Collision Resolution:</strong> Geometric bounds explicitly calculate distance snapping exactly flush to intersection thresholds seamlessly.</p></li>
+</ul>
 <p><strong>AABB Intersection Test:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">aabb_intersect</span><span class="p">(</span><span class="n">aabb1_min</span><span class="p">,</span> <span class="n">aabb1_max</span><span class="p">,</span> <span class="n">aabb2_min</span><span class="p">,</span> <span class="n">aabb2_max</span><span class="p">):</span>
-    <span class="c1"># No separation on any axis = collision</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">aabb1_min</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">x</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">x</span> <span class="ow">and</span>
-            <span class="n">aabb1_min</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span>
-            <span class="n">aabb1_min</span><span class="o">.</span><span class="n">z</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">z</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="p">(</span><span class="n">aabb1_min</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">x</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">x</span> <span class="ow">and</span>
+        <span class="n">aabb1_min</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span>
+        <span class="n">aabb1_min</span><span class="o">.</span><span class="n">z</span> <span class="o">&lt;</span> <span class="n">aabb2_max</span><span class="o">.</span><span class="n">z</span> <span class="ow">and</span> <span class="n">aabb1_max</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="n">aabb2_min</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Volume Intersection:</strong> Bounding box verifications check all parallel overlapping instances definitively.</p></li>
+</ul>
 </section>
 <section id="water-physics">
 <h2>Water Physics<a class="headerlink" href="#water-physics" title="Link to this heading"></a></h2>
 <p>When in water:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_in_water</span><span class="p">():</span>
-    <span class="c1"># Check if feet_pos in water voxel</span>
-    <span class="n">voxel</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">get_voxel</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
-
-    <span class="k">if</span> <span class="n">voxel</span> <span class="o">==</span> <span class="n">WATER</span><span class="p">:</span>
-        <span class="n">in_water</span> <span class="o">=</span> <span class="kc">True</span>
-
-        <span class="c1"># Check if head in water (for oxygen drain)</span>
-        <span class="n">head_voxel</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">get_voxel</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
-        <span class="n">head_in_water</span> <span class="o">=</span> <span class="p">(</span><span class="n">head_voxel</span> <span class="o">==</span> <span class="n">WATER</span><span class="p">)</span>
-
-        <span class="c1"># Horizontal drag</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">*=</span> <span class="n">PLAYER_WATER_DRAG_MULTIPLIER</span>  <span class="c1"># 0.5</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">*=</span> <span class="n">PLAYER_WATER_DRAG_MULTIPLIER</span>
-
-        <span class="c1"># Vertical drag</span>
-        <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">PLAYER_VERTICAL_WATER_DRAG</span><span class="p">)</span>  <span class="c1"># Additional damping</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">in_water</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">head_in_water</span> <span class="o">=</span> <span class="kc">False</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">*=</span> <span class="n">PLAYER_WATER_DRAG_MULTIPLIER</span>
+<span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">PLAYER_VERTICAL_WATER_DRAG</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Liquid Dampening:</strong> Severe scalar decrements forcefully apply across movement bounds strictly inside liquid domains.</p></li>
+</ul>
 <p><strong>Dolphin Leap (jump near surface):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">try_jump_in_water</span><span class="p">():</span>
-    <span class="k">if</span> <span class="n">in_water</span> <span class="ow">and</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;Space&#39;</span><span class="p">]:</span>
-        <span class="c1"># Check if near surface (head not in water)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">head_in_water</span><span class="p">:</span>
-            <span class="c1"># Apply upward boost</span>
-            <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">JUMP_VELOCITY</span> <span class="o">*</span> <span class="n">PLAYER_DOLPHIN_LEAP_MULTIPLIER</span>  <span class="c1"># 1.05x</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Normal swimming upward</span>
-            <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="mi">3</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">head_in_water</span><span class="p">:</span>
+    <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">JUMP_VELOCITY</span> <span class="o">*</span> <span class="n">PLAYER_DOLPHIN_LEAP_MULTIPLIER</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Surface Leaping:</strong> Distinct thresholds evaluate if oxygen metrics align safely prior to launching elevated velocity spikes natively.</p></li>
+</ul>
 </section>
 <section id="survival-stats-management">
 <h2>Survival Stats Management<a class="headerlink" href="#survival-stats-management" title="Link to this heading"></a></h2>
@@ -865,111 +740,71 @@
 <li><p>Healed by: Food (not implemented in basic version)</p></li>
 <li><p>Death: respawn at spawn point</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_fall_damage</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">on_ground</span><span class="p">:</span>
-        <span class="n">highest_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">highest_y</span><span class="p">,</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">on_ground</span> <span class="ow">and</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">highest_y</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">:</span>
-        <span class="c1"># Fall distance &gt; 3 blocks</span>
-        <span class="n">fall_distance</span> <span class="o">=</span> <span class="n">highest_y</span> <span class="o">-</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span>
-        <span class="n">damage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fall_distance</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">)</span>
-        <span class="n">take_damage</span><span class="p">(</span><span class="n">damage</span><span class="p">)</span>
-        <span class="n">highest_y</span> <span class="o">=</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fall_distance</span> <span class="o">=</span> <span class="n">highest_y</span> <span class="o">-</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span>
+<span class="n">damage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fall_distance</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Height Injury:</strong> Substantial block thresholds directly convert raw velocity differentials into discrete damage indices seamlessly.</p></li>
+</ul>
 <p><strong>Hunger</strong> (0-20)</p>
 <ul class="simple">
 <li><p>Drains when sprinting or traveling</p></li>
 <li><p>Restored by consuming food</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">HUNGER_DRAIN_SPRINT</span> <span class="o">=</span> <span class="mf">0.002</span>       <span class="c1"># per millisecond</span>
-<span class="n">HUNGER_DRAIN_WALK</span> <span class="o">=</span> <span class="mf">0.0005</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">update_hunger</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">is_sprinting</span><span class="p">:</span>
-        <span class="n">hunger</span> <span class="o">-=</span> <span class="n">HUNGER_DRAIN_SPRINT</span> <span class="o">*</span> <span class="n">delta_time</span>
-    <span class="k">elif</span> <span class="n">is_moving</span><span class="p">:</span>
-        <span class="n">hunger</span> <span class="o">-=</span> <span class="n">HUNGER_DRAIN_WALK</span> <span class="o">*</span> <span class="n">delta_time</span>
-
-    <span class="n">hunger</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">hunger</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">MAX_HUNGER</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">hunger</span> <span class="o">-=</span> <span class="n">HUNGER_DRAIN_SPRINT</span> <span class="o">*</span> <span class="n">delta_time</span>
+<span class="n">hunger</span> <span class="o">-=</span> <span class="n">HUNGER_DRAIN_WALK</span> <span class="o">*</span> <span class="n">delta_time</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Endurance Depletion:</strong> Specific sub-values continually detach natively mapped multipliers across elapsed time intervals precisely.</p></li>
+</ul>
 <p><strong>Oxygen</strong> (0-20)</p>
 <ul class="simple">
 <li><p>Depletes when head in water</p></li>
 <li><p>Regenerates when above water surface</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">OXYGEN_LOSE_TIMER</span> <span class="o">=</span> <span class="mi">1000</span>    <span class="c1"># ms, depletes 1 oxygen per second</span>
-<span class="n">OXYGEN_GAIN_TIMER</span> <span class="o">=</span> <span class="mi">200</span>     <span class="c1"># ms, regenerates 1 oxygen per 200ms</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">update_oxygen</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">head_in_water</span><span class="p">:</span>
-        <span class="n">oxygen_drain_time</span> <span class="o">+=</span> <span class="n">delta_time</span>
-        <span class="k">if</span> <span class="n">oxygen_drain_time</span> <span class="o">&gt;=</span> <span class="n">OXYGEN_LOSE_TIMER</span><span class="p">:</span>
-            <span class="n">oxygen</span> <span class="o">-=</span> <span class="mi">1</span>
-            <span class="n">oxygen_drain_time</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">oxygen_refill_time</span> <span class="o">+=</span> <span class="n">delta_time</span>
-        <span class="k">if</span> <span class="n">oxygen_refill_time</span> <span class="o">&gt;=</span> <span class="n">OXYGEN_GAIN_TIMER</span><span class="p">:</span>
-            <span class="n">oxygen</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">oxygen_refill_time</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="n">oxygen</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">oxygen</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">MAX_OXYGEN</span><span class="p">)</span>
-
-    <span class="c1"># Drowned at 0 oxygen</span>
-    <span class="k">if</span> <span class="n">oxygen</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">take_damage</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># 1 damage per frame</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">oxygen_drain_time</span> <span class="o">&gt;=</span> <span class="n">OXYGEN_LOSE_TIMER</span><span class="p">:</span>
+    <span class="n">oxygen</span> <span class="o">-=</span> <span class="mi">1</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Breath Decrements:</strong> Time loops repeatedly fire structural logic limits checking head positioning securely above physics grids dynamically.</p></li>
+</ul>
 <p><strong>Void Damage</strong> (Y &lt; -64)</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">VOID_DEATH_Y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">64</span>
-<span class="n">VOID_DAMAGE</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">VOID_DAMAGE_INTERVAL</span> <span class="o">=</span> <span class="mi">500</span>  <span class="c1"># ms</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">apply_void_damage</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">VOID_DEATH_Y</span><span class="p">:</span>
-        <span class="n">void_damage_time</span> <span class="o">+=</span> <span class="n">delta_time</span>
-        <span class="k">if</span> <span class="n">void_damage_time</span> <span class="o">&gt;=</span> <span class="n">VOID_DAMAGE_INTERVAL</span><span class="p">:</span>
-            <span class="n">take_damage</span><span class="p">(</span><span class="n">VOID_DAMAGE</span><span class="p">)</span>
-            <span class="n">void_damage_time</span> <span class="o">=</span> <span class="mi">0</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">VOID_DEATH_Y</span><span class="p">:</span>
+    <span class="n">take_damage</span><span class="p">(</span><span class="n">VOID_DAMAGE</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Abyss Processing:</strong> Infinite downward limits automatically strike static variables halting map leaks successfully.</p></li>
+</ul>
 </section>
 <section id="inventory-management">
 <h2>Inventory Management<a class="headerlink" href="#inventory-management" title="Link to this heading"></a></h2>
 <p><strong>Structure:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">inventory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span>  <span class="c1"># 41 slots, 0 = empty, 1-255 = voxel ID</span>
-<span class="n">inventory_counts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span>  <span class="c1"># Stack sizes (1-64)</span>
-
-<span class="c1"># Slots breakdown:</span>
-<span class="c1"># 0-8:   Hotbar</span>
-<span class="c1"># 9-35:  Main storage (27 slots)</span>
-<span class="c1"># 36-39: Crafting 2x2 grid</span>
-<span class="c1"># 40:    Crafting output</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">inventory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span>
+<span class="n">inventory_counts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">41</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Allocation Geometry:</strong> Fundamental grid arrays separate specifically localized components intuitively spanning up to 41 distinct fields effortlessly.</p></li>
+</ul>
 <p><strong>Add Item (pickup or craft):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">add_item</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
-    <span class="c1"># Try to stack on existing</span>
-    <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">41</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">inventory</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">==</span> <span class="n">voxel_id</span> <span class="ow">and</span> <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">:</span>
-            <span class="n">space</span> <span class="o">=</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span>
-            <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">return</span>
-
-    <span class="c1"># Add to empty slot (hotbar first)</span>
-    <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">41</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">inventory</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">inventory</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">=</span> <span class="n">voxel_id</span>
-            <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="k">return</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">inventory</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">==</span> <span class="n">voxel_id</span> <span class="ow">and</span> <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">:</span>
+    <span class="n">inventory_counts</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Stack Increment:</strong> Incoming item instances cleanly augment parallel matching vectors up to specified bounds safely via loop detection logic reliably.</p></li>
+</ul>
 <p><strong>Get Held Item:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_held_item</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">inventory</span><span class="p">[</span><span class="n">hotbar_index</span><span class="p">],</span> <span class="n">inventory_counts</span><span class="p">[</span><span class="n">hotbar_index</span><span class="p">]</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="n">inventory</span><span class="p">[</span><span class="n">hotbar_index</span><span class="p">],</span> <span class="n">inventory_counts</span><span class="p">[</span><span class="n">hotbar_index</span><span class="p">]</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Held Element:</strong> Easy index matching retrieves mapped pointers quickly globally precisely.</p></li>
+</ul>
 </section>
 <section id="mining-and-placing">
 <h2>Mining and Placing<a class="headerlink" href="#mining-and-placing" title="Link to this heading"></a></h2>
@@ -979,112 +814,65 @@
 <li><p>Calculate break time based on block hardness and held tool</p></li>
 <li><p>If held long enough, remove block and drop item</p></li>
 </ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">BLOCK_HARDNESS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">STONE</span><span class="p">:</span> <span class="mi">1500</span><span class="p">,</span>        <span class="c1"># ms to break</span>
-    <span class="n">WOOD</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
-    <span class="n">DIRT</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
-    <span class="n">GRASS</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
-    <span class="o">...</span>
-<span class="p">}</span>
-
-<span class="n">TOOL_MULTIPLIER</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">BARE_HAND</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-    <span class="n">WOODEN_PICKAXE</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>   <span class="c1"># 5x faster than bare hand</span>
-    <span class="n">STONE_PICKAXE</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-    <span class="o">...</span>
-<span class="p">}</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">mine_block</span><span class="p">(</span><span class="n">target_block_id</span><span class="p">):</span>
-    <span class="n">hardness</span> <span class="o">=</span> <span class="n">BLOCK_HARDNESS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">target_block_id</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
-    <span class="n">held_item</span> <span class="o">=</span> <span class="n">get_held_item</span><span class="p">()</span>
-    <span class="n">multiplier</span> <span class="o">=</span> <span class="n">TOOL_MULTIPLIER</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">held_item</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-
-    <span class="n">break_time</span> <span class="o">=</span> <span class="n">hardness</span> <span class="o">*</span> <span class="n">multiplier</span>  <span class="c1"># ms</span>
-
-    <span class="c1"># Player holds LClick; after break_time, remove block</span>
-    <span class="k">if</span> <span class="n">held_click_duration</span> <span class="o">&gt;=</span> <span class="n">break_time</span><span class="p">:</span>
-        <span class="n">world</span><span class="o">.</span><span class="n">remove_voxel</span><span class="p">(</span><span class="n">target_pos</span><span class="p">)</span>
-        <span class="c1"># Drop item if not in creative mode or not holding wrong tool</span>
-        <span class="k">if</span> <span class="n">game_mode</span> <span class="o">==</span> <span class="s1">&#39;SURVIVAL&#39;</span><span class="p">:</span>
-            <span class="n">drop_item</span><span class="p">(</span><span class="n">target_block_id</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">break_time</span> <span class="o">=</span> <span class="n">hardness</span> <span class="o">*</span> <span class="n">multiplier</span>
+<span class="k">if</span> <span class="n">held_click_duration</span> <span class="o">&gt;=</span> <span class="n">break_time</span><span class="p">:</span> <span class="n">world</span><span class="o">.</span><span class="n">remove_voxel</span><span class="p">(</span><span class="n">target_pos</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Hardness Modifiers:</strong> Tool matrices dramatically reduce required click thresholds dynamically processing interaction ray calculations simultaneously universally accurately.</p></li>
+</ul>
 <p><strong>Placing (RClick):</strong></p>
 <ol class="arabic simple">
 <li><p>Raycast to find target face</p></li>
 <li><p>Place block on adjacent empty voxel</p></li>
 <li><p>Consume from inventory</p></li>
 </ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">place_block</span><span class="p">():</span>
-    <span class="n">target_face_normal</span> <span class="o">=</span> <span class="n">raycast_result</span><span class="o">.</span><span class="n">normal</span>
-    <span class="n">target_pos</span> <span class="o">=</span> <span class="n">raycast_result</span><span class="o">.</span><span class="n">pos</span>
-
-    <span class="c1"># Compute placement position (adjacent to target)</span>
-    <span class="n">place_pos</span> <span class="o">=</span> <span class="n">target_pos</span> <span class="o">+</span> <span class="n">target_face_normal</span>
-
-    <span class="c1"># Check empty and no player collision</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">world</span><span class="o">.</span><span class="n">is_solid</span><span class="p">(</span><span class="n">place_pos</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">aabb_intersect_voxel</span><span class="p">(</span><span class="n">place_pos</span><span class="p">):</span>
-        <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">get_held_item</span><span class="p">()</span>
-        <span class="n">world</span><span class="o">.</span><span class="n">place_voxel</span><span class="p">(</span><span class="n">place_pos</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">game_mode</span> <span class="o">==</span> <span class="s1">&#39;SURVIVAL&#39;</span><span class="p">:</span>
-            <span class="n">consume_inventory</span><span class="p">(</span><span class="n">hotbar_index</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">world</span><span class="o">.</span><span class="n">is_solid</span><span class="p">(</span><span class="n">place_pos</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">aabb_intersect_voxel</span><span class="p">(</span><span class="n">place_pos</span><span class="p">):</span>
+    <span class="n">world</span><span class="o">.</span><span class="n">place_voxel</span><span class="p">(</span><span class="n">place_pos</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Void Bounds:</strong> Face computations place items exclusively when checking empty volume availability actively safely maintaining grid consistency robustly effortlessly.</p></li>
+</ul>
 </section>
 <section id="view-bobbing-and-hand-animation">
 <h2>View Bobbing and Hand Animation<a class="headerlink" href="#view-bobbing-and-hand-animation" title="Link to this heading"></a></h2>
 <p><strong>View Bobbing (Camera offset):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_view_bobbing</span><span class="p">():</span>
-    <span class="c1"># Sine wave based on step_counter</span>
-    <span class="n">bob_y</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">step_counter</span> <span class="o">*</span> <span class="n">BOB_FREQ</span><span class="p">)</span> <span class="o">*</span> <span class="n">BOB_AMPLITUDE</span>
-
-    <span class="c1"># Vertical head offset</span>
-    <span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">bob_y</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bob_y</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">step_counter</span> <span class="o">*</span> <span class="n">BOB_FREQ</span><span class="p">)</span> <span class="o">*</span> <span class="n">BOB_AMPLITUDE</span>
+<span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">bob_y</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Visual Pacing:</strong> Harmonic sine logic strictly couples offset manipulation dynamically toward pure distance evaluations smoothly realistically continuously.</p></li>
+</ul>
 <p><strong>Held Item Swing (for visual feedback):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_held_item_animation</span><span class="p">():</span>
-    <span class="k">if</span> <span class="n">held_item_swing</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c1"># Decrease swing over time</span>
-        <span class="n">held_item_swing</span> <span class="o">-=</span> <span class="n">delta_time</span> <span class="o">/</span> <span class="n">SWING_DURATION</span>  <span class="c1"># e.g., 0.2 seconds</span>
-        <span class="n">held_item_swing</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">held_item_swing</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-
-    <span class="c1"># During swing, rotate/bob held item in camera space</span>
-    <span class="n">swing_rotation</span> <span class="o">=</span> <span class="n">held_item_swing</span> <span class="o">*</span> <span class="mi">45</span>  <span class="c1"># degrees</span>
-    <span class="n">swing_bob</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">held_item_swing</span> <span class="o">*</span> <span class="n">PI</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">swing_rotation</span> <span class="o">=</span> <span class="n">held_item_swing</span> <span class="o">*</span> <span class="mi">45</span>
+<span class="n">swing_bob</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">held_item_swing</span> <span class="o">*</span> <span class="n">PI</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Swing Metrics:</strong> Action interpolations cleanly render independent UI item arrays naturally completely synchronously via normalized duration thresholds purely.</p></li>
+</ul>
 </section>
 <section id="dynamic-fov-during-sprint">
 <h2>Dynamic FOV During Sprint<a class="headerlink" href="#dynamic-fov-during-sprint" title="Link to this heading"></a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_fov</span><span class="p">():</span>
-    <span class="n">target_fov</span> <span class="o">=</span> <span class="n">BASE_FOV</span>  <span class="c1"># e.g., 70 degrees</span>
-
-    <span class="k">if</span> <span class="n">is_sprinting</span><span class="p">:</span>
-        <span class="n">target_fov</span> <span class="o">=</span> <span class="n">BASE_FOV</span> <span class="o">+</span> <span class="mi">10</span>  <span class="c1"># Expand FOV while running</span>
-
-    <span class="c1"># Smooth lerp</span>
-    <span class="n">current_fov</span> <span class="o">=</span> <span class="n">lerp</span><span class="p">(</span><span class="n">current_fov</span><span class="p">,</span> <span class="n">target_fov</span><span class="p">,</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">delta_time</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">is_sprinting</span><span class="p">:</span> <span class="n">target_fov</span> <span class="o">=</span> <span class="n">BASE_FOV</span> <span class="o">+</span> <span class="mi">10</span>
+<span class="n">current_fov</span> <span class="o">=</span> <span class="n">lerp</span><span class="p">(</span><span class="n">current_fov</span><span class="p">,</span> <span class="n">target_fov</span><span class="p">,</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">delta_time</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Perspective Expansion:</strong> Linear interpolation visually manipulates lens sizing rapidly during advanced velocity scenarios effectively smoothly securely.</p></li>
+</ul>
 </section>
 <section id="integration-with-game-loop">
 <h2>Integration with Game Loop<a class="headerlink" href="#integration-with-game-loop" title="Link to this heading"></a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">player_update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">):</span>
-    <span class="n">update_movement</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-    <span class="n">handle_mouse_motion</span><span class="p">()</span>
-    <span class="n">apply_gravity</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-    <span class="n">move_and_collide</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-    <span class="n">update_in_water</span><span class="p">()</span>
-    <span class="n">update_oxygen</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-    <span class="n">update_hunger</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-    <span class="n">apply_fall_damage</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-    <span class="n">apply_void_damage</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-    <span class="n">update_held_item_animation</span><span class="p">()</span>
-    <span class="n">update_view_bobbing</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">apply_gravity</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
+<span class="n">move_and_collide</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Delegation Pass:</strong> Singular unified core looping handles continuous physical physics state adjustments transparently uniformly.</p></li>
+</ul>
 </section>
 </section>
 

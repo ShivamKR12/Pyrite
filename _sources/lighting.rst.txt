@@ -23,12 +23,7 @@ Lightmap Data Structure
 
 .. code-block:: python
 
-    # Reference packing (actual engine uses compiled Numba for speed)
-    # sunlight: 0-15 (upper 4 bits)
-    # blocklight: 0-15 (lower 4 bits)
     packed = (sunlight << 4) | blocklight
-
-    # Unpacking
     sunlight = (packed >> 4) & 0xF
     blocklight = packed & 0xF
 
@@ -49,43 +44,23 @@ Sunlight Propagation Algorithm
 
 .. code-block:: python
 
-    def init_chunk_sunlight(chunk_voxels, chunk_lightmap):
-        """Initialize sunlight for freshly loaded chunk"""
+    for y in range(CHUNK_SIZE - 1, -1, -1):
+        voxel_id = chunk_voxels[x + z * 48 + y * 48**2]
 
-        # Constants
-        LIGHT_LEVEL_MAX = 15
-        SUNLIGHT_QUEUE = []  # BFS queue
+* **Downward Raycast:** The initialization loop scans from the top of the chunk to the bottom, checking the voxel ID at each height layer.
 
-        # Step 1: Cast sunlight downward
-        for x in range(CHUNK_SIZE):
-            for z in range(CHUNK_SIZE):
-                current_level = LIGHT_LEVEL_MAX
+.. code-block:: python
 
-                for y in range(CHUNK_SIZE - 1, -1, -1):  # Top to bottom
-                    voxel_id = chunk_voxels[x + z * 48 + y * 48**2]
+    if not is_transparent(voxel_id):
+        break
 
-                    if not is_transparent(voxel_id):
-                        # Hit solid block, light propagates no further down this column
-                        break
+* **Collision Halting:** If the downward ray encounters a solid, non-transparent block, sunlight is immediately stopped for that column.
 
-                    # Set sunlight for this air block
-                    lightmap_index = x + z * 48 + y * 48**2
-                    packed = chunk_lightmap[lightmap_index]
-                    blocklight = packed & 0xF
-                    # Pack into single byte: (sunlight << 4) | blocklight
-                    chunk_lightmap[lightmap_index] = (current_level << 4) | blocklight
+.. code-block:: python
 
-                    # Queue for horizontal spread
-                    SUNLIGHT_QUEUE.append((x, y, z, current_level, SUNLIGHT))
+    chunk_lightmap[lightmap_index] = (current_level << 4) | blocklight
 
-                    # Reduce level through certain blocks
-                    if voxel_id == WATER or voxel_id == LEAVES:
-                        current_level = max(0, current_level - 2)
-                    elif voxel_id in [GLASS]:
-                        current_level = max(0, current_level - 1)
-
-        # Step 2: Propagate horizontally (BFS)
-        propagate_light_bfs(chunk_voxels, chunk_lightmap, SUNLIGHT_QUEUE, SUNLIGHT)
+* **Data Packing:** The active sunlight level is bitshifted left by 4 to occupy the upper 4 bits, then merged securely with the existing blocklight via bitwise OR.
 
 **O(1) Vertical Raycast Optimization:**
 
@@ -97,32 +72,17 @@ When a block is mined exposing a hole to sunlight, an O(1) downward fill is more
 
 .. code-block:: python
 
-    # Pseudo-code: how vertical sunlight filling optimizes block breaking
-    # (Actual implementation is inside update_light_remove_block in src/lighting.py)
+    for dy in range(y, CHUNK_SIZE):
+        voxel_id = chunk_voxels[x + z * 48 + dy * 48**2]
 
-    def quick_sunlight_fill(x, y, z, chunk_voxels, chunk_lightmap):
-        """Quick downward fill for exposed blocks"""
+* **O(1) Downward Fill:** When a block is broken, the engine casts a simple ray downwards from the broken block to instantly fill exposed air rather than launching an expensive 3D BFS.
 
-        LIGHT_LEVEL_MAX = 15
-        current_level = LIGHT_LEVEL_MAX
+.. code-block:: python
 
-        for dy in range(y, CHUNK_SIZE):  # Downward
-            voxel_id = chunk_voxels[x + z * 48 + dy * 48**2]
+    if voxel_id == WATER or voxel_id == LEAVES:
+        current_level = max(0, current_level - 2)
 
-            if not is_transparent(voxel_id):
-                break  # Hit solid, propagation stops
-
-            # Set light: (current_level << 4) | blocklight
-            lightmap_index = x + z * 48 + dy * 48**2
-            packed = chunk_lightmap[lightmap_index]
-            blocklight = packed & 0xF
-            chunk_lightmap[lightmap_index] = (current_level << 4) | blocklight
-
-            # Apply diminishment
-            if voxel_id == WATER or voxel_id == LEAVES:
-                current_level = max(0, current_level - 2)
-
-        # Queue neighboring blocks for BFS expansion
+* **Light Diminishment:** Even during quick fills, light is strictly reduced by 2 levels if it passes through semi-transparent blocks.
 
 BFS Light Propagation
 ---------------------
@@ -131,78 +91,31 @@ BFS Light Propagation
 
 Instead of Python lists (slow), use preallocated NumPy arrays as ring buffers:
 
-**Queue-Based Approach (Actual Implementation):**
+**Queue-Based Approach:**
 
-The engine uses global pre-allocated NumPy arrays as ring buffers for efficiency:
+The engine uses global pre-allocated NumPy arrays directly as ring buffers for efficiency:
 
 .. code-block:: python
 
-    # Actual implementation in src/lighting.py uses:
-    # - GLOBAL_QUEUE_A: numpy array storing (x, y, z, level) tuples
-    # - GLOBAL_QUEUE_B: numpy array for secondary queue
-    # - Head/tail pointers for ring buffer management
-    #
-    # See propagate_light_queue(queue, tail, is_sun, ...) in src/lighting.py
+    GLOBAL_QUEUE = np.zeros(MAX_QUEUE_SIZE, dtype=np.uint32)
+    head, tail = 0, 0
 
 **Main BFS Loop:**
 
 .. code-block:: python
 
-    # Pseudo-code for light propagation (actual: propagate_light_queue in src/lighting.py)
-    def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, chunk_positions):
-        """Propagate light using BFS queue.
+    while True:
+        node = queue.dequeue()
+        if node is None: break
 
-        Args:
-            queue: Pre-allocated array of light nodes
-            tail: Current position in ring buffer
-            is_sun: True for sunlight, False for blocklight
-            world_voxels: All loaded chunk voxels
-            world_lightmaps: All loaded chunk lightmaps
-            chunk_positions: Chunk position lookup table
-        """
+* **BFS Ring Buffer Loop:** A memory-efficient array dequeues active light nodes dynamically without instantiating slow Python lists.
 
-        DIRECTIONS = [(-1,0,0), (1,0,0), (0,-1,0), (0,1,0), (0,0,-1), (0,0,1)]
+.. code-block:: python
 
-        while True:
-            node = queue.dequeue()
-            if node is None:
-                break
+    if new_level > neighbor_light:
+        queue.enqueue(neighbor_x, neighbor_y, neighbor_z, new_level)
 
-            x, y, z, level = node
-
-            # Skip if at lowest possible light level
-            if level <= 0:
-                continue
-
-            # Check all 6 neighbors
-            for dx, dy, dz in DIRECTIONS:
-                neighbor_x = x + dx
-                neighbor_y = y + dy
-                neighbor_z = z + dz
-
-                # Skip out-of-bounds
-                if neighbor_y < 0 or neighbor_y >= 256:
-                    continue
-
-                # Get neighbor voxel and light
-                neighbor_voxel = get_voxel_fast(neighbor_x, neighbor_y, neighbor_z, world_voxels)
-                neighbor_light = get_light_fast(neighbor_x, neighbor_y, neighbor_z, world_lightmaps, is_sun)
-
-                # Skip if solid
-                if not is_transparent(neighbor_voxel):
-                    continue
-
-                # Calculate diminished light
-                if is_sun and dy == -1 and level == 15 and neighbor_voxel == AIR:
-                    new_level = 15
-                else:
-                    diminish = 2 if (neighbor_voxel == WATER or neighbor_voxel == LEAVES) else 1
-                    new_level = max(0, level - diminish)
-
-                # Update if brighter
-                if new_level > neighbor_light:
-                    set_light_fast(neighbor_x, neighbor_y, neighbor_z, world_lightmaps, is_sun, new_level)
-                    queue.enqueue(neighbor_x, neighbor_y, neighbor_z, new_level)
+* **Neighbor Expansion:** For each of the 6 neighboring blocks, if the newly propagated light is brighter than the neighbor's current light, it overwrites it and pushes the neighbor into the queue for further expansion.
 
 **Fast Voxel Access Helper:**
 
@@ -234,14 +147,10 @@ Blocklight (Torch) Propagation
 
 .. code-block:: python
 
-    def place_torch(world_x, world_y, world_z, world_lightmaps, queue):
-        """Place torch and start light propagation"""
+    set_light_fast(world_x, world_y, world_z, world_lightmaps, BLOCKLIGHT, 14)
+    queue.enqueue(world_x, world_y, world_z, 14)
 
-        set_light_fast(world_x, world_y, world_z, world_lightmaps, BLOCKLIGHT, 14)
-        queue.enqueue(world_x, world_y, world_z, 14)  # Torch emits level 14
-
-        # Start BFS propagation
-        propagate_light_bfs(world_voxels, world_lightmaps, chunk_positions, queue, BLOCKLIGHT)
+* **Blocklight Seeding:** A newly placed torch injects a maximum blocklight value of `14` directly into the chunk lightmap and starts expanding immediately.
 
 **Breaking a Torch (Removal Pass + Refill):**
 
@@ -249,42 +158,18 @@ When a torch is removed or a block is broken, light must be recalculated. The al
 
 .. code-block:: python
 
-    def remove_block_light_update(broken_x, broken_y, broken_z, world_voxels, world_lightmaps, queue):
-        """Remove light from broken torch"""
+    if neighbor_light > 0 and neighbor_light < level:
+        set_light_fast(neighbor_x, neighbor_y, neighbor_z, world_lightmaps, BLOCKLIGHT, 0)
+        removal_queue.enqueue(neighbor_x, neighbor_y, neighbor_z, neighbor_light)
 
-        # Step 1: REMOVAL PASS - drain dependent light
-        removal_queue = LightQueue()
-        removal_queue.enqueue(broken_x, broken_y, broken_z, 14)
+* **Removal Pass:** When a light source is destroyed, a negative BFS sweeps outward, aggressively setting all dependent light levels back to `0`.
 
-        while True:
-            node = removal_queue.dequeue()
-            if node is None:
-                break
+.. code-block:: python
 
-            x, y, z, level = node
+    elif neighbor_light >= level:
+        refill_queue.enqueue(neighbor_x, neighbor_y, neighbor_z, neighbor_light)
 
-            # Check all 6 neighbors
-            for dx, dy, dz in [(-1,0,0), (1,0,0), (0,-1,0), (0,1,0), (0,0,-1), (0,0,1)]:
-                neighbor_x, neighbor_y, neighbor_z = x + dx, y + dy, z + dz
-
-                neighbor_voxel = get_voxel_fast(neighbor_x, neighbor_y, neighbor_z, world_voxels)
-                if not is_transparent(neighbor_voxel):
-                    continue
-
-                neighbor_light = get_light_fast(neighbor_x, neighbor_y, neighbor_z, world_lightmaps, BLOCKLIGHT)
-
-                # If neighbor was lit by broken torch, reduce its light
-                if neighbor_light > 0 and neighbor_light < level:
-                    # This light was dependent on broken torch
-                    set_light_fast(neighbor_x, neighbor_y, neighbor_z, world_lightmaps, BLOCKLIGHT, 0)
-                    removal_queue.enqueue(neighbor_x, neighbor_y, neighbor_z, neighbor_light)
-                elif neighbor_light >= level:
-                    # This light is from another source (brighter neighbor)
-                    # Capture for refill pass
-                    refill_queue.enqueue(neighbor_x, neighbor_y, neighbor_z, neighbor_light)
-
-        # Step 2: REFILL PASS - propagate light from surviving sources
-        propagate_light_bfs(world_voxels, world_lightmaps, chunk_positions, refill_queue, BLOCKLIGHT)
+* **Refill Pass:** If the removal pass hits a light level equal to or brighter than what it's trying to erase, it stops and marks that border block as a seed to immediately refill the empty space.
 
 Chunk Boundary Stitching
 ------------------------
@@ -293,46 +178,10 @@ When chunks load/unload, light must be synchronized across boundaries:
 
 .. code-block:: python
 
-    def stitch_chunk_lighting(chunk_x, chunk_y, chunk_z, world_voxels, world_lightmaps):
-        """Ensure light propagates correctly across chunk edges"""
+    if neighbor_light > current_light:
+        light_queue.enqueue(chunk_x * 48 + 47, chunk_y * 48 + y, chunk_z * 48 + z, neighbor_light)
 
-        # Check 6 neighbors of chunk
-        neighbors = [
-            (chunk_x - 1, chunk_y, chunk_z),
-            (chunk_x + 1, chunk_y, chunk_z),
-            (chunk_x, chunk_y - 1, chunk_z),
-            (chunk_x, chunk_y + 1, chunk_z),
-            (chunk_x, chunk_y, chunk_z - 1),
-            (chunk_x, chunk_y, chunk_z + 1),
-        ]
-
-        light_queue = LightQueue()
-
-        for neighbor_chunk in neighbors:
-            if neighbor_chunk not in world_lightmaps:
-                continue
-
-            # For each edge voxel of current chunk
-            # Check if neighbor has brighter light
-            # If so, start propagation from boundary
-
-            # Example: check +X boundary
-            if neighbor_chunk[0] == chunk_x + 1:
-                for y in range(CHUNK_SIZE):
-                    for z in range(CHUNK_SIZE):
-                        # Current chunk edge (x = 47)
-                        current_light = get_light(chunk_x, 47, y, z, world_lightmaps, SUNLIGHT)
-
-                        # Neighbor edge (x = 0 in neighbor chunk)
-                        neighbor_light = get_light(neighbor_chunk[0], 0, y, z, world_lightmaps, SUNLIGHT)
-
-                        if neighbor_light > current_light:
-                            # Neighbor is brighter, propagate inward
-                            light_queue.enqueue(chunk_x * 48 + 47, chunk_y * 48 + y, chunk_z * 48 + z, neighbor_light)
-
-        # Run BFS from boundaries
-        if light_queue.head != light_queue.tail:
-            propagate_light_bfs(world_voxels, world_lightmaps, chunk_positions, light_queue, SUNLIGHT)
+* **Chunk Seams:** When adjacent chunks load, they sample the immediate edge boundaries of their neighbors. Brighter light is naturally enqueued to bleed seamlessly across the chunk boundaries.
 
 Integration with Rendering
 ---------------------------
@@ -341,27 +190,10 @@ Integration with Rendering
 
 .. code-block:: glsl
 
-    // In chunk.frag
-    in float sun_light;    // Interpolated sunlight (0.0-1.0)
-    in float block_light;  // Interpolated blocklight (0.0-1.0)
+    float final_light = max(sun_light * day_night, block_light);
+    vec3 lit_color = color * final_light;
 
-    void main() {
-        // Sample base color
-        vec3 color = texture(u_texture_array, vec3(uv, texLayer)).rgb;
-
-        // Apply day/night cycle to sunlight
-        float day_night = 0.5 + 0.5 * u_sun_direction.y;  // -1 (night) to 1 (day)
-        float adjusted_sun = sun_light * day_night;
-
-        float adjusted_block = block_light;
-
-        // Combine lights (take maximum for natural look)
-        float final_light = max(adjusted_sun, adjusted_block);
-
-        // Apply to final color
-        vec3 lit_color = color * final_light;
-        fragColor = vec4(lit_color, 1.0);
-    }
+* **Maximum Blending:** To prevent blowouts, the fragment shader computes the final lighting multiplier by taking the maximum (not the sum) of the dynamically scaled sunlight and static blocklight.
 
 Replication Checklist
 ---------------------

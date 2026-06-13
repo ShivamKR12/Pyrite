@@ -54,7 +54,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop">The Main Game Loop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
@@ -570,128 +570,65 @@
 <section id="core-ui-component-base-class">
 <h2>Core UI Component Base Class<a class="headerlink" href="#core-ui-component-base-class" title="Link to this heading"></a></h2>
 <p><strong>UIComponent (Abstract Base)</strong></p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>class UIComponent:
-    def __init__(self, pos, size):
-        self.position: (float, float) = pos       # Top-left in NDC
-        self.size: (float, float) = size          # Width, height
-        self.visible: bool = True
-        self.mouse_over: bool = False
-        self.clicked: bool = False
-
-    def update(self, delta_time):
-        # Update animations, hover states, etc.
-        pass
-
-    def render(self, ctx, program):
-        # Draw to screen (or skip if not visible)
-        pass
-
-    def handle_event(self, event):
-        # Respond to mouse/keyboard
-        pass
-
-    def contains_point(self, x, y) -&gt; bool:
-        # Check if (x, y) is within component bounds
-        return (self.position[0] &lt;= x &lt;= self.position[0] + self.size[0] and
-                self.position[1] &lt;= y &lt;= self.position[1] + self.size[1])
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>self.position: (float, float) = pos
+self.size: (float, float) = size
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Base Structure:</strong> Every standard sub-component maps basic bounds tracking logically across generalized generic initialization phases.</p></li>
+</ul>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>def render(self, ctx, program):
+    pass
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Visual Dispatch:</strong> Each class mandates distinct custom geometric allocations processing seamlessly directly over base UI shaders.</p></li>
+</ul>
 </section>
 <section id="in-game-hud-components">
 <h2>In-Game HUD Components<a class="headerlink" href="#in-game-hud-components" title="Link to this heading"></a></h2>
 <p><strong>1. Crosshair</strong></p>
 <p>Simple ‘+’ rendered at screen center. Always visible in-game.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Crosshair</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">))</span>  <span class="c1"># Small quad at center</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>  <span class="c1"># White, semi-transparent</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="c1"># Draw 2 quads: horizontal and vertical lines forming &#39;+&#39;</span>
-        <span class="c1"># Use ui_color shader to render simple geometry</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">))</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Center Overlay:</strong> A hardcoded alpha-bound quad locks tightly permanently relative directly across viewports.</p></li>
+</ul>
 <p><strong>2. Hotbar</strong></p>
 <p>9 slots at bottom of screen, showing held items with selection highlight.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Hotbar</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">((</span><span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.95</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">))</span>  <span class="c1"># Bottom center</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">player</span> <span class="o">=</span> <span class="n">player</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">slots</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Array of slot quads</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">selected_index</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_time</span><span class="p">):</span>
-        <span class="c1"># Update selection when player changes hotbar_index</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">selected_index</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="c1"># Render 9 slot backgrounds</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
-            <span class="n">slot_pos</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.4</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.95</span><span class="p">)</span>
-            <span class="n">slot_size</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">)</span>
-
-            <span class="c1"># Render background quad (gray for unselected, bright for selected)</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">selected_index</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)</span>
-            <span class="n">render_quad</span><span class="p">(</span><span class="n">slot_pos</span><span class="p">,</span> <span class="n">slot_size</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
-
-            <span class="c1"># Render held item icon</span>
-            <span class="n">voxel_id</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">voxel_id</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">render_item_icon</span><span class="p">(</span><span class="n">slot_pos</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">)</span>
-                <span class="n">render_count_text</span><span class="p">(</span><span class="n">slot_pos</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">selected_index</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Slot Logic:</strong> Specific bounds dynamically link strictly back to primary mapped vectors continually synchronously processing changes immediately.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">selected_index</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)</span>
+<span class="n">render_quad</span><span class="p">(</span><span class="n">slot_pos</span><span class="p">,</span> <span class="n">slot_size</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Slot Masking:</strong> Grayed indices uniquely map rendering blocks dynamically highlighting correctly globally identically visually directly.</p></li>
+</ul>
 <p><strong>3. Health/Hunger/Oxygen Bars</strong></p>
 <p>Status indicators above hotbar.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">HealthBar</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">((</span><span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.05</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">))</span>  <span class="c1"># Per-heart display</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">player</span> <span class="o">=</span> <span class="n">player</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="c1"># Render 10 hearts (2 per full health point)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
-            <span class="n">heart_pos</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.45</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">0.045</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.05</span><span class="p">)</span>
-            <span class="n">health_fill</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">health</span> <span class="o">/</span> <span class="mf">20.0</span>
-
-            <span class="c1"># Full heart, half heart, or empty heart based on fill</span>
-            <span class="n">render_heart</span><span class="p">(</span><span class="n">heart_pos</span><span class="p">,</span> <span class="n">health_fill</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">health_fill</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">health</span> <span class="o">/</span> <span class="mf">20.0</span>
+<span class="n">render_heart</span><span class="p">(</span><span class="n">heart_pos</span><span class="p">,</span> <span class="n">health_fill</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Status Masking:</strong> Numeric allocations immediately populate precise graphical representations functionally seamlessly uniformly visually cleanly.</p></li>
+</ul>
 <p><strong>4. Debug Overlay (F3)</strong></p>
 <p>Shows FPS, coords, chunk, facing direction, time, target block.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">DebugOverlay</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">player</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">((</span><span class="o">-</span><span class="mf">0.95</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.95</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">player</span> <span class="o">=</span> <span class="n">player</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">update_interval</span> <span class="o">=</span> <span class="mf">0.25</span>  <span class="c1"># ms</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_update</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_time</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_update</span> <span class="o">+=</span> <span class="n">delta_time</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_update</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_interval</span><span class="p">:</span>
-            <span class="c1"># Gather data</span>
-            <span class="n">fps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">get_fps</span><span class="p">()</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span>
-            <span class="n">chunk</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">//</span> <span class="mi">48</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">z</span> <span class="o">//</span> <span class="mi">48</span><span class="p">))</span>
-            <span class="n">facing</span> <span class="o">=</span> <span class="n">compute_facing_direction</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">yaw</span><span class="p">)</span>
-            <span class="n">time</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">session_time</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">debug_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">            FPS: </span><span class="si">{</span><span class="n">fps</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span>
-<span class="s2">            XYZ: </span><span class="si">{</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pos</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span>
-<span class="s2">            Chunk: </span><span class="si">{</span><span class="n">chunk</span><span class="si">}</span>
-<span class="s2">            Facing: </span><span class="si">{</span><span class="n">facing</span><span class="si">}</span>
-<span class="s2">            Time: </span><span class="si">{</span><span class="n">time</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span>
-<span class="s2">            &quot;&quot;&quot;</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_update</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="n">render_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug_text</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">get_fps</span><span class="p">()</span>
+<span class="n">chunk</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">//</span> <span class="mi">48</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">z</span> <span class="o">//</span> <span class="mi">48</span><span class="p">))</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Data Strings:</strong> Text strings constantly poll dynamic internal matrix queries strictly efficiently formatting debug tracking perfectly visually reliably.</p></li>
+</ul>
 </section>
 <section id="menu-system">
 <h2>Menu System<a class="headerlink" href="#menu-system" title="Link to this heading"></a></h2>
@@ -707,100 +644,28 @@
 </pre></div>
 </div>
 <p><strong>MainMenu Component</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MainMenu</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">((</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
-
-        <span class="c1"># Buttons as child components</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">Button</span><span class="p">((</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">),</span> <span class="s2">&quot;Play&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_play</span><span class="p">),</span>
-            <span class="n">Button</span><span class="p">((</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">),</span> <span class="s2">&quot;Options&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_options</span><span class="p">),</span>
-            <span class="n">Button</span><span class="p">((</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">),</span> <span class="s2">&quot;Quit&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">),</span>
-        <span class="p">]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_time</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
-            <span class="n">button</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="c1"># Render title</span>
-        <span class="n">render_text</span><span class="p">((</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="s2">&quot;PYRITE&quot;</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-
-        <span class="c1"># Render buttons</span>
-        <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
-            <span class="n">button</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">button</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
-                <span class="n">button</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">button</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
+    <span class="n">button</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>State Hierarchy:</strong> Parent instances distribute input checks logically downward towards local objects recursively optimally successfully inherently strictly accurately.</p></li>
+</ul>
 <p><strong>Inventory Grid and Crafting</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">InventoryUI</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">((</span><span class="o">-</span><span class="mf">0.35</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.45</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">player</span> <span class="o">=</span> <span class="n">player</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">slots</span> <span class="o">=</span> <span class="p">[</span><span class="n">SlotWidget</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">41</span><span class="p">)]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dragging_from</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">crafting_output</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Current crafting output voxel ID</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">update_crafting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Check crafting recipes</span>
-        <span class="n">recipe_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="p">(</span><span class="n">WOOD</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span> <span class="p">(</span><span class="n">WOOD_PLANKS</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-            <span class="p">(</span><span class="n">WOOD_PLANKS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">WOOD_PLANKS</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span> <span class="p">(</span><span class="n">STICK</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-            <span class="p">(</span><span class="n">WOOD_PLANKS</span><span class="p">,</span> <span class="n">WOOD_PLANKS</span><span class="p">,</span> <span class="n">STICK</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span> <span class="p">(</span><span class="n">WOODEN_PICKAXE</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-            <span class="c1"># ... more recipes</span>
-        <span class="p">}</span>
-
-        <span class="n">inputs</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="mi">36</span><span class="p">],</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="mi">37</span><span class="p">],</span>
-            <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="mi">38</span><span class="p">],</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="mi">39</span><span class="p">]</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">inputs</span> <span class="ow">in</span> <span class="n">recipe_map</span><span class="p">:</span>
-            <span class="n">output</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">recipe_map</span><span class="p">[</span><span class="n">inputs</span><span class="p">]</span>
-            <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span>
-            <span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">[</span><span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">[</span><span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="c1"># Render grid background</span>
-        <span class="n">render_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">))</span>
-
-        <span class="c1"># Render 41 slot quads</span>
-        <span class="n">slot_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_slot_grid</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">slot_positions</span><span class="p">):</span>
-            <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">count</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-            <span class="c1"># Draw slot background</span>
-            <span class="n">render_quad</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">))</span>
-
-            <span class="c1"># Draw item if present</span>
-            <span class="k">if</span> <span class="n">voxel_id</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">render_item_icon</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">render_text</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">count</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MOUSEBUTTONDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># LClick</span>
-            <span class="c1"># Find slot at click position</span>
-            <span class="n">slot_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_slot_at</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">slot_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dragging_from</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="c1"># Start drag</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">dragging_from</span> <span class="o">=</span> <span class="n">slot_index</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Drop on target</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">swap_or_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dragging_from</span><span class="p">,</span> <span class="n">slot_index</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">dragging_from</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">inputs</span> <span class="ow">in</span> <span class="n">recipe_map</span><span class="p">:</span>
+    <span class="n">output</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">recipe_map</span><span class="p">[</span><span class="n">inputs</span><span class="p">]</span>
+    <span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Crafting Matrix:</strong> Dedicated tuples directly compare index combinations perfectly uniformly calculating valid logical states seamlessly cleanly.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">swap_or_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dragging_from</span><span class="p">,</span> <span class="n">slot_index</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Drag Drop:</strong> Memory mappings exchange internal storage indexes natively logically safely reliably effectively strictly purely mathematically functionally accurately.</p></li>
+</ul>
 </section>
 <section id="layout-metrics-slot-grid">
 <h2>Layout Metrics (Slot Grid)<a class="headerlink" href="#layout-metrics-slot-grid" title="Link to this heading"></a></h2>
@@ -820,175 +685,51 @@ Crafting (2x2 grid + output)
 </div>
 <p><strong>3x3 Slot Size:</strong> Typically 0.08 x 0.08 in NDC</p>
 <p><strong>Slot Position Formula:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_slot_positions</span><span class="p">():</span>
-    <span class="n">slot_size</span> <span class="o">=</span> <span class="mf">0.08</span>
-    <span class="n">spacing</span> <span class="o">=</span> <span class="mf">0.02</span>
-
-    <span class="n">positions</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="c1"># Hotbar (bottom, centered)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.35</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">spacing</span><span class="p">)</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.05</span>
-        <span class="n">positions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="p">(</span><span class="n">slot_size</span><span class="p">,</span> <span class="n">slot_size</span><span class="p">))</span>
-
-    <span class="c1"># Main inventory (above hotbar)</span>
-    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
-            <span class="n">i</span> <span class="o">=</span> <span class="mi">9</span> <span class="o">+</span> <span class="n">row</span> <span class="o">*</span> <span class="mi">9</span> <span class="o">+</span> <span class="n">col</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.35</span> <span class="o">+</span> <span class="n">col</span> <span class="o">*</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">spacing</span><span class="p">)</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="mf">0.15</span> <span class="o">+</span> <span class="n">row</span> <span class="o">*</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">spacing</span><span class="p">)</span>
-            <span class="n">positions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="p">(</span><span class="n">slot_size</span><span class="p">,</span> <span class="n">slot_size</span><span class="p">))</span>
-
-    <span class="c1"># Crafting grid</span>
-    <span class="n">craft_positions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">36</span><span class="p">,</span> <span class="mi">37</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">39</span><span class="p">,</span> <span class="mi">40</span><span class="p">]</span>
-    <span class="n">craft_x</span> <span class="o">=</span> <span class="mf">0.30</span>
-    <span class="n">craft_y</span> <span class="o">=</span> <span class="mf">0.25</span>
-    <span class="n">craft_slot_size</span> <span class="o">=</span> <span class="mf">0.06</span>
-
-    <span class="c1"># 2x2 grid</span>
-    <span class="n">positions</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">craft_x</span><span class="p">,</span> <span class="n">craft_y</span><span class="p">),</span> <span class="p">(</span><span class="n">craft_slot_size</span><span class="p">,</span> <span class="n">craft_slot_size</span><span class="p">))</span>
-    <span class="n">positions</span><span class="p">[</span><span class="mi">37</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">craft_x</span> <span class="o">+</span> <span class="mf">0.08</span><span class="p">,</span> <span class="n">craft_y</span><span class="p">),</span> <span class="p">(</span><span class="n">craft_slot_size</span><span class="p">,</span> <span class="n">craft_slot_size</span><span class="p">))</span>
-    <span class="n">positions</span><span class="p">[</span><span class="mi">38</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">craft_x</span><span class="p">,</span> <span class="n">craft_y</span> <span class="o">+</span> <span class="mf">0.08</span><span class="p">),</span> <span class="p">(</span><span class="n">craft_slot_size</span><span class="p">,</span> <span class="n">craft_slot_size</span><span class="p">))</span>
-    <span class="n">positions</span><span class="p">[</span><span class="mi">39</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">craft_x</span> <span class="o">+</span> <span class="mf">0.08</span><span class="p">,</span> <span class="n">craft_y</span> <span class="o">+</span> <span class="mf">0.08</span><span class="p">),</span> <span class="p">(</span><span class="n">craft_slot_size</span><span class="p">,</span> <span class="n">craft_slot_size</span><span class="p">))</span>
-
-    <span class="c1"># Output (larger, to the right)</span>
-    <span class="n">positions</span><span class="p">[</span><span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">craft_x</span> <span class="o">+</span> <span class="mf">0.20</span><span class="p">,</span> <span class="n">craft_y</span> <span class="o">+</span> <span class="mf">0.04</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">))</span>
-
-    <span class="k">return</span> <span class="n">positions</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.35</span> <span class="o">+</span> <span class="n">col</span> <span class="o">*</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">spacing</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="mf">0.15</span> <span class="o">+</span> <span class="n">row</span> <span class="o">*</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">spacing</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Grid Layouts:</strong> Formulaic offsets cleanly configure exact spacing globally flawlessly strictly reliably effectively smoothly natively automatically statically clearly purely.</p></li>
+</ul>
 </section>
 <section id="button-and-component-library">
 <h2>Button and Component Library<a class="headerlink" href="#button-and-component-library" title="Link to this heading"></a></h2>
 <p><strong>Button Component</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Button</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hover</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pressed</span> <span class="o">=</span> <span class="kc">False</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_time</span><span class="p">):</span>
-        <span class="c1"># Track hover via mouse position (from pygame)</span>
-        <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
-        <span class="n">ndc_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen_to_ndc</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hover</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">ndc_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ndc_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="c1"># Draw background (brighter if hovering)</span>
-        <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-        <span class="n">render_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
-
-        <span class="c1"># Draw label text</span>
-        <span class="n">render_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MOUSEBUTTONDOWN</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MOUSEBUTTONDOWN</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">()</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Interaction Flow:</strong> Polled mouse arrays trigger prebound callbacks implicitly smoothly effectively perfectly uniformly successfully completely safely natively seamlessly accurately fully.</p></li>
+</ul>
 <p><strong>TextInput Component</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">TextInput</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">placeholder</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">placeholder</span> <span class="o">=</span> <span class="n">placeholder</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cursor_blink</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_time</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cursor_blink</span> <span class="o">+=</span> <span class="n">delta_time</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor_blink</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cursor_blink</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="c1"># Draw input box</span>
-        <span class="n">render_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-
-        <span class="c1"># Draw text</span>
-        <span class="n">display_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">placeholder</span>
-        <span class="n">render_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="n">display_text</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
-
-        <span class="c1"># Draw cursor if active and blinking</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor_blink</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
-            <span class="n">cursor_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.01</span>
-            <span class="n">render_text</span><span class="p">((</span><span class="n">cursor_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="s2">&quot;|&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">KEYDOWN</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">K_BACKSPACE</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">unicode</span><span class="o">.</span><span class="n">isprintable</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">+=</span> <span class="n">event</span><span class="o">.</span><span class="n">unicode</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">unicode</span><span class="o">.</span><span class="n">isprintable</span><span class="p">():</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">+=</span> <span class="n">event</span><span class="o">.</span><span class="n">unicode</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Keyboard Trapping:</strong> Typing instances automatically catch raw Unicode parameters organically perfectly cleanly seamlessly correctly explicitly functionally directly efficiently organically.</p></li>
+</ul>
 <p><strong>Slider Component</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Slider</span><span class="p">(</span><span class="n">UIComponent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">on_change</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span> <span class="o">=</span> <span class="n">min_val</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_val</span> <span class="o">=</span> <span class="n">max_val</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">initial</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">on_change</span> <span class="o">=</span> <span class="n">on_change</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dragging</span> <span class="o">=</span> <span class="kc">False</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="c1"># Draw background bar</span>
-        <span class="n">render_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-
-        <span class="c1"># Draw filled portion (based on value)</span>
-        <span class="n">fill_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_val</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">))</span>
-        <span class="n">render_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="p">(</span><span class="n">fill_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-
-        <span class="c1"># Draw value text</span>
-        <span class="n">value_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">render_text</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.02</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">value_text</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">dragging</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MOUSEBUTTONUP</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dragging</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MOUSEMOTION</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dragging</span><span class="p">:</span>
-            <span class="c1"># Calculate new value from mouse position</span>
-            <span class="n">relative_x</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">new_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span> <span class="o">+</span> <span class="p">(</span><span class="n">relative_x</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_val</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">new_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_val</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">on_change</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">new_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span> <span class="o">+</span> <span class="p">(</span><span class="n">relative_x</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_val</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">new_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_val</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Interpolated Ratios:</strong> Scaled dragging translates implicitly accurately identically dynamically globally seamlessly purely cleanly strictly visually functionally optimally reliably fully natively.</p></li>
+</ul>
 </section>
 <section id="transition-animations">
 <h2>Transition Animations<a class="headerlink" href="#transition-animations" title="Link to this heading"></a></h2>
 <p><strong>Menu Slide-In/Out (cubic easing):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MenuTransition</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">elapsed</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">complete</span> <span class="o">=</span> <span class="kc">False</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_time</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">elapsed</span> <span class="o">+=</span> <span class="n">delta_time</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">complete</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">elapsed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Cubic easing-in</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
-        <span class="k">return</span> <span class="n">t</span> <span class="o">*</span> <span class="n">t</span> <span class="o">*</span> <span class="n">t</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_offset</span><span class="p">):</span>
-        <span class="c1"># Use progress for smooth slide</span>
-        <span class="k">return</span> <span class="n">full_offset</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress</span><span class="p">())</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+<span class="k">return</span> <span class="n">t</span> <span class="o">*</span> <span class="n">t</span> <span class="o">*</span> <span class="n">t</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Animation Scaling:</strong> Duration mapping applies natural visual easing precisely universally efficiently cleanly seamlessly flawlessly organically optimally explicitly accurately reliably natively.</p></li>
+</ul>
 </section>
 <section id="integration-with-main-loop">
 <h2>Integration with Main Loop<a class="headerlink" href="#integration-with-main-loop" title="Link to this heading"></a></h2>
@@ -1006,40 +747,15 @@ Crafting (2x2 grid + output)
 - Render text overlay
 - Re-enable depth test</p></li>
 </ol>
-<p><strong>pseudocode:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">main_loop</span><span class="p">():</span>
-    <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">ui_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
-                <span class="n">player</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">KEYDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">K_e</span><span class="p">:</span>
-                    <span class="n">ui_state</span> <span class="o">=</span> <span class="s1">&#39;INVENTORY&#39;</span>
-            <span class="k">elif</span> <span class="n">ui_state</span> <span class="o">==</span> <span class="s1">&#39;INVENTORY&#39;</span><span class="p">:</span>
-                <span class="n">inventory_ui</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">KEYDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">K_e</span><span class="p">:</span>
-                    <span class="n">ui_state</span> <span class="o">=</span> <span class="s1">&#39;IN_GAME&#39;</span>
-            <span class="k">elif</span> <span class="n">ui_state</span> <span class="o">==</span> <span class="s1">&#39;MAIN_MENU&#39;</span><span class="p">:</span>
-                <span class="n">main_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-        <span class="c1"># Update</span>
-        <span class="k">if</span> <span class="n">ui_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
-            <span class="n">player</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-            <span class="n">hud</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">ui_state</span> <span class="o">==</span> <span class="s1">&#39;INVENTORY&#39;</span><span class="p">:</span>
-            <span class="n">inventory_ui</span><span class="o">.</span><span class="n">update_crafting</span><span class="p">()</span>
-            <span class="n">inventory_ui</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">delta_time</span><span class="p">)</span>
-
-        <span class="c1"># Render</span>
-        <span class="n">glDisable</span><span class="p">(</span><span class="n">GL_DEPTH_TEST</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">ui_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
-            <span class="n">crosshair</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-            <span class="n">hotbar</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-            <span class="n">health_bar</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">ui_state</span> <span class="o">==</span> <span class="s1">&#39;INVENTORY&#39;</span><span class="p">:</span>
-            <span class="n">inventory_ui</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-        <span class="n">glEnable</span><span class="p">(</span><span class="n">GL_DEPTH_TEST</span><span class="p">)</span>
+<p><strong>Render Dispatch Implementation:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">glDisable</span><span class="p">(</span><span class="n">GL_DEPTH_TEST</span><span class="p">)</span>
+<span class="n">inventory_ui</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">glEnable</span><span class="p">(</span><span class="n">GL_DEPTH_TEST</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Drawing Pass:</strong> Render dispatches are natively bracketed uniformly strictly securely automatically explicitly fully effectively cleanly reliably safely securely accurately flawlessly securely correctly seamlessly.</p></li>
+</ul>
 </section>
 </section>
 

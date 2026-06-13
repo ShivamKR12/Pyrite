@@ -54,7 +54,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop">The Main Game Loop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
@@ -742,64 +742,20 @@ Bits 3-0 (4 bits): Blocklight (0-15)
 </ol>
 <p><strong>Detailed Algorithm: X-Plane Scanning</strong></p>
 <p>Processing YZ-plane slices (X varying):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">x_slice</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-    <span class="c1"># Build 2D mask of YZ values (which are solid and exposed on +X face)</span>
-    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span>
-
-            <span class="c1"># Check if solid and has exposed +X face</span>
-            <span class="k">if</span> <span class="n">is_solid</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">x_slice</span> <span class="o">==</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">is_solid</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x_slice</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]):</span>
-                    <span class="n">mask</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-
-    <span class="c1"># Greedy rectangle extraction from mask</span>
-    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">CHUNK_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]:</span>
-                <span class="k">continue</span>
-
-            <span class="c1"># Find greedy width (extend along z-axis)</span>
-            <span class="n">width</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="k">while</span> <span class="n">z</span> <span class="o">+</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="n">mask</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">width</span><span class="p">]:</span>
-                <span class="n">width</span> <span class="o">+=</span> <span class="mi">1</span>
-
-            <span class="c1"># Find greedy height (extend along y-axis)</span>
-            <span class="n">height</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">valid</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="k">while</span> <span class="n">y</span> <span class="o">+</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="n">valid</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">z_check</span> <span class="ow">in</span> <span class="n">z</span> <span class="n">to</span> <span class="n">z</span> <span class="o">+</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="p">[</span><span class="n">y</span> <span class="o">+</span> <span class="n">height</span><span class="p">,</span> <span class="n">z_check</span><span class="p">]:</span>
-                        <span class="n">valid</span> <span class="o">=</span> <span class="kc">False</span>
-                        <span class="k">break</span>
-                <span class="k">if</span> <span class="n">valid</span><span class="p">:</span>
-                    <span class="n">height</span> <span class="o">+=</span> <span class="mi">1</span>
-
-            <span class="c1"># Mark processed to avoid overlap</span>
-            <span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">height</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">dz</span> <span class="ow">in</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">width</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                    <span class="n">mask</span><span class="p">[</span><span class="n">y</span> <span class="o">+</span> <span class="n">dy</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">dz</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-
-            <span class="c1"># Get 4 corner light/AO values</span>
-            <span class="n">l0</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
-            <span class="n">l1</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
-            <span class="n">l2</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="n">width</span><span class="p">)</span>
-            <span class="n">l3</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="n">width</span><span class="p">)</span>
-
-            <span class="n">ao0</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
-            <span class="n">ao1</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
-            <span class="n">ao2</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="n">width</span><span class="p">))</span>
-            <span class="n">ao3</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">+</span><span class="n">width</span><span class="p">))</span>
-
-            <span class="c1"># Flip detection (see section below)</span>
-            <span class="n">flip_id</span> <span class="o">=</span> <span class="n">should_flip_diagonal</span><span class="p">(</span><span class="n">l0</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">l3</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">ao3</span><span class="p">)</span>
-
-            <span class="c1"># Emit 2 triangles (6 indices)</span>
-            <span class="n">emit_quad</span><span class="p">(</span><span class="n">x_slice</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l0</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">l3</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">x_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Mask Initialization:</strong> The mesher iterates through flat 2D slices, creating a boolean tracking array to isolate exclusively solid and exposed voxel faces.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">z</span> <span class="o">+</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="n">mask</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">width</span><span class="p">]:</span>
+    <span class="n">width</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Greedy Expansion:</strong> The algorithm continuously sweeps rightwards along the active axis, incrementing the geometric rectangle width perfectly flush as long as adjacent faces share identical properties.</p></li>
+</ul>
 <p><strong>Y and Z Plane Scanning</strong> work similarly, iterating through XZ and XY slices respectively.</p>
 <p><strong>Performance Note:</strong> This is a hot loop executed once per chunk load. Implemented in Numba with <code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">nogil=True)</span></code> for 500x+ speedup.</p>
 </section>
@@ -892,13 +848,7 @@ Bits 3-0 (4 bits): Blocklight (0-15)
 <li><p>Render call splits: draw opaque faces first (full depth test), then draw water faces (transparency blending enabled)</p></li>
 </ol>
 <p><strong>Separate render call (in Shader Program):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Opaque pass</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
-<span class="n">vao</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">moderngl</span><span class="o">.</span><span class="n">TRIANGLES</span><span class="p">,</span> <span class="n">vertices</span><span class="o">=</span><span class="n">opaque_count</span><span class="p">)</span>
-
-<span class="c1"># Water pass</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">blend_func</span> <span class="o">=</span> <span class="p">(</span><span class="n">moderngl</span><span class="o">.</span><span class="n">SRC_ALPHA</span><span class="p">,</span> <span class="n">moderngl</span><span class="o">.</span><span class="n">ONE_MINUS_SRC_ALPHA</span><span class="p">)</span>
 <span class="n">vao</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">moderngl</span><span class="o">.</span><span class="n">TRIANGLES</span><span class="p">,</span> <span class="n">vertices</span><span class="o">=</span><span class="n">water_count</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="n">opaque_count</span><span class="p">)</span>
 </pre></div>
@@ -939,24 +889,14 @@ Bits 3-0 (4 bits): Blocklight (0-15)
 </li>
 </ol>
 <p><strong>VBO Pool (Memory Recycling):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vbo_pool</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># List of unused VBOs</span>
-<span class="n">VBO_POOL_CAP</span> <span class="o">=</span> <span class="mi">150</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">get_or_create_vbo</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">vbo_pool</span><span class="p">:</span>
-        <span class="n">vbo</span> <span class="o">=</span> <span class="n">vbo_pool</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
-        <span class="n">vbo</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># Overwrite with new data</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">vbo</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">vbo</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">release_vbo</span><span class="p">(</span><span class="n">vbo</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vbo_pool</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">VBO_POOL_CAP</span><span class="p">:</span>
-        <span class="n">vbo_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vbo</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>  <span class="c1"># Destroy GPU memory</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="p">:</span>
+    <span class="n">vbo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">vbo</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>VBO Recycling:</strong> The engine pops stale buffers off the deque queue and overwrites the exact memory addresses in VRAM instantaneously without expensive destructions natively.</p></li>
+</ul>
 </section>
 <section id="data-flow-example">
 <h2>Data Flow Example<a class="headerlink" href="#data-flow-example" title="Link to this heading"></a></h2>

@@ -54,7 +54,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#application-control">Application Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-initialization-sequence">Detailed Initialization Sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-state-machine">Detailed State Machine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop-pseudocode">The Main Game Loop (Pseudocode)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#the-main-game-loop">The Main Game Loop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-event-handling">Detailed Event Handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-update-step-in-game">Detailed Update Step (In-Game)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#detailed-render-step">Detailed Render Step</a></li>
@@ -552,7 +552,7 @@
 <li><p>RAM: 4GB minimum (8GB recommended for larger worlds)</p></li>
 <li><p>Storage: 500MB for installation + variable for world saves</p></li>
 </ul>
-<p><strong>Python Version:</strong> 3.9 or higher</p>
+<p><strong>Python Version:</strong> 3.9 or higher (Python 3.13 recommended)</p>
 </section>
 <section id="python-dependencies">
 <h2>Python Dependencies<a class="headerlink" href="#python-dependencies" title="Link to this heading"></a></h2>
@@ -584,7 +584,16 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
 </li>
 <li><p><strong>Create Virtual Environment</strong></p>
 <p>Isolate dependencies to avoid conflicts:</p>
+<ul class="simple">
+<li><p><strong>Windows:</strong></p></li>
+</ul>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>macOS/Linux:</strong></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
 </pre></div>
 </div>
 <p>Activate:</p>
@@ -620,7 +629,16 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
 </li>
 <li><p><strong>Verify Installation</strong></p>
 <p>Run a quick test to ensure all imports work:</p>
+<ul class="simple">
+<li><p><strong>Windows:</strong></p></li>
+</ul>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pygame, moderngl, numpy, numba, glm, opensimplex; print(&#39;All dependencies loaded successfully!&#39;)&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>macOS/Linux:</strong></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pygame, moderngl, numpy, numba, glm, opensimplex; print(&#39;All dependencies loaded successfully!&#39;)&quot;</span>
 </pre></div>
 </div>
 </li>
@@ -652,7 +670,12 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
 <section id="running-the-engine">
 <h2>Running the Engine<a class="headerlink" href="#running-the-engine" title="Link to this heading"></a></h2>
 <p><strong>Standard Run (Main Game)</strong></p>
+<p><strong>Windows:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>run.py
+</pre></div>
+</div>
+<p><strong>macOS/Linux:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.py
 </pre></div>
 </div>
 <p>Starts the Pyrite application and opens the main menu. World selection and world creation are handled from the in-game menu; <code class="docutils literal notranslate"><span class="pre">run.py</span></code> does not automatically create a default world on first launch.</p>

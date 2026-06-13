@@ -18,7 +18,7 @@ Prerequisites
 - RAM: 4GB minimum (8GB recommended for larger worlds)
 - Storage: 500MB for installation + variable for world saves
 
-**Python Version:** 3.9 or higher
+**Python Version:** 3.9 or higher (Python 3.13 recommended)
 
 Python Dependencies
 -------------------
@@ -57,9 +57,17 @@ Installation Steps
 
    Isolate dependencies to avoid conflicts:
 
+   - **Windows:**
+
    .. code-block:: bash
 
        python -m venv venv
+
+   - **macOS/Linux:**
+
+   .. code-block:: bash
+
+       python3 -m venv venv
 
    Activate:
 
@@ -99,9 +107,17 @@ Installation Steps
 
    Run a quick test to ensure all imports work:
 
+   - **Windows:**
+
    .. code-block:: bash
 
        python -c "import pygame, moderngl, numpy, numba, glm, opensimplex; print('All dependencies loaded successfully!')"
+
+   - **macOS/Linux:**
+
+   .. code-block:: bash
+
+       python3 -c "import pygame, moderngl, numpy, numba, glm, opensimplex; print('All dependencies loaded successfully!')"
 
 Configuration
 --------------
@@ -135,9 +151,17 @@ Running the Engine
 
 **Standard Run (Main Game)**
 
+**Windows:**
+
 .. code-block:: bash
 
     python run.py
+
+**macOS/Linux:**
+
+.. code-block:: bash
+
+    python3 run.py
 
 Starts the Pyrite application and opens the main menu. World selection and world creation are handled from the in-game menu; ``run.py`` does not automatically create a default world on first launch.
 
