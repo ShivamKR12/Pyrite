@@ -1001,7 +1001,19 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">AIR</span><span class="p">,</span> <span class="n">CHUNK_AREA</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">CHUNK_VOL</span><span class="p">,</span> <span class="n">GLASS</span><span class="p">,</span> <span class="n">LEAVES</span><span class="p">,</span> <span class="n">WATER</span><span class="p">,</span> <span class="n">WORLD_AREA</span><span class="p">,</span> <span class="n">WORLD_D</span><span class="p">,</span> <span class="n">WORLD_H</span><span class="p">,</span> <span class="n">WORLD_W</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AIR</span><span class="p">,</span>
+    <span class="n">CHUNK_AREA</span><span class="p">,</span>
+    <span class="n">CHUNK_SIZE</span><span class="p">,</span>
+    <span class="n">CHUNK_VOLUME</span><span class="p">,</span>
+    <span class="n">GLASS</span><span class="p">,</span>
+    <span class="n">LEAVES</span><span class="p">,</span>
+    <span class="n">WATER</span><span class="p">,</span>
+    <span class="n">WORLD_AREA</span><span class="p">,</span>
+    <span class="n">WORLD_DEPTH</span><span class="p">,</span>
+    <span class="n">WORLD_HEIGHT</span><span class="p">,</span>
+    <span class="n">WORLD_WIDTH</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="get_ao">
@@ -1235,10 +1247,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">cy</span> <span class="o">=</span> <span class="n">wy</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
     <span class="n">cz</span> <span class="o">=</span> <span class="n">wz</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">cy</span> <span class="o">&lt;</span> <span class="n">WORLD_H</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">cy</span> <span class="o">&lt;</span> <span class="n">WORLD_HEIGHT</span><span class="p">):</span>
         <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
 
-    <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="n">cx</span> <span class="o">%</span> <span class="n">WORLD_W</span><span class="p">)</span> <span class="o">+</span> <span class="n">WORLD_W</span> <span class="o">*</span> <span class="p">(</span><span class="n">cz</span> <span class="o">%</span> <span class="n">WORLD_D</span><span class="p">)</span> <span class="o">+</span> <span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="p">(</span><span class="n">cy</span> <span class="o">%</span> <span class="n">WORLD_H</span><span class="p">)</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="n">cx</span> <span class="o">%</span> <span class="n">WORLD_WIDTH</span><span class="p">)</span> <span class="o">+</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="p">(</span><span class="n">cz</span> <span class="o">%</span> <span class="n">WORLD_DEPTH</span><span class="p">)</span> <span class="o">+</span> <span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="p">(</span><span class="n">cy</span> <span class="o">%</span> <span class="n">WORLD_HEIGHT</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">chunk_positions</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">cx</span> <span class="ow">and</span> <span class="n">chunk_positions</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">cy</span> <span class="ow">and</span> <span class="n">chunk_positions</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">cz</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">index</span>
@@ -1383,8 +1395,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    into massive single polygons, calculating ambient occlusion and smoothed lighting</span>
 <span class="sd">    along the way. Returns the combined vertex data for both opaque and water meshes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">vertex_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">CHUNK_VOL</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">format_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint32&#39;</span><span class="p">)</span>
-    <span class="n">water_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">CHUNK_VOL</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">format_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint32&#39;</span><span class="p">)</span>
+    <span class="n">vertex_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">format_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint32&#39;</span><span class="p">)</span>
+    <span class="n">water_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">format_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint32&#39;</span><span class="p">)</span>
     <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">water_index</span> <span class="o">=</span> <span class="mi">0</span>
 

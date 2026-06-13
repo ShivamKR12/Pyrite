@@ -1006,7 +1006,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">meshes.chunk_mesh</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChunkMesh</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">global_profiler</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">CHUNK_VOL</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">CHUNK_VOLUME</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">terrain_gen</span><span class="w"> </span><span class="kn">import</span> <span class="n">fill_initial_sunlight</span><span class="p">,</span> <span class="n">set_voxel_column</span>
 
 
@@ -1111,7 +1111,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function to allocate an empty array and immediately invoke the terrain generator.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">voxels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">CHUNK_VOL</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="n">voxels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
 
         <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generate_terrain</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">)</span>

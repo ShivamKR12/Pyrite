@@ -1023,7 +1023,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">WATER</span><span class="p">,</span>
     <span class="n">WATER_LINE</span><span class="p">,</span>
     <span class="n">WOOD</span><span class="p">,</span>
-    <span class="n">WORLD_H</span><span class="p">,</span>
+    <span class="n">WORLD_HEIGHT</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -1096,7 +1096,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">height</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f8</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f8</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
 
     <span class="c1"># Absolute safety nets: prevent terrain from ever exceeding the chunk limits</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">WORLD_H</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">WORLD_HEIGHT</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">height</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)</span></div>

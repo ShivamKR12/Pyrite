@@ -1015,12 +1015,12 @@ window.runMermaid = runMermaid;</script>
     <span class="n">DEPTH_SIZE</span><span class="p">,</span>
     <span class="n">FONT_SIZE_LOADING</span><span class="p">,</span>
     <span class="n">FONT_SIZE_SUBTITLE</span><span class="p">,</span>
-    <span class="n">FOV_DEG</span><span class="p">,</span>
-    <span class="n">MAJOR_VER</span><span class="p">,</span>
-    <span class="n">MINOR_VER</span><span class="p">,</span>
+    <span class="n">FOV_DEGREE</span><span class="p">,</span>
+    <span class="n">MAJOR_VERSION</span><span class="p">,</span>
+    <span class="n">MINOR_VERSION</span><span class="p">,</span>
     <span class="n">MOUSE_SENSITIVITY</span><span class="p">,</span>
     <span class="n">NUM_SAMPLES</span><span class="p">,</span>
-    <span class="n">WIN_RES</span><span class="p">,</span>
+    <span class="n">WINDOW_RESOLUTION</span><span class="p">,</span>
     <span class="n">get_path</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shader_program</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShaderProgram</span>
@@ -1053,13 +1053,13 @@ window.runMermaid = runMermaid;</script>
         <span class="k">except</span> <span class="n">pg</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
             <span class="k">pass</span>
 
-        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_MAJOR_VERSION</span><span class="p">,</span> <span class="n">MAJOR_VER</span><span class="p">)</span>
-        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_MINOR_VERSION</span><span class="p">,</span> <span class="n">MINOR_VER</span><span class="p">)</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_MAJOR_VERSIONSION</span><span class="p">,</span> <span class="n">MAJOR_VERSION</span><span class="p">)</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_MINOR_VERSIONSION</span><span class="p">,</span> <span class="n">MINOR_VERSION</span><span class="p">)</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_PROFILE_MASK</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_PROFILE_CORE</span><span class="p">)</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_DEPTH_SIZE</span><span class="p">,</span> <span class="n">DEPTH_SIZE</span><span class="p">)</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_MULTISAMPLESAMPLES</span><span class="p">,</span> <span class="n">NUM_SAMPLES</span><span class="p">)</span>
 
-        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="n">WIN_RES</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pg</span><span class="o">.</span><span class="n">OPENGL</span> <span class="o">|</span> <span class="n">pg</span><span class="o">.</span><span class="n">DOUBLEBUF</span> <span class="o">|</span> <span class="n">pg</span><span class="o">.</span><span class="n">FULLSCREEN</span><span class="p">)</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="n">WINDOW_RESOLUTION</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pg</span><span class="o">.</span><span class="n">OPENGL</span> <span class="o">|</span> <span class="n">pg</span><span class="o">.</span><span class="n">DOUBLEBUF</span> <span class="o">|</span> <span class="n">pg</span><span class="o">.</span><span class="n">FULLSCREEN</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">mgl</span><span class="o">.</span><span class="n">create_context</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="n">mgl</span><span class="o">.</span><span class="n">DEPTH_TEST</span> <span class="o">|</span> <span class="n">mgl</span><span class="o">.</span><span class="n">CULL_FACE</span> <span class="o">|</span> <span class="n">mgl</span><span class="o">.</span><span class="n">BLEND</span><span class="p">)</span>
@@ -1075,7 +1075,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;MAIN_MENU&#39;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;fov&#39;</span><span class="p">:</span> <span class="n">FOV_DEG</span><span class="p">,</span>
+            <span class="s1">&#39;fov&#39;</span><span class="p">:</span> <span class="n">FOV_DEGREE</span><span class="p">,</span>
             <span class="s1">&#39;sensitivity&#39;</span><span class="p">:</span> <span class="n">MOUSE_SENSITIVITY</span><span class="p">,</span>
             <span class="s1">&#39;volume&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
             <span class="s1">&#39;render_distance&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
@@ -1368,7 +1368,9 @@ window.runMermaid = runMermaid;</script>
                     <span class="c1"># Capture screen for thumbnail before UI draws over it!</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-                        <span class="n">img</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">WIN_RES</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">WIN_RES</span><span class="o">.</span><span class="n">y</span><span class="p">)),</span> <span class="s1">&#39;RGB&#39;</span><span class="p">)</span>
+                        <span class="n">img</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span>
+                            <span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">WINDOW_RESOLUTION</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">WINDOW_RESOLUTION</span><span class="o">.</span><span class="n">y</span><span class="p">)),</span> <span class="s1">&#39;RGB&#39;</span>
+                        <span class="p">)</span>
                         <span class="n">img</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>  <span class="c1"># OpenGL renders bottom-up</span>
                         <span class="n">thumb_w</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">320</span>
                         <span class="n">thumb_h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">320</span> <span class="o">/</span> <span class="n">ASPECT_RATIO</span><span class="p">)</span>

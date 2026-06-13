@@ -1002,7 +1002,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyglm</span><span class="w"> </span><span class="kn">import</span> <span class="n">glm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">global_profiler</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">CHUNK_SPHERE_RADIUS</span><span class="p">,</span> <span class="n">FAR</span><span class="p">,</span> <span class="n">H_FOV</span><span class="p">,</span> <span class="n">NEAR</span><span class="p">,</span> <span class="n">V_FOV</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">CHUNK_SPHERE_RADIUS</span><span class="p">,</span> <span class="n">FAR</span><span class="p">,</span> <span class="n">HORIZONTAL_FOV</span><span class="p">,</span> <span class="n">NEAR</span><span class="p">,</span> <span class="n">VERTICLE_FOV</span>
 
 
 <div class="viewcode-block" id="Frustum">
@@ -1029,7 +1029,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">tan_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">factor_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tan_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">update_factors</span><span class="p">(</span><span class="n">V_FOV</span><span class="p">,</span> <span class="n">H_FOV</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_factors</span><span class="p">(</span><span class="n">VERTICLE_FOV</span><span class="p">,</span> <span class="n">HORIZONTAL_FOV</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Frustum.update_factors">
 <a class="viewcode-back" href="../api/frustum.html#frustum.Frustum.update_factors">[docs]</a>

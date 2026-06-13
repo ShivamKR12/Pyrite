@@ -1018,41 +1018,41 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="c1"># OpenGL settings</span>
-<span class="n">MAJOR_VER</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
-<span class="n">MINOR_VER</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">MAJOR_VERSION</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">MINOR_VERSION</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
 <span class="n">DEPTH_SIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">24</span>
 <span class="n">NUM_SAMPLES</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># antialiasing</span>
 
 <span class="c1"># resolution</span>
 <span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
 <span class="n">info</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">Info</span><span class="p">()</span>
-<span class="n">WIN_RES</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec2</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">current_w</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">current_h</span><span class="p">)</span>
+<span class="n">WINDOW_RESOLUTION</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec2</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">current_w</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">current_h</span><span class="p">)</span>
 <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
 
 <span class="c1"># ray casting</span>
-<span class="n">MAX_RAY_DIST</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">MAX_RAY_DISTANCE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
 
 <span class="c1"># chunk</span>
 <span class="n">CHUNK_SIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48</span>
-<span class="n">H_CHUNK_SIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_SIZE</span> <span class="o">//</span> <span class="mi">2</span>
+<span class="n">HALF_CHUNK_SIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_SIZE</span> <span class="o">//</span> <span class="mi">2</span>
 <span class="n">CHUNK_AREA</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_SIZE</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
-<span class="n">CHUNK_VOL</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
-<span class="n">CHUNK_SPHERE_RADIUS</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">H_CHUNK_SIZE</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">CHUNK_VOLUME</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
+<span class="n">CHUNK_SPHERE_RADIUS</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">HALF_CHUNK_SIZE</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 
 <span class="c1"># world</span>
-<span class="n">WORLD_W</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span>
-<span class="n">WORLD_H</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
-<span class="n">WORLD_D</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_W</span>
-<span class="n">WORLD_AREA</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_W</span> <span class="o">*</span> <span class="n">WORLD_D</span>
-<span class="n">WORLD_VOL</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="n">WORLD_H</span>
-<span class="n">CENTER_XZ</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WORLD_W</span> <span class="o">*</span> <span class="n">H_CHUNK_SIZE</span>
+<span class="n">WORLD_WIDTH</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">WORLD_HEIGHT</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">WORLD_DEPTH</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_WIDTH</span>
+<span class="n">WORLD_AREA</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="n">WORLD_DEPTH</span>
+<span class="n">WORLD_VOLUME</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="n">WORLD_HEIGHT</span>
+<span class="n">CENTER_XZ</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="n">HALF_CHUNK_SIZE</span>
 <span class="n">CENTER_Y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48</span>
 
 <span class="c1"># camera</span>
-<span class="n">ASPECT_RATIO</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WIN_RES</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">WIN_RES</span><span class="o">.</span><span class="n">y</span>
-<span class="n">FOV_DEG</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="n">V_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">FOV_DEG</span><span class="p">)</span>  <span class="c1"># vertical FOV</span>
-<span class="n">H_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">V_FOV</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">)</span>  <span class="c1"># horizontal FOV</span>
+<span class="n">ASPECT_RATIO</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WINDOW_RESOLUTION</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">WINDOW_RESOLUTION</span><span class="o">.</span><span class="n">y</span>
+<span class="n">FOV_DEGREE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">VERTICLE_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">FOV_DEGREE</span><span class="p">)</span>  <span class="c1"># vertical FOV</span>
+<span class="n">HORIZONTAL_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">VERTICLE_FOV</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">)</span>  <span class="c1"># horizontal FOV</span>
 <span class="n">NEAR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
 <span class="n">FAR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2000.0</span>
 <span class="n">PITCH_MAX</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">89</span><span class="p">)</span>
@@ -1213,7 +1213,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="c1"># water</span>
 <span class="n">WATER_LINE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
-<span class="n">WATER_AREA</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">*</span> <span class="n">WORLD_W</span>
+<span class="n">WATER_AREA</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">*</span> <span class="n">WORLD_WIDTH</span>
 
 <span class="c1"># cloud</span>
 <span class="n">CLOUD_SCALE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span>

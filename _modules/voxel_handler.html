@@ -1006,7 +1006,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">CHUNK_AREA</span><span class="p">,</span>
     <span class="n">CHUNK_SIZE</span><span class="p">,</span>
     <span class="n">GLOWSTONE</span><span class="p">,</span>
-    <span class="n">MAX_RAY_DIST</span><span class="p">,</span>
+    <span class="n">MAX_RAY_DISTANCE</span><span class="p">,</span>
     <span class="n">NON_PLACEABLE</span><span class="p">,</span>
     <span class="n">STONE</span><span class="p">,</span>
     <span class="n">SURVIVAL</span><span class="p">,</span>
@@ -1272,7 +1272,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">x2</span><span class="p">:</span> <span class="nb">float</span>
         <span class="n">y2</span><span class="p">:</span> <span class="nb">float</span>
         <span class="n">z2</span><span class="p">:</span> <span class="nb">float</span>
-        <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="n">MAX_RAY_DIST</span>
+        <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="n">MAX_RAY_DISTANCE</span>
 
         <span class="n">current_voxel_pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span> <span class="o">=</span> <span class="mi">0</span>
