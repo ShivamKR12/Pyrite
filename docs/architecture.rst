@@ -112,3 +112,8 @@ Purpose: Maximize CPU cache hits during Numba JIT execution.
 
 * **Row-Major Layout:** Instead of using slow, nested Python lists (``chunk[x][y][z]``), all chunk data is flattened into a single contiguous 1D Numpy array.
 * **Cache Optimization:** X advances fastest, then Z, and Y last. This contiguous alignment allows the CPU prefetcher to load adjacent blocks efficiently, which is critical for Numba's vectorization speeds.
+
+Next Steps
+----------
+
+With a solid grasp of the asynchronous thread pool and engine queues, continue to :doc:`persistence` to see how Pyrite permanently saves terrain and player data directly to the disk.

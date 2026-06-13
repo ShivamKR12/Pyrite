@@ -1,7 +1,8 @@
 .. _shaders:
 
+=================================
 Shader Systems and GLSL Breakdown
-==================================
+=================================
 
 This document provides detailed explanations of Pyrite's OpenGL shaders (GLSL 3.3), including vertex and fragment processing, uniform bindings, and lighting integration. All shaders are located in ``src/shaders/``.
 
@@ -431,3 +432,8 @@ Debugging Tips
 1. **Visualize Normals:** Replace fragment color with normal vector (for lighting issues).
 2. **Show AO:** Output ao_id directly as grayscale to verify ambient occlusion.
 3. **Show Lighting:** Output sun_light and block_light channels separately.
+
+Next Steps
+----------
+
+Now that you understand the rendering pipeline and shaders, continue to the :doc:`player` documentation to understand how the user physically interacts with and navigates this 3D environment.

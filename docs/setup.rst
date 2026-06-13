@@ -305,3 +305,8 @@ Performance Tuning
 - Use lower resolution (e.g., 1280x720 instead of 1920x1080)
 - Reduce texture resolution by editing asset pipeline
 - Disable occlusion queries in ``shader_program.py`` if ineffective
+
+Next Steps
+----------
+
+With your environment configured and the engine running, dive into the :doc:`main` guide to understand how the application initializes and runs its core execution cycle.

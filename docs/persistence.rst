@@ -264,14 +264,7 @@ SQLite's Write-Ahead Logging (WAL) mode provides:
 
 * **I/O Balance:** Activates specialized SQLite caching behaviors maximizing engine speeds directly without hard freezing read capabilities on chunk boundaries.
 
-Replication Checklist
----------------------
+Next Steps
+----------
 
-1. ✓ Create SQLite schema (3 tables)
-2. ✓ Implement chunk serialization (numpy → bytes)
-3. ✓ Add zlib compression
-4. ✓ Implement CRUD operations (save/load)
-5. ✓ Set up threading and queues
-6. ✓ Enable WAL mode
-7. ✓ Handle database cleanup on quit
-8. ✓ Implement world listing from filesystem
+Now that you know how chunks are saved and loaded from SQLite, explore the :doc:`terrain` system to learn how these chunks are procedurally generated from scratch using noise.

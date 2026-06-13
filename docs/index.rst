@@ -1,3 +1,6 @@
+.. _index:
+
+============
 Introduction
 ============
 Welcome to Pyrite's Documentation!
@@ -42,15 +45,15 @@ The following sections delve into how Pyrite achieves its high performance and m
    :maxdepth: 2
    :caption: Explanation:
 
-   Application Entry and Core Loop <main>
    Engine Initialization and Settings <setup>
+   Application Entry and Core Loop <main>
    World Architecture and Multithreading <architecture>
    Persistence Systems and SQLite Storage <persistence>
    Terrain Systems and Procedural Generation <terrain>
-   Shader Systems and GLSL Breakdown <shaders>
    Lighting Systems and BFS Propagation <lighting>
    Meshing Systems and Greedy Geometry <meshes>
    Rendering Pipeline and Camera <rendering>
+   Shader Systems and GLSL Breakdown <shaders>
    Player Systems and Physics Controller <player>
    Survival Mechanics and Statistics <survival>
    UI Systems and 2D Overlays <ui>
@@ -70,3 +73,8 @@ The API documentation is automatically generated from the source code docstrings
    :caption: API Reference:
 
    API Reference <api/modules>
+
+Next Steps
+----------
+
+Ready to dive in? Start by exploring the :doc:`setup` guide to get the engine installed and running on your local machine.

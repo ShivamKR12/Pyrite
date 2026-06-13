@@ -54,3 +54,8 @@ Versioning and artist workflow
 
 - Keep source PSD/EXR files (layered) outside `assets/` in an artist repo; commit generated atlases/arrays only when necessary.
 - Document texture IDs and changes in a simple manifest (e.g., `assets/textures/README.md`) for consistency between artists and engine.
+
+Next Steps
+----------
+
+Now that the core engine, gameplay, and assets are fully documented, learn how to monitor performance bottlenecks by exploring the :doc:`profiling` and telemetry systems.

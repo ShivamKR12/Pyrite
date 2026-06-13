@@ -195,22 +195,7 @@ Integration with Rendering
 
 * **Maximum Blending:** To prevent blowouts, the fragment shader computes the final lighting multiplier by taking the maximum (not the sum) of the dynamically scaled sunlight and static blocklight.
 
-Replication Checklist
----------------------
+Next Steps
+----------
 
-1. ✓ Implement lightmap packing/unpacking
-2. ✓ Create sunlight initialization (downward raycast)
-3. ✓ Implement BFS light propagation with queue
-4. ✓ Add blocklight support (torches)
-5. ✓ Implement removal pass + refill logic
-6. ✓ Add chunk boundary stitching
-7. ✓ Integrate with mesh building (per-vertex light sampling)
-8. ✓ Connect to shader (lighting application)
-
-Performance Considerations
---------------------------
-
-- **Queue size:** 200K nodes typical max (prevents explosion of propagation)
-- **Diminishment:** Constants prevent infinite propagation
-- **Optimization:** O(1) downward raycasts for common case
-- **Threading:** Entire BFS can run on background thread (no GIL issues with Numba)
+With the lighting maps generated, proceed to the :doc:`meshes` guide to learn how the Greedy Meshing algorithm packs everything into highly optimized GPU buffers.

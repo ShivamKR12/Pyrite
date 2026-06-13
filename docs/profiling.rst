@@ -110,3 +110,8 @@ Purpose: Safely merge the isolated thread data into a readable format on applica
     * **Avg_ms:** The standard mean execution time.
     * **Max_ms:** The absolute longest a single call took (usually indicating an initial cold-boot compile or DB load).
     * **P99_ms:** The 99th Percentile. This is the most crucial engine metric. It isolates the worst 1% of execution times. If your average frame is 16ms (60 FPS), but your P99 is 150ms, it indicates the game is experiencing severe, localized micro-stutters during heavy loads!
+
+Next Steps
+----------
+
+With performance tracking in place, move on to the :doc:`testing` framework to see how Pyrite ensures engine stability and guards against regressions.

@@ -1,5 +1,6 @@
 .. _terrain:
 
+===================================================
 Terrain Systems and Procedural Generation Breakdown
 ===================================================
 
@@ -213,3 +214,8 @@ Purpose: Probabilistically spawn and construct multi-block tree structures withi
         voxels[get_index(x + ix + k, y + iy, z + iz + k)] = LEAVES
 
 * **Sparse Leaf Crown:** The spherical crown is generated layer by layer. We utilize modulo math (``% 4``) to skip specific leaf blocks, creating a sparse, organic checkerboard pattern that allows ambient light to pass through.
+
+Next Steps
+----------
+
+With terrain generation complete, move on to the :doc:`lighting` system to see how sunlight and blocklight propagate dynamically across the newly generated voxel grid.

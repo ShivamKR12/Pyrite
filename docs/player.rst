@@ -325,3 +325,8 @@ Integration with Game Loop
     move_and_collide(delta_time)
 
 * **Delegation Pass:** Singular unified core looping handles continuous physical physics state adjustments transparently uniformly.
+
+Next Steps
+----------
+
+Now that player movement and block interactions are covered, explore the :doc:`survival` mechanics to see how health, inventory, and item physics complete the gameplay loop.
