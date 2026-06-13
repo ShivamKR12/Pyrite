@@ -425,3 +425,8 @@ Data Flow Example
     Vertices unpacked in Vertex Shader → Position + Attributes
              ↓
     Fragment Shader colors pixels
+
+Next Steps
+----------
+
+Now that the vertex data is packed and ready on the GPU, dive into the overall :doc:`rendering` pipeline to see how frustum culling and hardware occlusion determine what actually gets drawn.

@@ -1,3 +1,5 @@
+.. _rendering:
+
 ==================
 Rendering Pipeline
 ==================
@@ -62,3 +64,8 @@ The renderer is not a single monolithic loop; it is a sequence of stages. In bro
 4. **UI pass:** Render HUD and menus last with depth test disabled.
 
 This ordered approach is what allows Pyrite to keep the visible geometry count low and still present a coherent world each frame.
+
+Next Steps
+----------
+
+With the world rendering pipeline established, move on to the :doc:`shaders` breakdown to understand how Pyrite's GLSL programs visually construct the atmosphere and geometry on the GPU.

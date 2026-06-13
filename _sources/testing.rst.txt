@@ -55,3 +55,8 @@ Notes
 - Run tests from the repository root so imports like `from settings import ...` work correctly.
 - If tests fail due to missing native extensions, ensure the development environment has required build tools and that `requirements-dev.txt` is installed.
 - For profiling, use `pytest --durations=10` or Python profilers directly; profiling guidance belongs in a separate section when needed.
+
+Next Steps
+----------
+
+Once your code is fully tested and verified, conclude with the :doc:`deployment` guide to learn how to compile standalone executables and manage releases via CI/CD.

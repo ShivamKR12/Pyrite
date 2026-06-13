@@ -246,3 +246,8 @@ Integration with Main Loop
     glEnable(GL_DEPTH_TEST)
 
 * **Drawing Pass:** Render dispatches are natively bracketed uniformly strictly securely automatically explicitly fully effectively cleanly reliably safely securely accurately flawlessly securely correctly seamlessly.
+
+Next Steps
+----------
+
+Now that you understand the 2D overlays and menus, proceed to the :doc:`audio` system to learn how Pyrite handles spatial block sound effects and background music.
