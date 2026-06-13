@@ -10,7 +10,7 @@ from typing import Any
 
 from frustum import Frustum
 from profiler import global_profiler
-from settings import ASPECT_RATIO, FAR, NEAR, PITCH_MAX, VERTICLE_FOV, glm
+from settings import ASPECT_RATIO, FAR, NEAR, PITCH_MAX, VERTICAL_FOV, glm
 
 
 class Camera:
@@ -40,7 +40,7 @@ class Camera:
         self.right: Any = glm.vec3(1, 0, 0)
         self.forward: Any = glm.vec3(0, 0, -1)
 
-        self.m_proj: Any = glm.perspective(VERTICLE_FOV, ASPECT_RATIO, NEAR, FAR)
+        self.m_proj: Any = glm.perspective(VERTICAL_FOV, ASPECT_RATIO, NEAR, FAR)
         self.m_view: Any = glm.mat4()
 
         self.frustum: Frustum = Frustum(self)

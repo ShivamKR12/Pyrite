@@ -59,8 +59,8 @@ CENTER_Y: int = 48
 # camera
 ASPECT_RATIO: float = WINDOW_RESOLUTION.x / WINDOW_RESOLUTION.y
 FOV_DEGREE: int = 50
-VERTICLE_FOV: float = glm.radians(FOV_DEGREE)  # vertical FOV
-HORIZONTAL_FOV: float = 2 * math.atan(math.tan(VERTICLE_FOV * 0.5) * ASPECT_RATIO)  # horizontal FOV
+VERTICAL_FOV: float = glm.radians(FOV_DEGREE)  # vertical FOV
+HORIZONTAL_FOV: float = 2 * math.atan(math.tan(VERTICAL_FOV * 0.5) * ASPECT_RATIO)  # horizontal FOV
 NEAR: float = 0.1
 FAR: float = 2000.0
 PITCH_MAX: float = glm.radians(89)

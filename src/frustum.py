@@ -13,7 +13,7 @@ from numba import njit, prange
 from pyglm import glm
 
 from profiler import global_profiler
-from settings import CHUNK_SPHERE_RADIUS, FAR, HORIZONTAL_FOV, NEAR, VERTICLE_FOV
+from settings import CHUNK_SPHERE_RADIUS, FAR, HORIZONTAL_FOV, NEAR, VERTICAL_FOV
 
 
 class Frustum:
@@ -38,7 +38,7 @@ class Frustum:
         self.tan_y: float = 0.0
         self.factor_x: float = 0.0
         self.tan_x: float = 0.0
-        self.update_factors(VERTICLE_FOV, HORIZONTAL_FOV)
+        self.update_factors(VERTICAL_FOV, HORIZONTAL_FOV)
 
     @global_profiler.profile_func('Frustum_UpdateFactors')
     def update_factors(self, v_fov: float, h_fov: float) -> None:
