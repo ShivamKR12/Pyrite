@@ -610,8 +610,6 @@
 </ul>
 <p><strong>O(1) Vertical Raycast Optimization:</strong></p>
 <p>When a block is mined exposing a hole to sunlight, instead of expensive 3D BFS:</p>
-<p>Vertical Raycast Optimization:</p>
-<p>When a block is mined exposing a hole to sunlight, an O(1) downward fill is more efficient than 3D BFS:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">):</span>
     <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span><span class="p">]</span>
 </pre></div>

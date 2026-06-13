@@ -47,11 +47,17 @@ Spatialization & volume
 API usage
 ---------
 
-Typical calls available in `src/sounds.py`:
+.. code-block:: python
 
-- `Sounds.play_sfx(name, pos=None, volume=1.0)` — play a short effect; pass `pos` (world vec3) for panning/attenuation.
-- `Sounds.play_music(track_name, loop=True)` — start background music.
-- `Sounds.set_master_volume(0.0-1.0)` — adjust global volume.
+    self.app.sounds.play_sfx(name, pos=world_pos)
+
+* **Spatial SFX:** Play a short effect; passing a `pos` (world vec3) automatically calculates left/right panning and distance attenuation relative to the player's camera.
+
+.. code-block:: python
+
+    self.app.sounds.play_music(track_name, loop=True)
+
+* **Background Music:** Hooks into the Pygame music mixer to stream longer audio tracks asynchronously.
 
 Debugging
 ---------

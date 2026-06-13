@@ -66,10 +66,6 @@ Sunlight Propagation Algorithm
 
 When a block is mined exposing a hole to sunlight, instead of expensive 3D BFS:
 
-Vertical Raycast Optimization:
-
-When a block is mined exposing a hole to sunlight, an O(1) downward fill is more efficient than 3D BFS:
-
 .. code-block:: python
 
     for dy in range(y, CHUNK_SIZE):

@@ -658,9 +658,9 @@
 <li><p><strong>FBm Detail Octaves:</strong> Each subsequent octave doubles the frequency (<code class="docutils literal notranslate"><span class="pre">f2,</span> <span class="pre">f4,</span> <span class="pre">f8</span></code>) and halves the amplitude (<code class="docutils literal notranslate"><span class="pre">a2,</span> <span class="pre">a4,</span> <span class="pre">a8</span></code>). Summing these together creates increasingly fine, localized bumps across the terrain.</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">cont</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">:</span>
-<span class="n">w</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="o">-</span><span class="mf">0.2</span> <span class="o">-</span> <span class="n">cont</span><span class="p">)</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-<span class="n">target_h</span> <span class="o">=</span> <span class="n">WATER_LINE</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">detail_2</span> <span class="o">*</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="n">detail_3</span> <span class="o">*</span> <span class="mf">0.3</span>
-<span class="n">height</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">target_h</span> <span class="o">*</span> <span class="n">w</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="o">-</span><span class="mf">0.2</span> <span class="o">-</span> <span class="n">cont</span><span class="p">)</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">target_h</span> <span class="o">=</span> <span class="n">WATER_LINE</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">detail_2</span> <span class="o">*</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="n">detail_3</span> <span class="o">*</span> <span class="mf">0.3</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">target_h</span> <span class="o">*</span> <span class="n">w</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -684,8 +684,8 @@
 <li><p><strong>Entrance Mask:</strong> Before looping through the Y-axis, we calculate a 2D map once per column to determine how “open” or “closed” the surface should be, preventing all caves from breaching the top.</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">surface_dist</span> <span class="o">&lt;</span> <span class="mi">14</span><span class="p">:</span>
-<span class="n">taper_factor</span> <span class="o">=</span> <span class="p">(</span><span class="mi">14</span> <span class="o">-</span> <span class="n">surface_dist</span><span class="p">)</span> <span class="o">/</span> <span class="mf">14.0</span>
-<span class="n">target_threshold</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">entrance_mask</span><span class="p">)</span> <span class="o">*</span> <span class="mf">4.0</span>
+    <span class="n">taper_factor</span> <span class="o">=</span> <span class="p">(</span><span class="mi">14</span> <span class="o">-</span> <span class="n">surface_dist</span><span class="p">)</span> <span class="o">/</span> <span class="mf">14.0</span>
+    <span class="n">target_threshold</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">entrance_mask</span><span class="p">)</span> <span class="o">*</span> <span class="mf">4.0</span>
 </pre></div>
 </div>
 <ul class="simple">

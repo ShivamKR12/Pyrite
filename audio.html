@@ -600,11 +600,17 @@
 </section>
 <section id="api-usage">
 <h2>API usage<a class="headerlink" href="#api-usage" title="Link to this heading"></a></h2>
-<p>Typical calls available in <cite>src/sounds.py</cite>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">play_sfx</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">world_pos</span><span class="p">)</span>
+</pre></div>
+</div>
 <ul class="simple">
-<li><p><cite>Sounds.play_sfx(name, pos=None, volume=1.0)</cite> — play a short effect; pass <cite>pos</cite> (world vec3) for panning/attenuation.</p></li>
-<li><p><cite>Sounds.play_music(track_name, loop=True)</cite> — start background music.</p></li>
-<li><p><cite>Sounds.set_master_volume(0.0-1.0)</cite> — adjust global volume.</p></li>
+<li><p><strong>Spatial SFX:</strong> Play a short effect; passing a <cite>pos</cite> (world vec3) automatically calculates left/right panning and distance attenuation relative to the player’s camera.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">play_music</span><span class="p">(</span><span class="n">track_name</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Background Music:</strong> Hooks into the Pygame music mixer to stream longer audio tracks asynchronously.</p></li>
 </ul>
 </section>
 <section id="debugging">

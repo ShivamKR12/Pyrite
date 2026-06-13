@@ -121,9 +121,9 @@ Purpose: Utilize Fractional Brownian Motion (FBm) combined with continental modi
 .. code-block:: python
 
     if cont < -0.2:
-    w = min((-0.2 - cont) * 5.0, 1.0)
-    target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
-    height = height * (1.0 - w) + target_h * w
+        w = min((-0.2 - cont) * 5.0, 1.0)
+        target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
+        height = height * (1.0 - w) + target_h * w
 
 * **Terrain Shaping:** If continentalness is very low, we treat it as Deep Plains or Oceans. We calculate an interpolation weight ``w`` and heavily flatten the ``target_h`` just below the water line, linearly interpolating the raw FBm height towards it.
 
@@ -149,8 +149,8 @@ Purpose: Hollow out complex underground cave systems using 3D noise while preven
 .. code-block:: python
 
     if surface_dist < 14:
-    taper_factor = (14 - surface_dist) / 14.0
-    target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
+        taper_factor = (14 - surface_dist) / 14.0
+        target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
 
 * **Dynamic Tapering:** If we are within 14 blocks of the surface crust, the tapering mechanism kicks in. We calculate a linear factor that shifts the ``target_threshold`` higher, making it harder for noise to exceed it.
 

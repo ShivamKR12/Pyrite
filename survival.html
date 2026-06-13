@@ -582,6 +582,13 @@ The 2x2 crafting grid matches the four input slots against a hardcoded dictionar
 <h2>3D Item Entities<a class="headerlink" href="#d-item-entities" title="Link to this heading"></a></h2>
 <p>When blocks are mined, they are spawned into the world as independent <cite>Item</cite> instances. These items possess their own isolated velocity and gravity vectors, allowing them to bounce and slide across the voxel terrain until they fall asleep.</p>
 <p>When the player walks within the <cite>ITEM_PICKUP_RADIUS</cite>, the items are destroyed and injected into the player’s inventory array. To protect CPU physics threads and GPU draw limits from entity overflow, the <cite>ItemManager</cite> enforces a hard FIFO (First-In-First-Out) cap of 256 items. If the 257th item drops, the oldest item is instantly despawned.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ITEM_ENTITY_CAP</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Entity Cap:</strong> The ItemManager enforces a hard FIFO limit to instantly despawn the oldest entities if too many blocks break concurrently.</p></li>
+</ul>
 </section>
 <section id="next-steps">
 <h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
