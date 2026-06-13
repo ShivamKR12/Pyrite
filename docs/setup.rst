@@ -292,7 +292,7 @@ Performance Tuning
 
 **Memory Optimization:**
 
-- Reduce ``WORLD_W``, ``WORLD_H``, ``WORLD_D`` in ``settings.py`` to limit chunk count
+- Reduce ``WORLD_WIDTH``, ``WORLD_HEIGHT``, ``WORLD_DEPTH`` in ``settings.py`` to limit chunk count
 - Reduce ``VBO_POOL_CAP`` to recycle GPU buffers faster
 
 **CPU Optimization:**

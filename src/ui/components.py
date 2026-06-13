@@ -14,7 +14,14 @@ import moderngl as mgl
 import pygame as pg
 
 from profiler import global_profiler
-from settings import ASPECT_RATIO, FONT_SIZE_BUTTONS, FONT_SIZE_SLIDERS, UI_BUTTON_COLOR, UI_HOVER_COLOR, WIN_RES
+from settings import (
+    ASPECT_RATIO,
+    FONT_SIZE_BUTTONS,
+    FONT_SIZE_SLIDERS,
+    UI_BUTTON_COLOR,
+    UI_HOVER_COLOR,
+    WINDOW_RESOLUTION,
+)
 
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
@@ -63,8 +70,8 @@ def get_shared_resource(app: Any, res_type: str, **kwargs: Any) -> Any:
         key = f'mask_{w}_{h}_{radius}'
 
         if key not in _shared_ui_resources:
-            px_w: int = max(1, int(w * WIN_RES.x))
-            px_h: int = max(1, int(h * WIN_RES.y))
+            px_w: int = max(1, int(w * WINDOW_RESOLUTION.x))
+            px_h: int = max(1, int(h * WINDOW_RESOLUTION.y))
             surf: pg.Surface = pg.Surface((px_w, px_h), pg.SRCALPHA)
             pg.draw.rect(surf, (255, 255, 255, 255), surf.get_rect(), border_radius=radius)
             tex: Any = app.ctx.texture(surf.get_size(), 4, pg.image.tobytes(surf, 'RGBA', True))
@@ -264,15 +271,15 @@ class Button(UINode):
         global_pos: Tuple[float, float] = self.get_global_pos()
         x: float = global_pos[0]
         y: float = global_pos[1]
-        y_dynamic: float = y + (self.dynamic_elevation / WIN_RES.y)
+        y_dynamic: float = y + (self.dynamic_elevation / WINDOW_RESOLUTION.y)
         w: float = self.size[0]
         h: float = self.size[1]
 
         # Convert normalized screen coords to pixel coords
         mouse_x: int = mouse_pos[0]
         mouse_y: int = mouse_pos[1]
-        win_w: int = int(WIN_RES.x)
-        win_h: int = int(WIN_RES.y)
+        win_w: int = int(WINDOW_RESOLUTION.x)
+        win_h: int = int(WINDOW_RESOLUTION.y)
 
         # Convert button normalized pos/size to pixel coords
         btn_x: float = (x + 1) * 0.5 * win_w
@@ -355,7 +362,7 @@ class Button(UINode):
         self.text_mesh.render()
 
         # Render Top (Main) Quad
-        py_dynamic: float = py + (self.dynamic_elevation / WIN_RES.y)
+        py_dynamic: float = py + (self.dynamic_elevation / WINDOW_RESOLUTION.y)
         c: Tuple[float, float, float, float] = self.hover_color if self.is_hovered else self.base_color
         self.text_mesh.program['u_scale'] = (w, h)
         self.text_mesh.program['u_offset'] = (px + offset[0], py_dynamic + offset[1])
@@ -480,11 +487,11 @@ class WorldButton(UINode):
         x: float = global_pos[0]
         y: float = global_pos[1]
 
-        y_dynamic: float = y + (self.dynamic_elevation / WIN_RES.y)
+        y_dynamic: float = y + (self.dynamic_elevation / WINDOW_RESOLUTION.y)
         w: float = self.size[0]
         h: float = self.size[1]
-        win_w: int = int(WIN_RES.x)
-        win_h: int = int(WIN_RES.y)
+        win_w: int = int(WINDOW_RESOLUTION.x)
+        win_h: int = int(WINDOW_RESOLUTION.y)
 
         btn_x: float = (x + 1) * 0.5 * win_w
         btn_y: float = (-y_dynamic + 1) * 0.5 * win_h
@@ -563,7 +570,7 @@ class WorldButton(UINode):
 
         self.text_mesh.render()
 
-        py_dynamic: float = py + (self.dynamic_elevation / WIN_RES.y)
+        py_dynamic: float = py + (self.dynamic_elevation / WINDOW_RESOLUTION.y)
         render_pos_top: Tuple[float, float] = (px + offset[0], py_dynamic + offset[1])
         c: Tuple[float, float, float, float] = self.hover_color if self.is_hovered else self.base_color
         self.text_mesh.program['u_scale'] = (w, h)
@@ -653,8 +660,8 @@ class TextInput(UINode):
 
             w: float = self.size[0]
             h: float = self.size[1]
-            win_w: int = int(WIN_RES.x)
-            win_h: int = int(WIN_RES.y)
+            win_w: int = int(WINDOW_RESOLUTION.x)
+            win_h: int = int(WINDOW_RESOLUTION.y)
 
             btn_x: float = (x + 1) * 0.5 * win_w
             btn_y: float = (-y + 1) * 0.5 * win_h
@@ -811,8 +818,8 @@ class Slider(UINode):
         y: float = global_pos[1]
         w: float = self.size[0]
         h: float = self.size[1]
-        win_w: int = int(WIN_RES.x)
-        win_h: int = int(WIN_RES.y)
+        win_w: int = int(WINDOW_RESOLUTION.x)
+        win_h: int = int(WINDOW_RESOLUTION.y)
 
         btn_x: float = (x + 1) * 0.5 * win_w
         btn_y: float = (-y + 1) * 0.5 * win_h
@@ -1003,8 +1010,8 @@ class Toggle(UINode):
         w: float = self.size[0]
         h: float = self.size[1]
 
-        win_w: int = int(WIN_RES.x)
-        win_h: int = int(WIN_RES.y)
+        win_w: int = int(WINDOW_RESOLUTION.x)
+        win_h: int = int(WINDOW_RESOLUTION.y)
 
         btn_x: float = (x + 1) * 0.5 * win_w
         btn_y: float = (-y + 1) * 0.5 * win_h
@@ -1077,7 +1084,7 @@ class Toggle(UINode):
         self.text_mesh.render()
 
         # Render track (pill shape)
-        track_mask: Any = get_shared_resource(self.app, 'button_mask', radius=int(h * WIN_RES.y), size=(w, h))
+        track_mask: Any = get_shared_resource(self.app, 'button_mask', radius=int(h * WINDOW_RESOLUTION.y), size=(w, h))
         track_mask.use(location=4)
         self.text_mesh.program['u_scale'] = (w, h)
         self.text_mesh.program['u_offset'] = render_pos
@@ -1096,7 +1103,7 @@ class Toggle(UINode):
         thumb_x: float = render_pos[0] + travel_dist if val else render_pos[0] - travel_dist
 
         thumb_mask: Any = get_shared_resource(
-            self.app, 'button_mask', radius=int(h * WIN_RES.y), size=(thumb_w, thumb_h)
+            self.app, 'button_mask', radius=int(h * WINDOW_RESOLUTION.y), size=(thumb_w, thumb_h)
         )
         thumb_mask.use(location=4)
         self.text_mesh.program['u_scale'] = (thumb_w, thumb_h)

@@ -16,7 +16,7 @@ import noise
 from meshes.base_mesh import BaseMesh
 from noise import noise2
 from profiler import global_profiler
-from settings import CHUNK_AREA, CHUNK_SIZE, CLOUD_HEIGHT, WORLD_AREA, WORLD_D, WORLD_W
+from settings import CHUNK_AREA, CHUNK_SIZE, CLOUD_HEIGHT, WORLD_AREA, WORLD_DEPTH, WORLD_WIDTH
 
 
 class CloudMesh(BaseMesh):
@@ -62,12 +62,12 @@ class CloudMesh(BaseMesh):
         Populates a 2D density grid using multi-octave simplex noise to procedurally
         determine the exact locations where clouds should form in the sky.
         """
-        for x in prange(WORLD_W * CHUNK_SIZE):
-            for z in range(WORLD_D * CHUNK_SIZE):
+        for x in prange(WORLD_WIDTH * CHUNK_SIZE):
+            for z in range(WORLD_DEPTH * CHUNK_SIZE):
                 if noise2(0.13 * x, 0.13 * z, perm_array) < 0.2:
                     continue
 
-                cloud_data[x + WORLD_W * CHUNK_SIZE * z] = 1
+                cloud_data[x + WORLD_WIDTH * CHUNK_SIZE * z] = 1
 
     @staticmethod
     @njit(cache=True, fastmath=True, nogil=True)
@@ -79,8 +79,8 @@ class CloudMesh(BaseMesh):
         """
         mesh = np.empty(WORLD_AREA * CHUNK_AREA * 6 * 3, dtype='uint16')
         index = 0
-        width = WORLD_W * CHUNK_SIZE
-        depth = WORLD_D * CHUNK_SIZE
+        width = WORLD_WIDTH * CHUNK_SIZE
+        depth = WORLD_DEPTH * CHUNK_SIZE
 
         y = CLOUD_HEIGHT
         visited = set()

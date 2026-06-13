@@ -26,41 +26,41 @@ def get_path(relative_path: str) -> str:
 
 
 # OpenGL settings
-MAJOR_VER: int = 3
-MINOR_VER: int = 3
+MAJOR_VERSION: int = 3
+MINOR_VERSION: int = 3
 DEPTH_SIZE: int = 24
 NUM_SAMPLES: int = 1  # antialiasing
 
 # resolution
 pygame.init()
 info: Any = pygame.display.Info()
-WIN_RES: Any = glm.vec2(info.current_w, info.current_h)
+WINDOW_RESOLUTION: Any = glm.vec2(info.current_w, info.current_h)
 pygame.quit()
 
 # ray casting
-MAX_RAY_DIST: int = 6
+MAX_RAY_DISTANCE: int = 6
 
 # chunk
 CHUNK_SIZE: int = 48
-H_CHUNK_SIZE: int = CHUNK_SIZE // 2
+HALF_CHUNK_SIZE: int = CHUNK_SIZE // 2
 CHUNK_AREA: int = CHUNK_SIZE * CHUNK_SIZE
-CHUNK_VOL: int = CHUNK_AREA * CHUNK_SIZE
-CHUNK_SPHERE_RADIUS: float = H_CHUNK_SIZE * math.sqrt(3)
+CHUNK_VOLUME: int = CHUNK_AREA * CHUNK_SIZE
+CHUNK_SPHERE_RADIUS: float = HALF_CHUNK_SIZE * math.sqrt(3)
 
 # world
-WORLD_W: int = 30
-WORLD_H: int = 5
-WORLD_D: int = WORLD_W
-WORLD_AREA: int = WORLD_W * WORLD_D
-WORLD_VOL: int = WORLD_AREA * WORLD_H
-CENTER_XZ: float = WORLD_W * H_CHUNK_SIZE
+WORLD_WIDTH: int = 30
+WORLD_HEIGHT: int = 5
+WORLD_DEPTH: int = WORLD_WIDTH
+WORLD_AREA: int = WORLD_WIDTH * WORLD_DEPTH
+WORLD_VOLUME: int = WORLD_AREA * WORLD_HEIGHT
+CENTER_XZ: float = WORLD_WIDTH * HALF_CHUNK_SIZE
 CENTER_Y: int = 48
 
 # camera
-ASPECT_RATIO: float = WIN_RES.x / WIN_RES.y
-FOV_DEG: int = 50
-V_FOV: float = glm.radians(FOV_DEG)  # vertical FOV
-H_FOV: float = 2 * math.atan(math.tan(V_FOV * 0.5) * ASPECT_RATIO)  # horizontal FOV
+ASPECT_RATIO: float = WINDOW_RESOLUTION.x / WINDOW_RESOLUTION.y
+FOV_DEGREE: int = 50
+VERTICLE_FOV: float = glm.radians(FOV_DEGREE)  # vertical FOV
+HORIZONTAL_FOV: float = 2 * math.atan(math.tan(VERTICLE_FOV * 0.5) * ASPECT_RATIO)  # horizontal FOV
 NEAR: float = 0.1
 FAR: float = 2000.0
 PITCH_MAX: float = glm.radians(89)
@@ -221,7 +221,7 @@ HOTBAR_Y: float = -0.85
 
 # water
 WATER_LINE: int = 6
-WATER_AREA: int = 5 * CHUNK_SIZE * WORLD_W
+WATER_AREA: int = 5 * CHUNK_SIZE * WORLD_WIDTH
 
 # cloud
 CLOUD_SCALE: int = 25

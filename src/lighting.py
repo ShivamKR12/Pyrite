@@ -14,7 +14,7 @@ from numba import njit
 
 from meshes.chunk_mesh_builder import get_chunk_index
 from profiler import global_profiler
-from settings import AIR, CHUNK_AREA, CHUNK_SIZE, GLASS, GLOWSTONE, LEAVES, LIGHTING_QUEUE_SIZE, WATER, WORLD_H
+from settings import AIR, CHUNK_AREA, CHUNK_SIZE, GLASS, GLOWSTONE, LEAVES, LIGHTING_QUEUE_SIZE, WATER, WORLD_HEIGHT
 
 # Pre-allocated global memory queues to prevent massive GC churn per interaction
 GLOBAL_QUEUE_A: Any = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
@@ -109,7 +109,7 @@ def propagate_light_queue(
         for i in range(6):
             nx, ny, nz = x + DIRS[i][0], y + DIRS[i][1], z + DIRS[i][2]
 
-            if ny < 0 or ny >= WORLD_H * CHUNK_SIZE:
+            if ny < 0 or ny >= WORLD_HEIGHT * CHUNK_SIZE:
                 continue
 
             # Optimization: In-Chunk Fast Path (Bypasses slow Modulo & Array Lookups!)
@@ -403,7 +403,7 @@ def remove_light_node(
         for i in range(6):
             nx, ny, nz = x + DIRS[i][0], y + DIRS[i][1], z + DIRS[i][2]
 
-            if ny < 0 or ny >= WORLD_H * CHUNK_SIZE:
+            if ny < 0 or ny >= WORLD_HEIGHT * CHUNK_SIZE:
                 continue
 
             n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)
@@ -513,7 +513,7 @@ def _update_light_remove_block(
     for i in range(6):
         nx, ny, nz = wx + DIRS[i][0], wy + DIRS[i][1], wz + DIRS[i][2]
 
-        if ny < 0 or ny >= WORLD_H * CHUNK_SIZE:
+        if ny < 0 or ny >= WORLD_HEIGHT * CHUNK_SIZE:
             continue
 
         n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)

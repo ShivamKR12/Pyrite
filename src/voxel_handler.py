@@ -17,7 +17,7 @@ from settings import (
     CHUNK_AREA,
     CHUNK_SIZE,
     GLOWSTONE,
-    MAX_RAY_DIST,
+    MAX_RAY_DISTANCE,
     NON_PLACEABLE,
     STONE,
     SURVIVAL,
@@ -264,7 +264,7 @@ class VoxelHandler:
         x2: float
         y2: float
         z2: float
-        x2, y2, z2 = self.app.player.position + self.app.player.forward * MAX_RAY_DIST
+        x2, y2, z2 = self.app.player.position + self.app.player.forward * MAX_RAY_DISTANCE
 
         current_voxel_pos: Any = glm.ivec3(x1, y1, z1)
         self.voxel_id = 0

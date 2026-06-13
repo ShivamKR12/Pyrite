@@ -37,7 +37,7 @@ from meshes.cube_mesh import CubeMesh
 from profiler import global_profiler
 from settings import (
     CHUNK_SIZE,
-    CHUNK_VOL,
+    CHUNK_VOLUME,
     MAIN_THREAD_CHUNK_PROCESS_LIMIT_INGAME,
     MAIN_THREAD_CHUNK_PROCESS_LIMIT_LOADING,
     MAIN_THREAD_MESH_PROCESS_LIMIT_INGAME,
@@ -47,10 +47,10 @@ from settings import (
     PLAYER_EYE_HEIGHT,
     VBO_POOL_CAP,
     WORLD_AREA,
-    WORLD_D,
-    WORLD_H,
-    WORLD_VOL,
-    WORLD_W,
+    WORLD_DEPTH,
+    WORLD_HEIGHT,
+    WORLD_VOLUME,
+    WORLD_WIDTH,
 )
 from voxel_handler import VoxelHandler
 from world_objects.chunk import Chunk
@@ -80,9 +80,9 @@ class World:
         self.world_seed: int = world_seed
         self.app: Any = app
         self.app.render_loading_screen('ALLOCATING MEMORY...')
-        self.chunks: List[Optional[Chunk]] = [None for _ in range(WORLD_VOL)]
+        self.chunks: List[Optional[Chunk]] = [None for _ in range(WORLD_VOLUME)]
         self.active_chunks: Dict[Tuple[int, int, int], Chunk] = {}
-        self.chunk_positions: NDArray[np.int32] = np.full((WORLD_VOL, 3), -999, dtype='int32')
+        self.chunk_positions: NDArray[np.int32] = np.full((WORLD_VOLUME, 3), -999, dtype='int32')
 
         self.executor: concurrent.futures.ThreadPoolExecutor = concurrent.futures.ThreadPoolExecutor(
             max_workers=max(4, (os.cpu_count() or 5) - 1)
@@ -91,8 +91,8 @@ class World:
         self.build_queue: List[Chunk] = []
         self.load_queue: List[Tuple[Optional[Chunk], concurrent.futures.Future[Any]]] = []
 
-        self.voxels: NDArray[np.uint8] = np.empty([WORLD_VOL, CHUNK_VOL], dtype='uint8')
-        self.lightmaps: NDArray[np.uint8] = np.full([WORLD_VOL, CHUNK_VOL], 255, dtype='uint8')
+        self.voxels: NDArray[np.uint8] = np.empty([WORLD_VOLUME, CHUNK_VOLUME], dtype='uint8')
+        self.lightmaps: NDArray[np.uint8] = np.full([WORLD_VOLUME, CHUNK_VOLUME], 255, dtype='uint8')
         self.voxel_handler: Any = VoxelHandler(self)
         self.vbo_pool: deque[Tuple[Any, Any]] = deque()
         self.last_player_chunk_pos: Optional[Tuple[int, int]] = None
@@ -230,8 +230,8 @@ class World:
         t0 = time.perf_counter()
 
         def compile_numba() -> None:
-            dummy_voxels = np.zeros(CHUNK_VOL, dtype='uint8')
-            dummy_lights = np.full(CHUNK_VOL, 255, dtype='uint8')
+            dummy_voxels = np.zeros(CHUNK_VOLUME, dtype='uint8')
+            dummy_lights = np.full(CHUNK_VOLUME, 255, dtype='uint8')
             Chunk.generate_terrain(
                 dummy_voxels, dummy_lights, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed
             )
@@ -394,9 +394,9 @@ class World:
                 # Only apply if the chunk wasn't unloaded while loading
                 if self.active_chunks.get(chunk.position) is chunk:
                     chunk_index = (
-                        (chunk.position[0] % WORLD_W)
-                        + WORLD_W * (chunk.position[2] % WORLD_D)
-                        + WORLD_AREA * (chunk.position[1] % WORLD_H)
+                        (chunk.position[0] % WORLD_WIDTH)
+                        + WORLD_WIDTH * (chunk.position[2] % WORLD_DEPTH)
+                        + WORLD_AREA * (chunk.position[1] % WORLD_HEIGHT)
                     )
                     x, y, z = chunk.position
 
@@ -467,13 +467,13 @@ class World:
                 return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, False)
 
             # Old save file format, fallback to generating sunlight
-            lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
+            lightmap_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
             Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, cx, cy, cz, noise.perm)
 
             return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
-        voxel_data = np.zeros(CHUNK_VOL, dtype='uint8')
-        lightmap_data = np.zeros(CHUNK_VOL, dtype='uint8')
+        voxel_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
+        lightmap_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
         Chunk.generate_terrain(
             voxel_data, lightmap_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed
         )
@@ -514,7 +514,7 @@ class World:
                 if (x - player_cx) ** 2 + (z - player_cz) ** 2 > render_dist**2:
                     continue
 
-                for y in range(WORLD_H):
+                for y in range(WORLD_HEIGHT):
                     if (x, y, z) not in self.active_chunks:
                         self.load_chunk(x, y, z)
                         chunks_to_load.append((x, y, z))
@@ -531,7 +531,7 @@ class World:
         Initializes a Chunk instance at the given coordinates and dispatches
         an asynchronous task to fetch or generate its actual voxel data.
         """
-        chunk_index = (x % WORLD_W) + WORLD_W * (z % WORLD_D) + WORLD_AREA * (y % WORLD_H)
+        chunk_index = (x % WORLD_WIDTH) + WORLD_WIDTH * (z % WORLD_DEPTH) + WORLD_AREA * (y % WORLD_HEIGHT)
 
         old_chunk = self.chunks[chunk_index]
         if old_chunk:
@@ -576,7 +576,9 @@ class World:
                 lightmap_copy = chunk.lightmap.copy() if chunk.lightmap is not None else None
                 self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels.copy(), lightmap_copy)
 
-            chunk_index = (pos[0] % WORLD_W) + WORLD_W * (pos[2] % WORLD_D) + WORLD_AREA * (pos[1] % WORLD_H)
+            chunk_index = (
+                (pos[0] % WORLD_WIDTH) + WORLD_WIDTH * (pos[2] % WORLD_DEPTH) + WORLD_AREA * (pos[1] % WORLD_HEIGHT)
+            )
             self.chunks[chunk_index] = None
             self.chunk_positions[chunk_index] = (-999, -999, -999)
 

@@ -26,12 +26,12 @@ from settings import (
     DEPTH_SIZE,
     FONT_SIZE_LOADING,
     FONT_SIZE_SUBTITLE,
-    FOV_DEG,
-    MAJOR_VER,
-    MINOR_VER,
+    FOV_DEGREE,
+    MAJOR_VERSION,
+    MINOR_VERSION,
     MOUSE_SENSITIVITY,
     NUM_SAMPLES,
-    WIN_RES,
+    WINDOW_RESOLUTION,
     get_path,
 )
 from shader_program import ShaderProgram
@@ -62,13 +62,13 @@ class Pyrite:
         except pg.error:
             pass
 
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, MAJOR_VER)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, MINOR_VER)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSIONSION, MAJOR_VERSION)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSIONSION, MINOR_VERSION)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
         pg.display.gl_set_attribute(pg.GL_DEPTH_SIZE, DEPTH_SIZE)
         pg.display.gl_set_attribute(pg.GL_MULTISAMPLESAMPLES, NUM_SAMPLES)
 
-        pg.display.set_mode(WIN_RES, flags=pg.OPENGL | pg.DOUBLEBUF | pg.FULLSCREEN)
+        pg.display.set_mode(WINDOW_RESOLUTION, flags=pg.OPENGL | pg.DOUBLEBUF | pg.FULLSCREEN)
         self.ctx: Any = mgl.create_context()
 
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE | mgl.BLEND)
@@ -84,7 +84,7 @@ class Pyrite:
         self.game_state: str = 'MAIN_MENU'
 
         self.config: Dict[str, Any] = {
-            'fov': FOV_DEG,
+            'fov': FOV_DEGREE,
             'sensitivity': MOUSE_SENSITIVITY,
             'volume': 10,
             'render_distance': 4,
@@ -354,7 +354,9 @@ class Pyrite:
                     # Capture screen for thumbnail before UI draws over it!
                     try:
                         data: Any = self.ctx.screen.read(components=3)
-                        img: pg.Surface = pg.image.frombuffer(data, (int(WIN_RES.x), int(WIN_RES.y)), 'RGB')
+                        img: pg.Surface = pg.image.frombuffer(
+                            data, (int(WINDOW_RESOLUTION.x), int(WINDOW_RESOLUTION.y)), 'RGB'
+                        )
                         img = pg.transform.flip(img, False, True)  # OpenGL renders bottom-up
                         thumb_w: int = 320
                         thumb_h: int = int(320 / ASPECT_RATIO)

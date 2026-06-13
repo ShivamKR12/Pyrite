@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from settings import CHUNK_AREA, CHUNK_SIZE, DIRT, WOOD, WORLD_H
+from settings import CHUNK_AREA, CHUNK_SIZE, DIRT, WOOD, WORLD_HEIGHT
 from terrain_gen import get_biome, get_height, get_index, place_tree
 
 
@@ -50,7 +50,7 @@ def test_get_height_safety_limits(mock_perm_array: Any) -> None:
 
     assert isinstance(height, int)
     assert height >= 2, 'Terrain generated below the absolute minimum boundary.'
-    assert height <= WORLD_H * CHUNK_SIZE - 2, 'Terrain exceeded the maximum world height boundary.'
+    assert height <= WORLD_HEIGHT * CHUNK_SIZE - 2, 'Terrain exceeded the maximum world height boundary.'
 
 
 def test_place_tree_structure() -> None:

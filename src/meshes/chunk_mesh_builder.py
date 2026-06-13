@@ -12,7 +12,19 @@ from typing import Any, Tuple
 import numpy as np
 from numba import njit
 
-from settings import AIR, CHUNK_AREA, CHUNK_SIZE, CHUNK_VOL, GLASS, LEAVES, WATER, WORLD_AREA, WORLD_D, WORLD_H, WORLD_W
+from settings import (
+    AIR,
+    CHUNK_AREA,
+    CHUNK_SIZE,
+    CHUNK_VOLUME,
+    GLASS,
+    LEAVES,
+    WATER,
+    WORLD_AREA,
+    WORLD_DEPTH,
+    WORLD_HEIGHT,
+    WORLD_WIDTH,
+)
 
 
 @njit(cache=True, nogil=True)
@@ -235,10 +247,10 @@ def get_chunk_index(world_voxel_pos: Tuple[int, int, int], chunk_positions: Any)
     cy = wy // CHUNK_SIZE
     cz = wz // CHUNK_SIZE
 
-    if not (0 <= cy < WORLD_H):
+    if not (0 <= cy < WORLD_HEIGHT):
         return -1
 
-    index = (cx % WORLD_W) + WORLD_W * (cz % WORLD_D) + WORLD_AREA * (cy % WORLD_H)
+    index = (cx % WORLD_WIDTH) + WORLD_WIDTH * (cz % WORLD_DEPTH) + WORLD_AREA * (cy % WORLD_HEIGHT)
 
     if chunk_positions[index][0] == cx and chunk_positions[index][1] == cy and chunk_positions[index][2] == cz:
         return index
@@ -365,8 +377,8 @@ def build_chunk_mesh(
     into massive single polygons, calculating ambient occlusion and smoothed lighting
     along the way. Returns the combined vertex data for both opaque and water meshes.
     """
-    vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
-    water_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint32')
+    vertex_data = np.empty(CHUNK_VOLUME * 18 * format_size, dtype='uint32')
+    water_data = np.empty(CHUNK_VOLUME * 18 * format_size, dtype='uint32')
     index = 0
     water_index = 0
 

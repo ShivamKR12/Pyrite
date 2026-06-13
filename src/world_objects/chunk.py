@@ -17,7 +17,7 @@ from pyglm import glm
 
 from meshes.chunk_mesh import ChunkMesh
 from profiler import global_profiler
-from settings import CHUNK_SIZE, CHUNK_VOL
+from settings import CHUNK_SIZE, CHUNK_VOLUME
 from terrain_gen import fill_initial_sunlight, set_voxel_column
 
 
@@ -103,7 +103,7 @@ class Chunk:
         """
         Helper function to allocate an empty array and immediately invoke the terrain generator.
         """
-        voxels: NDArray[np.uint8] = np.zeros(CHUNK_VOL, dtype='uint8')
+        voxels: NDArray[np.uint8] = np.zeros(CHUNK_VOLUME, dtype='uint8')
 
         cx, cy, cz = map(int, glm.ivec3(self.position) * CHUNK_SIZE)
         self.generate_terrain(voxels, cx, cy, cz)

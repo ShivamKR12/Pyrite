@@ -55,7 +55,7 @@ from settings import (
     UI_SLOT_HOVER_COLOR,
     UI_SLOT_SELECTED_BG_COLOR,
     UI_SLOT_SELECTED_FRAME_COLOR,
-    WIN_RES,
+    WINDOW_RESOLUTION,
     WOOD,
     WOOD_PLANKS,
     WOODEN_PICKAXE,
@@ -470,8 +470,8 @@ class InventoryUI:
     @global_profiler.profile_func('InventoryUI_GetSlotAtMouse')
     def get_slot_at_mouse(self, mouse_pos: Tuple[int, int]) -> int:
         """Returns the ID of the inventory slot currently hovered by the mouse cursor."""
-        mx: float = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
-        my: float = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+        mx: float = (mouse_pos[0] / WINDOW_RESOLUTION.x) * 2.0 - 1.0
+        my: float = 1.0 - (mouse_pos[1] / WINDOW_RESOLUTION.y) * 2.0
 
         slot_w: float = SLOT_SCALE / ASPECT_RATIO
         slot_h: float = SLOT_SCALE
@@ -489,8 +489,8 @@ class InventoryUI:
     @global_profiler.profile_func('InventoryUI_GetClosestValidSlot')
     def get_closest_valid_slot(self, mouse_pos: Tuple[int, int], drag_id: int, drag_count: int) -> int:
         """Finds the closest valid drop target slot during a drag-and-drop operation."""
-        mx: float = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
-        my: float = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+        mx: float = (mouse_pos[0] / WINDOW_RESOLUTION.x) * 2.0 - 1.0
+        my: float = 1.0 - (mouse_pos[1] / WINDOW_RESOLUTION.y) * 2.0
 
         best_i: int = -1
         best_dist_sq: float = float('inf')
@@ -759,8 +759,8 @@ class InventoryUI:
         # Dragged Item Render (Follows Mouse Cursor)
         if self.drag_id != 0:
             mouse_pos: Tuple[int, int] = pg.mouse.get_pos()
-            mx: float = (mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
-            my: float = 1.0 - (mouse_pos[1] / WIN_RES.y) * 2.0
+            mx: float = (mouse_pos[0] / WINDOW_RESOLUTION.x) * 2.0 - 1.0
+            my: float = 1.0 - (mouse_pos[1] / WINDOW_RESOLUTION.y) * 2.0
 
             if self.drag_id in (STICK, WOODEN_PICKAXE):
                 self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
@@ -807,8 +807,8 @@ class InventoryUI:
                 name: str = item_names.get(hover_id, f'Item ID: {hover_id}')
 
                 tt_mouse_pos: Tuple[int, int] = pg.mouse.get_pos()
-                tt_mx: float = (tt_mouse_pos[0] / WIN_RES.x) * 2.0 - 1.0
-                tt_my: float = 1.0 - (tt_mouse_pos[1] / WIN_RES.y) * 2.0
+                tt_mx: float = (tt_mouse_pos[0] / WINDOW_RESOLUTION.x) * 2.0 - 1.0
+                tt_my: float = 1.0 - (tt_mouse_pos[1] / WINDOW_RESOLUTION.y) * 2.0
 
                 if name != self.last_hover_name:
                     if self.tooltip_texture:
@@ -918,8 +918,8 @@ class DebugOverlay:
 
         tex_w: int = self.dynamic_texture.size[0]
         tex_h: int = self.dynamic_texture.size[1]
-        scale_y: float = tex_h / WIN_RES.y
-        scale_x: float = tex_w / WIN_RES.x
+        scale_y: float = tex_h / WINDOW_RESOLUTION.y
+        scale_x: float = tex_w / WINDOW_RESOLUTION.x
 
         x_offset: float = -1.0 + scale_x
         y_offset: float = 1.0 - scale_y
