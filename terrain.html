@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Procedural Terrain Generation &mdash; Pyrite 1.0.0 documentation</title>
+  <title>Terrain Systems and Procedural Generation Breakdown &mdash; Pyrite 1.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -21,8 +21,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Player Systems" href="player.html" />
-    <link rel="prev" title="Mesh Systems and Vertex Packing" href="meshes.html" /> 
+    <link rel="next" title="Shader Systems and GLSL Breakdown" href="shaders.html" />
+    <link rel="prev" title="World Persistence and Data Storage" href="persistence.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -46,20 +46,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Explanation:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="main.html">Core Engine Flow</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Application Entry and Core Loop</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="main.html#engine-initialization">Engine Initialization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#state-management">State Management</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#world-generation-and-sessions">World Generation and Sessions</a></li>
@@ -76,35 +63,45 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="architecture.html">Engine Architecture</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Engine Initialization and Settings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">World Architecture and Multithreading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#architecture-overview">Architecture Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#the-queue-system">The Queue System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="architecture.html#subsystem-responsibilities">Subsystem Responsibilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="architecture.html#world-data-persistence">World &amp; Data Persistence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#sqlite-write-ahead-logging-wal">SQLite Write-Ahead Logging (WAL)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture.html#memory-management-1d-vs-3d-arrays">Memory Management (1D vs 3D Arrays)</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persistence.html">Persistence Systems and SQLite Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#serialization-and-compression">Serialization and Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-operations">Database Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#world-management-file-system">World Management (File System)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#replication-checklist">Replication Checklist</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Terrain Systems and Procedural Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-overview">Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#biome-selection-algorithm">Biome Selection Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#height-generation-algorithm">Height Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tree-placement-and-structure">Tree Placement and Structure</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="shaders.html">Shader Systems and GLSL Breakdown</a><ul>
@@ -120,7 +117,19 @@
 <li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting Systems and BFS Propagation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="meshes.html">Meshing Systems and Greedy Geometry</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-packing-32-bit-format">Vertex Packing: 32-Bit Format</a></li>
@@ -133,21 +142,17 @@
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Procedural Terrain Generation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#biome-topography-system">Biome &amp; Topography System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#cave-carving">Cave Carving</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#tree-flora-generation">Tree &amp; Flora Generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#height-generation-algorithm">Height Generation Algorithm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#biome-selection-algorithm">Biome Selection Algorithm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#tree-placement-and-structure">Tree Placement and Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#ore-generation">Ore Generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#column-generation-sequence">Column Generation Sequence</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline and Camera</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="player.html">Player Systems</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="player.html">Player Systems and Physics Controller</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="player.html#player-class-hierarchy">Player Class Hierarchy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="player.html#coordinate-system">Coordinate System</a></li>
 <li class="toctree-l2"><a class="reference internal" href="player.html#controls-and-input-handling">Controls and Input Handling</a></li>
@@ -162,7 +167,14 @@
 <li class="toctree-l2"><a class="reference internal" href="player.html#integration-with-game-loop">Integration with Game Loop</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface Systems and Components</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival Mechanics and Statistics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ui.html">UI Systems and 2D Overlays</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="ui.html#ui-architecture-overview">UI Architecture Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ui.html#core-ui-component-base-class">Core UI Component Base Class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ui.html#in-game-hud-components">In-Game HUD Components</a></li>
@@ -173,35 +185,7 @@
 <li class="toctree-l2"><a class="reference internal" href="ui.html#integration-with-main-loop">Integration with Main Loop</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="persistence.html">World Persistence and Data Storage</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-schema">Database Schema</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#serialization-and-compression">Serialization and Compression</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-operations">Database Operations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#world-management-file-system">World Management (File System)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#replication-checklist">Replication Checklist</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival &amp; Physics Mechanics</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
-<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="assets.html">Assets (Textures, Models, Icons)</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#folder-layout">Folder layout</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#primary-tooling">Primary tooling</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#texture-conventions">Texture conventions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#models">Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#icons-ui-images">Icons &amp; UI images</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="audio.html">Audio System</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="audio.html">Audio Systems and Spatial Mixing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#primary-implementation">Primary implementation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#key-concepts">Key concepts</a></li>
@@ -212,28 +196,34 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="assets.html">Asset Systems and Texture Atlases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#folder-layout">Folder layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#primary-tooling">Primary tooling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#texture-conventions">Texture conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#models">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#icons-ui-images">Icons &amp; UI images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="profiling.html">Telemetry Systems and Profiling Breakdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="profiling.html#architecture-overview">Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiling.html#lock-free-buffering-thread-safety">Lock-Free Buffering (Thread Safety)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiling.html#api-wrappers-integration">API Wrappers &amp; Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiling.html#aggregation-and-reporting">Aggregation and Reporting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing Framework and CI/CD</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous integration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#notes">Notes</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Build Guides</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling &amp; Performance Diagnostics</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#primary-implementation">Primary implementation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#how-to-enable">How to enable</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#basic-usage">Basic usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#exporting-reports">Exporting reports</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#interpreting-results">Interpreting results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#best-practices">Best practices</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#see-also">See also</a></li>
 </ul>
 </li>
 </ul>
@@ -539,7 +529,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Procedural Terrain Generation</li>
+      <li class="breadcrumb-item active">Terrain Systems and Procedural Generation Breakdown</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/terrain.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -549,387 +539,203 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="procedural-terrain-generation">
-<h1>Procedural Terrain Generation<a class="headerlink" href="#procedural-terrain-generation" title="Link to this heading"></a></h1>
-<p>Pyrite generates infinite, deterministic worlds using highly parallelized OpenSimplex noise. By utilizing MD5 string-hashing, custom string seeds (e.g., “PyriteIsCool”) are converted into numerical integer seeds. The Numba compiler locks this seed via <cite>numpy.random.seed()</cite>, ensuring the exact same terrain topology is generated every time.</p>
-<section id="biome-topography-system">
-<h2>Biome &amp; Topography System<a class="headerlink" href="#biome-topography-system" title="Link to this heading"></a></h2>
-<p>The terrain generation heavily relies on independent, overlapping noise frequencies:</p>
-<ul class="simple">
-<li><p><strong>Continentalness:</strong> Dictates the physical landform (evaluated across 4 layered octaves: <cite>f1, f2, f4, f8</cite>). Very low values carve deep oceans, mid values create sweeping plains, and high values linearly interpolate the terrain upward into extreme mountains or plateaus.</p></li>
-<li><p><strong>Temperature &amp; Moisture:</strong> Evaluated via separate 2D noise maps to dictate the biome’s block palette (e.g., Snow vs. Desert Sand vs. Grass).</p></li>
-</ul>
-<p><strong>Biome Dithering:</strong>
-To prevent unnatural, blocky straight lines at biome borders, a subtle, high-frequency noise “dithering” offset is mathematically added to the temperature and moisture values. This creates a natural scatter effect, allowing blocks from adjacent biomes to organically mix at the edges.</p>
-</section>
-<section id="cave-carving">
-<h2>Cave Carving<a class="headerlink" href="#cave-carving" title="Link to this heading"></a></h2>
-<p>Underground systems are carved dynamically using volumetric 3D noise (<cite>noise3</cite>).</p>
-<p>First, the engine determines a deterministic <cite>crust</cite> thickness. Below this safe top layer, 3D noise is evaluated for every single block coordinate. If the 3D noise exceeds a specific density threshold, the block is overridden and forced to become <cite>AIR</cite>.</p>
-<p><strong>Natural Entrances:</strong>
-To create natural cave entrances rather than massive sinkholes, the cave threshold is dynamically tapered near the surface using a 2D <cite>entrance_mask</cite> noise map. This forces the 3D carving logic to narrow out and tighten before breaking through the grass layer.</p>
-</section>
-<section id="tree-flora-generation">
-<h2>Tree &amp; Flora Generation<a class="headerlink" href="#tree-flora-generation" title="Link to this heading"></a></h2>
-<p>Trees are placed procedurally during column generation based on the target Biome’s moisture rating.
-* High moisture yields a <cite>4%</cite> probability per column (Dense Forests).
-* Low moisture yields a <cite>0.01%</cite> probability (Sparse Plains).</p>
-<p>The tree structure is pre-defined using local relative coordinates. The engine enforces several environment constraints before spawning a tree:</p>
-<ol class="arabic simple">
-<li><p>Trees cannot spawn underwater.</p></li>
-<li><p>Trees cannot spawn on Snow or Sand.</p></li>
-<li><p>Trees cannot spawn at extreme mountain altitudes (<code class="docutils literal notranslate"><span class="pre">wy</span> <span class="pre">&gt;</span> <span class="pre">STONE_LVL</span></code>).</p></li>
-<li><p>A tree’s bounding box cannot exceed the chunk’s boundaries (preventing neighbor-chunk bleeding crashes).</p></li>
-</ol>
+  <section id="terrain-systems-and-procedural-generation-breakdown">
+<span id="terrain"></span><h1>Terrain Systems and Procedural Generation Breakdown<a class="headerlink" href="#terrain-systems-and-procedural-generation-breakdown" title="Link to this heading"></a></h1>
+<p>This document provides detailed explanations of Pyrite’s procedural terrain generation, including deterministic seeding, biome selection, height mapping (FBm), cave carving, and structural tree placement. All core terrain logic is located in <code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> and <code class="docutils literal notranslate"><span class="pre">src/noise.py</span></code>.</p>
+<section id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading"></a></h2>
+<p>Pyrite utilizes a heavily parallelized, lock-free approach to generate infinite terrain:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1. Noise Foundation    → Deterministic OpenSimplex noise and Numba JIT.
+2. Biome Selection     → 2D Temperature and Moisture evaluation.
+3. Height Generation   → Fractional Brownian Motion (FBm) + Continentalness.
+4. Cave Carving        → 3D Volumetric noise with entrance tapering.
+5. Tree Placement      → Probabilistic structural generation.
+</pre></div>
+</div>
 </section>
 <section id="noise-foundation-deterministic-generation">
 <h2>Noise Foundation (Deterministic Generation)<a class="headerlink" href="#noise-foundation-deterministic-generation" title="Link to this heading"></a></h2>
-<p><strong>Seed Conversion:</strong></p>
-<p><strong>Seed Conversion (Reference Implementation):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Note: Actual seed handling in engine uses set_seed() from src/noise.py</span>
-<span class="c1"># This is a reference implementation showing the concept:</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">string_to_seed</span><span class="p">(</span><span class="n">seed_string</span><span class="p">):</span>
-    <span class="c1"># Convert string seed to integer</span>
-    <span class="n">hash_obj</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">seed_string</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
-    <span class="n">seed_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hash_obj</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">31</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">seed_int</span>
-
-<span class="c1"># Example:</span>
-<span class="n">seed</span> <span class="o">=</span> <span class="n">string_to_seed</span><span class="p">(</span><span class="s2">&quot;PyriteIsCool&quot;</span><span class="p">)</span>  <span class="c1"># Result: deterministic 32-bit integer</span>
+<p><code class="docutils literal notranslate"><span class="pre">src/noise.py</span></code> - Noise &amp; Seeding Engine</p>
+<p>Purpose: Manage global permutation arrays, synchronize RNG, and ensure 100% deterministic world generation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">set_seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </pre></div>
 </div>
-<p><strong>OpenSimplex 2D Noise (Biomes):</strong></p>
-<p><strong>OpenSimplex 2D Noise (Biomes - Pseudo-code):</strong></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Actual function is <code class="docutils literal notranslate"><span class="pre">get_biome(x,</span> <span class="pre">z,</span> <span class="pre">perm_array)</span></code> in <code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code></p>
-</div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Reference implementation of biome noise calculation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">opensimplex</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenSimplex</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">get_biome_noise_ref</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
-    <span class="c1"># Initialize noise generator with seed (actual code: perm_array lookup)</span>
-    <span class="n">noise_gen</span> <span class="o">=</span> <span class="n">OpenSimplex</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-
-    <span class="c1"># Evaluate noise at point (returns temperature/moisture blend)</span>
-    <span class="n">value</span> <span class="o">=</span> <span class="n">noise_gen</span><span class="o">.</span><span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">scale</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>  <span class="c1"># Returns -1.0 to 1.0</span>
-    <span class="k">return</span> <span class="n">value</span>
+<ul class="simple">
+<li><p><strong>Seed Conversion:</strong> This function initializes the deterministic sequence. The engine hashes string inputs (like “PyriteIsCool”) into a 32-bit integer seed to feed into this function.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">perm</span><span class="p">,</span> <span class="n">perm_grad_index3</span> <span class="o">=</span> <span class="n">_init</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">new_seed</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>OpenSimplex 3D Noise (Caves - Pseudo-code):</strong></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Actual cave generation is embedded in <code class="docutils literal notranslate"><span class="pre">Chunk.generate_terrain()</span></code> in <code class="docutils literal notranslate"><span class="pre">src/world_objects/chunk.py</span></code></p>
-</div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Reference implementation of cave carving noise</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_cave_noise_ref</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.09</span><span class="p">):</span>
-    <span class="n">noise_gen</span> <span class="o">=</span> <span class="n">OpenSimplex</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-    <span class="n">value</span> <span class="o">=</span> <span class="n">noise_gen</span><span class="o">.</span><span class="n">noise3</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">scale</span><span class="p">,</span> <span class="n">y</span> <span class="o">*</span> <span class="n">scale</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">value</span>  <span class="c1"># Returns -1.0 to 1.0; carve if &gt; cave_threshold</span>
+<ul class="simple">
+<li><p><strong>OpenSimplex Initialization:</strong> We generate the fundamental noise permutation arrays. Numba will hardcode pointers to these specific arrays in memory to bypass Python object overhead.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">_seed_numba</span><span class="p">(</span><span class="n">new_seed</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">)</span>
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">)</span>
 </pre></div>
 </div>
-</section>
-<section id="height-generation-algorithm">
-<h2>Height Generation Algorithm<a class="headerlink" href="#height-generation-algorithm" title="Link to this heading"></a></h2>
-<p><strong>Multi-Octave Frequency Blending (FBm - Fractional Brownian Motion):</strong></p>
-<p>Height at column (x, z) is calculated by summing noise at multiple frequencies. Each octave has half the amplitude and double the frequency of the previous.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+<ul class="simple">
+<li><p><strong>RNG Synchronization:</strong> Because performance-critical loops are compiled with Numba, we must explicitly seed Numba’s internal RNG (<code class="docutils literal notranslate"><span class="pre">_seed_numba</span></code>) as well as standard Python random modules. This ensures functions like random chance for tree placement are identical on every launch.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Numba JIT Compilation</p>
+<p>Purpose: Execute complex noise math at near-C++ speeds using LLVM.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Actual function: <code class="docutils literal notranslate"><span class="pre">get_height(x,</span> <span class="pre">z,</span> <span class="pre">perm_array)</span></code> in <code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code></p>
-</div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Terrain height generation at a column (x, z in world coordinates)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_height</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">):</span>
-    <span class="c1"># Column generation (for all 48 Y values)</span>
-
-    <span class="c1"># Step 1: Evaluate continentalness (overall landform)</span>
-    <span class="n">continentalness</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">amplitude</span> <span class="o">=</span> <span class="mf">1.0</span>
-    <span class="n">frequency</span> <span class="o">=</span> <span class="mf">0.005</span>  <span class="c1"># Scale for first octave</span>
-
-    <span class="k">for</span> <span class="n">octave</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">]:</span>  <span class="c1"># 4 octaves</span>
-        <span class="n">freq</span> <span class="o">=</span> <span class="n">frequency</span> <span class="o">*</span> <span class="n">octave</span>
-        <span class="n">noise_value</span> <span class="o">=</span> <span class="n">opensimplex_noise</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">freq</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">freq</span><span class="p">)</span>
-        <span class="n">continentalness</span> <span class="o">+=</span> <span class="n">noise_value</span> <span class="o">*</span> <span class="n">amplitude</span>
-        <span class="n">amplitude</span> <span class="o">*=</span> <span class="mf">0.5</span>  <span class="c1"># Halve amplitude each octave</span>
-
-    <span class="c1"># Normalize continentalness to -1.0 to 1.0</span>
-    <span class="n">continentalness</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">continentalness</span> <span class="o">/</span> <span class="mf">1.875</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># 1.875 = sum of amplitudes</span>
-
-    <span class="c1"># Step 2: Evaluate jaggedness (mountain sharpness)</span>
-    <span class="n">jaggedness</span> <span class="o">=</span> <span class="n">opensimplex_noise</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.04</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.04</span><span class="p">)</span>  <span class="c1"># Higher frequency</span>
-
-    <span class="c1"># Step 3: Determine base height from continentalness</span>
-    <span class="k">if</span> <span class="n">continentalness</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">:</span>
-        <span class="c1"># Deep ocean</span>
-        <span class="n">base_height</span> <span class="o">=</span> <span class="mf">5.6</span> <span class="o">+</span> <span class="n">continentalness</span> <span class="o">*</span> <span class="mi">3</span>  <span class="c1"># Range: ~2 to 5.6 blocks</span>
-    <span class="k">elif</span> <span class="o">-</span><span class="mf">0.2</span> <span class="o">&lt;=</span> <span class="n">continentalness</span> <span class="o">&lt;=</span> <span class="mf">0.1</span><span class="p">:</span>
-        <span class="c1"># Beaches, plains</span>
-        <span class="n">base_height</span> <span class="o">=</span> <span class="mf">5.6</span> <span class="o">+</span> <span class="n">continentalness</span> <span class="o">*</span> <span class="mi">8</span>  <span class="c1"># Range: 5.6 to ~6 blocks (mostly flat)</span>
-    <span class="k">elif</span> <span class="mf">0.1</span> <span class="o">&lt;</span> <span class="n">continentalness</span> <span class="o">&lt;=</span> <span class="mf">0.3</span><span class="p">:</span>
-        <span class="c1"># Plateaus</span>
-        <span class="n">base_height</span> <span class="o">=</span> <span class="mf">6.0</span> <span class="o">+</span> <span class="n">continentalness</span> <span class="o">*</span> <span class="mi">30</span>  <span class="c1"># Range: 6 to ~15 blocks, cliffier</span>
-        <span class="n">jaggedness</span> <span class="o">*=</span> <span class="mi">2</span>  <span class="c1"># Emphasize jaggedness on plateaus</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Mountains</span>
-        <span class="n">base_height</span> <span class="o">=</span> <span class="mf">15.0</span> <span class="o">+</span> <span class="n">continentalness</span> <span class="o">*</span> <span class="mi">50</span>  <span class="c1"># Range: 15 to 35+ blocks</span>
-        <span class="n">jaggedness</span> <span class="o">*=</span> <span class="mi">3</span>  <span class="c1"># Very jagged</span>
-
-    <span class="c1"># Apply jaggedness</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="n">base_height</span> <span class="o">+</span> <span class="n">jaggedness</span> <span class="o">*</span> <span class="mi">4</span>
-
-    <span class="c1"># Clamp to world bounds (0 to 256)</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><strong>Height Constants:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">STONE_LVL</span> <span class="o">=</span> <span class="mi">8</span>          <span class="c1"># Below this Y, all blocks are stone (bedrock layer)</span>
-<span class="n">WATER_LVL</span> <span class="o">=</span> <span class="mf">5.6</span>        <span class="c1"># Sea level</span>
-<span class="n">SNOW_LVL</span> <span class="o">=</span> <span class="mi">25</span>          <span class="c1"># Above this, snow biomes appear</span>
-<span class="n">GRASS_LVL</span> <span class="o">=</span> <span class="mi">15</span>         <span class="c1"># Below this, grass; above, snow/rock</span>
-</pre></div>
-</div>
+<ul class="simple">
+<li><p><strong>Numba JIT Compilation:</strong> Functions decorated with <code class="docutils literal notranslate"><span class="pre">&#64;njit</span></code> bypass the Python Global Interpreter Lock (<code class="docutils literal notranslate"><span class="pre">nogil=True</span></code>) allowing true multithreading, use relaxed floating-point math (<code class="docutils literal notranslate"><span class="pre">fastmath=True</span></code>) for speed, and cache the compiled LLVM binary (<code class="docutils literal notranslate"><span class="pre">cache=True</span></code>) to speed up subsequent engine launches.</p></li>
+</ul>
 </section>
 <section id="biome-selection-algorithm">
 <h2>Biome Selection Algorithm<a class="headerlink" href="#biome-selection-algorithm" title="Link to this heading"></a></h2>
-<p><strong>Two-Stage Process:</strong></p>
-<ol class="arabic simple">
-<li><p>Evaluate temperature and moisture maps (independent 2D noise)</p></li>
-<li><p>Use lookup table or conditions to select block palette</p></li>
-</ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Biome Evaluation</p>
+<p>Purpose: Determine temperature and moisture to map out expansive biomes like deserts, snow, and forests.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">temp</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.002</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.002</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Actual function: <code class="docutils literal notranslate"><span class="pre">get_biome(x,</span> <span class="pre">z,</span> <span class="pre">perm_array)</span></code> in <code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code></p>
-</div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Determine biome type based on temperature and moisture at column</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_biome</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">):</span>
-    <span class="c1"># Sample temperature and moisture</span>
-    <span class="n">temperature</span> <span class="o">=</span> <span class="n">opensimplex_noise</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">)</span>  <span class="c1"># -1.0 to 1.0</span>
-    <span class="n">moisture</span> <span class="o">=</span> <span class="n">opensimplex_noise</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.015</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.015</span><span class="p">)</span>
-
-    <span class="c1"># Apply dithering (high-frequency noise for variety)</span>
-    <span class="n">dither</span> <span class="o">=</span> <span class="n">opensimplex_noise</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.05</span>  <span class="c1"># ±0.05 offset</span>
-    <span class="n">temperature</span> <span class="o">+=</span> <span class="n">dither</span>
-    <span class="n">moisture</span> <span class="o">+=</span> <span class="n">dither</span>
-
-    <span class="c1"># Biome lookup table</span>
-    <span class="k">if</span> <span class="n">temperature</span> <span class="o">&gt;</span> <span class="mf">0.3</span> <span class="ow">and</span> <span class="n">moisture</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s1">&#39;DESERT&#39;</span>
-    <span class="k">elif</span> <span class="n">temperature</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s1">&#39;SNOW&#39;</span>
-    <span class="k">elif</span> <span class="n">moisture</span> <span class="o">&gt;</span> <span class="mf">0.2</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s1">&#39;FOREST&#39;</span>
-    <span class="k">elif</span> <span class="n">moisture</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s1">&#39;PLAINS&#39;</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s1">&#39;GRASSLAND&#39;</span>
+<ul class="simple">
+<li><p><strong>Temperature Calculation:</strong> Temperature is evaluated using 2D Simplex noise. The <code class="docutils literal notranslate"><span class="pre">0.002</span></code> scale is extremely low, ensuring biomes are massive and sprawling across thousands of blocks.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">moist</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.002</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.002</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Biome Block Palettes:</strong></p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>DESERT:
-    Surface:    SAND
-    Under:      SAND (3 blocks)
-    Base:       STONE
-
-SNOW:
-    Surface:    SNOW
-    Under:      DIRT (2 blocks)
-    Base:       STONE
-
-FOREST/GRASSLAND:
-    Surface:    GRASS
-    Under:      DIRT (2-4 blocks)
-    Base:       STONE
+<ul class="simple">
+<li><p><strong>Moisture Calculation:</strong> Moisture is evaluated using the exact same massive scale but is offset by <code class="docutils literal notranslate"><span class="pre">100.0</span></code>. This ensures its noise map doesn’t identically overlap with the temperature map, creating diverse intersections (hot/dry, hot/wet, cold/dry, etc.).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dither</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">wx</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">wz</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.05</span> <span class="o">+</span> <span class="n">noise2</span><span class="p">(</span><span class="n">wx</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">wz</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.03</span>
+<span class="n">temp</span> <span class="o">+=</span> <span class="n">dither</span>
+<span class="n">moist</span> <span class="o">+=</span> <span class="n">dither</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Biome Dithering:</strong> To make biome transitions organic rather than perfectly straight, mathematical lines, we sample two much higher frequencies (<code class="docutils literal notranslate"><span class="pre">0.2</span></code> and <code class="docutils literal notranslate"><span class="pre">0.8</span></code>). By scaling them down and adding them to the base temp/moist, we subtly scramble the exact borders, causing blocks from adjacent biomes to mix naturally.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">is_desert</span> <span class="o">=</span> <span class="n">temp</span> <span class="o">&gt;</span> <span class="mf">0.3</span> <span class="ow">and</span> <span class="n">moist</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.2</span>
+<span class="n">is_snow</span> <span class="o">=</span> <span class="n">temp</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.2</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Biome Palettes:</strong> Using the dithered values, we define strict cutoff thresholds for deserts (hot and dry) and snow (cold). If neither matches, the terrain defaults to standard grass/dirt.</p></li>
+</ul>
+</section>
+<section id="height-generation-algorithm">
+<h2>Height Generation Algorithm<a class="headerlink" href="#height-generation-algorithm" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Height Evaluation</p>
+<p>Purpose: Utilize Fractional Brownian Motion (FBm) combined with continental modifiers to sculpt oceans, plains, and mountains.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cont</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.003</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.003</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Continentalness:</strong> We sample a slow-changing base map (offset to prevent overlap with biome noise) that defines the overarching landmass type independently of the climate.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">base_h</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f1</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f1</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">a1</span> <span class="o">+</span> <span class="n">a1</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>FBm Base Octave:</strong> The base octave uses a very low frequency (<code class="docutils literal notranslate"><span class="pre">f1</span> <span class="pre">=</span> <span class="pre">0.005</span></code>) and high amplitude (<code class="docutils literal notranslate"><span class="pre">a1</span> <span class="pre">=</span> <span class="pre">CENTER_Y</span></code>) to create sweeping, gentle hills and valleys.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">detail_1</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f2</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f2</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">a2</span> <span class="o">-</span> <span class="n">a2</span>
+<span class="n">detail_2</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f4</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f4</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">a4</span> <span class="o">+</span> <span class="n">a4</span>
+<span class="n">detail_3</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f8</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f8</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">a8</span> <span class="o">-</span> <span class="n">a8</span>
+<span class="n">height</span> <span class="o">=</span> <span class="n">base_h</span> <span class="o">+</span> <span class="n">detail_1</span> <span class="o">+</span> <span class="n">detail_2</span> <span class="o">+</span> <span class="n">detail_3</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>FBm Detail Octaves:</strong> Each subsequent octave doubles the frequency (<code class="docutils literal notranslate"><span class="pre">f2,</span> <span class="pre">f4,</span> <span class="pre">f8</span></code>) and halves the amplitude (<code class="docutils literal notranslate"><span class="pre">a2,</span> <span class="pre">a4,</span> <span class="pre">a8</span></code>). Summing these together creates increasingly fine, localized bumps across the terrain.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">cont</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">:</span>
+<span class="n">w</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="o">-</span><span class="mf">0.2</span> <span class="o">-</span> <span class="n">cont</span><span class="p">)</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="n">target_h</span> <span class="o">=</span> <span class="n">WATER_LINE</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">detail_2</span> <span class="o">*</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="n">detail_3</span> <span class="o">*</span> <span class="mf">0.3</span>
+<span class="n">height</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">target_h</span> <span class="o">*</span> <span class="n">w</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Terrain Shaping:</strong> If continentalness is very low, we treat it as Deep Plains or Oceans. We calculate an interpolation weight <code class="docutils literal notranslate"><span class="pre">w</span></code> and heavily flatten the <code class="docutils literal notranslate"><span class="pre">target_h</span></code> just below the water line, linearly interpolating the raw FBm height towards it.</p></li>
+</ul>
 </section>
 <section id="cave-carving-algorithm-3d">
 <h2>Cave Carving Algorithm (3D)<a class="headerlink" href="#cave-carving-algorithm-3d" title="Link to this heading"></a></h2>
-<p><strong>Volumetric Carving:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_and_carve_chunk</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">):</span>
-    <span class="c1"># First, generate terrain normally (above stone level)</span>
-
-    <span class="c1"># Then, carve caves below a certain Y threshold</span>
-    <span class="n">CAVE_THRESHOLD</span> <span class="o">=</span> <span class="mi">40</span>  <span class="c1"># Only cave below this</span>
-    <span class="n">CAVE_SPAWN_Y</span> <span class="o">=</span> <span class="mi">15</span>
-
-    <span class="k">for</span> <span class="n">local_x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">48</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">local_y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">48</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">local_z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">48</span><span class="p">):</span>
-                <span class="n">world_x</span> <span class="o">=</span> <span class="n">chunk_x</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">local_x</span>
-                <span class="n">world_y</span> <span class="o">=</span> <span class="n">chunk_y</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">local_y</span>
-                <span class="n">world_z</span> <span class="o">=</span> <span class="n">chunk_z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">local_z</span>
-
-                <span class="c1"># Only carve solidblocks below threshold</span>
-                <span class="k">if</span> <span class="n">world_y</span> <span class="o">&lt;</span> <span class="n">CAVE_SPAWN_Y</span> <span class="ow">or</span> <span class="n">world_y</span> <span class="o">&gt;</span> <span class="n">CAVE_THRESHOLD</span><span class="p">:</span>
-                    <span class="k">continue</span>
-
-                <span class="c1"># Skip air/water</span>
-                <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">local_x</span> <span class="o">+</span> <span class="n">local_z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">local_y</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span><span class="p">]</span>
-                <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
-                    <span class="k">continue</span>
-
-                <span class="c1"># Evaluate 3D cave noise</span>
-                <span class="n">cave_noise</span> <span class="o">=</span> <span class="n">opensimplex_noise_3d</span><span class="p">(</span><span class="n">world_x</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">world_y</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">)</span>
-
-                <span class="c1"># Apply entrance tapering (near surface, make caves narrower)</span>
-                <span class="n">surface_distance</span> <span class="o">=</span> <span class="n">world_y</span> <span class="o">-</span> <span class="n">CAVE_SPAWN_Y</span>
-                <span class="n">taper_factor</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">surface_distance</span> <span class="o">/</span> <span class="mf">14.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>  <span class="c1"># Tapers over 14 blocks</span>
-
-                <span class="n">entrance_mask</span> <span class="o">=</span> <span class="n">opensimplex_noise</span><span class="p">(</span><span class="n">world_x</span> <span class="o">*</span> <span class="mf">0.02</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">*</span> <span class="mf">0.02</span><span class="p">)</span>
-                <span class="n">cave_threshold</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="n">taper_factor</span> <span class="o">*</span> <span class="mf">0.2</span>
-
-                <span class="c1"># Carve if noise exceeds threshold</span>
-                <span class="k">if</span> <span class="n">cave_noise</span> <span class="o">&gt;</span> <span class="n">cave_threshold</span> <span class="ow">and</span> <span class="n">entrance_mask</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
-                    <span class="n">chunk_voxels</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">AIR</span>  <span class="c1"># Carve out voxel</span>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Volumetric Cave Carving</p>
+<p>Purpose: Hollow out complex underground cave systems using 3D noise while preventing unnatural surface craters.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cave_noise</span> <span class="o">=</span> <span class="n">noise3</span><span class="p">(</span><span class="n">wx</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">wy</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">wz</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">)</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p><strong>Volumetric Carving:</strong> For every solid block beneath the crust, we evaluate 3D Simplex noise using the exact <code class="docutils literal notranslate"><span class="pre">wx,</span> <span class="pre">wy,</span> <span class="pre">wz</span></code> world coordinates.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">entrance_mask</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">wx</span> <span class="o">*</span> <span class="mf">0.02</span> <span class="o">+</span> <span class="mf">200.0</span><span class="p">,</span> <span class="n">wz</span> <span class="o">*</span> <span class="mf">0.02</span> <span class="o">+</span> <span class="mf">200.0</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Entrance Mask:</strong> Before looping through the Y-axis, we calculate a 2D map once per column to determine how “open” or “closed” the surface should be, preventing all caves from breaching the top.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">surface_dist</span> <span class="o">&lt;</span> <span class="mi">14</span><span class="p">:</span>
+<span class="n">taper_factor</span> <span class="o">=</span> <span class="p">(</span><span class="mi">14</span> <span class="o">-</span> <span class="n">surface_dist</span><span class="p">)</span> <span class="o">/</span> <span class="mf">14.0</span>
+<span class="n">target_threshold</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">entrance_mask</span><span class="p">)</span> <span class="o">*</span> <span class="mf">4.0</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Dynamic Tapering:</strong> If we are within 14 blocks of the surface crust, the tapering mechanism kicks in. We calculate a linear factor that shifts the <code class="docutils literal notranslate"><span class="pre">target_threshold</span></code> higher, making it harder for noise to exceed it.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cave_threshold</span> <span class="o">=</span> <span class="n">target_threshold</span> <span class="o">*</span> <span class="n">taper_factor</span>
+<span class="k">if</span> <span class="n">cave_noise</span> <span class="o">&gt;</span> <span class="n">cave_threshold</span><span class="p">:</span>
+    <span class="n">voxel_id</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Block Removal:</strong> We scale the threshold shift by the taper factor. The closer you get to the grass, the harder it becomes for a cave to break through. If the noise still beats the modified threshold, the block is forced to <code class="docutils literal notranslate"><span class="pre">0</span></code> (AIR).</p></li>
+</ul>
 </section>
 <section id="tree-placement-and-structure">
 <h2>Tree Placement and Structure<a class="headerlink" href="#tree-placement-and-structure" title="Link to this heading"></a></h2>
-<p><strong>Probabilistic Placement:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">try_place_tree_in_column</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">biome</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
-    <span class="c1"># Determine tree probability from biome</span>
-    <span class="k">if</span> <span class="n">biome</span> <span class="o">==</span> <span class="s1">&#39;FOREST&#39;</span><span class="p">:</span>
-        <span class="n">tree_probability</span> <span class="o">=</span> <span class="mf">0.04</span>  <span class="c1"># 4% per column</span>
-    <span class="k">elif</span> <span class="n">biome</span> <span class="o">==</span> <span class="s1">&#39;GRASSLAND&#39;</span><span class="p">:</span>
-        <span class="n">tree_probability</span> <span class="o">=</span> <span class="mf">0.005</span>  <span class="c1"># 0.5% per column</span>
-    <span class="k">elif</span> <span class="n">biome</span> <span class="o">==</span> <span class="s1">&#39;PLAINS&#39;</span><span class="p">:</span>
-        <span class="n">tree_probability</span> <span class="o">=</span> <span class="mf">0.0001</span>  <span class="c1"># 0.01% per column</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># No trees in desert/snow</span>
-
-    <span class="c1"># Seeded random check</span>
-    <span class="n">rng_value</span> <span class="o">=</span> <span class="n">pseudo_random</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>  <span class="c1"># 0.0 to 1.0</span>
-
-    <span class="k">if</span> <span class="n">rng_value</span> <span class="o">&gt;</span> <span class="n">tree_probability</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># Don&#39;t place tree</span>
-
-    <span class="c1"># Check placement constraints</span>
-
-    <span class="c1"># 1. Not underwater</span>
-    <span class="k">if</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="n">WATER_LVL</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="c1"># 2. Not on sand or snow</span>
-    <span class="k">if</span> <span class="n">biome</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;DESERT&#39;</span><span class="p">,</span> <span class="s1">&#39;SNOW&#39;</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="c1"># 3. Not at extreme altitudes</span>
-    <span class="k">if</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="n">SNOW_LVL</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="c1"># 4. Bounding box doesn&#39;t exceed chunk</span>
-    <span class="n">tree_height</span> <span class="o">=</span> <span class="mi">8</span>
-    <span class="n">tree_crown_radius</span> <span class="o">=</span> <span class="mi">4</span>
-
-    <span class="n">local_x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">48</span>
-    <span class="n">local_z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">%</span> <span class="mi">48</span>
-
-    <span class="k">if</span> <span class="n">local_x</span> <span class="o">-</span> <span class="n">tree_crown_radius</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">local_x</span> <span class="o">+</span> <span class="n">tree_crown_radius</span> <span class="o">&gt;=</span> <span class="mi">48</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="n">local_z</span> <span class="o">-</span> <span class="n">tree_crown_radius</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">local_z</span> <span class="o">+</span> <span class="n">tree_crown_radius</span> <span class="o">&gt;=</span> <span class="mi">48</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="c1"># All checks pass - place tree</span>
-    <span class="k">return</span> <span class="n">place_tree_structure</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Flora Generation</p>
+<p>Purpose: Probabilistically spawn and construct multi-block tree structures within chunk memory bounds.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">wy</span> <span class="o">==</span> <span class="n">world_height</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">surface_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_underwater</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_beach</span> <span class="ow">and</span> <span class="n">wy</span> <span class="o">&lt;</span> <span class="n">STONE_LVL</span><span class="p">:</span>
 </pre></div>
 </div>
-<p><strong>Tree Structure (Predefined):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">place_tree_structure</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">base_y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
-    <span class="c1"># Tree structure (relative coordinates from base)</span>
-    <span class="n">trunk_height</span> <span class="o">=</span> <span class="mi">8</span>
-    <span class="n">crown_start_y</span> <span class="o">=</span> <span class="mi">5</span>
-
-    <span class="c1"># Trunk (straight column of wood)</span>
-    <span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">trunk_height</span><span class="p">):</span>
-        <span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">=</span> <span class="n">x</span><span class="p">,</span> <span class="n">base_y</span> <span class="o">+</span> <span class="n">dy</span><span class="p">,</span> <span class="n">z</span>
-        <span class="n">set_voxel</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">WOOD</span><span class="p">)</span>
-
-    <span class="c1"># Crown (spherical leaves)</span>
-    <span class="n">crown_y</span> <span class="o">=</span> <span class="n">base_y</span> <span class="o">+</span> <span class="n">crown_start_y</span>
-    <span class="n">crown_radius</span> <span class="o">=</span> <span class="mi">4</span>
-
-    <span class="k">for</span> <span class="n">dx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">crown_radius</span><span class="p">,</span> <span class="n">crown_radius</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">crown_radius</span><span class="p">,</span> <span class="n">crown_radius</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">dz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">crown_radius</span><span class="p">,</span> <span class="n">crown_radius</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">distance</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dz</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;=</span> <span class="n">crown_radius</span><span class="p">:</span>
-                    <span class="c1"># Checker pattern (sparse leaves for light penetration)</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">dx</span><span class="p">)</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dz</span><span class="p">))</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">world_x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span>
-                        <span class="n">world_y</span> <span class="o">=</span> <span class="n">crown_y</span> <span class="o">+</span> <span class="n">dy</span>
-                        <span class="n">world_z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="n">dz</span>
-                        <span class="n">set_voxel</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">LEAVES</span><span class="p">)</span>
+<ul class="simple">
+<li><p><strong>Spawning Constraints:</strong> Trees are strictly constrained. They can only spawn on the absolute top surface block, cannot spawn in water or on beaches, and cannot spawn high up in the mountains (above <code class="docutils literal notranslate"><span class="pre">STONE_LVL</span></code>).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">surface_id</span> <span class="o">==</span> <span class="n">GRASS</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">moist</span> <span class="o">&gt;</span> <span class="mf">0.4</span><span class="p">:</span>
+        <span class="n">tree_prob</span> <span class="o">=</span> <span class="mf">0.04</span>
+    <span class="k">elif</span> <span class="n">moist</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">tree_prob</span> <span class="o">=</span> <span class="mf">0.005</span>
 </pre></div>
 </div>
-</section>
-<section id="ore-generation">
-<h2>Ore Generation<a class="headerlink" href="#ore-generation" title="Link to this heading"></a></h2>
-<p>Pyrite does not currently implement dedicated ore spawning. Terrain generation focuses on biome placement, caves, trees, and surface details rather than mineral deposits.</p>
-</section>
-<section id="column-generation-sequence">
-<h2>Column Generation Sequence<a class="headerlink" href="#column-generation-sequence" title="Link to this heading"></a></h2>
-<p><strong>Per-Column Processing (called for each X,Z coordinate):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_column</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">):</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="n">get_height</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
-    <span class="n">biome</span> <span class="o">=</span> <span class="n">get_biome</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
-
-    <span class="n">column_voxels</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># 0 to 256 (Y=0 is bedrock)</span>
-
-    <span class="c1"># 1. Fill with stone below height</span>
-    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">STONE_LVL</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="n">STONE_LVL</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">column_voxels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BEDROCK</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">column_voxels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">STONE</span><span class="p">)</span>
-
-    <span class="c1"># 2. Add surface layer</span>
-    <span class="n">surface</span> <span class="o">=</span> <span class="n">get_biome_surface_block</span><span class="p">(</span><span class="n">biome</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">))</span>
-    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">256</span><span class="p">:</span>
-        <span class="n">column_voxels</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)]</span> <span class="o">=</span> <span class="n">surface</span>
-
-    <span class="c1"># 3. Add dirt layer (2-4 blocks)</span>
-    <span class="n">dirt_depth</span> <span class="o">=</span> <span class="mi">3</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dirt_depth</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="n">STONE_LVL</span><span class="p">:</span>
-            <span class="n">column_voxels</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">DIRT</span>
-
-    <span class="c1"># 4. Fill above height with air (or water if below sea level)</span>
-    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">256</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">WATER_LVL</span><span class="p">:</span>
-            <span class="n">column_voxels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">WATER</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">column_voxels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">AIR</span><span class="p">)</span>
-
-    <span class="c1"># 5. Return for insertion into chunk</span>
-    <span class="k">return</span> <span class="n">column_voxels</span>
+<ul class="simple">
+<li><p><strong>Moisture-based Density:</strong> Tree density is tied directly to the biome’s moisture rating. Dense forests have a 4% spawn rate per column, while sparse woods drop to 0.5%.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rnd</span> <span class="o">=</span> <span class="n">random</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">rnd</span> <span class="o">&gt;</span> <span class="n">tree_prob</span><span class="p">:</span>
+    <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
 </div>
-</section>
-<section id="replication-checklist">
-<h2>Replication Checklist<a class="headerlink" href="#replication-checklist" title="Link to this heading"></a></h2>
-<p>To reimplement terrain generation:</p>
-<ol class="arabic simple">
-<li><p>✓ Seed conversion (string → int via MD5 or similar)</p></li>
-<li><p>✓ OpenSimplex initialization with deterministic seed</p></li>
-<li><p>✓ Multi-octave FBm height calculation</p></li>
-<li><p>✓ Biome lookup (temperature + moisture → palette)</p></li>
-<li><p>✓ 3D cave carving with entrance tapering</p></li>
-<li><p>✓ 2D tree placement with probabilistic seeding</p></li>
-<li><p>✓ Tree structure generation (trunk + crown)</p></li>
-<li><p>✓ Column generation in correct order</p></li>
-<li><p>✓ Integration with chunk meshing pipeline</p></li>
-</ol>
+<ul class="simple">
+<li><p><strong>Probabilistic Check:</strong> The Numba-compiled <code class="docutils literal notranslate"><span class="pre">random()</span></code> uses our globally synchronized deterministic seed to decide if this specific column gets a tree.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">x</span> <span class="o">-</span> <span class="n">TREE_H_WIDTH</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">x</span> <span class="o">+</span> <span class="n">TREE_H_WIDTH</span> <span class="o">&gt;=</span> <span class="n">CHUNK_SIZE</span><span class="p">:</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Chunk Boundary Safety:</strong> To prevent the engine from crashing by writing outside of the 1D chunk array, we strictly verify that the tree’s leafy crown will not bleed over the X or Z chunk borders.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">voxels</span><span class="p">[</span><span class="n">get_index</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)]</span> <span class="o">=</span> <span class="n">DIRT</span>
+<span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TREE_HEIGHT</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+    <span class="n">voxels</span><span class="p">[</span><span class="n">get_index</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">iy</span><span class="p">,</span> <span class="n">z</span><span class="p">)]</span> <span class="o">=</span> <span class="n">WOOD</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Structural Building:</strong> The block directly under the trunk is forced to be dirt. The trunk is grown straight up using the fast 1D array coordinate flattener <code class="docutils literal notranslate"><span class="pre">get_index</span></code>.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="p">(</span><span class="n">ix</span> <span class="o">+</span> <span class="n">iz</span><span class="p">)</span> <span class="o">%</span> <span class="mi">4</span><span class="p">:</span>
+    <span class="n">voxels</span><span class="p">[</span><span class="n">get_index</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">k</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">iy</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">+</span> <span class="n">k</span><span class="p">)]</span> <span class="o">=</span> <span class="n">LEAVES</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Sparse Leaf Crown:</strong> The spherical crown is generated layer by layer. We utilize modulo math (<code class="docutils literal notranslate"><span class="pre">%</span> <span class="pre">4</span></code>) to skip specific leaf blocks, creating a sparse, organic checkerboard pattern that allows ambient light to pass through.</p></li>
+</ul>
 </section>
 </section>
 
@@ -937,8 +743,8 @@ FOREST/GRASSLAND:
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="meshes.html" class="btn btn-neutral float-left" title="Mesh Systems and Vertex Packing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="player.html" class="btn btn-neutral float-right" title="Player Systems" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="persistence.html" class="btn btn-neutral float-left" title="World Persistence and Data Storage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="shaders.html" class="btn btn-neutral float-right" title="Shader Systems and GLSL Breakdown" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

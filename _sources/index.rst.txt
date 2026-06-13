@@ -42,23 +42,23 @@ The following sections delve into how Pyrite achieves its high performance and m
    :maxdepth: 2
    :caption: Explanation:
 
-   setup
-   main
-   architecture
-   rendering
-   lighting
-   shaders
-   meshes
-   terrain
-   player
-   ui
-   persistence
-   survival
-   assets
-   audio
-   testing
-   deployment
-   profiling
+   Application Entry and Core Loop <main>
+   Engine Initialization and Settings <setup>
+   World Architecture and Multithreading <architecture>
+   Persistence Systems and SQLite Storage <persistence>
+   Terrain Systems and Procedural Generation <terrain>
+   Shader Systems and GLSL Breakdown <shaders>
+   Lighting Systems and BFS Propagation <lighting>
+   Meshing Systems and Greedy Geometry <meshes>
+   Rendering Pipeline and Camera <rendering>
+   Player Systems and Physics Controller <player>
+   Survival Mechanics and Statistics <survival>
+   UI Systems and 2D Overlays <ui>
+   Audio Systems and Spatial Mixing <audio>
+   Asset Systems and Texture Atlases <assets>
+   Telemetry Systems and Profiling Breakdown <profiling>
+   Testing Framework and CI/CD <testing>
+   Deployment and Build Guides <deployment>
 
 API Reference
 =============

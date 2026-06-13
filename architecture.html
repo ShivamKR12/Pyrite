@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Engine Architecture &mdash; Pyrite 1.0.0 documentation</title>
+  <title>World Architecture and Multithreading Breakdown &mdash; Pyrite 1.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -21,8 +21,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Rendering Pipeline" href="rendering.html" />
-    <link rel="prev" title="Core Engine Flow" href="main.html" /> 
+    <link rel="next" title="World Persistence and Data Storage" href="persistence.html" />
+    <link rel="prev" title="Installation and Setup Guide" href="setup.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -46,20 +46,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Explanation:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation and Setup Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="main.html">Core Engine Flow</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Application Entry and Core Loop</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="main.html#engine-initialization">Engine Initialization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#state-management">State Management</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main.html#world-generation-and-sessions">World Generation and Sessions</a></li>
@@ -76,35 +63,45 @@
 <li class="toctree-l2"><a class="reference internal" href="main.html#shutdown-and-cleanup">Shutdown and Cleanup</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Engine Architecture</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Engine Initialization and Settings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#python-dependencies">Python Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#installation-steps">Installation Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#running-the-engine">Running the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#building-the-engine">Building the Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#documentation-building">Documentation Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">World Architecture and Multithreading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-overview">Architecture Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#the-main-loop-asynchronous-processing">The Main Loop &amp; Asynchronous Processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#the-queue-system">The Queue System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#subsystem-responsibilities">Subsystem Responsibilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#world-data-persistence">World &amp; Data Persistence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sqlite-write-ahead-logging-wal">SQLite Write-Ahead Logging (WAL)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#memory-management-1d-vs-3d-arrays">Memory Management (1D vs 3D Arrays)</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persistence.html">Persistence Systems and SQLite Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#serialization-and-compression">Serialization and Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-operations">Database Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#world-management-file-system">World Management (File System)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#replication-checklist">Replication Checklist</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting System</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terrain.html">Terrain Systems and Procedural Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#architecture-overview">Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-selection-algorithm">Biome Selection Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#height-generation-algorithm">Height Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-placement-and-structure">Tree Placement and Structure</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="shaders.html">Shader Systems and GLSL Breakdown</a><ul>
@@ -120,7 +117,19 @@
 <li class="toctree-l2"><a class="reference internal" href="shaders.html#debugging-tips">Debugging Tips</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="meshes.html">Mesh Systems and Vertex Packing</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="lighting.html">Lighting Systems and BFS Propagation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#lightmap-data-structure">Lightmap Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#sunlight-propagation-algorithm">Sunlight Propagation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#bfs-light-propagation">BFS Light Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#blocklight-torch-propagation">Blocklight (Torch) Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#chunk-boundary-stitching">Chunk Boundary Stitching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#integration-with-rendering">Integration with Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lighting.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="meshes.html">Meshing Systems and Greedy Geometry</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#mesh-classes-hierarchy">Mesh Classes Hierarchy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#vertex-packing-32-bit-format">Vertex Packing: 32-Bit Format</a></li>
@@ -133,21 +142,17 @@
 <li class="toctree-l2"><a class="reference internal" href="meshes.html#data-flow-example">Data Flow Example</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="terrain.html">Procedural Terrain Generation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-topography-system">Biome &amp; Topography System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving">Cave Carving</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-flora-generation">Tree &amp; Flora Generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#noise-foundation-deterministic-generation">Noise Foundation (Deterministic Generation)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#height-generation-algorithm">Height Generation Algorithm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#biome-selection-algorithm">Biome Selection Algorithm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#cave-carving-algorithm-3d">Cave Carving Algorithm (3D)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#tree-placement-and-structure">Tree Placement and Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#ore-generation">Ore Generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#column-generation-sequence">Column Generation Sequence</a></li>
-<li class="toctree-l2"><a class="reference internal" href="terrain.html#replication-checklist">Replication Checklist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rendering.html">Rendering Pipeline and Camera</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#greedy-meshing">Greedy Meshing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#vectorized-frustum-culling">Vectorized Frustum Culling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#hardware-occlusion-queries">Hardware Occlusion Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#multi-pass-transparency">Multi-Pass Transparency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#texture-atlases">Texture Atlases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#ambient-occlusion">Ambient Occlusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rendering.html#render-flow-summary">Render Flow Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="player.html">Player Systems</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="player.html">Player Systems and Physics Controller</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="player.html#player-class-hierarchy">Player Class Hierarchy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="player.html#coordinate-system">Coordinate System</a></li>
 <li class="toctree-l2"><a class="reference internal" href="player.html#controls-and-input-handling">Controls and Input Handling</a></li>
@@ -162,7 +167,14 @@
 <li class="toctree-l2"><a class="reference internal" href="player.html#integration-with-game-loop">Integration with Game Loop</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface Systems and Components</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival Mechanics and Statistics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ui.html">UI Systems and 2D Overlays</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="ui.html#ui-architecture-overview">UI Architecture Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ui.html#core-ui-component-base-class">Core UI Component Base Class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ui.html#in-game-hud-components">In-Game HUD Components</a></li>
@@ -173,35 +185,7 @@
 <li class="toctree-l2"><a class="reference internal" href="ui.html#integration-with-main-loop">Integration with Main Loop</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="persistence.html">World Persistence and Data Storage</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-schema">Database Schema</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#serialization-and-compression">Serialization and Compression</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#database-operations">Database Operations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#asynchronous-i-o-and-threading">Asynchronous I/O and Threading</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#world-management-file-system">World Management (File System)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#wal-mode-benefits">WAL Mode Benefits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#replication-checklist">Replication Checklist</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="survival.html">Survival &amp; Physics Mechanics</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="survival.html#player-physics-aabb-collisions">Player Physics &amp; AABB Collisions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="survival.html#inventory-crafting">Inventory &amp; Crafting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="survival.html#tool-dependencies-mining-hardness">Tool Dependencies &amp; Mining Hardness</a></li>
-<li class="toctree-l2"><a class="reference internal" href="survival.html#d-item-entities">3D Item Entities</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="assets.html">Assets (Textures, Models, Icons)</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#folder-layout">Folder layout</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#primary-tooling">Primary tooling</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#texture-conventions">Texture conventions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#models">Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#icons-ui-images">Icons &amp; UI images</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
-<li class="toctree-l2"><a class="reference internal" href="assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="audio.html">Audio System</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="audio.html">Audio Systems and Spatial Mixing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#primary-implementation">Primary implementation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#key-concepts">Key concepts</a></li>
@@ -212,28 +196,34 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="assets.html">Asset Systems and Texture Atlases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#folder-layout">Folder layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#primary-tooling">Primary tooling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#texture-conventions">Texture conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#models">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#icons-ui-images">Icons &amp; UI images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#adding-or-updating-assets">Adding or updating assets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets.html#versioning-and-artist-workflow">Versioning and artist workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="profiling.html">Telemetry Systems and Profiling Breakdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="profiling.html#architecture-overview">Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiling.html#lock-free-buffering-thread-safety">Lock-Free Buffering (Thread Safety)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiling.html#api-wrappers-integration">API Wrappers &amp; Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiling.html#aggregation-and-reporting">Aggregation and Reporting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing Framework and CI/CD</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#quickstart">Quickstart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#useful-options">Useful options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous integration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html#notes">Notes</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Builds</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment and Build Guides</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#pyinstaller-setup">PyInstaller Setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#automated-ci-cd-pipeline">Automated CI/CD Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#version-management">Version Management</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling &amp; Performance Diagnostics</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#primary-implementation">Primary implementation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#how-to-enable">How to enable</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#basic-usage">Basic usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#exporting-reports">Exporting reports</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#interpreting-results">Interpreting results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#best-practices">Best practices</a></li>
-<li class="toctree-l2"><a class="reference internal" href="profiling.html#see-also">See also</a></li>
 </ul>
 </li>
 </ul>
@@ -539,7 +529,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Engine Architecture</li>
+      <li class="breadcrumb-item active">World Architecture and Multithreading Breakdown</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/architecture.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -549,66 +539,104 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="engine-architecture">
-<h1>Engine Architecture<a class="headerlink" href="#engine-architecture" title="Link to this heading"></a></h1>
-<p>Pyrite is built on a hybrid architecture combining Pygame (for windowing and events), ModernGL (for hardware-accelerated OpenGL rendering), and Numba (for high-performance mathematics).</p>
+  <section id="world-architecture-and-multithreading-breakdown">
+<span id="architecture"></span><h1>World Architecture and Multithreading Breakdown<a class="headerlink" href="#world-architecture-and-multithreading-breakdown" title="Link to this heading"></a></h1>
+<p>This document provides detailed explanations of Pyrite’s core architectural loop, multithreaded chunk streaming, queue systems, and SQLite disk persistence. All core architectural logic is primarily located in <code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> and <code class="docutils literal notranslate"><span class="pre">src/main.py</span></code>.</p>
+<section id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading"></a></h2>
+<p>Pyrite is built on a hybrid architecture combining Pygame, ModernGL, and Numba:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1. The Main Loop         → Synchronous Pygame events and rendering.
+2. ThreadPoolExecutor    → Asynchronous Numba compilation and DB reads.
+3. The Queue System      → Safely syncing background data to the main thread.
+4. SQLite WAL            → High-performance disk persistence.
+5. 1D Array Flattening   → Cache-optimized memory layout.
+</pre></div>
+</div>
+</section>
 <section id="the-main-loop-asynchronous-processing">
 <h2>The Main Loop &amp; Asynchronous Processing<a class="headerlink" href="#the-main-loop-asynchronous-processing" title="Link to this heading"></a></h2>
-<p>The core game loop runs strictly on the main thread, handling player inputs, camera updates, and issuing draw calls to the GPU. Because Python’s Global Interpreter Lock (GIL) prevents true multi-threading for standard Python objects, heavy engine tasks are offloaded using two specific techniques:</p>
-<ol class="arabic simple">
-<li><p><strong>The ThreadPoolExecutor:</strong> Background Python threads are used strictly for I/O operations (reading/writing to the SQLite database) and executing pre-compiled Numba functions.</p></li>
-<li><p><strong>Numba nogil=True:</strong> The heaviest tasks (Procedural Noise, Greedy Meshing, and BFS Lighting) are compiled to raw LLVM machine code. By passing the <cite>nogil=True</cite> flag, these functions completely detach from the Python interpreter, allowing them to utilize 100% of all available physical CPU cores simultaneously without freezing the Pygame render loop.</p></li>
-</ol>
+<p><code class="docutils literal notranslate"><span class="pre">src/main.py</span></code> - The Core Execution Loop</p>
+<p>Purpose: Maintain a stutter-free render loop while offloading heavy tasks.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">delta_time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">(),</span> <span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Tick Control:</strong> The main game loop runs strictly on the main thread. We cap the delta time at 50ms to prevent massive physics lag spikes (like falling through the floor) if the engine momentarily hangs.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> - The ThreadPool</p>
+<p>Purpose: Execute Python functions in the background.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">executor</span> <span class="o">=</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="ow">or</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Thread Allocation:</strong> We allocate background worker threads based on the user’s CPU core count (leaving one core free for the OS/Main Thread). These threads handle I/O operations and execute Numba functions.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fetch_or_generate_voxels</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Non-Blocking Dispatch:</strong> Instead of pausing the game to load terrain, we submit the chunk coordinates to the ThreadPool. The main thread immediately continues rendering the next frame.</p></li>
+</ul>
 </section>
 <section id="the-queue-system">
 <h2>The Queue System<a class="headerlink" href="#the-queue-system" title="Link to this heading"></a></h2>
-<p>To manage the flow of asynchronous data back to the synchronous main thread (which is required for OpenGL calls), Pyrite uses a robust queue pipeline:</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> - Safe Thread Synchronization</p>
+<p>Purpose: Manage the flow of asynchronous data back to the synchronous main thread.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">load_queue</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Chunk</span><span class="p">],</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">Future</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">[]</span>
+</pre></div>
+</div>
 <ul class="simple">
-<li><p><strong>load_queue:</strong> Contains background futures fetching or generating raw voxel data. Once complete, the chunks are passed to the <cite>build_queue</cite>.</p></li>
-<li><p><strong>build_queue:</strong> A list of chunks awaiting greedy meshing. To prioritize player experience, this queue is dynamically re-sorted every frame so that chunks closest to the player are processed first.</p></li>
-<li><p><strong>mesh_queue:</strong> Contains the final step. The main thread safely pops from this queue to allocate OpenGL Vertex Buffer Objects (VBOs) and Vertex Array Objects (VAOs) without risking cross-thread OpenGL context crashes. To prevent memory leaks, Pyrite utilizes a <strong>VBO Pool</strong> that recycles released buffers for new meshes.</p></li>
+<li><p><strong>Load Queue:</strong> Contains background futures fetching or generating raw voxel data. Once a future resolves, the main thread extracts the 1D arrays and initializes the Chunk object.</p></li>
 </ul>
-</section>
-<section id="subsystem-responsibilities">
-<h2>Subsystem Responsibilities<a class="headerlink" href="#subsystem-responsibilities" title="Link to this heading"></a></h2>
-<p>The architecture is intentionally layered so that heavy computation occurs outside the main render thread, while the main thread remains responsible for OpenGL state, input dispatch, and the final draw call submission.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">build_queue</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">player_cx</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">player_cz</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
 <ul class="simple">
-<li><p>The <strong>World</strong> subsystem owns chunk lifecycle, procedural generation, and persistence.</p></li>
-<li><p>The <strong>Player</strong> subsystem owns camera updates, movement, and collision logic.</p></li>
-<li><p>The <strong>Scene</strong> subsystem owns visible object sorting, frustum culling, and render pass orchestration.</p></li>
-<li><p>The <strong>ShaderProgram</strong> subsystem owns GLSL compilation and uniform updates.</p></li>
-<li><p>The <strong>UI</strong> subsystem owns menu events, overlay rendering, and game-state transitions.</p></li>
+<li><p><strong>Build Queue Prioritization:</strong> Contains chunks awaiting greedy meshing. To prioritize player experience, this queue is dynamically re-sorted using squared distances so chunks closest to the player generate their meshes first.</p></li>
 </ul>
-<p>This separation keeps the code readable and makes it easier to reason about why the main thread stays responsive even when chunks are being generated and meshed in the background.</p>
-</section>
-<section id="world-data-persistence">
-<h2>World &amp; Data Persistence<a class="headerlink" href="#world-data-persistence" title="Link to this heading"></a></h2>
-<p>Pyrite handles infinite terrain through a chunk-based streaming system. Each chunk is a 48x48x48 (<cite>CHUNK_SIZE</cite>) grid.</p>
-<p>To prevent RAM exhaustion, active chunks are stored in a centralized dictionary (<cite>world.active_chunks</cite>). As the player moves, a 2D grid distance check determines which chunks fall out of the configured <cite>render_distance</cite>. Unloaded chunks are serialized and saved to disk.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vbo</span><span class="p">,</span> <span class="n">chunk</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vao</span><span class="p">))</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Mesh Queue &amp; VBO Pooling:</strong> The main thread pops completed meshes to allocate OpenGL VBOs/VAOs safely. To prevent VRAM exhaustion during fast movement, Pyrite recycles old buffer objects into a <code class="docutils literal notranslate"><span class="pre">vbo_pool</span></code> instead of constantly creating new ones.</p></li>
+</ul>
 </section>
 <section id="sqlite-write-ahead-logging-wal">
 <h2>SQLite Write-Ahead Logging (WAL)<a class="headerlink" href="#sqlite-write-ahead-logging-wal" title="Link to this heading"></a></h2>
-<p>Because Python’s standard file handling can be slow for millions of blocks, Pyrite uses a local SQLite <cite>.db</cite> file configured with <cite>PRAGMA journal_mode = WAL</cite>. This provides async-like, high-performance disk writes.</p>
-<p>The database caches three primary states:</p>
-<ol class="arabic simple">
-<li><p><strong>The chunks Table:</strong>
-Stores the absolute <cite>x, y, z</cite> chunk coordinates as the Primary Key. The chunk’s 1D <cite>uint8</cite> Numpy arrays for Voxels and Lightmaps are compressed using <cite>zlib.compress()</cite> and stored as raw <cite>BLOB</cite> data.</p></li>
-<li><p><strong>The player_data Table:</strong>
-Stores a serialized JSON string containing the player’s exact <cite>[x, y, z]</cite> coordinates, camera angles (Yaw, Pitch), survival stats (Health, Hunger, Oxygen), and the exact state of the 41-slot inventory arrays.</p></li>
-<li><p><strong>The world_meta Table:</strong>
-Stores high-level data like the Seed, World Name, Game Mode, and timestamps.</p></li>
-</ol>
+<p><code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> - Database Initialization</p>
+<p>Purpose: Provide async-like, high-performance disk writes for massive voxel datasets.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA journal_mode = WAL&#39;</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA synchronous = NORMAL&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>WAL Configuration:</strong> Python’s standard file handling is too slow for millions of blocks. Enabling Write-Ahead Logging allows SQLite to append writes to a separate log file, drastically reducing I/O blocking.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">l_data</span><span class="p">))</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Chunk Serialization:</strong> When a chunk unloads, its 1D <code class="docutils literal notranslate"><span class="pre">uint8</span></code> Numpy arrays for Voxels and Lightmaps are compressed using <code class="docutils literal notranslate"><span class="pre">zlib.compress()</span></code> and stored as raw binary <code class="docutils literal notranslate"><span class="pre">BLOB</span></code> data mapped to its XYZ coordinate.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Thread-Local Reads:</strong> SQLite cursors cannot be safely shared across background threads. We attach independent cursors to <code class="docutils literal notranslate"><span class="pre">threading.local()</span></code> to prevent connection overlap crashes while the ThreadPool fetches chunks.</p></li>
+</ul>
 </section>
 <section id="memory-management-1d-vs-3d-arrays">
 <h2>Memory Management (1D vs 3D Arrays)<a class="headerlink" href="#memory-management-1d-vs-3d-arrays" title="Link to this heading"></a></h2>
-<p>Instead of storing chunks as slow, nested Python lists (e.g., <cite>chunk[x][y][z]</cite>), Pyrite flattens all volumetric data into 1D Numpy arrays.</p>
-<p>A block’s specific index in the array is calculated using:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE
-index = x + z * CHUNK_SIZE + y * CHUNK_AREA
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Array Flattening</p>
+<p>Purpose: Maximize CPU cache hits during Numba JIT execution.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_index</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">CHUNK_SIZE</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="n">y</span>
 </pre></div>
 </div>
-<p>This means X advances fastest in memory, Z advances next, and Y advances last. By flattening the chunk into a contiguous 1D array with this row-major layout, the engine can scan vertical columns and entire chunk planes efficiently, which is essential for Numba-accelerated operations like lighting propagation and greedy meshing.</p>
-<p>This layout guarantees contiguous memory alignment, ensuring maximum CPU cache utilization during Numba JIT execution.</p>
+<ul class="simple">
+<li><p><strong>Row-Major Layout:</strong> Instead of using slow, nested Python lists (<code class="docutils literal notranslate"><span class="pre">chunk[x][y][z]</span></code>), all chunk data is flattened into a single contiguous 1D Numpy array.</p></li>
+<li><p><strong>Cache Optimization:</strong> X advances fastest, then Z, and Y last. This contiguous alignment allows the CPU prefetcher to load adjacent blocks efficiently, which is critical for Numba’s vectorization speeds.</p></li>
+</ul>
 </section>
 </section>
 
@@ -616,8 +644,8 @@ index = x + z * CHUNK_SIZE + y * CHUNK_AREA
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="main.html" class="btn btn-neutral float-left" title="Core Engine Flow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="rendering.html" class="btn btn-neutral float-right" title="Rendering Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="setup.html" class="btn btn-neutral float-left" title="Installation and Setup Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="persistence.html" class="btn btn-neutral float-right" title="World Persistence and Data Storage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
