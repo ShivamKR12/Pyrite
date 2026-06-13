@@ -11,7 +11,7 @@ Quickstart
 
 - Create and activate a virtual environment:
 
-  .. code-block:: powershell
+.. code-block:: powershell
 
   python -m venv .venv
   .\.venv\Scripts\Activate.ps1   # PowerShell (Windows)
@@ -19,20 +19,20 @@ Quickstart
 
 - Install test dependencies:
 
-  .. code-block:: bash
+.. code-block:: bash
 
   pip install -r requirements-dev.txt
   pip install -r requirements.txt
 
 - Run the full test suite:
 
-  .. code-block:: bash
+.. code-block:: bash
 
   pytest -q
 
 - Run a single test file:
 
-  .. code-block:: bash
+.. code-block:: bash
 
   pytest -q tests/test_engine.py
 

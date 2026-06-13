@@ -1,402 +1,215 @@
-=============================
-Procedural Terrain Generation
-=============================
+.. _terrain:
 
-Pyrite generates infinite, deterministic worlds using highly parallelized OpenSimplex noise. By utilizing MD5 string-hashing, custom string seeds (e.g., "PyriteIsCool") are converted into numerical integer seeds. The Numba compiler locks this seed via `numpy.random.seed()`, ensuring the exact same terrain topology is generated every time.
+Terrain Systems and Procedural Generation Breakdown
+===================================================
 
-Biome & Topography System
--------------------------
-The terrain generation heavily relies on independent, overlapping noise frequencies:
+This document provides detailed explanations of Pyrite's procedural terrain generation, including deterministic seeding, biome selection, height mapping (FBm), cave carving, and structural tree placement. All core terrain logic is located in ``src/terrain_gen.py`` and ``src/noise.py``.
 
-* **Continentalness:** Dictates the physical landform (evaluated across 4 layered octaves: `f1, f2, f4, f8`). Very low values carve deep oceans, mid values create sweeping plains, and high values linearly interpolate the terrain upward into extreme mountains or plateaus.
-* **Temperature & Moisture:** Evaluated via separate 2D noise maps to dictate the biome's block palette (e.g., Snow vs. Desert Sand vs. Grass).
+Architecture Overview
+---------------------
 
-**Biome Dithering:**
-To prevent unnatural, blocky straight lines at biome borders, a subtle, high-frequency noise "dithering" offset is mathematically added to the temperature and moisture values. This creates a natural scatter effect, allowing blocks from adjacent biomes to organically mix at the edges.
+Pyrite utilizes a heavily parallelized, lock-free approach to generate infinite terrain:
 
-Cave Carving
-------------
-Underground systems are carved dynamically using volumetric 3D noise (`noise3`).
+.. code-block:: text
 
-First, the engine determines a deterministic `crust` thickness. Below this safe top layer, 3D noise is evaluated for every single block coordinate. If the 3D noise exceeds a specific density threshold, the block is overridden and forced to become `AIR`.
-
-**Natural Entrances:**
-To create natural cave entrances rather than massive sinkholes, the cave threshold is dynamically tapered near the surface using a 2D `entrance_mask` noise map. This forces the 3D carving logic to narrow out and tighten before breaking through the grass layer.
-
-Tree & Flora Generation
------------------------
-Trees are placed procedurally during column generation based on the target Biome's moisture rating.
-* High moisture yields a `4%` probability per column (Dense Forests).
-* Low moisture yields a `0.01%` probability (Sparse Plains).
-
-The tree structure is pre-defined using local relative coordinates. The engine enforces several environment constraints before spawning a tree:
-
-1. Trees cannot spawn underwater.
-2. Trees cannot spawn on Snow or Sand.
-3. Trees cannot spawn at extreme mountain altitudes (``wy > STONE_LVL``).
-4. A tree's bounding box cannot exceed the chunk's boundaries (preventing neighbor-chunk bleeding crashes).
+    1. Noise Foundation    → Deterministic OpenSimplex noise and Numba JIT.
+    2. Biome Selection     → 2D Temperature and Moisture evaluation.
+    3. Height Generation   → Fractional Brownian Motion (FBm) + Continentalness.
+    4. Cave Carving        → 3D Volumetric noise with entrance tapering.
+    5. Tree Placement      → Probabilistic structural generation.
 
 Noise Foundation (Deterministic Generation)
---------------------------------------------
+-------------------------------------------
 
-**Seed Conversion:**
+``src/noise.py`` - Noise & Seeding Engine
 
-**Seed Conversion (Reference Implementation):**
-
-.. code-block:: python
-
-    # Note: Actual seed handling in engine uses set_seed() from src/noise.py
-    # This is a reference implementation showing the concept:
-    import hashlib
-
-    def string_to_seed(seed_string):
-        # Convert string seed to integer
-        hash_obj = hashlib.md5(seed_string.encode())
-        seed_int = int(hash_obj.hexdigest(), 16) % (2**31)
-        return seed_int
-
-    # Example:
-    seed = string_to_seed("PyriteIsCool")  # Result: deterministic 32-bit integer
-
-**OpenSimplex 2D Noise (Biomes):**
-
-
-**OpenSimplex 2D Noise (Biomes - Pseudo-code):**
-
-.. note:: Actual function is ``get_biome(x, z, perm_array)`` in ``src/terrain_gen.py``
+Purpose: Manage global permutation arrays, synchronize RNG, and ensure 100% deterministic world generation.
 
 .. code-block:: python
 
-    # Reference implementation of biome noise calculation
-    from opensimplex import OpenSimplex
+    def set_seed(new_seed: int) -> None:
 
-    def get_biome_noise_ref(x, z, scale=0.05):
-        # Initialize noise generator with seed (actual code: perm_array lookup)
-        noise_gen = OpenSimplex(seed)
-
-        # Evaluate noise at point (returns temperature/moisture blend)
-        value = noise_gen.noise2(x * scale, z * scale)  # Returns -1.0 to 1.0
-        return value
-
-**OpenSimplex 3D Noise (Caves - Pseudo-code):**
-
-.. note:: Actual cave generation is embedded in ``Chunk.generate_terrain()`` in ``src/world_objects/chunk.py``
+* **Seed Conversion:** This function initializes the deterministic sequence. The engine hashes string inputs (like "PyriteIsCool") into a 32-bit integer seed to feed into this function.
 
 .. code-block:: python
 
-    # Reference implementation of cave carving noise
-    def get_cave_noise_ref(x, y, z, scale=0.09):
-        noise_gen = OpenSimplex(seed)
-        value = noise_gen.noise3(x * scale, y * scale, z * scale)
-        return value  # Returns -1.0 to 1.0; carve if > cave_threshold
+    perm, perm_grad_index3 = _init(seed=new_seed)
 
-Height Generation Algorithm
----------------------------
-
-**Multi-Octave Frequency Blending (FBm - Fractional Brownian Motion):**
-
-Height at column (x, z) is calculated by summing noise at multiple frequencies. Each octave has half the amplitude and double the frequency of the previous.
+* **OpenSimplex Initialization:** We generate the fundamental noise permutation arrays. Numba will hardcode pointers to these specific arrays in memory to bypass Python object overhead.
 
 .. code-block:: python
 
-.. note:: Actual function: ``get_height(x, z, perm_array)`` in ``src/terrain_gen.py``
+    _seed_numba(new_seed)
+    np.random.seed(new_seed)
+    random.seed(new_seed)
+
+* **RNG Synchronization:** Because performance-critical loops are compiled with Numba, we must explicitly seed Numba's internal RNG (``_seed_numba``) as well as standard Python random modules. This ensures functions like random chance for tree placement are identical on every launch.
+
+``src/terrain_gen.py`` - Numba JIT Compilation
+
+Purpose: Execute complex noise math at near-C++ speeds using LLVM.
 
 .. code-block:: python
 
-    # Terrain height generation at a column (x, z in world coordinates)
-    def get_height(x, z, perm_array):
-        # Column generation (for all 48 Y values)
+    @njit(cache=True, fastmath=True, nogil=True)
 
-        # Step 1: Evaluate continentalness (overall landform)
-        continentalness = 0
-        amplitude = 1.0
-        frequency = 0.005  # Scale for first octave
-
-        for octave in [1, 2, 4, 8]:  # 4 octaves
-            freq = frequency * octave
-            noise_value = opensimplex_noise(x * freq, z * freq)
-            continentalness += noise_value * amplitude
-            amplitude *= 0.5  # Halve amplitude each octave
-
-        # Normalize continentalness to -1.0 to 1.0
-        continentalness = clamp(continentalness / 1.875, -1.0, 1.0)  # 1.875 = sum of amplitudes
-
-        # Step 2: Evaluate jaggedness (mountain sharpness)
-        jaggedness = opensimplex_noise(x * 0.04, z * 0.04)  # Higher frequency
-
-        # Step 3: Determine base height from continentalness
-        if continentalness < -0.2:
-            # Deep ocean
-            base_height = 5.6 + continentalness * 3  # Range: ~2 to 5.6 blocks
-        elif -0.2 <= continentalness <= 0.1:
-            # Beaches, plains
-            base_height = 5.6 + continentalness * 8  # Range: 5.6 to ~6 blocks (mostly flat)
-        elif 0.1 < continentalness <= 0.3:
-            # Plateaus
-            base_height = 6.0 + continentalness * 30  # Range: 6 to ~15 blocks, cliffier
-            jaggedness *= 2  # Emphasize jaggedness on plateaus
-        else:
-            # Mountains
-            base_height = 15.0 + continentalness * 50  # Range: 15 to 35+ blocks
-            jaggedness *= 3  # Very jagged
-
-        # Apply jaggedness
-        height = base_height + jaggedness * 4
-
-        # Clamp to world bounds (0 to 256)
-        height = clamp(height, 0, 256)
-
-        return int(height)
-
-**Height Constants:**
-
-.. code-block:: python
-
-    STONE_LVL = 8          # Below this Y, all blocks are stone (bedrock layer)
-    WATER_LVL = 5.6        # Sea level
-    SNOW_LVL = 25          # Above this, snow biomes appear
-    GRASS_LVL = 15         # Below this, grass; above, snow/rock
+* **Numba JIT Compilation:** Functions decorated with ``@njit`` bypass the Python Global Interpreter Lock (``nogil=True``) allowing true multithreading, use relaxed floating-point math (``fastmath=True``) for speed, and cache the compiled LLVM binary (``cache=True``) to speed up subsequent engine launches.
 
 Biome Selection Algorithm
 -------------------------
 
-**Two-Stage Process:**
+``src/terrain_gen.py`` - Biome Evaluation
 
-1. Evaluate temperature and moisture maps (independent 2D noise)
-2. Use lookup table or conditions to select block palette
-
-.. code-block:: python
-
-.. note:: Actual function: ``get_biome(x, z, perm_array)`` in ``src/terrain_gen.py``
+Purpose: Determine temperature and moisture to map out expansive biomes like deserts, snow, and forests.
 
 .. code-block:: python
 
-    # Determine biome type based on temperature and moisture at column
-    def get_biome(x, z, perm_array):
-        # Sample temperature and moisture
-        temperature = opensimplex_noise(x * 0.01, z * 0.01)  # -1.0 to 1.0
-        moisture = opensimplex_noise(x * 0.015, z * 0.015)
+    temp = noise2(x * 0.002, z * 0.002, perm_array)
 
-        # Apply dithering (high-frequency noise for variety)
-        dither = opensimplex_noise(x * 0.1, z * 0.1) * 0.05  # ±0.05 offset
-        temperature += dither
-        moisture += dither
+* **Temperature Calculation:** Temperature is evaluated using 2D Simplex noise. The ``0.002`` scale is extremely low, ensuring biomes are massive and sprawling across thousands of blocks.
 
-        # Biome lookup table
-        if temperature > 0.3 and moisture < -0.2:
-            return 'DESERT'
-        elif temperature < -0.2:
-            return 'SNOW'
-        elif moisture > 0.2:
-            return 'FOREST'
-        elif moisture < -0.1:
-            return 'PLAINS'
-        else:
-            return 'GRASSLAND'
+.. code-block:: python
 
-**Biome Block Palettes:**
+    moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0, perm_array)
 
-.. code-block:: text
+* **Moisture Calculation:** Moisture is evaluated using the exact same massive scale but is offset by ``100.0``. This ensures its noise map doesn't identically overlap with the temperature map, creating diverse intersections (hot/dry, hot/wet, cold/dry, etc.).
 
-    DESERT:
-        Surface:    SAND
-        Under:      SAND (3 blocks)
-        Base:       STONE
+.. code-block:: python
 
-    SNOW:
-        Surface:    SNOW
-        Under:      DIRT (2 blocks)
-        Base:       STONE
+    dither = noise2(wx * 0.2, wz * 0.2, perm_array) * 0.05 + noise2(wx * 0.8, wz * 0.8, perm_array) * 0.03
+    temp += dither
+    moist += dither
 
-    FOREST/GRASSLAND:
-        Surface:    GRASS
-        Under:      DIRT (2-4 blocks)
-        Base:       STONE
+* **Biome Dithering:** To make biome transitions organic rather than perfectly straight, mathematical lines, we sample two much higher frequencies (``0.2`` and ``0.8``). By scaling them down and adding them to the base temp/moist, we subtly scramble the exact borders, causing blocks from adjacent biomes to mix naturally.
+
+.. code-block:: python
+
+    is_desert = temp > 0.3 and moist < -0.2
+    is_snow = temp < -0.2
+
+* **Biome Palettes:** Using the dithered values, we define strict cutoff thresholds for deserts (hot and dry) and snow (cold). If neither matches, the terrain defaults to standard grass/dirt.
+
+Height Generation Algorithm
+---------------------------
+
+``src/terrain_gen.py`` - Height Evaluation
+
+Purpose: Utilize Fractional Brownian Motion (FBm) combined with continental modifiers to sculpt oceans, plains, and mountains.
+
+.. code-block:: python
+
+    cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0, perm_array)
+
+* **Continentalness:** We sample a slow-changing base map (offset to prevent overlap with biome noise) that defines the overarching landmass type independently of the climate.
+
+.. code-block:: python
+
+    base_h = noise2(x * f1, z * f1, perm_array) * a1 + a1
+
+* **FBm Base Octave:** The base octave uses a very low frequency (``f1 = 0.005``) and high amplitude (``a1 = CENTER_Y``) to create sweeping, gentle hills and valleys.
+
+.. code-block:: python
+
+    detail_1 = noise2(x * f2, z * f2, perm_array) * a2 - a2
+    detail_2 = noise2(x * f4, z * f4, perm_array) * a4 + a4
+    detail_3 = noise2(x * f8, z * f8, perm_array) * a8 - a8
+    height = base_h + detail_1 + detail_2 + detail_3
+
+* **FBm Detail Octaves:** Each subsequent octave doubles the frequency (``f2, f4, f8``) and halves the amplitude (``a2, a4, a8``). Summing these together creates increasingly fine, localized bumps across the terrain.
+
+.. code-block:: python
+
+    if cont < -0.2:
+    w = min((-0.2 - cont) * 5.0, 1.0)
+    target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
+    height = height * (1.0 - w) + target_h * w
+
+* **Terrain Shaping:** If continentalness is very low, we treat it as Deep Plains or Oceans. We calculate an interpolation weight ``w`` and heavily flatten the ``target_h`` just below the water line, linearly interpolating the raw FBm height towards it.
 
 Cave Carving Algorithm (3D)
 ---------------------------
 
-**Volumetric Carving:**
+``src/terrain_gen.py`` - Volumetric Cave Carving
+
+Purpose: Hollow out complex underground cave systems using 3D noise while preventing unnatural surface craters.
 
 .. code-block:: python
 
-    def generate_and_carve_chunk(chunk_voxels, chunk_x, chunk_y, chunk_z):
-        # First, generate terrain normally (above stone level)
+    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09, perm_array, perm_grad_array)
 
-        # Then, carve caves below a certain Y threshold
-        CAVE_THRESHOLD = 40  # Only cave below this
-        CAVE_SPAWN_Y = 15
+* **Volumetric Carving:** For every solid block beneath the crust, we evaluate 3D Simplex noise using the exact ``wx, wy, wz`` world coordinates.
 
-        for local_x in range(48):
-            for local_y in range(48):
-                for local_z in range(48):
-                    world_x = chunk_x * 48 + local_x
-                    world_y = chunk_y * 48 + local_y
-                    world_z = chunk_z * 48 + local_z
+.. code-block:: python
 
-                    # Only carve solidblocks below threshold
-                    if world_y < CAVE_SPAWN_Y or world_y > CAVE_THRESHOLD:
-                        continue
+    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0, perm_array)
 
-                    # Skip air/water
-                    voxel_id = chunk_voxels[local_x + local_z * 48 + local_y * 48**2]
-                    if is_transparent(voxel_id):
-                        continue
+* **Entrance Mask:** Before looping through the Y-axis, we calculate a 2D map once per column to determine how "open" or "closed" the surface should be, preventing all caves from breaching the top.
 
-                    # Evaluate 3D cave noise
-                    cave_noise = opensimplex_noise_3d(world_x * 0.09, world_y * 0.09, world_z * 0.09)
+.. code-block:: python
 
-                    # Apply entrance tapering (near surface, make caves narrower)
-                    surface_distance = world_y - CAVE_SPAWN_Y
-                    taper_factor = 1.0 - (surface_distance / 14.0) ** 2  # Tapers over 14 blocks
+    if surface_dist < 14:
+    taper_factor = (14 - surface_dist) / 14.0
+    target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
 
-                    entrance_mask = opensimplex_noise(world_x * 0.02, world_z * 0.02)
-                    cave_threshold = 0.3 + taper_factor * 0.2
+* **Dynamic Tapering:** If we are within 14 blocks of the surface crust, the tapering mechanism kicks in. We calculate a linear factor that shifts the ``target_threshold`` higher, making it harder for noise to exceed it.
 
-                    # Carve if noise exceeds threshold
-                    if cave_noise > cave_threshold and entrance_mask < 0.5:
-                        chunk_voxels[...] = AIR  # Carve out voxel
+.. code-block:: python
+
+    cave_threshold = target_threshold * taper_factor
+    if cave_noise > cave_threshold:
+        voxel_id = 0
+
+* **Block Removal:** We scale the threshold shift by the taper factor. The closer you get to the grass, the harder it becomes for a cave to break through. If the noise still beats the modified threshold, the block is forced to ``0`` (AIR).
 
 Tree Placement and Structure
 -----------------------------
 
-**Probabilistic Placement:**
+``src/terrain_gen.py`` - Flora Generation
+
+Purpose: Probabilistically spawn and construct multi-block tree structures within chunk memory bounds.
 
 .. code-block:: python
 
-    def try_place_tree_in_column(x, z, biome, height):
-        # Determine tree probability from biome
-        if biome == 'FOREST':
-            tree_probability = 0.04  # 4% per column
-        elif biome == 'GRASSLAND':
-            tree_probability = 0.005  # 0.5% per column
-        elif biome == 'PLAINS':
-            tree_probability = 0.0001  # 0.01% per column
-        else:
-            return None  # No trees in desert/snow
+    if wy == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and wy < STONE_LVL:
 
-        # Seeded random check
-        rng_value = pseudo_random(x, z, seed)  # 0.0 to 1.0
-
-        if rng_value > tree_probability:
-            return None  # Don't place tree
-
-        # Check placement constraints
-
-        # 1. Not underwater
-        if height < WATER_LVL:
-            return None
-
-        # 2. Not on sand or snow
-        if biome in ['DESERT', 'SNOW']:
-            return None
-
-        # 3. Not at extreme altitudes
-        if height > SNOW_LVL:
-            return None
-
-        # 4. Bounding box doesn't exceed chunk
-        tree_height = 8
-        tree_crown_radius = 4
-
-        local_x = x % 48
-        local_z = z % 48
-
-        if local_x - tree_crown_radius < 0 or local_x + tree_crown_radius >= 48:
-            return None
-        if local_z - tree_crown_radius < 0 or local_z + tree_crown_radius >= 48:
-            return None
-
-        # All checks pass - place tree
-        return place_tree_structure(x, height, z)
-
-**Tree Structure (Predefined):**
+* **Spawning Constraints:** Trees are strictly constrained. They can only spawn on the absolute top surface block, cannot spawn in water or on beaches, and cannot spawn high up in the mountains (above ``STONE_LVL``).
 
 .. code-block:: python
 
-    def place_tree_structure(x, base_y, z):
-        # Tree structure (relative coordinates from base)
-        trunk_height = 8
-        crown_start_y = 5
+    if surface_id == GRASS:
+        if moist > 0.4:
+            tree_prob = 0.04
+        elif moist > 0.0:
+            tree_prob = 0.005
 
-        # Trunk (straight column of wood)
-        for dy in range(trunk_height):
-            world_x, world_y, world_z = x, base_y + dy, z
-            set_voxel(world_x, world_y, world_z, WOOD)
-
-        # Crown (spherical leaves)
-        crown_y = base_y + crown_start_y
-        crown_radius = 4
-
-        for dx in range(-crown_radius, crown_radius + 1):
-            for dy in range(-crown_radius, crown_radius + 1):
-                for dz in range(-crown_radius, crown_radius + 1):
-                    distance = sqrt(dx**2 + dy**2 + dz**2)
-                    if distance <= crown_radius:
-                        # Checker pattern (sparse leaves for light penetration)
-                        if (abs(dx) + abs(dz)) % 4 != 0:
-                            world_x = x + dx
-                            world_y = crown_y + dy
-                            world_z = z + dz
-                            set_voxel(world_x, world_y, world_z, LEAVES)
-
-Ore Generation
---------------
-
-Pyrite does not currently implement dedicated ore spawning. Terrain generation focuses on biome placement, caves, trees, and surface details rather than mineral deposits.
-
-Column Generation Sequence
---------------------------
-
-**Per-Column Processing (called for each X,Z coordinate):**
+* **Moisture-based Density:** Tree density is tied directly to the biome's moisture rating. Dense forests have a 4% spawn rate per column, while sparse woods drop to 0.5%.
 
 .. code-block:: python
 
-    def generate_column(x, z, perm_array):
-        height = get_height(x, z, perm_array)
-        biome = get_biome(x, z, perm_array)
+    rnd = random()
+    if rnd > tree_prob:
+        return None
 
-        column_voxels = []  # 0 to 256 (Y=0 is bedrock)
+* **Probabilistic Check:** The Numba-compiled ``random()`` uses our globally synchronized deterministic seed to decide if this specific column gets a tree.
 
-        # 1. Fill with stone below height
-        for y in range(STONE_LVL, int(height)):
-            if y <= STONE_LVL + 1:
-                column_voxels.append(BEDROCK)
-            else:
-                column_voxels.append(STONE)
+.. code-block:: python
 
-        # 2. Add surface layer
-        surface = get_biome_surface_block(biome, int(height))
-        if int(height) < 256:
-            column_voxels[int(height)] = surface
+    if x - TREE_H_WIDTH < 0 or x + TREE_H_WIDTH >= CHUNK_SIZE:
+        return None
 
-        # 3. Add dirt layer (2-4 blocks)
-        dirt_depth = 3
-        for i in range(dirt_depth):
-            if int(height) - i - 1 >= STONE_LVL:
-                column_voxels[int(height) - i - 1] = DIRT
+* **Chunk Boundary Safety:** To prevent the engine from crashing by writing outside of the 1D chunk array, we strictly verify that the tree's leafy crown will not bleed over the X or Z chunk borders.
 
-        # 4. Fill above height with air (or water if below sea level)
-        for y in range(int(height) + 1, 256):
-            if y < WATER_LVL:
-                column_voxels.append(WATER)
-            else:
-                column_voxels.append(AIR)
+.. code-block:: python
 
-        # 5. Return for insertion into chunk
-        return column_voxels
+    voxels[get_index(x, y, z)] = DIRT
+    for iy in range(1, TREE_HEIGHT - 2):
+        voxels[get_index(x, y + iy, z)] = WOOD
 
-Replication Checklist
----------------------
+* **Structural Building:** The block directly under the trunk is forced to be dirt. The trunk is grown straight up using the fast 1D array coordinate flattener ``get_index``.
 
-To reimplement terrain generation:
+.. code-block:: python
 
-1. ✓ Seed conversion (string → int via MD5 or similar)
-2. ✓ OpenSimplex initialization with deterministic seed
-3. ✓ Multi-octave FBm height calculation
-4. ✓ Biome lookup (temperature + moisture → palette)
-5. ✓ 3D cave carving with entrance tapering
-6. ✓ 2D tree placement with probabilistic seeding
-7. ✓ Tree structure generation (trunk + crown)
-8. ✓ Column generation in correct order
-9. ✓ Integration with chunk meshing pipeline
+    if (ix + iz) % 4:
+        voxels[get_index(x + ix + k, y + iy, z + iz + k)] = LEAVES
+
+* **Sparse Leaf Crown:** The spherical crown is generated layer by layer. We utilize modulo math (``% 4``) to skip specific leaf blocks, creating a sparse, organic checkerboard pattern that allows ambient light to pass through.
