@@ -26,21 +26,11 @@ Stores terrain voxel data and lightmaps for each chunk.
 
 .. code-block:: sql
 
-    CREATE TABLE chunks (
-        x INTEGER,
-        y INTEGER,
-        z INTEGER,
-        data BLOB,              -- Compressed 1D uint8 array (voxel IDs)
-        lightmap BLOB,          -- Compressed 1D uint8 array (light data)
-        
-        PRIMARY KEY (x, y, z)
-    )
+    CREATE TABLE chunks (x INTEGER, y INTEGER, z INTEGER, data BLOB, lightmap BLOB, PRIMARY KEY (x, y, z))
 
-**Row Structure:**
+* **Chunks Table:** Stores the `x`, `y`, `z` coordinates and the heavily compressed NumPy `BLOB` objects representing physical block IDs and BFS volumetric light.
 
-- **x, y, z:** Chunk coordinates (e.g., chunk at x=0, y=0, z=0 covers world voxels 0-47 in each axis)
-- **data:** Compressed blob of shape (CHUNK_VOL,) = (110592,) uint8 values (voxel IDs)
-- **lightmap:** Compressed blob of shape (CHUNK_VOL,) containing packed sunlight+blocklight (4 bits each)
+* **Indexing Integrity:** Local indices within a 48x48 chunk are natively resolved strictly to their flat integer via `local_index = (x % 48) + (z % 48) * 48 + (y % 48) * 48²`.
 
 **Note:** The `lightmap` column was added via schema migration (`ALTER TABLE chunks ADD COLUMN lightmap BLOB`) to support lightmap caching in existing worlds.
 
@@ -52,7 +42,7 @@ Stores terrain voxel data and lightmaps for each chunk.
     chunk_x = floor(x / CHUNK_SIZE)     # CHUNK_SIZE = 48
     chunk_y = floor(y / CHUNK_SIZE)
     chunk_z = floor(z / CHUNK_SIZE)
-    
+
     Local voxel index within chunk:
     local_index = (x % 48) + (z % 48) * 48 + (y % 48) * 48² = flat_index
 
@@ -62,14 +52,9 @@ Stores player position, inventory, and survival stats as serialized JSON.
 
 .. code-block:: sql
 
-    CREATE TABLE player_data (
-        id INTEGER PRIMARY KEY,
-        data TEXT                -- JSON serialized player state
-    )
+    CREATE TABLE player_data (id INTEGER PRIMARY KEY, data TEXT)
 
-**Storage Format:**
-
-The `data` column stores a JSON string containing all player information:
+* **Player Serialization:** Binds dynamic dictionaries containing position vectors and arrays directly to simple string payloads.
 
 .. code-block:: json
 
@@ -93,16 +78,9 @@ Stores world-level metadata (seed, game mode, creation date).
 
 .. code-block:: sql
 
-    CREATE TABLE world_meta (
-        id INTEGER PRIMARY KEY,
-        world_name TEXT,
-        seed INTEGER,
-        game_mode INTEGER,
-        creation_date TEXT,
-        last_played TEXT
-    )
+    CREATE TABLE world_meta (id INTEGER PRIMARY KEY, world_name TEXT, seed INTEGER, game_mode INTEGER, creation_date TEXT, last_played TEXT)
 
-**Stored Fields:**
+* **Engine Meta:** Boot params explicitly flag creative toggles and generation integers mapped by `id`.
 
 .. code-block:: text
 
@@ -119,23 +97,9 @@ Stores data for items dropped in the world.
 
 .. code-block:: sql
 
-    CREATE TABLE dropped_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        voxel_id INTEGER,
-        px REAL,                        -- Position X
-        py REAL,                        -- Position Y
-        pz REAL,                        -- Position Z
-        vx REAL,                        -- Velocity X
-        vy REAL,                        -- Velocity Y
-        vz REAL                         -- Velocity Z
-    )
+    CREATE TABLE dropped_items (id INTEGER PRIMARY KEY AUTOINCREMENT, voxel_id INTEGER, px REAL, py REAL, pz REAL, vx REAL, vy REAL, vz REAL)
 
-**Row Structure:**
-
-- **id:** Unique item identifier
-- **voxel_id:** Block/item type ID
-- **px, py, pz:** World position of the item
-- **vx, vy, vz:** Velocity vector for physics simulation
+* **Entities Record:** Caches unbound ground collision vectors mapped exclusively per-game instance.
 
 Serialization and Compression
 ------------------------------
@@ -144,33 +108,16 @@ Serialization and Compression
 
 .. code-block:: python
 
-    import zlib
-    import numpy as np
-    
-    def serialize_chunk(voxel_array, lightmap_array):
-        """Convert chunk data to compressed binary"""
-        # voxel_array: (110592,) uint8 array
-        # lightmap_array: (110592,) uint8 array
-        
-        # Convert to bytes
-        voxel_bytes = voxel_array.tobytes()      # 110592 bytes
-        lightmap_bytes = lightmap_array.tobytes()
-        
-        # Compress with zlib (default level)
-        voxel_compressed = zlib.compress(voxel_bytes)
-        lightmap_compressed = zlib.compress(lightmap_bytes)
-        
-        return voxel_compressed, lightmap_compressed
-    
-    def deserialize_chunk(voxel_compressed, lightmap_compressed):
-        """Decompress and convert back to arrays"""
-        voxel_bytes = zlib.decompress(voxel_compressed)
-        lightmap_bytes = zlib.decompress(lightmap_compressed)
-        
-        voxel_array = np.frombuffer(voxel_bytes, dtype=np.uint8).copy()
-        lightmap_array = np.frombuffer(lightmap_bytes, dtype=np.uint8).copy()
-        
-        return voxel_array, lightmap_array
+    voxel_bytes = voxel_array.tobytes()
+    voxel_compressed = zlib.compress(voxel_bytes)
+
+* **ZLib Compression:** Transforms 110592-index flat buffers straight into highly condensed bytes safely.
+
+.. code-block:: python
+
+    voxel_array = np.frombuffer(zlib.decompress(voxel_compressed), dtype=np.uint8).copy()
+
+* **Restoration Phase:** Explodes byte BLOBs cleanly back to NumPy instances using explicit types.
 
 **Compression Ratios:**
 
@@ -180,7 +127,7 @@ Serialization and Compression
     Dense terrain       ~25 KB             1:4.4 (stone/dirt/grass)
     Cave systems        ~15 KB             1:7.4 (many air gaps)
     Mixed biomes        ~35 KB             1:3.2 (varied blocks)
-    
+
     Typical world with 1,440 chunks (30x5x30):
     Uncompressed: 1,440 * 110,592 * 2 bytes ≈ 318 MB
     Compressed:   1,440 * 25 KB average ≈ 36 MB
@@ -192,151 +139,44 @@ Database Operations
 
 .. code-block:: python
 
-    import sqlite3
-    
-    def create_world_database(world_name, seed):
-        """Initialize new world database"""
-        db_path = f'saves/{world_name}.db'
-        conn = sqlite3.connect(db_path, check_same_thread=False)
-        cursor = conn.cursor()
-        
-        # Enable WAL mode for performance
-        cursor.execute('PRAGMA journal_mode=WAL')
-        cursor.execute('PRAGMA synchronous=NORMAL')  # Balance safety/speed
-        
-        # Create tables
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS chunks (
-                x INTEGER, y INTEGER, z INTEGER,
-                data BLOB, lightmap BLOB,
-                PRIMARY KEY (x, y, z)
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS player_data (
-                id INTEGER PRIMARY KEY,
-                data TEXT
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS world_meta (
-                id INTEGER PRIMARY KEY,
-                world_name TEXT,
-                seed INTEGER,
-                game_mode INTEGER,
-                creation_date TEXT,
-                last_played TEXT
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS dropped_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                voxel_id INTEGER,
-                px REAL, py REAL, pz REAL,
-                vx REAL, vy REAL, vz REAL
-            )
-        ''')
-        
-        conn.commit()
-        return conn
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+    cursor.execute('PRAGMA journal_mode=WAL')
+
+* **Initialization:** Skips standard lock bindings allowing non-blocking I/O operations dynamically per-session file.
 
 **Save Chunk:**
 
 .. code-block:: python
 
-    def save_chunk_to_db(cursor, conn, x, y, z, voxels, lightmap):
-        """Compress and store chunk data"""
-        voxel_data = zlib.compress(voxels.tobytes())
-        lightmap_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
-        
-        cursor.execute(
-            'INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)',
-            (x, y, z, voxel_data, lightmap_data)
-        )
-        conn.commit()
+    cursor.execute('INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)', (x, y, z, voxel_data, lightmap_data))
+
+* **Upsert Commit:** Overwrites previously saved geographical records immediately or pushes fresh memory blobs explicitly.
 
 **Load Chunk:**
 
 .. code-block:: python
 
-    def load_chunk_from_db(cursor, x, y, z):
-        """Retrieve and decompress chunk data"""
-        cursor.execute('SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
-        row = cursor.fetchone()
-        
-        if row:
-            voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8').copy()
-            lightmap_data = np.frombuffer(zlib.decompress(row[1]), dtype='uint8').copy() if row[1] else None
-            return voxel_data, lightmap_data
-        
-        return None, None
+    cursor.execute('SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
+
+* **Location Seeking:** Finds specifically tied tuples per execution.
 
 **Save Player Data:**
 
 .. code-block:: python
 
-    def save_player_data(cursor, conn, player_state_dict):
-        """Save player state as JSON"""
-        json_data = json.dumps(player_state_dict)
-        cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (1, ?)', (json_data,))
-        conn.commit()
+    json_data = json.dumps(player_state_dict)
+    cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (1, ?)', (json_data,))
+
+* **Status Upsert:** Single explicit dicts dumped over primary static rows seamlessly.
 
 **Load Player Data:**
 
 .. code-block:: python
 
-    def load_player_data(cursor):
-        """Load and deserialize player state"""
-        cursor.execute('SELECT data FROM player_data WHERE id=1')
-        row = cursor.fetchone()
-        
-        if row:
-            return json.loads(row[0])
-        
-        return None
-            CREATE TABLE player_data (
-                id INTEGER PRIMARY KEY,
-                x REAL, y REAL, z REAL,
-                yaw REAL, pitch REAL,
-                health REAL, hunger REAL, oxygen REAL,
-                inventory TEXT, inventory_counts TEXT,
-                hotbar_index INTEGER, timestamp INTEGER
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE world_meta (
-                key TEXT PRIMARY KEY,
-                value TEXT
-            )
-        ''')
-        
-        # Store metadata
-        cursor.execute("INSERT INTO world_meta VALUES (?, ?)", ("seed", seed))
-        cursor.execute("INSERT INTO world_meta VALUES (?, ?)", ("created_time", int(time.time())))
-        cursor.execute("INSERT INTO world_meta VALUES (?, ?)", ("game_mode", "SURVIVAL"))
-        
-        conn.commit()
-        conn.close()
+    row = cursor.fetchone()
+    return json.loads(row[0]) if row else None
 
-**Save Chunk:**
-
-.. code-block:: python
-
-    def save_chunk_to_db(conn, chunk_x, chunk_y, chunk_z, voxels, lightmap):
-        """Save chunk to database (insert or update)"""
-        cursor = conn.cursor()
-        
-        voxel_compressed, lightmap_compressed = serialize_chunk(voxels, lightmap)
-        timestamp = int(time.time())
-        
-        # UPSERT pattern (insert or replace)
-        cursor.execute('''
-            INSERT OR REPLACE INTO chunks 
-            (x, y, z, voxel_data, lightmap_data, generated, timestamp)
+* **Status Recovery:** Unpacks string objects immediately back to Python memory instances.
 
 Asynchronous I/O and Threading
 -------------------------------
@@ -347,41 +187,16 @@ Pyrite uses a ThreadPoolExecutor to handle database saves asynchronously, preven
 
 .. code-block:: python
 
-    from concurrent.futures import ThreadPoolExecutor
-    import threading
-    
-    class World:
-        def __init__(self):
-            self.executor = ThreadPoolExecutor(max_workers=max(4, (os.cpu_count() or 5) - 1))
-            self.db_lock = threading.Lock()
-            self.connection = sqlite3.connect(self.save_path, check_same_thread=False)
-        
-        def unload_chunk(self, pos):
-            """Queue chunk save to background thread"""
-            if pos in self.active_chunks:
-                chunk = self.active_chunks.pop(pos)
-                
-                if not chunk.is_empty and chunk.voxels is not None:
-                    # Submit save task to thread pool
-                    lightmap_copy = chunk.lightmap.copy() if chunk.lightmap else None
-                    self.executor.submit(
-                        self.save_chunk_to_db,
-                        pos[0], pos[1], pos[2],
-                        chunk.voxels.copy(),
-                        lightmap_copy
-                    )
-        
-        def save_chunk_to_db(self, x, y, z, voxels, lightmap):
-            """Thread-safe chunk save"""
-            data = zlib.compress(voxels.tobytes())
-            l_data = zlib.compress(lightmap.tobytes()) if lightmap is not None else None
-            
-            with self.db_lock:
-                self.cursor.execute(
-                    'INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)',
-                    (x, y, z, data, l_data)
-                )
-                self.connection.commit()
+    self.executor = ThreadPoolExecutor(max_workers=max(4, (os.cpu_count() or 5) - 1))
+    self.db_lock = threading.Lock()
+
+* **ThreadPool Isolation:** Threading queues independently submit disk write commands avoiding full render stalling during chunk teardowns.
+
+.. code-block:: python
+
+    self.executor.submit(self.save_chunk_to_db, x, y, z, voxels.copy(), lightmap.copy())
+
+* **Non-Blocking Eviction:** Pushing memory to concurrent futures allows main Pygame flow continuation smoothly.
 
 **Main Thread Integration:**
 
@@ -389,10 +204,10 @@ Pyrite uses a ThreadPoolExecutor to handle database saves asynchronously, preven
 
     # On world init
     world = World(app, save_name, seed)
-    
+
     # On chunk unload (main thread queues, background thread handles)
     world.unload_chunk(chunk_position)
-    
+
     # On application quit
     world.save()  # Block until all chunks flushed
 
@@ -416,51 +231,19 @@ World Management (File System)
 
 .. code-block:: python
 
-    def list_worlds():
-        """Find all saved worlds"""
-        worlds = []
-        saves_dir = 'saves'
-        
-        if not os.path.exists(saves_dir):
-            return worlds
-        
-        for world_name in os.listdir(saves_dir):
-            world_path = os.path.join(saves_dir, world_name)
-            db_file = os.path.join(world_path, f'{world_name}.db')
-            
-            if os.path.isfile(db_file):
-                # Load metadata
-                conn = sqlite3.connect(db_file)
-                cursor = conn.cursor()
-                
-                cursor.execute("SELECT value FROM world_meta WHERE key='created_time'")
-                created = cursor.fetchone()[0] if cursor.fetchone() else 0
-                
-                cursor.execute("SELECT value FROM world_meta WHERE key='game_mode'")
-                mode = cursor.fetchone()[0] if cursor.fetchone() else 'SURVIVAL'
-                
-                conn.close()
-                
-                worlds.append({
-                    'name': world_name,
-                    'path': db_file,
-                    'created': created,
-                    'mode': mode
-                })
-        
-        return worlds
+    for world_name in os.listdir('saves'):
+        pass
+
+* **Menu Indexing:** OS module recursively finds instances to build display parameters effortlessly.
 
 **Delete World:**
 
 .. code-block:: python
 
-    def delete_world(world_name):
-        """Delete world and all save files"""
-        import shutil
-        
-        world_path = f'saves/{world_name}'
-        if os.path.exists(world_path):
-            shutil.rmtree(world_path)
+    if os.path.exists(world_path):
+        shutil.rmtree(world_path)
+
+* **Deep Cleaning:** Removes associated filesystem paths fully off drives.
 
 WAL Mode Benefits
 -----------------
@@ -476,10 +259,10 @@ SQLite's Write-Ahead Logging (WAL) mode provides:
 
 .. code-block:: python
 
-    conn = sqlite3.connect(db_path)
     conn.execute('PRAGMA journal_mode=WAL')
     conn.execute('PRAGMA synchronous=NORMAL')  # Balance safety (FULL=safer, NORMAL=faster)
-    conn.close()
+
+* **I/O Balance:** Activates specialized SQLite caching behaviors maximizing engine speeds directly without hard freezing read capabilities on chunk boundaries.
 
 Replication Checklist
 ---------------------
@@ -492,5 +275,3 @@ Replication Checklist
 6. ✓ Enable WAL mode
 7. ✓ Handle database cleanup on quit
 8. ✓ Implement world listing from filesystem
-
-

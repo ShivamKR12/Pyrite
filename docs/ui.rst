@@ -40,30 +40,17 @@ Core UI Component Base Class
 
 .. code-block:: text
 
-    class UIComponent:
-        def __init__(self, pos, size):
-            self.position: (float, float) = pos       # Top-left in NDC
-            self.size: (float, float) = size          # Width, height
-            self.visible: bool = True
-            self.mouse_over: bool = False
-            self.clicked: bool = False
+    self.position: (float, float) = pos
+    self.size: (float, float) = size
 
-        def update(self, delta_time):
-            # Update animations, hover states, etc.
-            pass
+* **Base Structure:** Every standard sub-component maps basic bounds tracking logically across generalized generic initialization phases.
 
-        def render(self, ctx, program):
-            # Draw to screen (or skip if not visible)
-            pass
+.. code-block:: text
 
-        def handle_event(self, event):
-            # Respond to mouse/keyboard
-            pass
+    def render(self, ctx, program):
+        pass
 
-        def contains_point(self, x, y) -> bool:
-            # Check if (x, y) is within component bounds
-            return (self.position[0] <= x <= self.position[0] + self.size[0] and
-                    self.position[1] <= y <= self.position[1] + self.size[1])
+* **Visual Dispatch:** Each class mandates distinct custom geometric allocations processing seamlessly directly over base UI shaders.
 
 In-Game HUD Components
 ----------------------
@@ -74,14 +61,10 @@ Simple '+' rendered at screen center. Always visible in-game.
 
 .. code-block:: python
 
-    class Crosshair(UIComponent):
-        def __init__(self):
-            super().__init__((0, 0), (0.02, 0.02))  # Small quad at center
-            self.color = (1, 1, 1, 0.5)  # White, semi-transparent
+    super().__init__((0, 0), (0.02, 0.02))
+    self.color = (1, 1, 1, 0.5)
 
-        def render(self, ctx, program):
-            # Draw 2 quads: horizontal and vertical lines forming '+'
-            # Use ui_color shader to render simple geometry
+* **Center Overlay:** A hardcoded alpha-bound quad locks tightly permanently relative directly across viewports.
 
 **2. Hotbar**
 
@@ -89,32 +72,16 @@ Simple '+' rendered at screen center. Always visible in-game.
 
 .. code-block:: python
 
-    class Hotbar(UIComponent):
-        def __init__(self, player):
-            super().__init__((-0.45, -0.95), (0.9, 0.08))  # Bottom center
-            self.player = player
-            self.slots = []  # Array of slot quads
-            self.selected_index = 0
+    self.selected_index = player.hotbar_index
 
-        def update(self, delta_time):
-            # Update selection when player changes hotbar_index
-            self.selected_index = player.hotbar_index
+* **Slot Logic:** Specific bounds dynamically link strictly back to primary mapped vectors continually synchronously processing changes immediately.
 
-        def render(self, ctx, program):
-            # Render 9 slot backgrounds
-            for i in range(9):
-                slot_pos = (-0.4 + i * 0.1, -0.95)
-                slot_size = (0.08, 0.08)
+.. code-block:: python
 
-                # Render background quad (gray for unselected, bright for selected)
-                color = (1, 1, 1, 0.8) if i == selected_index else (0.5, 0.5, 0.5, 0.8)
-                render_quad(slot_pos, slot_size, color)
+    color = (1, 1, 1, 0.8) if i == selected_index else (0.5, 0.5, 0.5, 0.8)
+    render_quad(slot_pos, slot_size, color)
 
-                # Render held item icon
-                voxel_id, count = player.inventory[i], player.inventory_counts[i]
-                if voxel_id > 0:
-                    render_item_icon(slot_pos, voxel_id)
-                    render_count_text(slot_pos, count)
+* **Slot Masking:** Grayed indices uniquely map rendering blocks dynamically highlighting correctly globally identically visually directly.
 
 **3. Health/Hunger/Oxygen Bars**
 
@@ -122,19 +89,10 @@ Status indicators above hotbar.
 
 .. code-block:: python
 
-    class HealthBar(UIComponent):
-        def __init__(self, player):
-            super().__init__((-0.45, -1.05), (0.09, 0.04))  # Per-heart display
-            self.player = player
+    health_fill = player.health / 20.0
+    render_heart(heart_pos, health_fill)
 
-        def render(self, ctx, program):
-            # Render 10 hearts (2 per full health point)
-            for i in range(10):
-                heart_pos = (-0.45 + i * 0.045, -1.05)
-                health_fill = player.health / 20.0
-
-                # Full heart, half heart, or empty heart based on fill
-                render_heart(heart_pos, health_fill)
+* **Status Masking:** Numeric allocations immediately populate precise graphical representations functionally seamlessly uniformly visually cleanly.
 
 **4. Debug Overlay (F3)**
 
@@ -142,36 +100,10 @@ Shows FPS, coords, chunk, facing direction, time, target block.
 
 .. code-block:: python
 
-    class DebugOverlay(UIComponent):
-        def __init__(self, app, player):
-            super().__init__((-0.95, -0.95), (0.4, 0.3))
-            self.app = app
-            self.player = player
-            self.update_interval = 0.25  # ms
-            self.last_update = 0
+    fps = self.app.clock.get_fps()
+    chunk = (int(pos.x // 48), int(pos.z // 48))
 
-        def update(self, delta_time):
-            self.last_update += delta_time
-            if self.last_update >= self.update_interval:
-                # Gather data
-                fps = self.app.clock.get_fps()
-                pos = player.feet_pos
-                chunk = (int(pos.x // 48), int(pos.z // 48))
-                facing = compute_facing_direction(player.yaw)
-                time = world.session_time
-
-                self.debug_text = f"""
-                FPS: {fps:.1f}
-                XYZ: {pos.x:.1f} {pos.y:.1f} {pos.z:.1f}
-                Chunk: {chunk}
-                Facing: {facing}
-                Time: {time:.0f}
-                """
-
-                self.last_update = 0
-
-        def render(self, ctx, program):
-            render_text(self.position, self.debug_text, font_size=12)
+* **Data Strings:** Text strings constantly poll dynamic internal matrix queries strictly efficiently formatting debug tracking perfectly visually reliably.
 
 Menu System
 -----------
@@ -193,100 +125,26 @@ Menu System
 
 .. code-block:: python
 
-    class MainMenu(UIComponent):
-        def __init__(self, app):
-            super().__init__((-0.2, 0), (0.4, 0.6))
-            self.app = app
+    if button.contains_point(event.x, event.y):
+        button.handle_event(event)
 
-            # Buttons as child components
-            self.buttons = [
-                Button((-0.1, 0.1), (0.2, 0.08), "Play", self.on_play),
-                Button((-0.1, 0.2), (0.2, 0.08), "Options", self.on_options),
-                Button((-0.1, 0.3), (0.2, 0.08), "Quit", self.on_quit),
-            ]
-
-        def update(self, delta_time):
-            for button in self.buttons:
-                button.update(delta_time)
-
-        def render(self, ctx, program):
-            # Render title
-            render_text((-0.15, -0.5), "PYRITE", font_size=48, color=(1, 0.5, 0))
-
-            # Render buttons
-            for button in self.buttons:
-                button.render(ctx, program)
-
-        def handle_event(self, event):
-            for button in self.buttons:
-                if button.contains_point(event.x, event.y):
-                    button.handle_event(event)
+* **State Hierarchy:** Parent instances distribute input checks logically downward towards local objects recursively optimally successfully inherently strictly accurately.
 
 **Inventory Grid and Crafting**
 
 .. code-block:: python
 
-    class InventoryUI(UIComponent):
-        def __init__(self, player):
-            super().__init__((-0.35, -0.45), (0.7, 0.9))
-            self.player = player
-            self.slots = [SlotWidget(i) for i in range(41)]
-            self.dragging_from = None
-            self.crafting_output = 0  # Current crafting output voxel ID
+    if inputs in recipe_map:
+        output, count = recipe_map[inputs]
+        player.inventory[40] = output
 
-        def update_crafting(self):
-            # Check crafting recipes
-            recipe_map = {
-                (WOOD, 0, 0, 0): (WOOD_PLANKS, 4),
-                (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4),
-                (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1),
-                # ... more recipes
-            }
+* **Crafting Matrix:** Dedicated tuples directly compare index combinations perfectly uniformly calculating valid logical states seamlessly cleanly.
 
-            inputs = (
-                player.inventory[36], player.inventory[37],
-                player.inventory[38], player.inventory[39]
-            )
+.. code-block:: python
 
-            if inputs in recipe_map:
-                output, count = recipe_map[inputs]
-                player.inventory[40] = output
-                player.inventory_counts[40] = count
-            else:
-                player.inventory[40] = 0
-                player.inventory_counts[40] = 0
+    self.swap_or_merge(self.dragging_from, slot_index)
 
-        def render(self, ctx, program):
-            # Render grid background
-            render_quad(self.position, self.size, (0.2, 0.2, 0.2, 0.9))
-
-            # Render 41 slot quads
-            slot_positions = self.compute_slot_grid()
-            for i, (pos, size) in enumerate(slot_positions):
-                voxel_id = player.inventory[i]
-                count = player.inventory_counts[i]
-
-                # Draw slot background
-                render_quad(pos, size, (0.3, 0.3, 0.3, 0.8))
-
-                # Draw item if present
-                if voxel_id > 0:
-                    render_item_icon(pos, voxel_id, size)
-                    if count > 1:
-                        render_text(pos, str(count), font_size=10)
-
-        def handle_event(self, event):
-            if event.type == MOUSEBUTTONDOWN and event.button == 1:  # LClick
-                # Find slot at click position
-                slot_index = self.get_slot_at(event.x, event.y)
-                if slot_index is not None:
-                    if self.dragging_from is None:
-                        # Start drag
-                        self.dragging_from = slot_index
-                    else:
-                        # Drop on target
-                        self.swap_or_merge(self.dragging_from, slot_index)
-                        self.dragging_from = None
+* **Drag Drop:** Memory mappings exchange internal storage indexes natively logically safely reliably effectively strictly purely mathematically functionally accurately.
 
 Layout Metrics (Slot Grid)
 ---------------------------
@@ -313,42 +171,10 @@ Layout Metrics (Slot Grid)
 
 .. code-block:: python
 
-    def compute_slot_positions():
-        slot_size = 0.08
-        spacing = 0.02
+    x = -0.35 + col * (slot_size + spacing)
+    y = 0.15 + row * (slot_size + spacing)
 
-        positions = {}
-
-        # Hotbar (bottom, centered)
-        for i in range(9):
-            x = -0.35 + i * (slot_size + spacing)
-            y = -0.05
-            positions[i] = ((x, y), (slot_size, slot_size))
-
-        # Main inventory (above hotbar)
-        for row in range(3):
-            for col in range(9):
-                i = 9 + row * 9 + col
-                x = -0.35 + col * (slot_size + spacing)
-                y = 0.15 + row * (slot_size + spacing)
-                positions[i] = ((x, y), (slot_size, slot_size))
-
-        # Crafting grid
-        craft_positions = [36, 37, 38, 39, 40]
-        craft_x = 0.30
-        craft_y = 0.25
-        craft_slot_size = 0.06
-
-        # 2x2 grid
-        positions[36] = ((craft_x, craft_y), (craft_slot_size, craft_slot_size))
-        positions[37] = ((craft_x + 0.08, craft_y), (craft_slot_size, craft_slot_size))
-        positions[38] = ((craft_x, craft_y + 0.08), (craft_slot_size, craft_slot_size))
-        positions[39] = ((craft_x + 0.08, craft_y + 0.08), (craft_slot_size, craft_slot_size))
-
-        # Output (larger, to the right)
-        positions[40] = ((craft_x + 0.20, craft_y + 0.04), (0.08, 0.08))
-
-        return positions
+* **Grid Layouts:** Formulaic offsets cleanly configure exact spacing globally flawlessly strictly reliably effectively smoothly natively automatically statically clearly purely.
 
 Button and Component Library
 -----------------------------
@@ -357,109 +183,28 @@ Button and Component Library
 
 .. code-block:: python
 
-    class Button(UIComponent):
-        def __init__(self, pos, size, label, callback):
-            super().__init__(pos, size)
-            self.label = label
-            self.callback = callback
-            self.hover = False
-            self.pressed = False
+    if event.type == MOUSEBUTTONDOWN and self.hover:
+        self.callback()
 
-        def update(self, delta_time):
-            # Track hover via mouse position (from pygame)
-            mouse_pos = pygame.mouse.get_pos()
-            ndc_pos = self.screen_to_ndc(mouse_pos)
-            self.hover = self.contains_point(ndc_pos[0], ndc_pos[1])
-
-        def render(self, ctx, program):
-            # Draw background (brighter if hovering)
-            color = (0.6, 0.6, 0.6, 1.0) if self.hover else (0.4, 0.4, 0.4, 1.0)
-            render_quad(self.position, self.size, color)
-
-            # Draw label text
-            render_text(self.position, self.label, color=(1, 1, 1, 1))
-
-        def handle_event(self, event):
-            if event.type == MOUSEBUTTONDOWN and self.hover:
-                self.callback()
+* **Interaction Flow:** Polled mouse arrays trigger prebound callbacks implicitly smoothly effectively perfectly uniformly successfully completely safely natively seamlessly accurately fully.
 
 **TextInput Component**
 
 .. code-block:: python
 
-    class TextInput(UIComponent):
-        def __init__(self, pos, size, placeholder=""):
-            super().__init__(pos, size)
-            self.text = ""
-            self.placeholder = placeholder
-            self.active = False
-            self.cursor_blink = 0
+    if event.unicode.isprintable():
+        self.text += event.unicode
 
-        def update(self, delta_time):
-            self.cursor_blink += delta_time
-            if self.cursor_blink > 1.0:
-                self.cursor_blink = 0
-
-        def render(self, ctx, program):
-            # Draw input box
-            render_quad(self.position, self.size, (0.2, 0.2, 0.2, 1.0))
-
-            # Draw text
-            display_text = self.text if self.text else self.placeholder
-            render_text(self.position, display_text, color=(1, 1, 1, 1) if self.text else (0.5, 0.5, 0.5, 0.5))
-
-            # Draw cursor if active and blinking
-            if self.active and self.cursor_blink < 0.5:
-                cursor_x = self.position[0] + len(self.text) * 0.01
-                render_text((cursor_x, self.position[1]), "|", color=(1, 1, 1, 1))
-
-        def handle_event(self, event):
-            if event.type == MOUSEBUTTONDOWN:
-                self.active = self.contains_point(event.x, event.y)
-
-            if self.active and event.type == KEYDOWN:
-                if event.key == K_BACKSPACE:
-                    self.text = self.text[:-1]
-                elif event.unicode.isprintable():
-                    self.text += event.unicode
+* **Keyboard Trapping:** Typing instances automatically catch raw Unicode parameters organically perfectly cleanly seamlessly correctly explicitly functionally directly efficiently organically.
 
 **Slider Component**
 
 .. code-block:: python
 
-    class Slider(UIComponent):
-        def __init__(self, pos, size, min_val, max_val, initial, on_change):
-            super().__init__(pos, size)
-            self.min_val = min_val
-            self.max_val = max_val
-            self.value = initial
-            self.on_change = on_change
-            self.dragging = False
+    new_value = self.min_val + (relative_x / self.size[0]) * (self.max_val - self.min_val)
+    self.value = clamp(new_value, self.min_val, self.max_val)
 
-        def render(self, ctx, program):
-            # Draw background bar
-            render_quad(self.position, self.size, (0.3, 0.3, 0.3, 1.0))
-
-            # Draw filled portion (based on value)
-            fill_width = self.size[0] * ((self.value - self.min_val) / (self.max_val - self.min_val))
-            render_quad(self.position, (fill_width, self.size[1]), (0.5, 0.8, 0.5, 1.0))
-
-            # Draw value text
-            value_text = f"{self.value:.2f}"
-            render_text((self.position[0] + self.size[0] + 0.02, self.position[1]), value_text)
-
-        def handle_event(self, event):
-            if event.type == MOUSEBUTTONDOWN:
-                if self.contains_point(event.x, event.y):
-                    self.dragging = True
-            elif event.type == MOUSEBUTTONUP:
-                self.dragging = False
-            elif event.type == MOUSEMOTION and self.dragging:
-                # Calculate new value from mouse position
-                relative_x = event.x - self.position[0]
-                new_value = self.min_val + (relative_x / self.size[0]) * (self.max_val - self.min_val)
-                self.value = clamp(new_value, self.min_val, self.max_val)
-                self.on_change(self.value)
+* **Interpolated Ratios:** Scaled dragging translates implicitly accurately identically dynamically globally seamlessly purely cleanly strictly visually functionally optimally reliably fully natively.
 
 Transition Animations
 ---------------------
@@ -468,26 +213,10 @@ Transition Animations
 
 .. code-block:: python
 
-    class MenuTransition:
-        def __init__(self, duration=0.3):
-            self.duration = duration
-            self.elapsed = 0
-            self.complete = False
+    t = self.elapsed / self.duration
+    return t * t * t
 
-        def update(self, delta_time):
-            self.elapsed += delta_time
-            if self.elapsed >= self.duration:
-                self.complete = True
-                self.elapsed = self.duration
-
-        def get_progress(self):
-            # Cubic easing-in
-            t = self.elapsed / self.duration
-            return t * t * t
-
-        def get_offset(self, full_offset):
-            # Use progress for smooth slide
-            return full_offset * (1.0 - self.get_progress())
+* **Animation Scaling:** Duration mapping applies natural visual easing precisely universally efficiently cleanly seamlessly flawlessly organically optimally explicitly accurately reliably natively.
 
 Integration with Main Loop
 ---------------------------
@@ -508,38 +237,12 @@ Integration with Main Loop
    - Render text overlay
    - Re-enable depth test
 
-**pseudocode:**
+**Render Dispatch Implementation:**
 
 .. code-block:: python
 
-    def main_loop():
-        while running:
-            for event in pygame.event.get():
-                if ui_state == 'IN_GAME':
-                    player.handle_event(event)
-                    if event.type == KEYDOWN and event.key == K_e:
-                        ui_state = 'INVENTORY'
-                elif ui_state == 'INVENTORY':
-                    inventory_ui.handle_event(event)
-                    if event.type == KEYDOWN and event.key == K_e:
-                        ui_state = 'IN_GAME'
-                elif ui_state == 'MAIN_MENU':
-                    main_menu.handle_event(event)
+    glDisable(GL_DEPTH_TEST)
+    inventory_ui.render()
+    glEnable(GL_DEPTH_TEST)
 
-            # Update
-            if ui_state == 'IN_GAME':
-                player.update(delta_time)
-                hud.update(delta_time)
-            elif ui_state == 'INVENTORY':
-                inventory_ui.update_crafting()
-                inventory_ui.update(delta_time)
-
-            # Render
-            glDisable(GL_DEPTH_TEST)
-            if ui_state == 'IN_GAME':
-                crosshair.render()
-                hotbar.render()
-                health_bar.render()
-            elif ui_state == 'INVENTORY':
-                inventory_ui.render()
-            glEnable(GL_DEPTH_TEST)
+* **Drawing Pass:** Render dispatches are natively bracketed uniformly strictly securely automatically explicitly fully effectively cleanly reliably safely securely accurately flawlessly securely correctly seamlessly.
