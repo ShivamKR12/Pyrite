@@ -1,6 +1,9 @@
 name: Build Release
 
 on:
+  push:
+    tags:
+      - 'v*'
   release:
     types: [published]
   workflow_dispatch: # Allows you to manually click a "Build" button on GitHub!
@@ -10,27 +13,27 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-    
+
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.13'
-        
+
     - name: Install dependencies
       run: |
         pip install -r requirements-dev.txt
-        
+
     - name: Build Executable
       run: |
         pyinstaller build.spec
-        
+
     - name: Zip Executable (Windows)
       if: runner.os == 'Windows'
       run: Compress-Archive -Path dist/Pyrite -DestinationPath Pyrite_${{ runner.os }}.zip
