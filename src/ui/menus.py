@@ -52,7 +52,8 @@ class MainMenu:
             self.title_tex: Any = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
             self.title_tex.build_mipmaps()
             self.title_tex.filter = (mgl.LINEAR_MIPMAP_LINEAR, mgl.LINEAR)
-        except Exception:
+        except Exception as e:
+            print(f'[SYSTEM] Failed to load logo texture: {e}')
             self.title_tex = self.title_renderer.get_texture('Pyrite')
 
         try:
@@ -248,19 +249,19 @@ class MainMenu:
                     creation_date = row[3][:16].replace('T', ' ') if row[3] else 'Unknown'
                     last_played = row[4][:16].replace('T', ' ') if row[4] else 'Unknown'
 
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'[SYSTEM] Error reading world meta: {e}')
             finally:
                 if cursor:
                     try:
                         cursor.close()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f'[SYSTEM] Error closing cursor: {e}')
                 if connection:
                     try:
                         connection.close()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f'[SYSTEM] Error closing connection: {e}')
 
             def load_and_reset(sn: str = save_name) -> None:
                 self.app.init_game_session(sn)

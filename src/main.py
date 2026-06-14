@@ -178,13 +178,13 @@ class Pyrite:
                 if cursor:
                     try:
                         cursor.close()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f'[SYSTEM] Error closing cursor: {e}')
                 if connection:
                     try:
                         connection.close()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f'[SYSTEM] Error closing connection: {e}')
 
         else:
             seed = force_seed if force_seed is not None else random.randint(100000, 999999999)

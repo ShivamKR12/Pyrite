@@ -810,34 +810,34 @@ class World:
             for cur in self.thread_cursors:
                 try:
                     cur.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f'[SYSTEM] Error closing background cursor: {e}')
             self.thread_cursors.clear()
 
             # Close all background thread connections
             for conn in self.thread_connections:
                 try:
                     conn.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f'[SYSTEM] Error closing background connection: {e}')
             self.thread_connections.clear()
 
             try:
                 self.cursor.close()
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'[SYSTEM] Error closing cursor: {e}')
             try:
                 self.connection.close()
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'[SYSTEM] Error closing connection: {e}')
 
             # Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu
             for vbo, vao in self.vbo_pool:
                 try:
                     vbo.release()
                     vao.release()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f'[SYSTEM] Error releasing VBO/VAO from pool: {e}')
 
             self.vbo_pool.clear()
 
@@ -847,17 +847,17 @@ class World:
                         if ch.mesh.vao:
                             try:
                                 ch.mesh.vao.release()
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                print(f'[SYSTEM] Error releasing chunk VAO: {e}')
 
                         if ch.mesh.vbo:
                             try:
                                 ch.mesh.vbo.release()
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                print(f'[SYSTEM] Error releasing chunk VBO: {e}')
 
             if self.bbox_mesh and self.bbox_mesh.vao:
                 try:
                     self.bbox_mesh.vao.release()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f'[SYSTEM] Error releasing bbox VAO: {e}')
