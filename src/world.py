@@ -107,6 +107,8 @@ class World:
         os.makedirs('saves', exist_ok=True)
         self.save_path: str = f'saves/{self.save_name}.db'
         self.thread_local: threading.local = threading.local()
+        self.thread_connections: List[sqlite3.Connection] = []
+        self.thread_cursors: List[sqlite3.Cursor] = []
         self.db_lock: threading.Lock = threading.Lock()
         self.connection: sqlite3.Connection = sqlite3.connect(self.save_path, check_same_thread=False)
         self.cursor: sqlite3.Cursor = self.connection.cursor()
@@ -451,8 +453,11 @@ class World:
         cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
 
         if not hasattr(self.thread_local, 'cursor'):
-            conn = sqlite3.connect(self.save_path, timeout=10)
+            conn = sqlite3.connect(self.save_path, timeout=10, check_same_thread=False)
             self.thread_local.cursor = conn.cursor()
+            with self.db_lock:
+                self.thread_connections.append(conn)
+                self.thread_cursors.append(self.thread_local.cursor)
 
         self.thread_local.cursor.execute('SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?', (x, y, z))
         row = self.thread_local.cursor.fetchone()
@@ -734,81 +739,125 @@ class World:
         Synchronously dumps all currently active chunks, inventory contents,
         player coordinates, and world metadata safely to the SQLite disk on exit.
         """
-        # Save all currently active chunks synchronously
-        for chunk in self.active_chunks.values():
-            if not chunk.is_empty and chunk.voxels is not None:
-                self.save_chunk_to_db(
-                    chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels, chunk.lightmap
-                )
-
-        # Save player inventory, hotbar state & position
-        p_data = {
-            'inventory': [int(item) for item in self.app.player.inventory],
-            'counts': [int(count) for count in self.app.player.inventory_counts],
-            'hotbar_index': int(self.app.player.hotbar_index),
-            'position': [
-                float(self.app.player.position.x),
-                float(self.app.player.position.y),
-                float(self.app.player.position.z),
-            ],
-            'yaw': float(self.app.player.yaw),
-            'pitch': float(self.app.player.pitch),
-            'health': float(self.app.player.health),
-            'hunger': float(self.app.player.hunger),
-            'oxygen': float(self.app.player.oxygen),
-            'time_played': float(self.app.world_session_time),
-        }
-
-        now = datetime.datetime.now().isoformat()
-        with self.db_lock:
-            self.cursor.execute(
-                'UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1', (now, self.app.player.game_mode)
-            )
-            self.cursor.execute('INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', (1, json.dumps(p_data)))
-
-            # Save dropped items
-            if self.app.scene and hasattr(self.app.scene, 'item_manager'):
-                self.cursor.execute('DELETE FROM dropped_items')
-                item_data = []
-
-                for item in self.app.scene.item_manager.items:
-                    item_data.append(
-                        (
-                            item.voxel_id,
-                            float(item.position.x),
-                            float(item.position.y),
-                            float(item.position.z),
-                            float(item.velocity.x),
-                            float(item.velocity.y),
-                            float(item.velocity.z),
-                        )
+        try:
+            # Save all currently active chunks synchronously
+            for chunk in self.active_chunks.values():
+                if not chunk.is_empty and chunk.voxels is not None:
+                    self.save_chunk_to_db(
+                        chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels, chunk.lightmap
                     )
 
-                self.cursor.executemany(
-                    'INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    item_data,
+            # Save player inventory, hotbar state & position
+            p_data = {
+                'inventory': [int(item) for item in self.app.player.inventory],
+                'counts': [int(count) for count in self.app.player.inventory_counts],
+                'hotbar_index': int(self.app.player.hotbar_index),
+                'position': [
+                    float(self.app.player.position.x),
+                    float(self.app.player.position.y),
+                    float(self.app.player.position.z),
+                ],
+                'yaw': float(self.app.player.yaw),
+                'pitch': float(self.app.player.pitch),
+                'health': float(self.app.player.health),
+                'hunger': float(self.app.player.hunger),
+                'oxygen': float(self.app.player.oxygen),
+                'time_played': float(self.app.world_session_time),
+            }
+
+            now = datetime.datetime.now().isoformat()
+            with self.db_lock:
+                self.cursor.execute(
+                    'UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1', (now, self.app.player.game_mode)
+                )
+                self.cursor.execute(
+                    'INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)', (1, json.dumps(p_data))
                 )
 
-            self.connection.commit()
+                # Save dropped items
+                if self.app.scene and hasattr(self.app.scene, 'item_manager'):
+                    self.cursor.execute('DELETE FROM dropped_items')
+                    item_data = []
 
-        # Wait for any pending asynchronous saves from unload_chunk to complete
-        self.executor.shutdown(wait=True)
-        self.connection.close()
+                    for item in self.app.scene.item_manager.items:
+                        item_data.append(
+                            (
+                                int(item.voxel_id),
+                                float(item.position.x),
+                                float(item.position.y),
+                                float(item.position.z),
+                                float(item.velocity.x),
+                                float(item.velocity.y),
+                                float(item.velocity.z),
+                            )
+                        )
 
-        # Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu
-        for vbo, vao in self.vbo_pool:
-            vbo.release()
-            vao.release()
+                    self.cursor.executemany(
+                        'INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                        item_data,
+                    )
 
-        self.vbo_pool.clear()
+                self.connection.commit()
 
-        for ch in self.chunks:
-            if ch:
-                if ch.mesh:
-                    if ch.mesh.vao:
-                        ch.mesh.vao.release()
+        except Exception as e:
+            print(f'[SYSTEM] Error during World.save(): {e}')
 
-                    if ch.mesh.vbo:
-                        ch.mesh.vbo.release()
+        finally:
+            # Wait for any pending asynchronous saves from unload_chunk to complete
+            self.executor.shutdown(wait=True)
 
-        self.bbox_mesh.vao.release()
+            # Close all background thread cursors
+            for cur in self.thread_cursors:
+                try:
+                    cur.close()
+                except Exception:
+                    pass
+            self.thread_cursors.clear()
+
+            # Close all background thread connections
+            for conn in self.thread_connections:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            self.thread_connections.clear()
+
+            try:
+                self.cursor.close()
+            except Exception:
+                pass
+            try:
+                self.connection.close()
+            except Exception:
+                pass
+
+            # Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu
+            for vbo, vao in self.vbo_pool:
+                try:
+                    vbo.release()
+                    vao.release()
+                except Exception:
+                    pass
+
+            self.vbo_pool.clear()
+
+            for ch in self.chunks:
+                if ch:
+                    if ch.mesh:
+                        if ch.mesh.vao:
+                            try:
+                                ch.mesh.vao.release()
+                            except Exception:
+                                pass
+
+                        if ch.mesh.vbo:
+                            try:
+                                ch.mesh.vbo.release()
+                            except Exception:
+                                pass
+
+            if self.bbox_mesh and self.bbox_mesh.vao:
+                try:
+                    self.bbox_mesh.vao.release()
+                except Exception:
+                    pass

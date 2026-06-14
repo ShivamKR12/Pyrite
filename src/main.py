@@ -62,8 +62,8 @@ class Pyrite:
         except pg.error:
             pass
 
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSIONSION, MAJOR_VERSION)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSIONSION, MINOR_VERSION)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, MAJOR_VERSION)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, MINOR_VERSION)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
         pg.display.gl_set_attribute(pg.GL_DEPTH_SIZE, DEPTH_SIZE)
         pg.display.gl_set_attribute(pg.GL_MULTISAMPLESAMPLES, NUM_SAMPLES)
@@ -161,18 +161,30 @@ class Pyrite:
         seed: int = 0
 
         if os.path.exists(save_path):
+            connection: Optional[sqlite3.Connection] = None
+            cursor: Optional[sqlite3.Cursor] = None
             try:
-                connection: sqlite3.Connection = sqlite3.connect(save_path)
-                cursor: sqlite3.Cursor = connection.cursor()
+                connection = sqlite3.connect(save_path)
+                cursor = connection.cursor()
                 cursor.execute('SELECT seed FROM world_meta WHERE id=1')
                 row: Any = cursor.fetchone()
                 if row:
                     seed = row[0]
-                connection.close()
 
             except sqlite3.Error as e:
                 print(f'[SYSTEM] Could not read seed from existing save file: {e}')
                 seed = random.randint(100000, 999999999)
+            finally:
+                if cursor:
+                    try:
+                        cursor.close()
+                    except Exception:
+                        pass
+                if connection:
+                    try:
+                        connection.close()
+                    except Exception:
+                        pass
 
         else:
             seed = force_seed if force_seed is not None else random.randint(100000, 999999999)

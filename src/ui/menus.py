@@ -231,9 +231,11 @@ class MainMenu:
             creation_date: str = 'Unknown'
             last_played: str = 'Unknown'
 
+            connection: Optional[sqlite3.Connection] = None
+            cursor: Optional[sqlite3.Cursor] = None
             try:
-                connection: sqlite3.Connection = sqlite3.connect(f'saves/{save_file}')
-                cursor: sqlite3.Cursor = connection.cursor()
+                connection = sqlite3.connect(f'saves/{save_file}')
+                cursor = connection.cursor()
                 cursor.execute(
                     'SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1'
                 )
@@ -246,10 +248,19 @@ class MainMenu:
                     creation_date = row[3][:16].replace('T', ' ') if row[3] else 'Unknown'
                     last_played = row[4][:16].replace('T', ' ') if row[4] else 'Unknown'
 
-                connection.close()
-
             except Exception:
                 pass
+            finally:
+                if cursor:
+                    try:
+                        cursor.close()
+                    except Exception:
+                        pass
+                if connection:
+                    try:
+                        connection.close()
+                    except Exception:
+                        pass
 
             def load_and_reset(sn: str = save_name) -> None:
                 self.app.init_game_session(sn)
@@ -288,11 +299,10 @@ class MainMenu:
             save_name: Base filename of the save (without extension).
         """
         try:
-            if os.path.exists(f'saves/{save_name}.db'):
-                os.remove(f'saves/{save_name}.db')
-
-            if os.path.exists(f'saves/{save_name}_thumb.png'):
-                os.remove(f'saves/{save_name}_thumb.png')
+            for ext in ('.db', '.db-shm', '.db-wal', '_thumb.png'):
+                path: str = f'saves/{save_name}{ext}'
+                if os.path.exists(path):
+                    os.remove(path)
 
         except Exception as e:
             print(f'[SYSTEM] Failed to delete world: {e}')

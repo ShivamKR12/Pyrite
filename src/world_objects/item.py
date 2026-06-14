@@ -44,7 +44,7 @@ class Item:
     """
 
     @global_profiler.profile_func('Item_Init')
-    def __init__(self, app: Any, position: Any, voxel_id: int) -> None:
+    def __init__(self, app: Any, position: Any, voxel_id: Any) -> None:
         """
         Spawns an item bursting out of the specified position with a randomized velocity,
         and applies a short pickup delay to prevent instant re-collection.
@@ -56,7 +56,8 @@ class Item:
             0.005,
             (random.random() - 0.5) * ITEM_SPAWN_VELOCITY_MULTIPLIER,
         )
-        self.voxel_id: int = voxel_id
+        # Handle potential bytes from SQLite blobs (NumPy uint8 serialization mismatch)
+        self.voxel_id: int = int.from_bytes(voxel_id, 'little') if isinstance(voxel_id, bytes) else int(voxel_id)
         self.rotation: float = 0.0
         self.scale: float = ITEM_SCALE
         self.is_dead: bool = False
@@ -187,6 +188,6 @@ class ItemManager:
             mesh.program['m_model'].write(item.get_model_matrix())
 
             if 'voxel_id' in mesh.program:
-                mesh.program['voxel_id'] = item.voxel_id
+                mesh.program['voxel_id'] = int(item.voxel_id)
 
             mesh.render()
