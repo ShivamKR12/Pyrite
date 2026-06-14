@@ -19,18 +19,22 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Fetches all history so tag lookups map cleanly
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.13'
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
+        pip install --upgrade pip
         pip install -r requirements-dev.txt
 
-    - name: Build Executable
+    - name: Build Executable via PyInstaller
       run: |
         pyinstaller build.spec
 
@@ -45,4 +49,8 @@ jobs:
     - name: Upload Release Asset
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: ${{ github.ref_name }}
         files: Pyrite_${{ runner.os }}.zip
+        prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
