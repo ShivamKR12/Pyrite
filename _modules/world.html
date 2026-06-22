@@ -634,8 +634,6 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -1098,6 +1096,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;saves&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">save_name</span><span class="si">}</span><span class="s1">.db&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_connections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_cursors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Cursor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">:</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">check_same_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">:</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
@@ -1451,8 +1451,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">y</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="p">,</span> <span class="s1">&#39;cursor&#39;</span><span class="p">):</span>
-            <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+            <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">check_same_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">thread_connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">thread_cursors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="o">.</span><span class="n">cursor</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
         <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
@@ -1754,84 +1757,128 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Synchronously dumps all currently active chunks, inventory contents,</span>
 <span class="sd">        player coordinates, and world metadata safely to the SQLite disk on exit.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Save all currently active chunks synchronously</span>
-        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="o">.</span><span class="n">is_empty</span> <span class="ow">and</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">save_chunk_to_db</span><span class="p">(</span>
-                    <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span> <span class="n">chunk</span><span class="o">.</span><span class="n">lightmap</span>
-                <span class="p">)</span>
-
-        <span class="c1"># Save player inventory, hotbar state &amp; position</span>
-        <span class="n">p_data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">],</span>
-            <span class="s1">&#39;counts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">],</span>
-            <span class="s1">&#39;hotbar_index&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">),</span>
-            <span class="s1">&#39;position&#39;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
-                <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
-                <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
-            <span class="p">],</span>
-            <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">yaw</span><span class="p">),</span>
-            <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">pitch</span><span class="p">),</span>
-            <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">health</span><span class="p">),</span>
-            <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hunger</span><span class="p">),</span>
-            <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">oxygen</span><span class="p">),</span>
-            <span class="s1">&#39;time_played&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">world_session_time</span><span class="p">),</span>
-        <span class="p">}</span>
-
-        <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="s1">&#39;UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">game_mode</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">p_data</span><span class="p">)))</span>
-
-            <span class="c1"># Save dropped items</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="p">,</span> <span class="s1">&#39;item_manager&#39;</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;DELETE FROM dropped_items&#39;</span><span class="p">)</span>
-                <span class="n">item_data</span> <span class="o">=</span> <span class="p">[]</span>
-
-                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">item_manager</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
-                    <span class="n">item_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="p">(</span>
-                            <span class="n">item</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">,</span>
-                            <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
-                            <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
-                            <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
-                            <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
-                            <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
-                            <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
-                        <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Save all currently active chunks synchronously</span>
+            <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="o">.</span><span class="n">is_empty</span> <span class="ow">and</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">save_chunk_to_db</span><span class="p">(</span>
+                        <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span> <span class="n">chunk</span><span class="o">.</span><span class="n">lightmap</span>
                     <span class="p">)</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span>
-                    <span class="s1">&#39;INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)&#39;</span><span class="p">,</span>
-                    <span class="n">item_data</span><span class="p">,</span>
+            <span class="c1"># Save player inventory, hotbar state &amp; position</span>
+            <span class="n">p_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;inventory&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">],</span>
+                <span class="s1">&#39;counts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">],</span>
+                <span class="s1">&#39;hotbar_index&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">),</span>
+                <span class="s1">&#39;position&#39;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
+                <span class="p">],</span>
+                <span class="s1">&#39;yaw&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">yaw</span><span class="p">),</span>
+                <span class="s1">&#39;pitch&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">pitch</span><span class="p">),</span>
+                <span class="s1">&#39;health&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">health</span><span class="p">),</span>
+                <span class="s1">&#39;hunger&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hunger</span><span class="p">),</span>
+                <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">oxygen</span><span class="p">),</span>
+                <span class="s1">&#39;time_played&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">world_session_time</span><span class="p">),</span>
+            <span class="p">}</span>
+
+            <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="s1">&#39;UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">game_mode</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="s1">&#39;INSERT OR REPLACE INTO player_data (id, data) VALUES (?, ?)&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">p_data</span><span class="p">))</span>
                 <span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+                <span class="c1"># Save dropped items</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="p">,</span> <span class="s1">&#39;item_manager&#39;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;DELETE FROM dropped_items&#39;</span><span class="p">)</span>
+                    <span class="n">item_data</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="c1"># Wait for any pending asynchronous saves from unload_chunk to complete</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">item_manager</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+                        <span class="n">item_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="p">(</span>
+                                <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">),</span>
+                                <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
+                                <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                                <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
+                                <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
+                                <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                                <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
 
-        <span class="c1"># Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu</span>
-        <span class="k">for</span> <span class="n">vbo</span><span class="p">,</span> <span class="n">vao</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="p">:</span>
-            <span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
-            <span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span>
+                        <span class="s1">&#39;INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)&#39;</span><span class="p">,</span>
+                        <span class="n">item_data</span><span class="p">,</span>
+                    <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">ch</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span>
-                        <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error during World.save(): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-                    <span class="k">if</span> <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vbo</span><span class="p">:</span>
-                        <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="c1"># Wait for any pending asynchronous saves from unload_chunk to complete</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">bbox_mesh</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span></div>
+            <span class="c1"># Close all background thread cursors</span>
+            <span class="k">for</span> <span class="n">cur</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_cursors</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">cur</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error closing background cursor: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread_cursors</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+            <span class="c1"># Close all background thread connections</span>
+            <span class="k">for</span> <span class="n">conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_connections</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error closing background connection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread_connections</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error closing cursor: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error closing connection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu</span>
+            <span class="k">for</span> <span class="n">vbo</span><span class="p">,</span> <span class="n">vao</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                    <span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error releasing VBO/VAO from pool: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ch</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error releasing chunk VAO: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vbo</span><span class="p">:</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error releasing chunk VBO: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bbox_mesh</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">bbox_mesh</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bbox_mesh</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error releasing bbox VAO: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

@@ -50,9 +50,18 @@ In OpenGL, a global `TEXTURE_MAP` array translates the block's `voxel_id` into a
 
 Ambient Occlusion
 -----------------
-Pyrite simulates soft shadows in the corners of blocks using Vertex-based Ambient Occlusion (AO). The engine checks the adjacent diagonal blocks of a face during meshing. Depending on how many blocks surround the corner, it assigns an `ao_id` (0 to 3). The shader interpolates this value across the face to create a smooth darkening effect.
+Pyrite simulates soft shadows in the corners of blocks using **vertex-based Ambient Occlusion (AO)**.
 
-Why this matters: ambient occlusion is a low-cost way to add depth and visual richness to blocky geometry without full ray tracing. It is evaluated once during mesh generation, then baked into the vertex data, so it does not require per-frame overhead.
+Key pipeline point:
+
+- **AO is computed during meshing** (CPU) from the local 3D block neighborhood.
+- The result is encoded into the per-vertex packed attributes.
+- The **shader** then simply interpolates/apply that AO during rendering.
+
+This keeps AO effectively free at runtime (no ray tracing / no per-frame neighborhood queries).
+
+Why this matters: AO adds depth and visual richness to blocky geometry without full ray tracing, and it does not require per-frame overhead because it is baked into the vertex data during mesh build.
+
 
 Render Flow Summary
 -------------------

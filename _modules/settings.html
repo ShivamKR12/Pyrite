@@ -634,8 +634,6 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -1051,8 +1049,8 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># camera</span>
 <span class="n">ASPECT_RATIO</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WINDOW_RESOLUTION</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">WINDOW_RESOLUTION</span><span class="o">.</span><span class="n">y</span>
 <span class="n">FOV_DEGREE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="n">VERTICLE_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">FOV_DEGREE</span><span class="p">)</span>  <span class="c1"># vertical FOV</span>
-<span class="n">HORIZONTAL_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">VERTICLE_FOV</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">)</span>  <span class="c1"># horizontal FOV</span>
+<span class="n">VERTICAL_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">FOV_DEGREE</span><span class="p">)</span>  <span class="c1"># vertical FOV</span>
+<span class="n">HORIZONTAL_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">VERTICAL_FOV</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">)</span>  <span class="c1"># horizontal FOV</span>
 <span class="n">NEAR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
 <span class="n">FAR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2000.0</span>
 <span class="n">PITCH_MAX</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">89</span><span class="p">)</span>

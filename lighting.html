@@ -201,8 +201,6 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -582,134 +580,155 @@
 </section>
 <section id="sunlight-propagation-algorithm">
 <h2>Sunlight Propagation Algorithm<a class="headerlink" href="#sunlight-propagation-algorithm" title="Link to this heading"></a></h2>
-<p><strong>Initialization (new or unloaded chunk):</strong></p>
-<ol class="arabic simple">
-<li><p>Cast sunlight downward from top</p></li>
-<li><p>Maintain level 15 through air until hitting solid blocks</p></li>
-<li><p>Reduce by 2 through water/leaves, by 1 through other transparent blocks</p></li>
-</ol>
+<p>This lighting system uses two different update paths:</p>
+<ul class="simple">
+<li><p><strong>Initialization / chunk load:</strong> compute sunlight with a vertical raycast for the newly loaded chunk.</p></li>
+<li><p><strong>Dynamic updates (mining/building):</strong> when the player changes a block, propagate changes with a targeted downward fill when a hole opens, otherwise use BFS.</p></li>
+</ul>
+<p><strong>1) Sunlight initialization (new or unloaded chunk)</strong></p>
+<p><strong>Rules for transparency / attenuation</strong></p>
+<p>Sunlight starts at <strong>level 15</strong> at the top of the world (per column) and then walks downward.</p>
+<ul class="simple">
+<li><p>A voxel is considered <strong>opaque</strong> if it blocks light.</p></li>
+<li><p>A voxel is considered <strong>transparent</strong> if light passes through.</p></li>
+</ul>
+<p>Attenuation is applied only when light passes through transparent voxels:</p>
+<ul class="simple">
+<li><p>Through <strong>water or leaves</strong>: reduce by <strong>2</strong> levels</p></li>
+<li><p>Through <strong>other transparent blocks</strong>: reduce by <strong>1</strong> level</p></li>
+<li><p>Through <strong>opaque</strong> voxels: stop immediately (no further sunlight)</p></li>
+</ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
     <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
+        <span class="k">break</span>
+
+    <span class="c1"># apply reduction based on voxel type</span>
+    <span class="k">if</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">:</span>
+        <span class="n">current_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">current_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">chunk_lightmap</span><span class="p">[</span><span class="n">lightmap_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_level</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">blocklight</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><p><strong>Downward Raycast:</strong> The initialization loop scans from the top of the chunk to the bottom, checking the voxel ID at each height layer.</p></li>
-</ul>
+<p><strong>Downward raycast / collision halting</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
     <span class="k">break</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><p><strong>Collision Halting:</strong> If the downward ray encounters a solid, non-transparent block, sunlight is immediately stopped for that column.</p></li>
-</ul>
+<p><strong>Data packing into the lightmap</strong></p>
+<p>Sunlight is stored in the <strong>upper 4 bits</strong> of the 8-bit packed lightmap value, blocklight in the lower 4 bits.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">chunk_lightmap</span><span class="p">[</span><span class="n">lightmap_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_level</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="n">blocklight</span>
 </pre></div>
 </div>
+<p>That is:</p>
 <ul class="simple">
-<li><p><strong>Data Packing:</strong> The active sunlight level is bitshifted left by 4 to occupy the upper 4 bits, then merged securely with the existing blocklight via bitwise OR.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(current_level</span> <span class="pre">&lt;&lt;</span> <span class="pre">4)</span></code> places sunlight into bits 4..7</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">|</span> <span class="pre">blocklight</span></code> preserves the existing blocklight bits 0..3</p></li>
 </ul>
-<p><strong>O(1) Vertical Raycast Optimization:</strong></p>
-<p>When a block is mined exposing a hole to sunlight, instead of expensive 3D BFS:</p>
+<p><strong>2) O(1) vertical raycast optimization (when a hole opens)</strong></p>
+<p>When a block is broken and exposes a path to the sky, the engine avoids a full 3D BFS and instead performs a <strong>vertical downward fill</strong> from the opened block.</p>
+<ul class="simple">
+<li><p>scan downward from the broken location until you hit an opaque voxel</p></li>
+<li><p>update <code class="docutils literal notranslate"><span class="pre">current_level</span></code> as you pass through semi-transparent voxels</p></li>
+</ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">):</span>
     <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="mi">48</span><span class="o">**</span><span class="mi">2</span><span class="p">]</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li><p><strong>O(1) Downward Fill:</strong> When a block is broken, the engine casts a simple ray downwards from the broken block to instantly fill exposed air rather than launching an expensive 3D BFS.</p></li>
-</ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">:</span>
+
+<span class="k">if</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">:</span>
     <span class="n">current_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+<span class="k">elif</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">):</span>
+    <span class="n">current_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
+<p><strong>Which path is used when?</strong></p>
 <ul class="simple">
-<li><p><strong>Light Diminishment:</strong> Even during quick fills, light is strictly reduced by 2 levels if it passes through semi-transparent blocks.</p></li>
+<li><p><strong>Hole to sky appears</strong> → use the downward fill path.</p></li>
+<li><p><strong>Torch placed/removed</strong> → use BFS for the affected region.</p></li>
 </ul>
 </section>
 <section id="bfs-light-propagation">
 <h2>BFS Light Propagation<a class="headerlink" href="#bfs-light-propagation" title="Link to this heading"></a></h2>
-<p><strong>Queue-Based Approach (CPU-efficient):</strong></p>
-<p>Instead of Python lists (slow), use preallocated NumPy arrays as ring buffers:</p>
-<p><strong>Queue-Based Approach:</strong></p>
-<p>The engine uses global pre-allocated NumPy arrays directly as ring buffers for efficiency:</p>
+<p><strong>Queue representation (what a BFS node contains)</strong></p>
+<p>The BFS queue stores <em>nodes</em> describing <strong>where</strong> the light should propagate and <strong>what brightness level</strong> to apply.</p>
+<p>A practical packed node format is:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>node = (x, y, z, level)
+</pre></div>
+</div>
+<p>Internally this is backed by a preallocated NumPy array and treated as a <strong>ring buffer</strong> (two indices: <code class="docutils literal notranslate"><span class="pre">head</span></code> and <code class="docutils literal notranslate"><span class="pre">tail</span></code>) to avoid Python object allocations.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">GLOBAL_QUEUE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
 <span class="n">head</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
 </pre></div>
 </div>
-<p><strong>Main BFS Loop:</strong></p>
+<p><strong>Main BFS loop</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
     <span class="n">node</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">break</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><p><strong>BFS Ring Buffer Loop:</strong> A memory-efficient array dequeues active light nodes dynamically without instantiating slow Python lists.</p></li>
-</ul>
+<p>For each dequeued node, expand to the <strong>6 axis neighbors</strong> (+X/-X/+Y/-Y/+Z/-Z). Light only updates a neighbor if it can improve it:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">new_level</span> <span class="o">&gt;</span> <span class="n">neighbor_light</span><span class="p">:</span>
     <span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">new_level</span><span class="p">)</span>
 </pre></div>
 </div>
+<p><strong>Transparent / opaque rule inside BFS</strong></p>
+<p>During BFS:</p>
 <ul class="simple">
-<li><p><strong>Neighbor Expansion:</strong> For each of the 6 neighboring blocks, if the newly propagated light is brighter than the neighbor’s current light, it overwrites it and pushes the neighbor into the queue for further expansion.</p></li>
+<li><p>If the neighbor voxel is <strong>opaque</strong>, the neighbor does not receive propagated light.</p></li>
+<li><p>If it is <strong>transparent</strong>, the propagation continues with attenuation:</p>
+<ul>
+<li><p>water/leaves: <code class="docutils literal notranslate"><span class="pre">new_level</span> <span class="pre">-</span> <span class="pre">2</span></code></p></li>
+<li><p>other transparent: <code class="docutils literal notranslate"><span class="pre">new_level</span> <span class="pre">-</span> <span class="pre">1</span></code></p></li>
 </ul>
-<p><strong>Fast Voxel Access Helper:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_voxel_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get voxel ID with chunk boundary handling&quot;&quot;&quot;</span>
-    <span class="n">chunk_x</span> <span class="o">=</span> <span class="n">world_x</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-    <span class="n">chunk_y</span> <span class="o">=</span> <span class="n">world_y</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-    <span class="n">chunk_z</span> <span class="o">=</span> <span class="n">world_z</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-
-    <span class="c1"># Check if chunk loaded</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">world_voxels</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">STONE</span>  <span class="c1"># Unloaded = solid</span>
-
-    <span class="c1"># Get local index</span>
-    <span class="n">local_x</span> <span class="o">=</span> <span class="n">world_x</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
-    <span class="n">local_y</span> <span class="o">=</span> <span class="n">world_y</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
-    <span class="n">local_z</span> <span class="o">=</span> <span class="n">world_z</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
-    <span class="n">local_index</span> <span class="o">=</span> <span class="n">local_x</span> <span class="o">+</span> <span class="n">local_z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">local_y</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">**</span> <span class="mi">2</span>
-
-    <span class="k">return</span> <span class="n">world_voxels</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">local_index</span><span class="p">]</span>
-</pre></div>
-</div>
+</li>
+</ul>
 </section>
 <section id="blocklight-torch-propagation">
 <h2>Blocklight (Torch) Propagation<a class="headerlink" href="#blocklight-torch-propagation" title="Link to this heading"></a></h2>
-<p><strong>Torch Placement:</strong></p>
+<p><strong>Torch placement (seeding BFS)</strong></p>
+<p>A newly placed torch injects blocklight at the maximum value (14) into the lightmap and enqueues it as the BFS seed.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">set_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
 <span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><p><strong>Blocklight Seeding:</strong> A newly placed torch injects a maximum blocklight value of <cite>14</cite> directly into the chunk lightmap and starts expanding immediately.</p></li>
-</ul>
-<p><strong>Breaking a Torch (Removal Pass + Refill):</strong></p>
-<p>When a torch is removed or a block is broken, light must be recalculated. The algorithm uses a <strong>Removal Pass</strong> followed by a <strong>Refill Pass</strong>:</p>
+<p><strong>Torch removal / recalculation (Removal pass + Refill pass)</strong></p>
+<p>Removing a torch is harder than adding: simply stopping the new light will often leave “stale” light behind. The algorithm therefore performs:</p>
+<ol class="arabic simple">
+<li><p><strong>Removal pass:</strong> walk outward and erase only regions that depended on the removed source.</p></li>
+<li><p><strong>Refill pass:</strong> stop erasing when reaching cells that are still supported by <em>other</em> sources (or brighter equal levels), and seed refill where needed.</p></li>
+</ol>
+<p><strong>Removal pass behavior</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">neighbor_light</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">neighbor_light</span> <span class="o">&lt;</span> <span class="n">level</span><span class="p">:</span>
     <span class="n">set_light_fast</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">BLOCKLIGHT</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
     <span class="n">removal_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><p><strong>Removal Pass:</strong> When a light source is destroyed, a negative BFS sweeps outward, aggressively setting all dependent light levels back to <cite>0</cite>.</p></li>
-</ul>
+<p><strong>Refill pass behavior</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">elif</span> <span class="n">neighbor_light</span> <span class="o">&gt;=</span> <span class="n">level</span><span class="p">:</span>
     <span class="n">refill_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">neighbor_x</span><span class="p">,</span> <span class="n">neighbor_y</span><span class="p">,</span> <span class="n">neighbor_z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><p><strong>Refill Pass:</strong> If the removal pass hits a light level equal to or brighter than what it’s trying to erase, it stops and marks that border block as a seed to immediately refill the empty space.</p></li>
-</ul>
 </section>
 <section id="chunk-boundary-stitching">
 <h2>Chunk Boundary Stitching<a class="headerlink" href="#chunk-boundary-stitching" title="Link to this heading"></a></h2>
-<p>When chunks load/unload, light must be synchronized across boundaries:</p>
+<p><strong>Correctness across chunk boundaries</strong></p>
+<p>Light propagation must remain consistent when neighboring chunks are loaded/unloaded.</p>
+<p>The doc rule of thumb used by the engine is:</p>
+<ul class="simple">
+<li><p>Treat <strong>unloaded chunks as opaque</strong> for propagation decisions (so BFS does not propagate through missing geometry).</p></li>
+<li><p>When a neighbor chunk becomes loaded, resample the boundary and enqueue any boundary cells whose light level can improve the newly loaded chunk.</p></li>
+</ul>
+<p><strong>Edge sampling / seam enqueue</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">neighbor_light</span> <span class="o">&gt;</span> <span class="n">current_light</span><span class="p">:</span>
     <span class="n">light_queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">chunk_x</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="mi">47</span><span class="p">,</span> <span class="n">chunk_y</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">chunk_z</span> <span class="o">*</span> <span class="mi">48</span> <span class="o">+</span> <span class="n">z</span><span class="p">,</span> <span class="n">neighbor_light</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>This ensures:</p>
 <ul class="simple">
-<li><p><strong>Chunk Seams:</strong> When adjacent chunks load, they sample the immediate edge boundaries of their neighbors. Brighter light is naturally enqueued to bleed seamlessly across the chunk boundaries.</p></li>
+<li><p>If the neighbor is brighter, the newly loaded chunk receives that brightness at the seam.</p></li>
+<li><p>If the neighbor is not brighter, the seam remains unchanged.</p></li>
 </ul>
 </section>
 <section id="integration-with-rendering">
@@ -725,7 +744,7 @@
 </section>
 <section id="next-steps">
 <h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
-<p>With the lighting maps generated, proceed to the <a class="reference internal" href="meshes.html"><span class="doc">Mesh Systems and Vertex Packing</span></a> guide to learn how the Greedy Meshing algorithm packs everything into highly optimized GPU buffers.</p>
+<p>With the lighting maps generated, proceed to the <a class="reference internal" href="meshes.html"><span class="doc">Mesh Systems and Vertex Packing</span></a> guide.</p>
 </section>
 </section>
 

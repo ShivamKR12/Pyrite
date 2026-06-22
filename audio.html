@@ -201,8 +201,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -594,31 +592,13 @@
 </section>
 <section id="spatialization-volume">
 <h2>Spatialization &amp; volume<a class="headerlink" href="#spatialization-volume" title="Link to this heading"></a></h2>
+<p>Pyrite currently uses a <strong>simple spatialization model</strong> on top of Pygame’s mixer.</p>
+<p>The audio subsystem uses:</p>
 <ul class="simple">
-<li><p>Pyrite applies a simple distance-based attenuation and left/right panning based on the relative position between the sound source and the listener (player). See <cite>src/sounds.py</cite> for exact attenuation curve.</p></li>
+<li><p><strong>Mixer channel pool:</strong> a pool of <strong>32 mixer channels</strong> (see <code class="docutils literal notranslate"><span class="pre">pg.mixer.set_num_channels(32)</span></code> in <code class="docutils literal notranslate"><span class="pre">src/sounds.py</span></code>). If too many SFX play at once, additional sounds may be dropped by the mixer.</p></li>
+<li><p><strong>Volume scaling:</strong> an exposed <code class="docutils literal notranslate"><span class="pre">sfx_volume</span></code> value (0-100), mapped internally to a per-sample volume multiplier (see <code class="docutils literal notranslate"><span class="pre">Sounds.set_sfx_volume()</span></code>).</p></li>
 </ul>
-</section>
-<section id="api-usage">
-<h2>API usage<a class="headerlink" href="#api-usage" title="Link to this heading"></a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">play_sfx</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">world_pos</span><span class="p">)</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li><p><strong>Spatial SFX:</strong> Play a short effect; passing a <cite>pos</cite> (world vec3) automatically calculates left/right panning and distance attenuation relative to the player’s camera.</p></li>
-</ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">play_music</span><span class="p">(</span><span class="n">track_name</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li><p><strong>Background Music:</strong> Hooks into the Pygame music mixer to stream longer audio tracks asynchronously.</p></li>
-</ul>
-</section>
-<section id="debugging">
-<h2>Debugging<a class="headerlink" href="#debugging" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>If a sound fails to play, verify the file path is correct and the format is supported by your platform’s SDL mixer backend.</p></li>
-<li><p>The engine logs missing mappings to the console during startup (see main logs).</p></li>
-</ul>
+<p>In-game spatialization (distance/left-right) is supported at the engine level via the positional API. If you need the exact attenuation/panning math, treat the doc as a high-level overview unless the formulas are explicitly documented in this page.</p>
 </section>
 <section id="next-steps">
 <h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>

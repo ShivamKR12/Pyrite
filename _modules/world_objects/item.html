@@ -634,8 +634,6 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l2"><a class="reference internal" href="../../audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -1035,7 +1033,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Item_Init&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Spawns an item bursting out of the specified position with a randomized velocity,</span>
 <span class="sd">        and applies a short pickup delay to prevent instant re-collection.</span>
@@ -1047,7 +1045,8 @@ window.runMermaid = runMermaid;</script>
             <span class="mf">0.005</span><span class="p">,</span>
             <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ITEM_SPAWN_VELOCITY_MULTIPLIER</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">voxel_id</span>
+        <span class="c1"># Handle potential bytes from SQLite blobs (NumPy uint8 serialization mismatch)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="s1">&#39;little&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">ITEM_SCALE</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_dead</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1198,7 +1197,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">&#39;m_model&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get_model_matrix</span><span class="p">())</span>
 
             <span class="k">if</span> <span class="s1">&#39;voxel_id&#39;</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
-                <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">&#39;voxel_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">voxel_id</span>
+                <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">&#39;voxel_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">)</span>
 
             <span class="n">mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span></div>
 </div>

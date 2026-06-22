@@ -634,8 +634,6 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l2"><a class="reference internal" href="../../audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -1043,7 +1041,8 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="s1">&#39;RGBA&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="o">.</span><span class="n">build_mipmaps</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR_MIPMAP_LINEAR</span><span class="p">,</span> <span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Failed to load logo texture: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="o">.</span><span class="n">get_texture</span><span class="p">(</span><span class="s1">&#39;Pyrite&#39;</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -1236,9 +1235,11 @@ window.runMermaid = runMermaid;</script>
             <span class="n">creation_date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Unknown&#39;</span>
             <span class="n">last_played</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Unknown&#39;</span>
 
+            <span class="n">connection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">cursor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Cursor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">connection</span><span class="p">:</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">save_file</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="n">cursor</span><span class="p">:</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+                <span class="n">connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">save_file</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
                 <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
                     <span class="s1">&#39;SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1&#39;</span>
                 <span class="p">)</span>
@@ -1251,10 +1252,19 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">creation_date</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">][:</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span>
                     <span class="n">last_played</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">4</span><span class="p">][:</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span>
 
-                <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="k">pass</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error reading world meta: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cursor</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error closing cursor: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">connection</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error closing connection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">load_and_reset</span><span class="p">(</span><span class="n">sn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">save_name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">init_game_session</span><span class="p">(</span><span class="n">sn</span><span class="p">)</span>
@@ -1296,11 +1306,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            save_name: Base filename of the save (without extension).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">save_name</span><span class="si">}</span><span class="s1">.db&#39;</span><span class="p">):</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">save_name</span><span class="si">}</span><span class="s1">.db&#39;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">save_name</span><span class="si">}</span><span class="s1">_thumb.png&#39;</span><span class="p">):</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">save_name</span><span class="si">}</span><span class="s1">_thumb.png&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;.db&#39;</span><span class="p">,</span> <span class="s1">&#39;.db-shm&#39;</span><span class="p">,</span> <span class="s1">&#39;.db-wal&#39;</span><span class="p">,</span> <span class="s1">&#39;_thumb.png&#39;</span><span class="p">):</span>
+                <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;saves/</span><span class="si">{</span><span class="n">save_name</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Failed to delete world: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>

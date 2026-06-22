@@ -201,8 +201,6 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -593,8 +591,15 @@ To minimize GPU bandwidth, vertex data is heavily bit-packed into a single 32-bi
 </section>
 <section id="ambient-occlusion">
 <h2>Ambient Occlusion<a class="headerlink" href="#ambient-occlusion" title="Link to this heading"></a></h2>
-<p>Pyrite simulates soft shadows in the corners of blocks using Vertex-based Ambient Occlusion (AO). The engine checks the adjacent diagonal blocks of a face during meshing. Depending on how many blocks surround the corner, it assigns an <cite>ao_id</cite> (0 to 3). The shader interpolates this value across the face to create a smooth darkening effect.</p>
-<p>Why this matters: ambient occlusion is a low-cost way to add depth and visual richness to blocky geometry without full ray tracing. It is evaluated once during mesh generation, then baked into the vertex data, so it does not require per-frame overhead.</p>
+<p>Pyrite simulates soft shadows in the corners of blocks using <strong>vertex-based Ambient Occlusion (AO)</strong>.</p>
+<p>Key pipeline point:</p>
+<ul class="simple">
+<li><p><strong>AO is computed during meshing</strong> (CPU) from the local 3D block neighborhood.</p></li>
+<li><p>The result is encoded into the per-vertex packed attributes.</p></li>
+<li><p>The <strong>shader</strong> then simply interpolates/apply that AO during rendering.</p></li>
+</ul>
+<p>This keeps AO effectively free at runtime (no ray tracing / no per-frame neighborhood queries).</p>
+<p>Why this matters: AO adds depth and visual richness to blocky geometry without full ray tracing, and it does not require per-frame overhead because it is baked into the vertex data during mesh build.</p>
 </section>
 <section id="render-flow-summary">
 <h2>Render Flow Summary<a class="headerlink" href="#render-flow-summary" title="Link to this heading"></a></h2>

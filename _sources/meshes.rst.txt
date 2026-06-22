@@ -9,14 +9,18 @@ This document provides a complete, replicable guide to Pyrite's mesh architectur
 Overview
 --------
 
-Pyrite renders millions of voxels using a multi-stage mesh pipeline:
+Pyrite renders millions of voxels using a multi-stage pipeline where **lighting is generated first**, then meshed/packed, then finally interpreted by shaders:
 
-1. **Greedy Meshing:** CPU-side algorithm groups adjacent coplanar faces into large rectangular polygons.
-2. **Vertex Packing:** Vertex attributes compressed into 32-bit integers to minimize GPU memory.
-3. **Lighting:** Per-vertex smoothed light values sampled from adjacent blocks.
-4. **AO Calculation:** Corner darkness determined by surrounding block density.
-5. **GPU Upload:** Main thread creates VAO/VBO objects from packed data.
-6. **Rendering:** Draw calls per mesh (opaque + transparent passes).
+1. **Voxel data availability:** chunk voxels + (optional) chunk lightmap.
+2. **Lighting generation (elsewhere):** sunlight + blocklight are computed by the lighting system and stored in the per-chunk lightmap.
+3. **Greedy Meshing:** CPU-side algorithm groups adjacent coplanar faces into large rectangular polygons.
+4. **Vertex Packing:** Vertex attributes compressed into 32-bit integers to minimize GPU memory.
+5. **AO + per-vertex light smoothing:**
+   - **AO** is computed from neighboring blocks (baked into the vertex).
+   - **Sunlight/blocklight** values from the chunk lightmap are sampled and averaged into a per-vertex `light_data` value.
+6. **GPU Upload:** Main thread creates VAO/VBO objects from packed data.
+7. **Rendering:** Draw calls per mesh (opaque + transparent passes).
+
 
 Mesh Classes Hierarchy
 ----------------------

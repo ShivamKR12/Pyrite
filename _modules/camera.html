@@ -634,8 +634,6 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -999,7 +997,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">frustum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Frustum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">global_profiler</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="n">FAR</span><span class="p">,</span> <span class="n">NEAR</span><span class="p">,</span> <span class="n">PITCH_MAX</span><span class="p">,</span> <span class="n">VERTICLE_FOV</span><span class="p">,</span> <span class="n">glm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="n">FAR</span><span class="p">,</span> <span class="n">NEAR</span><span class="p">,</span> <span class="n">PITCH_MAX</span><span class="p">,</span> <span class="n">VERTICAL_FOV</span><span class="p">,</span> <span class="n">glm</span>
 
 
 <div class="viewcode-block" id="Camera">
@@ -1031,7 +1029,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">m_proj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">perspective</span><span class="p">(</span><span class="n">VERTICLE_FOV</span><span class="p">,</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="n">NEAR</span><span class="p">,</span> <span class="n">FAR</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m_proj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">perspective</span><span class="p">(</span><span class="n">VERTICAL_FOV</span><span class="p">,</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="n">NEAR</span><span class="p">,</span> <span class="n">FAR</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">m_view</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">frustum</span><span class="p">:</span> <span class="n">Frustum</span> <span class="o">=</span> <span class="n">Frustum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>

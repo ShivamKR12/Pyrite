@@ -42,28 +42,14 @@ How to add new sounds
 Spatialization & volume
 -----------------------
 
-- Pyrite applies a simple distance-based attenuation and left/right panning based on the relative position between the sound source and the listener (player). See `src/sounds.py` for exact attenuation curve.
+Pyrite currently uses a **simple spatialization model** on top of Pygame's mixer.
 
-API usage
----------
+The audio subsystem uses:
 
-.. code-block:: python
+- **Mixer channel pool:** a pool of **32 mixer channels** (see ``pg.mixer.set_num_channels(32)`` in ``src/sounds.py``). If too many SFX play at once, additional sounds may be dropped by the mixer.
+- **Volume scaling:** an exposed ``sfx_volume`` value (0-100), mapped internally to a per-sample volume multiplier (see ``Sounds.set_sfx_volume()``).
 
-    self.app.sounds.play_sfx(name, pos=world_pos)
-
-* **Spatial SFX:** Play a short effect; passing a `pos` (world vec3) automatically calculates left/right panning and distance attenuation relative to the player's camera.
-
-.. code-block:: python
-
-    self.app.sounds.play_music(track_name, loop=True)
-
-* **Background Music:** Hooks into the Pygame music mixer to stream longer audio tracks asynchronously.
-
-Debugging
----------
-
-- If a sound fails to play, verify the file path is correct and the format is supported by your platform's SDL mixer backend.
-- The engine logs missing mappings to the console during startup (see main logs).
+In-game spatialization (distance/left-right) is supported at the engine level via the positional API. If you need the exact attenuation/panning math, treat the doc as a high-level overview unless the formulas are explicitly documented in this page.
 
 Next Steps
 ----------

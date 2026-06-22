@@ -634,8 +634,6 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -1053,8 +1051,8 @@ window.runMermaid = runMermaid;</script>
         <span class="k">except</span> <span class="n">pg</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
             <span class="k">pass</span>
 
-        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_MAJOR_VERSIONSION</span><span class="p">,</span> <span class="n">MAJOR_VERSION</span><span class="p">)</span>
-        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_MINOR_VERSIONSION</span><span class="p">,</span> <span class="n">MINOR_VERSION</span><span class="p">)</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_MAJOR_VERSION</span><span class="p">,</span> <span class="n">MAJOR_VERSION</span><span class="p">)</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_MINOR_VERSION</span><span class="p">,</span> <span class="n">MINOR_VERSION</span><span class="p">)</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_PROFILE_MASK</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">GL_CONTEXT_PROFILE_CORE</span><span class="p">)</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_DEPTH_SIZE</span><span class="p">,</span> <span class="n">DEPTH_SIZE</span><span class="p">)</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">gl_set_attribute</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">GL_MULTISAMPLESAMPLES</span><span class="p">,</span> <span class="n">NUM_SAMPLES</span><span class="p">)</span>
@@ -1163,18 +1161,30 @@ window.runMermaid = runMermaid;</script>
         <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">save_path</span><span class="p">):</span>
+            <span class="n">connection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">cursor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Cursor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">connection</span><span class="p">:</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span>
-                <span class="n">cursor</span><span class="p">:</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+                <span class="n">connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span>
+                <span class="n">cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
                 <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT seed FROM world_meta WHERE id=1&#39;</span><span class="p">)</span>
                 <span class="n">row</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
                     <span class="n">seed</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
             <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Could not read seed from existing save file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
                 <span class="n">seed</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">100000</span><span class="p">,</span> <span class="mi">999999999</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cursor</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error closing cursor: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">connection</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[SYSTEM] Error closing connection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">seed</span> <span class="o">=</span> <span class="n">force_seed</span> <span class="k">if</span> <span class="n">force_seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">100000</span><span class="p">,</span> <span class="mi">999999999</span><span class="p">)</span>

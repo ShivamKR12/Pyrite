@@ -201,8 +201,6 @@
 <li class="toctree-l2"><a class="reference internal" href="audio.html#file-formats-recommendations">File formats &amp; recommendations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#how-to-add-new-sounds">How to add new sounds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#spatialization-volume">Spatialization &amp; volume</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#api-usage">API usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audio.html#debugging">Debugging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="audio.html#next-steps">Next Steps</a></li>
 </ul>
 </li>
@@ -558,12 +556,15 @@
 <p>This document provides a complete, replicable guide to Pyrite’s mesh architecture, including data structures, vertex packing, the greedy meshing algorithm, and ambient occlusion (AO) calculation.</p>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
-<p>Pyrite renders millions of voxels using a multi-stage mesh pipeline:</p>
+<p>Pyrite renders millions of voxels using a multi-stage pipeline where <strong>lighting is generated first</strong>, then meshed/packed, then finally interpreted by shaders:</p>
 <ol class="arabic simple">
+<li><p><strong>Voxel data availability:</strong> chunk voxels + (optional) chunk lightmap.</p></li>
+<li><p><strong>Lighting generation (elsewhere):</strong> sunlight + blocklight are computed by the lighting system and stored in the per-chunk lightmap.</p></li>
 <li><p><strong>Greedy Meshing:</strong> CPU-side algorithm groups adjacent coplanar faces into large rectangular polygons.</p></li>
 <li><p><strong>Vertex Packing:</strong> Vertex attributes compressed into 32-bit integers to minimize GPU memory.</p></li>
-<li><p><strong>Lighting:</strong> Per-vertex smoothed light values sampled from adjacent blocks.</p></li>
-<li><p><strong>AO Calculation:</strong> Corner darkness determined by surrounding block density.</p></li>
+<li><p><strong>AO + per-vertex light smoothing:</strong>
+- <strong>AO</strong> is computed from neighboring blocks (baked into the vertex).
+- <strong>Sunlight/blocklight</strong> values from the chunk lightmap are sampled and averaged into a per-vertex <cite>light_data</cite> value.</p></li>
 <li><p><strong>GPU Upload:</strong> Main thread creates VAO/VBO objects from packed data.</p></li>
 <li><p><strong>Rendering:</strong> Draw calls per mesh (opaque + transparent passes).</p></li>
 </ol>
