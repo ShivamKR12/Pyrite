@@ -36,67 +36,110 @@ Lightmap Data Structure
 Sunlight Propagation Algorithm
 -------------------------------
 
-**Initialization (new or unloaded chunk):**
+This lighting system uses two different update paths:
 
-1. Cast sunlight downward from top
-2. Maintain level 15 through air until hitting solid blocks
-3. Reduce by 2 through water/leaves, by 1 through other transparent blocks
+* **Initialization / chunk load:** compute sunlight with a vertical raycast for the newly loaded chunk.
+* **Dynamic updates (mining/building):** when the player changes a block, propagate changes with a targeted downward fill when a hole opens, otherwise use BFS.
+
+
+**1) Sunlight initialization (new or unloaded chunk)**
+
+**Rules for transparency / attenuation**
+
+Sunlight starts at **level 15** at the top of the world (per column) and then walks downward.
+
+* A voxel is considered **opaque** if it blocks light.
+* A voxel is considered **transparent** if light passes through.
+
+Attenuation is applied only when light passes through transparent voxels:
+
+* Through **water or leaves**: reduce by **2** levels
+* Through **other transparent blocks**: reduce by **1** level
+* Through **opaque** voxels: stop immediately (no further sunlight)
 
 .. code-block:: python
 
     for y in range(CHUNK_SIZE - 1, -1, -1):
         voxel_id = chunk_voxels[x + z * 48 + y * 48**2]
 
-* **Downward Raycast:** The initialization loop scans from the top of the chunk to the bottom, checking the voxel ID at each height layer.
+        if not is_transparent(voxel_id):
+            break
+
+        # apply reduction based on voxel type
+        if voxel_id == WATER or voxel_id == LEAVES:
+            current_level = max(0, current_level - 2)
+        else:
+            current_level = max(0, current_level - 1)
+
+        chunk_lightmap[lightmap_index] = (current_level << 4) | blocklight
+
+
+**Downward raycast / collision halting**
 
 .. code-block:: python
 
     if not is_transparent(voxel_id):
         break
 
-* **Collision Halting:** If the downward ray encounters a solid, non-transparent block, sunlight is immediately stopped for that column.
+**Data packing into the lightmap**
+
+Sunlight is stored in the **upper 4 bits** of the 8-bit packed lightmap value, blocklight in the lower 4 bits.
 
 .. code-block:: python
 
     chunk_lightmap[lightmap_index] = (current_level << 4) | blocklight
 
-* **Data Packing:** The active sunlight level is bitshifted left by 4 to occupy the upper 4 bits, then merged securely with the existing blocklight via bitwise OR.
+That is:
 
-**O(1) Vertical Raycast Optimization:**
+* ``(current_level << 4)`` places sunlight into bits 4..7
+* ``| blocklight`` preserves the existing blocklight bits 0..3
 
-When a block is mined exposing a hole to sunlight, instead of expensive 3D BFS:
+**2) O(1) vertical raycast optimization (when a hole opens)**
+
+When a block is broken and exposes a path to the sky, the engine avoids a full 3D BFS and instead performs a **vertical downward fill** from the opened block.
+
+
+* scan downward from the broken location until you hit an opaque voxel
+* update ``current_level`` as you pass through semi-transparent voxels
+
 
 .. code-block:: python
 
     for dy in range(y, CHUNK_SIZE):
         voxel_id = chunk_voxels[x + z * 48 + dy * 48**2]
 
-* **O(1) Downward Fill:** When a block is broken, the engine casts a simple ray downwards from the broken block to instantly fill exposed air rather than launching an expensive 3D BFS.
-
-.. code-block:: python
-
     if voxel_id == WATER or voxel_id == LEAVES:
         current_level = max(0, current_level - 2)
+    elif is_transparent(voxel_id):
+        current_level = max(0, current_level - 1)
 
-* **Light Diminishment:** Even during quick fills, light is strictly reduced by 2 levels if it passes through semi-transparent blocks.
+**Which path is used when?**
+
+* **Hole to sky appears** → use the downward fill path.
+* **Torch placed/removed** → use BFS for the affected region.
+
 
 BFS Light Propagation
 ---------------------
 
-**Queue-Based Approach (CPU-efficient):**
+**Queue representation (what a BFS node contains)**
 
-Instead of Python lists (slow), use preallocated NumPy arrays as ring buffers:
+The BFS queue stores *nodes* describing **where** the light should propagate and **what brightness level** to apply.
 
-**Queue-Based Approach:**
+A practical packed node format is:
 
-The engine uses global pre-allocated NumPy arrays directly as ring buffers for efficiency:
+.. code-block:: text
+
+    node = (x, y, z, level)
+
+Internally this is backed by a preallocated NumPy array and treated as a **ring buffer** (two indices: ``head`` and ``tail``) to avoid Python object allocations.
 
 .. code-block:: python
 
     GLOBAL_QUEUE = np.zeros(MAX_QUEUE_SIZE, dtype=np.uint32)
     head, tail = 0, 0
 
-**Main BFS Loop:**
+**Main BFS loop**
 
 .. code-block:: python
 
@@ -104,53 +147,43 @@ The engine uses global pre-allocated NumPy arrays directly as ring buffers for e
         node = queue.dequeue()
         if node is None: break
 
-* **BFS Ring Buffer Loop:** A memory-efficient array dequeues active light nodes dynamically without instantiating slow Python lists.
+For each dequeued node, expand to the **6 axis neighbors** (+X/-X/+Y/-Y/+Z/-Z). Light only updates a neighbor if it can improve it:
 
 .. code-block:: python
 
     if new_level > neighbor_light:
         queue.enqueue(neighbor_x, neighbor_y, neighbor_z, new_level)
 
-* **Neighbor Expansion:** For each of the 6 neighboring blocks, if the newly propagated light is brighter than the neighbor's current light, it overwrites it and pushes the neighbor into the queue for further expansion.
+**Transparent / opaque rule inside BFS**
 
-**Fast Voxel Access Helper:**
+During BFS:
 
-.. code-block:: python
+* If the neighbor voxel is **opaque**, the neighbor does not receive propagated light.
+* If it is **transparent**, the propagation continues with attenuation:
 
-    def get_voxel_fast(world_x, world_y, world_z, world_voxels):
-        """Get voxel ID with chunk boundary handling"""
-        chunk_x = world_x // CHUNK_SIZE
-        chunk_y = world_y // CHUNK_SIZE
-        chunk_z = world_z // CHUNK_SIZE
-
-        # Check if chunk loaded
-        key = (chunk_x, chunk_y, chunk_z)
-        if key not in world_voxels:
-            return STONE  # Unloaded = solid
-
-        # Get local index
-        local_x = world_x % CHUNK_SIZE
-        local_y = world_y % CHUNK_SIZE
-        local_z = world_z % CHUNK_SIZE
-        local_index = local_x + local_z * CHUNK_SIZE + local_y * CHUNK_SIZE ** 2
-
-        return world_voxels[key][local_index]
+  * water/leaves: ``new_level - 2``
+  * other transparent: ``new_level - 1``
 
 Blocklight (Torch) Propagation
 -------------------------------
 
-**Torch Placement:**
+**Torch placement (seeding BFS)**
+
+A newly placed torch injects blocklight at the maximum value (14) into the lightmap and enqueues it as the BFS seed.
 
 .. code-block:: python
 
     set_light_fast(world_x, world_y, world_z, world_lightmaps, BLOCKLIGHT, 14)
     queue.enqueue(world_x, world_y, world_z, 14)
 
-* **Blocklight Seeding:** A newly placed torch injects a maximum blocklight value of `14` directly into the chunk lightmap and starts expanding immediately.
+**Torch removal / recalculation (Removal pass + Refill pass)**
 
-**Breaking a Torch (Removal Pass + Refill):**
+Removing a torch is harder than adding: simply stopping the new light will often leave “stale” light behind. The algorithm therefore performs:
 
-When a torch is removed or a block is broken, light must be recalculated. The algorithm uses a **Removal Pass** followed by a **Refill Pass**:
+1) **Removal pass:** walk outward and erase only regions that depended on the removed source.
+2) **Refill pass:** stop erasing when reaching cells that are still supported by *other* sources (or brighter equal levels), and seed refill where needed.
+
+**Removal pass behavior**
 
 .. code-block:: python
 
@@ -158,29 +191,41 @@ When a torch is removed or a block is broken, light must be recalculated. The al
         set_light_fast(neighbor_x, neighbor_y, neighbor_z, world_lightmaps, BLOCKLIGHT, 0)
         removal_queue.enqueue(neighbor_x, neighbor_y, neighbor_z, neighbor_light)
 
-* **Removal Pass:** When a light source is destroyed, a negative BFS sweeps outward, aggressively setting all dependent light levels back to `0`.
+**Refill pass behavior**
 
 .. code-block:: python
 
     elif neighbor_light >= level:
         refill_queue.enqueue(neighbor_x, neighbor_y, neighbor_z, neighbor_light)
 
-* **Refill Pass:** If the removal pass hits a light level equal to or brighter than what it's trying to erase, it stops and marks that border block as a seed to immediately refill the empty space.
-
 Chunk Boundary Stitching
 ------------------------
 
-When chunks load/unload, light must be synchronized across boundaries:
+**Correctness across chunk boundaries**
+
+Light propagation must remain consistent when neighboring chunks are loaded/unloaded.
+
+The doc rule of thumb used by the engine is:
+
+* Treat **unloaded chunks as opaque** for propagation decisions (so BFS does not propagate through missing geometry).
+* When a neighbor chunk becomes loaded, resample the boundary and enqueue any boundary cells whose light level can improve the newly loaded chunk.
+
+
+**Edge sampling / seam enqueue**
 
 .. code-block:: python
 
     if neighbor_light > current_light:
         light_queue.enqueue(chunk_x * 48 + 47, chunk_y * 48 + y, chunk_z * 48 + z, neighbor_light)
 
-* **Chunk Seams:** When adjacent chunks load, they sample the immediate edge boundaries of their neighbors. Brighter light is naturally enqueued to bleed seamlessly across the chunk boundaries.
+This ensures:
+
+* If the neighbor is brighter, the newly loaded chunk receives that brightness at the seam.
+* If the neighbor is not brighter, the seam remains unchanged.
 
 Integration with Rendering
 ---------------------------
+
 
 **Shader Light Application:**
 
@@ -194,4 +239,4 @@ Integration with Rendering
 Next Steps
 ----------
 
-With the lighting maps generated, proceed to the :doc:`meshes` guide to learn how the Greedy Meshing algorithm packs everything into highly optimized GPU buffers.
+With the lighting maps generated, proceed to the :doc:`meshes` guide.
