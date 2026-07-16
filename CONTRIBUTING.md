@@ -21,9 +21,13 @@ Before writing any code, please ensure there is an open issue for your planned w
 2. Create and activate a Python 3.13 virtual environment.
 3. Install all required development, testing, and core dependencies:
    ```bash
-   pip install -r requirements-dev.txt
+   pip install -r requirements-dev.txt -r requirements.txt
    ```
-4. Verify your setup by running the engine locally:
+4. Install the pre-commit hooks, which will automatically format and lint your code before each commit:
+   ```bash
+   pre-commit install
+   ```
+5. Verify your setup by running the engine locally:
    ```bash
    python run.py
    ```
@@ -82,17 +86,18 @@ Chunk generation, lighting BFS queues, and database reads are offloaded to a `Th
 
 ## 🎨 Code Quality & Typing
 
-We use **Ruff** for hyper-fast formatting/linting and **Mypy** for strict static type checking. Continuous Integration (CI) via GitHub Actions will automatically reject code that fails these checks.
+We use **Ruff** for hyper-fast formatting/linting and **Mypy** for strict static type checking. Your code must pass these checks to be accepted.
 
-To ensure your code complies with our style rules (such as using double quotes and a 120-character line limit) and to automatically correct code that is failing the CI tests, run the following commands in the root directory before committing:
+By installing the pre-commit hooks (from the setup guide), these checks will run automatically on every commit. However, you can also run them manually:
 
-1. **Format**: `ruff format .` (Automatically fixes quote styles, spacing, and line wrapping)
-2. **Lint**: `ruff check --fix .` (Automatically fixes unused imports and basic stylistic errors)
-3. **Type Hint**: `mypy src/` (Validates your static typing)
+```bash
+# Format code, fix linting errors, and run type checks all at once
+pre-commit run --all-files
+```
 
-If your Pull Request fails the automated Ruff tests, simply running the formatting commands above will usually correct the code for you.
+Our style guide is defined in `pyproject.toml` and enforces a 120-character line limit and the use of **single quotes** for strings.
 
-*Note: Due to our use of highly optimized C-extensions (`pyglm`, `moderngl`), `Any` may be used as a type hint exclusively when interacting directly with OpenGL contexts or PyGLM matrices.*
+*Note: Due to our use of highly optimized C-extensions (`pyglm`, `moderngl`, `numba`, `pygame`), `mypy` is configured with `ignore_missing_imports = true`. You may use `Any` as a type hint when interacting directly with these libraries, but please use specific types wherever possible.*
 
 ### Documentation & Docstrings
 All code must be thoroughly documented using **Google Style** docstrings. Proper documentation ensures the engine remains approachable for new contributors and seamlessly integrates with our Sphinx automated documentation builder.
@@ -125,9 +130,9 @@ Because Pyrite relies heavily on OpenGL and Pygame event loops, testing mechanic
 * **Mutation Testing (The Ultimate Proof)**: To mathematically verify test quality, we use **Mutmut**. It deliberately injects tiny bugs (mutations) into the source code (like flipping `<` to `>`). If your tests still pass despite the injected bug, your assertions are weak or missing. You can manually trigger the Mutation Testing pipeline in the GitHub Actions tab.
 
 ### Running Tests Locally
-Before opening a PR, ensure all tests pass and review your coverage report:
+Before opening a PR, ensure all tests pass. The `pytest` command will automatically use the configurations in `pyproject.toml` to generate a coverage report.
 ```bash
-pytest --cov=src --cov-report=term-missing tests/
+pytest
 ```
 
 ---
