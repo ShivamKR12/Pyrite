@@ -1,7 +1,14 @@
+# ============================================================================
+# Build System
+# ============================================================================
+# PEP 517 build configuration.
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+# ============================================================================
+# Project Metadata
+# ============================================================================
 [project]
 name = "pyrite"
 version = "1.0.0"
@@ -9,93 +16,283 @@ description = "A highly-optimized, procedural 3D Voxel Engine written entirely i
 readme = "README.md"
 requires-python = ">=3.13"
 
-# Ruff Configuration
+authors = [
+    { name = "Shivam Kumar" }
+]
+
+license = { text = "MIT" }
+
+keywords = [
+    "game-engine",
+    "glsl",
+    "moderngl",
+    "numba",
+    "opengl",
+    "procedural-generation",
+    "pygame",
+    "python",
+    "terrain-generation",
+    "voxel",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/ShivamKR12/Pyrite"
+Documentation = "https://shivamkr12.github.io/Pyrite/"
+Repository = "https://github.com/ShivamKR12/Pyrite"
+Issues = "https://github.com/ShivamKR12/Pyrite/issues"
+
+# ============================================================================
+# Setuptools
+# ============================================================================
+# Package discovery configuration for the src/ project layout.
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# ============================================================================
+# Ruff
+# ============================================================================
+# Primary formatter and linter.
+# Ruff is the project's single source of truth for formatting and linting.
+# Black and isort are intentionally not configured separately.
 [tool.ruff]
 target-version = "py313"
 line-length = 120
 src = ["src"]
 
+# ----------------------------------------------------------------------------
+# Ruff Lint Configuration
+# ----------------------------------------------------------------------------
+# Enabled rule families:
+#   E/W  -> pycodestyle
+#   F    -> Pyflakes
+#   I    -> isort
+#   B    -> flake8-bugbear
+#   SIM  -> flake8-simplify
 [tool.ruff.lint]
-# E/W: Pycodestyle, F: Pyflakes, I: Isort, B: Flake8-bugbear, SIM: Flake8-simplify
 select = ["E", "F", "W", "I", "B", "SIM"]
+
+# Every ignored rule is intentionally documented.
+# Rules are disabled only when they conflict with:
+#
+#   • Numba JIT compilation
+#   • Greedy meshing algorithms
+#   • OpenGL rendering
+#   • Numerical code readability
+#   • Established engine architecture
 ignore = [
-    "E741", # Allow ambiguous variable names like 'l' or 'I' (common in 3D matrix math)
-    "F403", # Allow wildcard imports (used heavily with settings.py)
-    "F405", # Allow variables from wildcard imports
-    "SIM",  # Ignores all flake8-simplify rules (SIM102, SIM108, SIM109, etc.)
-    "B007", # Loop control variable not used
-    "B905", # zip() without an explicit strict= parameter
-    "F401", # Imported but unused
-    "E501", # Line too long
-    "E722", # Do not use bare except
-    "F841", # Local variable assigned to but never used
+    # ------------------------------------------------------------------------
+    # flake8-bugbear
+    # ------------------------------------------------------------------------
+
+    "B007", # Intentionally allow unused loop variables in certain iteration-heavy rendering code.
+    "B905", # zip(strict=...) is intentionally omitted for compatibility and cleaner iteration.
+
+    # ------------------------------------------------------------------------
+    # pycodestyle
+    # ------------------------------------------------------------------------
+
+    "E501", # Long mathematical expressions, shader definitions, and lookup tables are kept unwrapped for readability.
+    "E722", # Bare except blocks are intentionally used in a few engine-level fail-safe paths.
+    "E741", # Single-letter variables (i, j, k, x, y, z, l) are common in voxel math and matrix operations.
+
+    # ------------------------------------------------------------------------
+    # Pyflakes
+    # ------------------------------------------------------------------------
+
+    "F401", # Some imports exist solely for side effects, registration, or future optional usage.
+    "F403", # Wildcard imports are intentionally used by settings.py to expose engine-wide constants.
+    "F405", # Variables imported via wildcard imports are expected throughout the codebase.
+    "F841", # Temporary variables are sometimes retained intentionally during rendering/debug workflows.
+
+    # ------------------------------------------------------------------------
+    # flake8-simplify
+    # ------------------------------------------------------------------------
+
+    "SIM", # Preserve explicit logic over aggressive simplification for readability and debugging.
 ]
 
-# Mutmut Configuration (Version 3+)
+# ----------------------------------------------------------------------------
+# Ruff Formatter
+# ----------------------------------------------------------------------------
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+# ============================================================================
+# MyPy
+# ============================================================================
+# Static type checking.
+[tool.mypy]
+python_version = "3.13"
+
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+
+# Suppress unresolved import errors for third-party C-extension modules
+# that cannot be fully analyzed statically.
+ignore_missing_imports = true
+
+# ============================================================================
+# Pytest
+# ============================================================================
+# Unit testing configuration.
+[tool.pytest.ini_options]
+minversion = "7.0"
+
+# -ra               -> Display a summary of skipped, xfailed, and xpassed tests.
+# -q                -> Reduce console verbosity while preserving failures.
+# --tb=short        -> Produce compact, readable tracebacks.
+# --strict-config   -> Treat unknown pytest configuration options as errors.
+# --strict-markers  -> Prevent accidental use of undeclared pytest markers.
+addopts = """
+-ra
+-q
+--tb=short
+--strict-config
+--strict-markers
+"""
+
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+# ============================================================================
+# Mutmut
+# ============================================================================
+# Mutation testing configuration.
 [tool.mutmut]
 source_paths = ["src/"]
 pytest_add_cli_args_test_selection = ["tests/"]
 
-[tool.ruff.format]
-quote-style = "single"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-
-# MyPy Configuration
-[tool.mypy]
-python_version = "3.13"
-warn_return_any = true
-warn_unused_configs = true
-ignore_missing_imports = true # Crucial for C-extensions like moderngl and pyglm
-check_untyped_defs = true
-
-# Pytest Configuration
-[tool.pytest.ini_options]
-minversion = "7.0"
-addopts = "-ra -q --tb=short"
-testpaths = ["tests"]
-pythonpath = ["src"]
-
+# ============================================================================
+# Pylint
+# ============================================================================
+# Allow Pylint to inspect compiled extension modules used by the engine.
 [tool.pylint.main]
-# Allow Pylint to analyze C-extensions to resolve false positive errors.
-extension-pkg-allow-list = ["pygame", "moderngl", "pyglm", "numba"]
+extension-pkg-allow-list = [
+    "moderngl",
+    "numba",
+    "pygame",
+    "pyglm",
+]
 
+# ----------------------------------------------------------------------------
+# Pylint Message Control
+# ----------------------------------------------------------------------------
+# Pyrite prioritizes runtime performance, numerical correctness, and engine
+# architecture over strict adherence to every static-analysis recommendation.
+#
+# Many disabled rules are intentional and documented individually below.
+# Formatting concerns are delegated entirely to Ruff.
+# The remaining disabled rules are either:
+#   • intentionally incompatible with this project's architecture,
+#   • known false positives,
+#   • or undesirable for a performance-oriented voxel engine.
 [tool.pylint.messages_control]
-# Disable styling/convention checks and false positives to ensure the CI passes.
 disable = [
-    "invalid-name",  # Allows short variable names like x, y, z, i, f
-    "too-many-instance-attributes",
-    "too-many-locals",
-    "too-many-arguments",
-    "too-many-branches",
-    "too-many-statements",
-    "too-many-public-methods",
-    "wrong-import-order",
-    "import-outside-toplevel",
-    "no-member",  # Handled by extension-pkg-allow-list
-    "line-too-long",  # Handled by Ruff
-    "trailing-whitespace",  # Handled by Ruff
-    "missing-final-newline",  # Handled by Ruff
-    "multiple-statements",
-    "superfluous-parens",
-    "ungrouped-imports",
-    "too-many-positional-arguments",  # Required for Numba
-    "too-many-nested-blocks",  # Required for Greedy Meshing
-    "too-many-boolean-expressions",  # Required for AO checks
-    "not-an-iterable",  # Numba prange false positive
-    "consider-using-in",  # Numba compatibility
-    "chained-comparison",
-    "redefined-outer-name",  # Pytest fixtures
-    "too-few-public-methods",
-    "broad-exception-caught",
-    "attribute-defined-outside-init",
-    "global-statement",
-    "inconsistent-return-statements",
-    "no-else-return",
-    "unused-argument",
-    "unused-variable",
-    "bare-except",
-    "redefined-builtin",
-    "protected-access"
+
+    # ------------------------------------------------------------------------
+    # Naming
+    # ------------------------------------------------------------------------
+
+    "invalid-name", # Short names (x, y, z, i, j, k, u, v, f, etc.) are standard in graphics and voxel algorithms.
+
+    # ------------------------------------------------------------------------
+    # Imports
+    # ------------------------------------------------------------------------
+
+    "import-outside-toplevel", # Lazy imports are intentionally used to reduce startup cost and avoid circular imports.
+    "redefined-outer-name",    # Common with pytest fixtures.
+    "ungrouped-imports",       # Import grouping occasionally reflects subsystem organization rather than style.
+    "wrong-import-order",      # Ruff/isort already manages import ordering.
+
+    # ------------------------------------------------------------------------
+    # Complexity
+    # ------------------------------------------------------------------------
+
+    "too-few-public-methods",          # Data containers and engine components often expose a minimal API.
+    "too-many-arguments",              # Rendering and generation functions naturally require many parameters.
+    "too-many-boolean-expressions",    # Ambient Occlusion and visibility checks require complex conditions.
+    "too-many-branches",               # Chunk meshing and world generation inherently branch heavily.
+    "too-many-instance-attributes",    # Engine objects legitimately maintain substantial state.
+    "too-many-locals",                 # Performance-critical routines often cache many local values.
+    "too-many-nested-blocks",          # Greedy meshing algorithms require deeply nested traversal logic.
+    "too-many-positional-arguments",   # Required for Numba JIT compatibility and performance.
+    "too-many-public-methods",         # Manager classes naturally expose multiple engine operations.
+    "too-many-statements",             # Large rendering/update loops are intentionally kept together.
+
+    # ------------------------------------------------------------------------
+    # Numba / C-extension False Positives
+    # ------------------------------------------------------------------------
+
+    "consider-using-in", # Numba-compatible code often avoids constructs preferred by standard Python.
+    "no-member",         # Attributes from compiled extension modules cannot always be statically resolved.
+    "not-an-iterable",   # False positive when using numba.prange().
+
+    # ------------------------------------------------------------------------
+    # Style (Handled by Ruff)
+    # ------------------------------------------------------------------------
+
+    "line-too-long",         # Managed by Ruff.
+    "missing-final-newline", # Managed by Ruff.
+    "trailing-whitespace",   # Managed by Ruff.
+
+    # ------------------------------------------------------------------------
+    # Project-specific Design Decisions
+    # ------------------------------------------------------------------------
+
+    "attribute-defined-outside-init",   # Runtime initialization patterns are common in engine objects.
+    "bare-except",                      # Select engine-level fail-safe handlers intentionally catch all exceptions.
+    "broad-exception-caught",           # Engine shutdown and recovery paths intentionally handle unexpected failures.
+    "chained-comparison",               # Explicit comparisons are sometimes preferred for readability.
+    "global-statement",                 # Certain engine-wide caches and registries are intentionally global.
+    "inconsistent-return-statements",   # Some callback-style functions intentionally return conditionally.
+    "multiple-statements",              # Small performance-oriented sections occasionally use compact statements.
+    "no-else-return",                   # Explicit branching is often clearer during engine debugging.
+    "protected-access",                 # Internal engine subsystems legitimately access protected members.
+    "redefined-builtin",                # Graphics/math terminology occasionally overlaps with Python built-ins.
+    "superfluous-parens",               # Extra parentheses often improve readability in mathematical expressions.
+    "unused-argument",                  # Required by callback interfaces, abstract methods, and event handlers.
+    "unused-variable",                  # Variables are sometimes retained for debugging or future optimization.
+]
+
+# ============================================================================
+# Coverage.py
+# ============================================================================
+# Code coverage configuration used by pytest-cov and CI.
+
+[tool.coverage.run]
+
+# Measure branch coverage in addition to statement coverage.
+branch = true
+
+# Restrict coverage collection to the project's source tree.
+source = ["src"]
+
+[tool.coverage.report]
+
+# Display uncovered line numbers in reports.
+show_missing = true
+
+# Include files even when they reach 100% coverage.
+skip_covered = false
+
+# Display percentages with two decimal places.
+precision = 2
+
+# Exclude common patterns that should not negatively impact coverage metrics.
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
 ]
