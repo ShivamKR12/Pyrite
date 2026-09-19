@@ -46,34 +46,42 @@ def get_biome(x: float, z: float, perm_array: Any) -> Tuple[float, float]:
     Evaluates Simplex noise to determine the overarching temperature and moisture
     levels of a specific vertical column, shaping its respective biome.
     """
-    # Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)
-    # Scaled down frequencies by 10x to create massive, sprawling biomes
+    # Calculate temperature by evaluating 2D Simplex noise at the given (x, z) coordinates.
+    # The coordinate scaling factor of 0.002 represents the frequency of the noise.
+    # A smaller frequency stretches the noise out, resulting in massive, sprawling biomes
+    # rather than rapidly alternating hot/cold patches. The noise output inherently ranges
+    # from approximately -1.0 to 1.0.
     temp = noise2(x * 0.002, z * 0.002, perm_array)
+
+    # Calculate moisture using the same 2D Simplex noise function and frequency scaling (0.002).
+    # We add a fixed offset of 100.0 to both the x and z coordinates before evaluation.
+    # This acts as a spatial translation, sampling the noise field from a distant region.
+    # Since Simplex noise is deterministic but pseudorandom, this effectively generates a
+    # completely independent, uncorrelated moisture map using the same permutation array,
+    # ensuring temperature and moisture don't mirror each other.
     moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0, perm_array)
 
     return temp, moist
 
 
-# ============================================================================
-# REAL-WORLD CONTEXT: Procedural Terrain Generation using Noise
-# ============================================================================
+# Procedural Terrain Generation using Noise
 # This function calculates the Y-height of the terrain for any given (X, Z) coordinate.
-# 
+#
 # How it works:
-# 1. It uses Fractional Brownian Motion (fBm) by layering multiple "octaves" of 
-#    Simplex noise. Each subsequent octave has double the frequency (f2, f4, f8) 
-#    and half the amplitude (a2, a4, a8). 
-# 2. Summing these layers creates natural-looking fractal terrain, where the first 
+# 1. It uses Fractional Brownian Motion (fBm) by layering multiple "octaves" of
+#    Simplex noise. Each subsequent octave has double the frequency (f2, f4, f8)
+#    and half the amplitude (a2, a4, a8).
+# 2. Summing these layers creates natural-looking fractal terrain, where the first
 #    layer defines the massive mountains/valleys, and the last layer defines small bumps.
-# 3. We then use a "Continentalness" noise map to warp the final height. If the 
-#    continentalness is low, we forcefully squash the height map to create flat 
+# 3. We then use a "Continentalness" noise map to warp the final height. If the
+#    continentalness is low, we forcefully squash the height map to create flat
 #    oceans. If it's high, we amplify the amplitude to create towering peaks.
 #
 # References:
 # - Making Maps with Noise (Amazing visual guide): https://www.redblobgames.com/maps/terrain-from-noise/
 # - Fractional Brownian Motion: https://en.wikipedia.org/wiki/Fractional_Brownian_motion
 # - Simplex Noise overview: https://en.wikipedia.org/wiki/Simplex_noise
-# ============================================================================
+
 
 @njit(cache=True, fastmath=True, nogil=True)
 def get_height(x: float, z: float, perm_array: Any) -> int:
@@ -81,51 +89,117 @@ def get_height(x: float, z: float, perm_array: Any) -> int:
     Calculates the absolute maximum surface elevation of the terrain at a specific
     X,Z coordinate using fractional Brownian motion and continentalness modifiers.
     """
-    # Continentalness: Controls overall elevation independently from climate
-    # This creates distinct Plains, Hills, Plateaus, and Mountains!
+    # Calculate continentalness using 2D Simplex noise, acting as an overarching
+    # macro-scale terrain modifier. The frequency 0.003 dictates very broad geographical
+    # features (continents and oceans). We apply a spatial offset of +100.0 to x and z
+    # to decouple this noise map from the temperature/moisture maps, preventing correlation.
     cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0, perm_array)
 
-    # Base properties
+    # Base properties for the first octave (the fundamental shape of the terrain).
+    # a1 represents the amplitude (maximum vertical displacement) of the primary base terrain.
     a1 = CENTER_Y
+
+    # Calculate the amplitudes for the subsequent octaves (detail layers).
+    # In standard fractional Brownian motion (fBm), amplitude halves with each octave
+    # (persistence = 0.5), meaning finer details have progressively less vertical impact.
     a2, a4, a8 = a1 * 0.5, a1 * 0.25, a1 * 0.125
+
+    # f1 represents the frequency (horizontal stretching) of the primary base terrain.
     f1 = 0.005
+
+    # Calculate the frequencies for the subsequent octaves.
+    # In standard fBm, frequency doubles with each octave (lacunarity = 2.0),
+    # meaning each new layer adds smaller, more tightly packed details.
     f2, f4, f8 = f1 * 2, f1 * 4, f1 * 8
 
+    # Evaluate the first octave (base height). We multiply the noise output [-1, 1]
+    # by amplitude a1 to scale it to [-a1, a1]. We then add a1 to shift the range to [0, 2*a1],
+    # ensuring the base terrain sits entirely above y=0, centered around a1.
     base_h = noise2(x * f1, z * f1, perm_array) * a1 + a1
+
+    # Evaluate the second octave (first detail pass). Multiplied by its smaller amplitude a2
+    # for a range of [-a2, a2]. We subtract a2 to shift the range downwards to [-2*a2, 0].
+    # This creates a bias towards carving out valleys and lowering peaks relative to the base height.
     detail_1 = noise2(x * f2, z * f2, perm_array) * a2 - a2
+
+    # Evaluate the third octave. Multiplied by a4, yielding [-a4, a4]. Adding a4 shifts
+    # the range upwards to [0, 2*a4], adding small bumps and localized ridges.
     detail_2 = noise2(x * f4, z * f4, perm_array) * a4 + a4
+
+    # Evaluate the fourth octave. Multiplied by a8, yielding [-a8, a8]. Subtracting a8 shifts
+    # the range downwards to [-2*a8, 0], etching fine erosion patterns and micro-valleys.
     detail_3 = noise2(x * f8, z * f8, perm_array) * a8 - a8
 
+    # Superimpose all the fractional Brownian motion octaves together. This linear combination
+    # fuses the massive base structure with the progressively finer surface details.
     height = base_h + detail_1 + detail_2 + detail_3
 
     # Terrain Shaping based on Continentalness
     if cont < -0.2:
         # Deep Plains & Oceans (Flatter and lower)
+        # Calculate a blending weight 'w'. We measure how deep the continentalness goes below -0.2.
+        # Multiplying by 5.0 scales this penetration such that cont values from -0.2 to -0.4
+        # map to weights from 0.0 to 1.0. The min() clamps the maximum weight at 1.0.
         w = min((-0.2 - cont) * 5.0, 1.0)
+
+        # Define the target height for oceans/plains. We start near the WATER_LINE,
+        # and only include the smallest detail octaves (scaled down by 0.3) to keep the seabed flat.
         target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
+
+        # Linearly interpolate (lerp) between the original highly-varied height and the flattened
+        # target_h, using the blend weight w. As continentalness decreases, the terrain flattens out.
         height = height * (1.0 - w) + target_h * w
 
     elif cont > 0.4:
         # Extreme Mountains
+        # Calculate blending weight 'w' measuring how far continentalness exceeds 0.4.
+        # Scaled by 5.0, cont values from 0.4 to 0.6 map to weights from 0.0 to 1.0. Clamped to 1.0.
         w = min((cont - 0.4) * 5.0, 1.0)
+
+        # Define the target mountain height. We heavily exaggerate the base height (x1.5)
+        # and the largest detail layer (x2.0), while keeping smaller details normal.
+        # A static +30 offset ensures these peaks definitively tower over everything else.
         target_h = base_h * 1.5 + detail_1 * 2.0 + detail_2 + detail_3 + 30
+
+        # Linearly interpolate between the standard terrain height and the exaggerated
+        # mountain height using weight w, causing terrain to soar smoothly upwards.
         height = height * (1.0 - w) + target_h * w
 
     elif 0.1 < cont <= 0.3:
         # Plateaus (steep cliffs, flat tops)
+        # Calculate a dual-sided weight using a bell-curve-like mapping.
+        # (cont - 0.1) * 10.0 goes from 0 to 1 as cont goes 0.1 -> 0.2.
+        # (0.3 - cont) * 10.0 goes from 0 to 1 as cont goes 0.3 -> 0.2.
+        # Multiplying these clamps shapes a peak weight of ~1.0 at cont=0.2, fading to 0 at the edges.
         w = min((cont - 0.1) * 10.0, 1.0) * min((0.3 - cont) * 10.0, 1.0)
+
+        # Define the fixed plateau altitude, hovering just above the world center.
         plat_h = CENTER_Y + 12
 
+        # If the underlying raw terrain attempts to poke above the plateau altitude,
+        # we forcefully squash it down.
         if height > plat_h:
+            # Compress any height exceeding plat_h to only 10% of its original overage,
+            # effectively shearing the tops off mountains to create flat plateau surfaces.
             flattened = plat_h + (height - plat_h) * 0.1
+
+            # Interpolate between the raw towering height and the sheared plateau surface
+            # using our localized plateau weight w.
             height = height * (1.0 - w) + flattened * w
 
+    # A final micro-noise perturbation at the highest frequency (f8) is evaluated and added to 2.
+    # The terrain height is then clamped via max() to never drop below this noisy floor.
+    # This prevents the absolute lowest bedrock layers from being perfectly flat.
     height = max(height, noise2(x * f8, z * f8, perm_array) + 2)
 
     # Absolute safety nets: prevent terrain from ever exceeding the chunk limits
+    # Cap the maximum height slightly below the total world chunk volume limit to avoid Out-Of-Bounds errors.
     height = min(height, WORLD_HEIGHT * CHUNK_SIZE - 2)
+
+    # Cap the absolute minimum height to 2.0 to ensure a solid, unbreakable bedrock floor always exists.
     height = max(height, 2.0)
 
+    # Cast the floating-point height evaluation into an integer index to align with the voxel grid.
     return int(height)
 
 
