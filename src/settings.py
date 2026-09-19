@@ -32,37 +32,64 @@ DEPTH_SIZE: int = 24
 NUM_SAMPLES: int = 1  # antialiasing
 
 # resolution
+# Initialize pygame briefly just to grab the current display information from the OS
 pygame.init()
 info: Any = pygame.display.Info()
+# Create a 2D vector representing the screen width and height in pixels
 WINDOW_RESOLUTION: Any = glm.vec2(info.current_w, info.current_h)
 pygame.quit()
 
 # ray casting
+# The maximum distance in blocks/meters that the player's crosshair can interact with
 MAX_RAY_DISTANCE: int = 6
 
 # chunk
+# The number of blocks along each axis (X, Y, Z) in a single chunk
 CHUNK_SIZE: int = 48
+# Half the chunk size, often used as an offset to find the center of a chunk
 HALF_CHUNK_SIZE: int = CHUNK_SIZE // 2
+# The 2D area (X * Z) of a chunk slice, useful for iterating over vertical columns
 CHUNK_AREA: int = CHUNK_SIZE * CHUNK_SIZE
+# The total number of blocks in a chunk (X * Y * Z), used for sizing flat arrays
 CHUNK_VOLUME: int = CHUNK_AREA * CHUNK_SIZE
+# The radius of a bounding sphere that perfectly encapsulates a cubic chunk.
+# Calculated using the 3D Pythagorean theorem: r = sqrt((L/2)^2 + (W/2)^2 + (H/2)^2)
+# Since chunks are perfect cubes, this simplifies to r = (Size/2) * sqrt(3).
+# Used for frustum culling to quickly check if a chunk is visible on screen.
 CHUNK_SPHERE_RADIUS: float = HALF_CHUNK_SIZE * math.sqrt(3)
 
 # world
+# The number of chunks along the X axis
 WORLD_WIDTH: int = 30
+# The number of chunks along the Y (vertical) axis
 WORLD_HEIGHT: int = 5
+# The number of chunks along the Z axis (typically same as width for a square world)
 WORLD_DEPTH: int = WORLD_WIDTH
+# The total number of chunks in a horizontal slice of the world
 WORLD_AREA: int = WORLD_WIDTH * WORLD_DEPTH
+# The total number of chunks loaded in the entire world
 WORLD_VOLUME: int = WORLD_AREA * WORLD_HEIGHT
+# The exact center point of the world on the X and Z axes, calculated in block coordinates
 CENTER_XZ: float = WORLD_WIDTH * HALF_CHUNK_SIZE
+# The base vertical level for flat terrain generation
 CENTER_Y: int = 48
 
 # camera
+# The ratio of the window's width to its height, required to prevent the rendered image from stretching
 ASPECT_RATIO: float = WINDOW_RESOLUTION.x / WINDOW_RESOLUTION.y
+# The base vertical field of view in degrees, defining how much the camera can see up and down
 FOV_DEGREE: int = 50
-VERTICAL_FOV: float = glm.radians(FOV_DEGREE)  # vertical FOV
-HORIZONTAL_FOV: float = 2 * math.atan(math.tan(VERTICAL_FOV * 0.5) * ASPECT_RATIO)  # horizontal FOV
+# ModernGL and GLM require angles in radians, so we convert the degree value here
+VERTICAL_FOV: float = glm.radians(FOV_DEGREE)
+# Calculates the horizontal FOV based on the vertical FOV and screen aspect ratio.
+# This uses basic trigonometry: tan(fov_h / 2) = tan(fov_v / 2) * aspect_ratio.
+# We multiply by 2 at the end because the tangent calculation only gives half the angle.
+HORIZONTAL_FOV: float = 2 * math.atan(math.tan(VERTICAL_FOV * 0.5) * ASPECT_RATIO)
+# The closest distance the camera will render objects; anything closer is clipped
 NEAR: float = 0.1
+# The maximum distance the camera will render objects; anything further is clipped
 FAR: float = 2000.0
+# The maximum angle in radians the camera can look up or down, capped just shy of 90 degrees to prevent gimbal lock
 PITCH_MAX: float = glm.radians(89)
 
 # player

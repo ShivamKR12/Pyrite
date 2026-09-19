@@ -149,27 +149,37 @@ class ShaderProgram:
         calculates dynamic sun direction/fog density based on the day-night cycle,
         and syncs UI animations (like mining progress).
         """
+        # Upload the player's view matrix to the chunk shader.
+        # This matrix represents the camera's position and rotation, transforming world coordinates into camera-relative coordinates.
         self.chunk['m_view'].write(self.player.m_view)
 
+        # Check if the 'u_time' uniform exists in the compiled chunk shader program before attempting to write to it
         if 'u_time' in self.chunk:
+            # Pass the elapsed world session time, which can be used in the shader for procedural animations like waving grass
             self.chunk['u_time'] = (
                 self.app.world_session_time
             )  # Make sure the shader actually has the uniform before writing
 
+        # Send the view matrix to other shaders so all elements render from the same camera perspective
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
+        # Push the exact player 3D position to the clouds shader, likely used to offset the cloud generation algorithm
         self.clouds['player_pos'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
         self.obj['m_view'].write(self.player.m_view)
 
         # Update projection matrix dynamically for FOV zooming
+        # The projection matrix handles perspective, making further objects appear smaller.
+        # It's updated every frame because mechanics like sprinting or using a spyglass can alter the field of view on the fly.
         self.chunk['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
         self.item['m_proj'].write(self.player.m_proj)
         self.obj['m_proj'].write(self.player.m_proj)
+        # The sky shader requires inverse matrices to calculate the exact direction of each pixel relative to the camera
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
+        # Provide time to the sky shader to animate dynamic elements like moving stars or shifting auroras
         if 'u_time' in self.sky:
             self.sky['u_time'] = self.app.world_session_time
 
@@ -255,12 +265,22 @@ class ShaderProgram:
         """
         Helper function to load and compile a matching pair of .vert and .frag shader files from disk.
         """
+        # Open the vertex shader file with read permissions and utf-8 encoding to prevent text mangling
         with open(get_path(f'src/shaders/{shader_name}.vert'), 'r', encoding='utf-8') as file:
+            # Read the entire raw GLSL source code into a Python string variable for the vertex stage
             vertex_shader: str = file.read()
 
+        # Open the fragment shader file, which computes the final color of each pixel
         with open(get_path(f'src/shaders/{shader_name}.frag'), 'r', encoding='utf-8') as file:
+            # Read the entire raw GLSL source code into a Python string variable for the fragment stage
             fragment_shader: str = file.read()
 
+        # ModernGL takes the raw string sources and performs several steps behind the scenes:
+        # 1. Parsing: It checks the GLSL syntax for both shaders to ensure they conform to the OpenGL version specified.
+        # 2. Compilation: The graphics driver compiles the text into GPU-specific machine code.
+        # 3. Linking: The compiled vertex and fragment shaders are linked together into a single executable pipeline.
+        # This pipeline dictates how 3D coordinates are transformed onto the 2D screen, and how they are colored.
         program: Any = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
 
+        # Return the linked program object, which can now be bound to uniforms and used in draw calls
         return program
