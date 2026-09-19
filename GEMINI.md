@@ -17,3 +17,8 @@ No exceptions. Do not try to predict what a function signature is. Do not halluc
 1. **READ THE CODE BEFORE CRITIQUING**: Never draw conclusions about performance bottlenecks, game freezes, or architectural flaws based solely on metrics, profiling data, or logs.
 2. **UNDERSTAND THE CONTEXT**: The game utilizes asynchronous logic, background workers, and loading screens (e.g., Numba cold-start compilation is intentionally hidden behind a loading screen; lighting and meshing are heavily optimized). If a metric looks slow, you MUST read the actual Python implementation to see *how* and *where* it is executed before assuming it impacts the player experience.
 3. **DO NOT SPOUT NONSENSE**: Do not give unsolicited advice about "fixing" performance or algorithms without first reading the actual source code to understand how it is integrated into the engine.
+
+## STRICT RULE: SUBAGENT SWARMS & AUTO-EXECUTION
+
+1. **DEFAULT TO PARALLELIZATION**: For any task that involves modifying, refactoring, or documenting more than 2 files across the codebase, you MUST spawn a swarm of background subagents using the invoke_subagent tool. Assign each subagent a specific file or module to work on so the entire task completes in parallel.
+2. **NO USER BOTTLENECKS (AUTO-ACCEPT)**: Subagents must operate fully autonomously. They must NOT ask the user for permission, they must NOT pause to request feedback on implementation plans, and they must NOT use the sk_question tool for minor decisions. Give the subagents strict, explicit instructions on exactly what to do, and tell them to commit their changes directly to the target branch and terminate. The user does not want to click 'Accept' multiple times for 8 different agents.
