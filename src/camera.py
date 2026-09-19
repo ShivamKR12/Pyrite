@@ -60,6 +60,27 @@ class Camera:
         """
         self.m_view = glm.lookAt(self.position, self.position + self.forward, self.up)
 
+    # ============================================================================
+    # REAL-WORLD CONTEXT: Euler Angles & Spherical Coordinates (3D Camera Math)
+    # ============================================================================
+    # How does moving the mouse translate into a 3D looking direction?
+    # This function converts "Euler Angles" (Yaw and Pitch in radians) into a 
+    # 3D directional vector (self.forward) using Spherical Coordinates trigonometry.
+    #
+    # How it works:
+    # 1. Forward Vector: We use `cos()` and `sin()` to project a 3D sphere onto
+    #    the X, Y, and Z axes based on where the player is looking. 
+    # 2. Right Vector: We use a "Cross Product" between our new Forward vector 
+    #    and the absolute World Up vector (0, 1, 0). The cross product mathematically 
+    #    returns a 3D vector that is perfectly perpendicular to both, giving us 
+    #    our "Right" direction!
+    # 3. Up Vector: We do one last cross product between Right and Forward to get
+    #    the camera's local "Up" direction.
+    #
+    # References:
+    # - Camera Math Tutorial: https://learnopengl.com/Getting-started/Camera
+    # - Cross Product visualizer: https://en.wikipedia.org/wiki/Cross_product
+    # ============================================================================
     @global_profiler.profile_func('Camera_UpdateVectors')
     def update_vectors(self) -> None:
         """

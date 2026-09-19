@@ -248,6 +248,29 @@ class VoxelHandler:
         """
         self.ray_cast()
 
+    # ============================================================================
+    # REAL-WORLD CONTEXT: Fast Voxel Traversal Algorithm (3D DDA)
+    # ============================================================================
+    # How does the game know exactly which block you are looking at? 
+    # It uses a technique called 3D Digital Differential Analyzer (DDA), specifically
+    # the "Amanatides & Woo" algorithm for fast voxel traversal.
+    #
+    # How it works:
+    # Instead of "stepping" forward by tiny amounts and checking if we hit a block 
+    # (which is slow and can "skip" through thin corners), this algorithm calculates
+    # exactly how far the ray must travel to hit the next X, Y, or Z grid boundary 
+    # (`max_x`, `max_y`, `max_z`).
+    #
+    # We step into the grid along whichever axis is closest, update the boundary 
+    # distance (`delta_x`, `delta_y`, `delta_z`), and repeat until we hit a solid 
+    # block. It guarantees we never miss a block and runs incredibly fast since 
+    # it only evaluates grid intersections!
+    #
+    # References:
+    # - 3D DDA Visualized: https://www.youtube.com/watch?v=NbSee-cg7Ig
+    # - Original Amanatides & Woo Paper: http://www.cse.yorku.ca/~amana/research/grid.pdf
+    # - LodeV's Raycasting Tutorial: https://lodev.org/cgtutor/raycasting.html
+    # ============================================================================
     @global_profiler.profile_func('VoxelHandler_RayCast')
     def ray_cast(self) -> bool:
         """
