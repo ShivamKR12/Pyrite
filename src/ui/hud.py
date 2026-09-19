@@ -44,6 +44,8 @@ from settings import (
     HOTBAR_SIZE,
     HOTBAR_Y,
     INVENTORY_SIZE,
+    OAK_LOG,
+    OAK_PLANKS,
     SAND,
     SLOT_SCALE,
     STICK,
@@ -56,8 +58,6 @@ from settings import (
     UI_SLOT_SELECTED_BG_COLOR,
     UI_SLOT_SELECTED_FRAME_COLOR,
     WINDOW_RESOLUTION,
-    OAK_LOG,
-    OAK_PLANKS,
     WOODEN_PICKAXE,
     get_path,
 )

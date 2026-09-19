@@ -152,8 +152,15 @@ class Player(Camera):
         center_z: int = 0
 
         ocean_biomes = {
-            OCEAN, DEEP_OCEAN, WARM_OCEAN, LUKEWARM_OCEAN, DEEP_LUKEWARM_OCEAN,
-            COLD_OCEAN, DEEP_COLD_OCEAN, FROZEN_OCEAN, DEEP_FROZEN_OCEAN
+            OCEAN,
+            DEEP_OCEAN,
+            WARM_OCEAN,
+            LUKEWARM_OCEAN,
+            DEEP_LUKEWARM_OCEAN,
+            COLD_OCEAN,
+            DEEP_COLD_OCEAN,
+            FROZEN_OCEAN,
+            DEEP_FROZEN_OCEAN,
         }
 
         # Expanding grid search for the closest solid block

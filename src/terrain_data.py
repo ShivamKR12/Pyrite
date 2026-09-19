@@ -73,37 +73,73 @@ EROSION_SPLINE: Any = np.array(
 # These are abstract IDs. The terrain generator will map them to surface blocks.
 
 # Generic
-OCEAN = 0; PLAINS = 1; RIVER = 2
+OCEAN = 0
+PLAINS = 1
+RIVER = 2
 
 # Mountain Biomes
-MEADOW = 10; GROVE = 11; SNOWY_SLOPES = 12; JAGGED_PEAKS = 13; FROZEN_PEAKS = 14; STONY_PEAKS = 15
+MEADOW = 10
+GROVE = 11
+SNOWY_SLOPES = 12
+JAGGED_PEAKS = 13
+FROZEN_PEAKS = 14
+STONY_PEAKS = 15
 
 # Highland Biomes
-WINDSWEPT_HILLS = 20; WINDSWEPT_GRAVELLY_HILLS = 21; WINDSWEPT_FOREST = 22
+WINDSWEPT_HILLS = 20
+WINDSWEPT_GRAVELLY_HILLS = 21
+WINDSWEPT_FOREST = 22
 
 # Woodland Biomes
-FOREST = 30; FLOWER_FOREST = 31; DARK_FOREST = 32; BIRCH_FOREST = 33
-OLD_GROWTH_BIRCH_FOREST = 34; TAIGA = 35; OLD_GROWTH_PINE_TAIGA = 36
-OLD_GROWTH_SPRUCE_TAIGA = 37; SNOWY_TAIGA = 38; JUNGLE = 39; SPARSE_JUNGLE = 40
+FOREST = 30
+FLOWER_FOREST = 31
+DARK_FOREST = 32
+BIRCH_FOREST = 33
+OLD_GROWTH_BIRCH_FOREST = 34
+TAIGA = 35
+OLD_GROWTH_PINE_TAIGA = 36
+OLD_GROWTH_SPRUCE_TAIGA = 37
+SNOWY_TAIGA = 38
+JUNGLE = 39
+SPARSE_JUNGLE = 40
 BAMBOO_JUNGLE = 41
 
 # Flatland Biomes
-SUNFLOWER_PLAINS = 50; SNOWY_PLAINS = 51; ICE_SPIKES = 52
+SUNFLOWER_PLAINS = 50
+SNOWY_PLAINS = 51
+ICE_SPIKES = 52
 
 # Arid Land Biomes
-DESERT = 60; SAVANNA = 61; SAVANNA_PLATEAU = 62; WINDSWEPT_SAVANNA = 63
-BADLANDS = 64; ERODED_BADLANDS = 65; WOODED_BADLANDS = 66
+DESERT = 60
+SAVANNA = 61
+SAVANNA_PLATEAU = 62
+WINDSWEPT_SAVANNA = 63
+BADLANDS = 64
+ERODED_BADLANDS = 65
+WOODED_BADLANDS = 66
 
 # Wetland & Coastal Biomes
-SWAMP = 70; FROZEN_RIVER = 71; BEACH = 72; SNOWY_BEACH = 73; STONY_SHORE = 74
+SWAMP = 70
+FROZEN_RIVER = 71
+BEACH = 72
+SNOWY_BEACH = 73
+STONY_SHORE = 74
 
 # Ocean & Island Biomes
-DEEP_OCEAN = 80; WARM_OCEAN = 81; LUKEWARM_OCEAN = 82; DEEP_LUKEWARM_OCEAN = 83
-COLD_OCEAN = 84; DEEP_COLD_OCEAN = 85; FROZEN_OCEAN = 86; DEEP_FROZEN_OCEAN = 87
+DEEP_OCEAN = 80
+WARM_OCEAN = 81
+LUKEWARM_OCEAN = 82
+DEEP_LUKEWARM_OCEAN = 83
+COLD_OCEAN = 84
+DEEP_COLD_OCEAN = 85
+FROZEN_OCEAN = 86
+DEEP_FROZEN_OCEAN = 87
 MUSHROOM_FIELDS = 88
 
 # Cave Biomes (Note: Not fully implemented with a 'depth' dimension yet)
-LUSH_CAVES = 90; DRIPSTONE_CAVES = 91; DEEP_DARK = 92
+LUSH_CAVES = 90
+DRIPSTONE_CAVES = 91
+DEEP_DARK = 92
 
 # ----------------------------------------------------------------------------
 # Noise Slicing Ranges
@@ -151,47 +187,47 @@ BIOME_TABLE: Any = np.full(BIOME_TABLE_SHAPE, PLAINS, dtype=np.uint8)
 # --- Define Biome Placement Rules (based on Minecraft 1.18 multi-noise) ---
 
 # Oceans (Low Continentalness)
-BIOME_TABLE[4, :, 0, :, :] = DEEP_FROZEN_OCEAN      # Hot Temp, Deep Ocean -> Frozen (Anomaly)
-BIOME_TABLE[3, :, 0, :, :] = DEEP_LUKEWARM_OCEAN    # Warm Temp, Deep Ocean
-BIOME_TABLE[2, :, 0, :, :] = DEEP_COLD_OCEAN        # Neutral Temp, Deep Ocean
-BIOME_TABLE[1, :, 0, :, :] = DEEP_COLD_OCEAN        # Cold Temp, Deep Ocean
-BIOME_TABLE[0, :, 0, :, :] = DEEP_FROZEN_OCEAN      # Hyper-Cold Temp, Deep Ocean
+BIOME_TABLE[4, :, 0, :, :] = DEEP_FROZEN_OCEAN  # Hot Temp, Deep Ocean -> Frozen (Anomaly)
+BIOME_TABLE[3, :, 0, :, :] = DEEP_LUKEWARM_OCEAN  # Warm Temp, Deep Ocean
+BIOME_TABLE[2, :, 0, :, :] = DEEP_COLD_OCEAN  # Neutral Temp, Deep Ocean
+BIOME_TABLE[1, :, 0, :, :] = DEEP_COLD_OCEAN  # Cold Temp, Deep Ocean
+BIOME_TABLE[0, :, 0, :, :] = DEEP_FROZEN_OCEAN  # Hyper-Cold Temp, Deep Ocean
 
-BIOME_TABLE[4, :, 1, :, :] = WARM_OCEAN             # Hot Temp, Ocean
-BIOME_TABLE[3, :, 1, :, :] = LUKEWARM_OCEAN         # Warm Temp, Ocean
-BIOME_TABLE[2, :, 1, :, :] = COLD_OCEAN             # Neutral Temp, Ocean
-BIOME_TABLE[1, :, 1, :, :] = COLD_OCEAN             # Cold Temp, Ocean
-BIOME_TABLE[0, :, 1, :, :] = FROZEN_OCEAN           # Hyper-Cold Temp, Ocean
+BIOME_TABLE[4, :, 1, :, :] = WARM_OCEAN  # Hot Temp, Ocean
+BIOME_TABLE[3, :, 1, :, :] = LUKEWARM_OCEAN  # Warm Temp, Ocean
+BIOME_TABLE[2, :, 1, :, :] = COLD_OCEAN  # Neutral Temp, Ocean
+BIOME_TABLE[1, :, 1, :, :] = COLD_OCEAN  # Cold Temp, Ocean
+BIOME_TABLE[0, :, 1, :, :] = FROZEN_OCEAN  # Hyper-Cold Temp, Ocean
 
 # Coasts (Transition Continentalness)
-BIOME_TABLE[0, :, 2, :, :] = SNOWY_BEACH            # Hyper-Cold Coast
-BIOME_TABLE[1:, :, 2, 0:2, :] = STONY_SHORE         # Non-Cold Coast, Low/Mid Erosion
-BIOME_TABLE[1:, :, 2, 2:, :] = BEACH               # Non-Cold Coast, High/Extreme Erosion
+BIOME_TABLE[0, :, 2, :, :] = SNOWY_BEACH  # Hyper-Cold Coast
+BIOME_TABLE[1:, :, 2, 0:2, :] = STONY_SHORE  # Non-Cold Coast, Low/Mid Erosion
+BIOME_TABLE[1:, :, 2, 2:, :] = BEACH  # Non-Cold Coast, High/Extreme Erosion
 
 # Rivers (Extreme Erosion)
-BIOME_TABLE[0:2, :, 3:, 3, :] = FROZEN_RIVER        # Cold/Hyper-Cold, Extreme Erosion
-BIOME_TABLE[2:, :, 3:, 3, :] = RIVER               # Neutral/Warm/Hot, Extreme Erosion
+BIOME_TABLE[0:2, :, 3:, 3, :] = FROZEN_RIVER  # Cold/Hyper-Cold, Extreme Erosion
+BIOME_TABLE[2:, :, 3:, 3, :] = RIVER  # Neutral/Warm/Hot, Extreme Erosion
 
 # Swamps (Warm, Moist, High Erosion)
 BIOME_TABLE[3, 3, 3:, 2, :] = SWAMP
 
 # Mountains (Far Inland, Low Erosion)
-BIOME_TABLE[0, :, 6, 0, :] = FROZEN_PEAKS          # Hyper-Cold
-BIOME_TABLE[1, :, 6, 0, :] = JAGGED_PEAKS          # Cold
-BIOME_TABLE[2:, 0:3, 6, 0, :] = STONY_PEAKS        # Neutral/Warm/Hot, Not Moist/Lush
-BIOME_TABLE[2:, 3:, 6, 0, :] = JAGGED_PEAKS        # Neutral/Warm/Hot, Moist/Lush
+BIOME_TABLE[0, :, 6, 0, :] = FROZEN_PEAKS  # Hyper-Cold
+BIOME_TABLE[1, :, 6, 0, :] = JAGGED_PEAKS  # Cold
+BIOME_TABLE[2:, 0:3, 6, 0, :] = STONY_PEAKS  # Neutral/Warm/Hot, Not Moist/Lush
+BIOME_TABLE[2:, 3:, 6, 0, :] = JAGGED_PEAKS  # Neutral/Warm/Hot, Moist/Lush
 
 # Plateaus & Slopes (Far Inland, Moderate Erosion)
-BIOME_TABLE[0, :, 6, 1, :] = SNOWY_SLOPES          # Hyper-Cold
-BIOME_TABLE[1, :, 6, 1, :] = GROVE                # Cold
-BIOME_TABLE[2, :, 6, 1, :] = MEADOW               # Neutral
-BIOME_TABLE[3:, 0, 6, 1, :] = SAVANNA_PLATEAU     # Warm/Hot, Arid
+BIOME_TABLE[0, :, 6, 1, :] = SNOWY_SLOPES  # Hyper-Cold
+BIOME_TABLE[1, :, 6, 1, :] = GROVE  # Cold
+BIOME_TABLE[2, :, 6, 1, :] = MEADOW  # Neutral
+BIOME_TABLE[3:, 0, 6, 1, :] = SAVANNA_PLATEAU  # Warm/Hot, Arid
 
 # Standard Land (Inland, High Erosion)
-BIOME_TABLE[0, :, 3:, 2, :] = SNOWY_PLAINS         # Hyper-Cold
-BIOME_TABLE[1, :, 3:, 2, :] = SNOWY_TAIGA          # Cold
-BIOME_TABLE[2, 2, 3:, 2, :] = FOREST               # Neutral, Normal Humidity
-BIOME_TABLE[2, 3, 3:, 2, :] = DARK_FOREST          # Neutral, Moist Humidity
-BIOME_TABLE[3, 0, 3:, 2, :] = SAVANNA              # Warm, Arid
-BIOME_TABLE[4, 0, 3:, 2, :] = DESERT               # Hot, Arid
-BIOME_TABLE[4, 3:, 3:, 2, :] = JUNGLE              # Hot, Moist/Lush
+BIOME_TABLE[0, :, 3:, 2, :] = SNOWY_PLAINS  # Hyper-Cold
+BIOME_TABLE[1, :, 3:, 2, :] = SNOWY_TAIGA  # Cold
+BIOME_TABLE[2, 2, 3:, 2, :] = FOREST  # Neutral, Normal Humidity
+BIOME_TABLE[2, 3, 3:, 2, :] = DARK_FOREST  # Neutral, Moist Humidity
+BIOME_TABLE[3, 0, 3:, 2, :] = SAVANNA  # Warm, Arid
+BIOME_TABLE[4, 0, 3:, 2, :] = DESERT  # Hot, Arid
+BIOME_TABLE[4, 3:, 3:, 2, :] = JUNGLE  # Hot, Moist/Lush

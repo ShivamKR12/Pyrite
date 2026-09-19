@@ -36,10 +36,10 @@ void main() {
         // Animate water texture by selecting one of 32 vertical frames over time.
         float animation_speed = 15.0; // Frames per second
         int frame_count = 32;
-        
+
         int current_frame = int(u_time * animation_speed) % frame_count;
         float frame_height = 1.0 / float(frame_count);
-        
+
         vec2 water_uv = vec2(face_uv.x, (face_uv.y * frame_height) + (float(current_frame) * frame_height));
         tex_sample = texture(u_texture_water, water_uv);
 
@@ -53,13 +53,13 @@ void main() {
     if (tex_sample.a < 0.1) {
         discard;
     }
-    
+
     vec3 tex_col = tex_sample.rgb;
     tex_col = pow(tex_col, gamma);
-    
+
     // Apply Day/Night cycle to sunlight
-    float day_light = max(0.05, u_sun_direction.y + 0.2); 
-    
+    float day_light = max(0.05, u_sun_direction.y + 0.2);
+
     // Final combined light
     float final_light = max(sun_light * day_light, block_light);
     final_light = max(0.02, pow(final_light, 1.5)); // Gamma curve for natural darkness
@@ -76,7 +76,7 @@ void main() {
     //fog
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
     float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
-    
+
     tex_col = mix(tex_col, bg_color, fog_factor);
 
     float alpha = 1.0;

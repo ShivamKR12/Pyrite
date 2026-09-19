@@ -14,7 +14,7 @@ from numba import njit
 
 from meshes.chunk_mesh_builder import get_chunk_index
 from profiler import global_profiler
-from settings import AIR, CHUNK_AREA, CHUNK_SIZE, GLASS, GLOWSTONE, OAK_LEAVES, LIGHTING_QUEUE_SIZE, WATER, WORLD_HEIGHT
+from settings import AIR, CHUNK_AREA, CHUNK_SIZE, GLASS, GLOWSTONE, LIGHTING_QUEUE_SIZE, OAK_LEAVES, WATER, WORLD_HEIGHT
 
 # Pre-allocated global memory queues to prevent massive GC churn per interaction
 GLOBAL_QUEUE_A: Any = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)

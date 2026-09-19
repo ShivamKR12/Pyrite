@@ -16,20 +16,20 @@ from numba import njit
 
 from noise import noise2, noise3
 from settings import (
-    AIR,
-    CENTER_XZ,
     ACACIA_LOG,
+    AIR,
     BIRCH_LOG,
-    CHUNK_AREA,
+    CENTER_XZ,
     CENTER_Y,
     CHUNK_AREA,
     CHUNK_SIZE,
     DARK_OAK_LOG,
-    JUNGLE_LOG,
     DIRT,
     GLASS,
     GRASS,
+    JUNGLE_LOG,
     OAK_LEAVES,
+    OAK_LOG,
     SAND,
     SNOW,
     SPRUCE_LOG,
@@ -40,17 +40,22 @@ from settings import (
     TREE_HEIGHT,
     WATER,
     WATER_LINE,
-    OAK_LOG,
     WORLD_HEIGHT,
 )
 from terrain_data import (
     BEACH,
+    BIOME_TABLE,
     BIRCH_FOREST,
+    CONTINENTALNESS_RANGES,
+    CONTINENTALNESS_SPLINE,
     DESERT,
+    EROSION_RANGES,
     FOREST,
+    HUMIDITY_RANGES,
     JAGGED_PEAKS,
     JUNGLE,
     OCEAN,
+    PV_RANGES,
     SAVANNA,
     SNOWY_BEACH,
     SNOWY_PLAINS,
@@ -59,15 +64,8 @@ from terrain_data import (
     STONY_SHORE,
     SWAMP,
     TAIGA,
-    BIOME_TABLE,
-    CONTINENTALNESS_RANGES,
-    CONTINENTALNESS_SPLINE,
-    EROSION_RANGES,
-    HUMIDITY_RANGES,
-    PV_RANGES,
     TEMPERATURE_RANGES,
 )
-
 
 # Terrain generator with temperature, moisture, and continentalness to create distinct biomes and landforms.
 # Has Biome Dithering to create more natural transitions and less blocky borders.
