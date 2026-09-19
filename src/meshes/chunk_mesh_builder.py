@@ -408,7 +408,7 @@ def build_chunk_mesh(
     mask0 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint64)
     mask1 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint64)
 
-    # ================== Y PLANES (Top/Bottom) ==================
+    # Y PLANES (Top/Bottom)
     for y in range(CHUNK_SIZE):
         wy = y + cy * CHUNK_SIZE
 
@@ -482,9 +482,15 @@ def build_chunk_mesh(
                         chunk_positions,
                     )
 
+                    # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
+                    # We compare the total lighting (sun + block + ao) of the two diagonals.
+                    # The diagonal with the higher total light is split to create smoother gradients.
                     flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
                         (l0 >> 4) + (l0 & 15) + ao[0]
                     ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
+                    # into a single 64-bit integer mask for efficient greedy meshing later.
+                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
                     mask0[x, z] = (
                         (np.uint64(v_id) << 41)
                         | (np.uint64(l0) << 33)
@@ -557,9 +563,15 @@ def build_chunk_mesh(
                         chunk_positions,
                     )
 
+                    # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
+                    # We compare the total lighting (sun + block + ao) of the two diagonals.
+                    # The diagonal with the higher total light is split to create smoother gradients.
                     flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
                         (l0 >> 4) + (l0 & 15) + ao[0]
                     ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
+                    # into a single 64-bit integer mask for efficient greedy meshing later.
+                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
                     mask1[x, z] = (
                         (np.uint64(v_id) << 41)
                         | (np.uint64(l0) << 33)
@@ -580,6 +592,8 @@ def build_chunk_mesh(
                 if val:
                     w, h = 1, 1
 
+                    # Greedy meshing: Find the maximum width (w) this face can extend along the first axis
+                    # where all faces share the exact same attributes (voxel ID, lighting, AO, etc).
                     while x + w < CHUNK_SIZE and mask0[x + w, z] == val:
                         w += 1
 
@@ -595,6 +609,7 @@ def build_chunk_mesh(
                             break
                         h += 1
 
+                    # Unpack the chunked face attributes from the 64-bit mask value
                     v_id = int((val >> 41) & 0xFF)
                     l0 = int((val >> 33) & 0xFF)
                     l1 = int((val >> 25) & 0xFF)
@@ -607,6 +622,7 @@ def build_chunk_mesh(
                     ao3 = int((val >> 1) & 3)
                     flip_id = int(val & 1)
 
+                    # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
                     v0 = pack_data(x, y + 1, z, v_id, 0, ao0, flip_id, l0)
                     v1 = pack_data(x + w, y + 1, z, v_id, 0, ao1, flip_id, l1)
                     v2 = pack_data(x + w, y + 1, z + h, v_id, 0, ao2, flip_id, l2)
@@ -651,6 +667,7 @@ def build_chunk_mesh(
 
                         h += 1
 
+                    # Unpack the chunked face attributes from the 64-bit mask value
                     v_id = int((val >> 41) & 0xFF)
                     l0 = int((val >> 33) & 0xFF)
                     l1 = int((val >> 25) & 0xFF)
@@ -663,6 +680,7 @@ def build_chunk_mesh(
                     ao3 = int((val >> 1) & 3)
                     flip_id = int(val & 1)
 
+                    # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
                     v0 = pack_data(x, y, z, v_id, 1, ao0, flip_id, l0)
                     v1 = pack_data(x + w, y, z, v_id, 1, ao1, flip_id, l1)
                     v2 = pack_data(x + w, y, z + h, v_id, 1, ao2, flip_id, l2)
@@ -684,7 +702,7 @@ def build_chunk_mesh(
                         for iz in range(h):
                             mask1[x + ix, z + iz] = 0
 
-    # ================== X PLANES (Right/Left) ==================
+    # X PLANES (Right/Left)
     for x in range(CHUNK_SIZE):
         wx = x + cx * CHUNK_SIZE
 
@@ -757,9 +775,15 @@ def build_chunk_mesh(
                         chunk_positions,
                     )
 
+                    # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
+                    # We compare the total lighting (sun + block + ao) of the two diagonals.
+                    # The diagonal with the higher total light is split to create smoother gradients.
                     flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
                         (l0 >> 4) + (l0 & 15) + ao[0]
                     ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
+                    # into a single 64-bit integer mask for efficient greedy meshing later.
+                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
                     mask0[y, z] = (
                         (np.uint64(v_id) << 41)
                         | (np.uint64(l0) << 33)
@@ -831,9 +855,15 @@ def build_chunk_mesh(
                         chunk_positions,
                     )
 
+                    # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
+                    # We compare the total lighting (sun + block + ao) of the two diagonals.
+                    # The diagonal with the higher total light is split to create smoother gradients.
                     flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
                         (l0 >> 4) + (l0 & 15) + ao[0]
                     ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
+                    # into a single 64-bit integer mask for efficient greedy meshing later.
+                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
                     mask1[y, z] = (
                         (np.uint64(v_id) << 41)
                         | (np.uint64(l0) << 33)
@@ -870,6 +900,7 @@ def build_chunk_mesh(
 
                         h += 1
 
+                    # Unpack the chunked face attributes from the 64-bit mask value
                     v_id = int((val >> 41) & 0xFF)
                     l0 = int((val >> 33) & 0xFF)
                     l1 = int((val >> 25) & 0xFF)
@@ -882,6 +913,7 @@ def build_chunk_mesh(
                     ao3 = int((val >> 1) & 3)
                     flip_id = int(val & 1)
 
+                    # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
                     v0 = pack_data(x + 1, y, z, v_id, 2, ao0, flip_id, l0)
                     v1 = pack_data(x + 1, y + w, z, v_id, 2, ao1, flip_id, l1)
                     v2 = pack_data(x + 1, y + w, z + h, v_id, 2, ao2, flip_id, l2)
@@ -926,6 +958,7 @@ def build_chunk_mesh(
 
                         h += 1
 
+                    # Unpack the chunked face attributes from the 64-bit mask value
                     v_id = int((val >> 41) & 0xFF)
                     l0 = int((val >> 33) & 0xFF)
                     l1 = int((val >> 25) & 0xFF)
@@ -938,6 +971,7 @@ def build_chunk_mesh(
                     ao3 = int((val >> 1) & 3)
                     flip_id = int(val & 1)
 
+                    # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
                     v0 = pack_data(x, y, z, v_id, 3, ao0, flip_id, l0)
                     v1 = pack_data(x, y + w, z, v_id, 3, ao1, flip_id, l1)
                     v2 = pack_data(x, y + w, z + h, v_id, 3, ao2, flip_id, l2)
@@ -959,7 +993,7 @@ def build_chunk_mesh(
                         for iz in range(h):
                             mask1[y + iy, z + iz] = 0
 
-    # ================== Z PLANES (Back/Front) ==================
+    # Z PLANES (Back/Front)
     for z in range(CHUNK_SIZE):
         wz = z + cz * CHUNK_SIZE
 
@@ -1032,9 +1066,15 @@ def build_chunk_mesh(
                         chunk_positions,
                     )
 
+                    # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
+                    # We compare the total lighting (sun + block + ao) of the two diagonals.
+                    # The diagonal with the higher total light is split to create smoother gradients.
                     flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
                         (l0 >> 4) + (l0 & 15) + ao[0]
                     ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
+                    # into a single 64-bit integer mask for efficient greedy meshing later.
+                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
                     mask0[x, y] = (
                         (np.uint64(v_id) << 41)
                         | (np.uint64(l0) << 33)
@@ -1106,9 +1146,15 @@ def build_chunk_mesh(
                         chunk_positions,
                     )
 
+                    # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
+                    # We compare the total lighting (sun + block + ao) of the two diagonals.
+                    # The diagonal with the higher total light is split to create smoother gradients.
                     flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
                         (l0 >> 4) + (l0 & 15) + ao[0]
                     ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
+                    # into a single 64-bit integer mask for efficient greedy meshing later.
+                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
                     mask1[x, y] = (
                         (np.uint64(v_id) << 41)
                         | (np.uint64(l0) << 33)
@@ -1145,6 +1191,7 @@ def build_chunk_mesh(
 
                         h += 1
 
+                    # Unpack the chunked face attributes from the 64-bit mask value
                     v_id = int((val >> 41) & 0xFF)
                     l0 = int((val >> 33) & 0xFF)
                     l1 = int((val >> 25) & 0xFF)
@@ -1157,6 +1204,7 @@ def build_chunk_mesh(
                     ao3 = int((val >> 1) & 3)
                     flip_id = int(val & 1)
 
+                    # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
                     v0 = pack_data(x, y, z, v_id, 4, ao0, flip_id, l0)
                     v1 = pack_data(x, y + h, z, v_id, 4, ao1, flip_id, l1)
                     v2 = pack_data(x + w, y + h, z, v_id, 4, ao2, flip_id, l2)
@@ -1201,6 +1249,7 @@ def build_chunk_mesh(
 
                         h += 1
 
+                    # Unpack the chunked face attributes from the 64-bit mask value
                     v_id = int((val >> 41) & 0xFF)
                     l0 = int((val >> 33) & 0xFF)
                     l1 = int((val >> 25) & 0xFF)
@@ -1213,6 +1262,7 @@ def build_chunk_mesh(
                     ao3 = int((val >> 1) & 3)
                     flip_id = int(val & 1)
 
+                    # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
                     v0 = pack_data(x, y, z + 1, v_id, 5, ao0, flip_id, l0)
                     v1 = pack_data(x, y + h, z + 1, v_id, 5, ao1, flip_id, l1)
                     v2 = pack_data(x + w, y + h, z + 1, v_id, 5, ao2, flip_id, l2)
