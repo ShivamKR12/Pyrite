@@ -109,7 +109,7 @@ class Chunk:
         self.generate_terrain(voxels, cx, cy, cz)
 
         if np.any(voxels):
-            self.is_empty = False
+            self.is_empty = False  # noqa: B007
 
         return voxels
 
@@ -122,6 +122,8 @@ class Chunk:
         A highly parallelized Numba wrapper that populates a chunk's voxel and lighting arrays
         deterministically based on the world seed.
         """
+        # Seed the random generator uniquely for each chunk to ensure thread-safe random numbers
+        # This is critical for functions like place_tree that use random.random()
         np.random.seed(seed ^ cx ^ cy ^ cz)
         random.seed(seed ^ cx ^ cy ^ cz)
 
@@ -129,7 +131,7 @@ class Chunk:
             for z in range(CHUNK_SIZE):
                 set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)
 
-        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
+        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array, seed)
 
     @staticmethod
     @njit(cache=True, fastmath=True, nogil=True)
@@ -138,4 +140,4 @@ class Chunk:
         A Numba-optimized function to fill sunlight in a chunk's lightmap without modifying the voxel data.
         Used during world loading to quickly restore lighting without regenerating terrain.
         """
-        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
+        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array, 0)  # Seed is not critical here

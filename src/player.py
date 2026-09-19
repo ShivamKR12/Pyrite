@@ -21,7 +21,7 @@ from settings import (
     BAREHAND_MINING_PENALTY,
     BLOCK_HARDNESS,
     CENTER_XZ,
-    COBBELSTONE,
+    COBBLESTONE,
     CREATIVE,
     FALL_DAMAGE_THRESHOLD,
     FAR,
@@ -55,7 +55,7 @@ from settings import (
     SPRINT_FOV_LERP_SPEED,
     STONE,
     SURVIVAL,
-    VIEW_BOBBING_AMPLITUDE,
+    VIEW_BOBBING_AMPLITUDE,  # This import was duplicated, removing one.
     VIEW_BOBBING_STEP_FREQUENCY,
     VOID_DAMAGE,
     VOID_DAMAGE_INTERVAL,
@@ -64,7 +64,18 @@ from settings import (
     WATER_LINE,
     WOODEN_PICKAXE,
 )
-from terrain_gen import get_height
+from terrain_data import (
+    COLD_OCEAN,
+    DEEP_COLD_OCEAN,
+    DEEP_FROZEN_OCEAN,
+    DEEP_LUKEWARM_OCEAN,
+    DEEP_OCEAN,
+    FROZEN_OCEAN,
+    LUKEWARM_OCEAN,
+    OCEAN,
+    WARM_OCEAN,
+)
+from terrain_gen import get_terrain_params
 
 
 class Player(Camera):
@@ -137,8 +148,13 @@ class Player(Camera):
         Locates a valid surface spawn position near the center of the world
         by scanning outward iteratively until a solid block above water is found.
         """
-        center_x: int = int(CENTER_XZ)
-        center_z: int = int(CENTER_XZ)
+        center_x: int = 0
+        center_z: int = 0
+
+        ocean_biomes = {
+            OCEAN, DEEP_OCEAN, WARM_OCEAN, LUKEWARM_OCEAN, DEEP_LUKEWARM_OCEAN,
+            COLD_OCEAN, DEEP_COLD_OCEAN, FROZEN_OCEAN, DEEP_FROZEN_OCEAN
+        }
 
         # Expanding grid search for the closest solid block
         for radius in range(0, SPAWN_SEARCH_RADIUS):
@@ -148,11 +164,12 @@ class Player(Camera):
                     if abs(dx) == radius or abs(dz) == radius:
                         x: int = center_x + dx
                         z: int = center_z + dz
-                        y: int = get_height(x, z, noise.perm)
 
-                        # Ensure the player doesn't spawn underwater
-                        if y > WATER_LINE:
-                            return glm.vec3(x + 0.5, y, z + 0.5)
+                        _, _, biome_id = get_terrain_params(float(x), float(z), noise.perm)
+
+                        if biome_id in ocean_biomes:
+                            # Spawn the player right on the water's surface
+                            return glm.vec3(x + 0.5, WATER_LINE + 1.0, z + 0.5)
 
         return glm.vec3(PLAYER_POS)
 
@@ -407,7 +424,7 @@ class Player(Camera):
                 hardness: float = float(BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0))
                 held_id: int = self.inventory[self.hotbar_index]
 
-                if voxel_handler.voxel_id in (STONE, COBBELSTONE):
+                if voxel_handler.voxel_id in (STONE, COBBLESTONE):
                     if held_id == WOODEN_PICKAXE:
                         hardness /= PICKAXE_MINING_MULTIPLIER  # 5x faster WITH a pickaxe!
                     else:

@@ -39,7 +39,8 @@ class Textures:
 
         # load textures
         self.texture_0: Any = self.load('textures/uis/frame.png')
-        self.texture_array_0: Any = self.load('textures/arrays/texture-array-2.png', is_tex_array=True)
+        self.texture_array_0: Any = self.load('textures/atlases/texture_atlas.png', is_tex_array=True)
+        self.texture_water: Any = self.load('textures/atlases/Water.png')
         self.texture_breaking: Any = self.load('textures/effects/block-breaking.png')
         self.texture_stick: Any = self.load('models/items/stick/stick.png')
         self.texture_pickaxe: Any = self.load('models/items/wooden-pickaxe/wooden_pickaxe.png', rotation=-90)
@@ -47,6 +48,7 @@ class Textures:
         # assign texture unit
         self.texture_0.use(location=0)
         self.texture_array_0.use(location=1)
+        self.texture_water.use(location=2)
         self.texture_breaking.use(location=3)
         self.texture_stick.use(location=5)
         self.texture_pickaxe.use(location=6)

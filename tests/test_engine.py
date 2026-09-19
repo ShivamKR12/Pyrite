@@ -2,7 +2,7 @@
 that determines which block faces to render based on transparency."""
 
 from meshes.chunk_mesh_builder import is_transparent
-from settings import AIR, GLASS, GRASS, LEAVES, STONE, WATER
+from settings import AIR, GLASS, GRASS, OAK_LEAVES, STONE, WATER
 
 
 def test_transparent_blocks():
@@ -10,6 +10,6 @@ def test_transparent_blocks():
     assert is_transparent(AIR) is True
     assert is_transparent(WATER) is True
     assert is_transparent(GLASS) is True
-    assert is_transparent(LEAVES) is True
+    assert is_transparent(OAK_LEAVES) is True
     assert is_transparent(STONE) is False
     assert is_transparent(GRASS) is False

@@ -14,19 +14,35 @@ import pygame as pg
 from profiler import global_profiler
 from settings import (
     CACTUS,
-    COBBELSTONE,
+    CLAY,
+    COBBLESTONE,
+    COAL_ORE,
+    DIAMOND_ORE,
     DIRT,
+    EMERALD_ORE,
     GLASS,
     GLOWSTONE,
+    GOLD_ORE,
     GRASS,
     GRAVEL,
-    LEAVES,
+    ICE,
+    IRON_ORE,
+    LAPIS_ORE,
+    OAK_LEAVES,
+    OAK_LOG,
+    OAK_PLANKS,
+    REDSTONE_ORE,
     SAND,
     SNOW,
     STONE,
     STONE_BRICKS,
-    WOOD,
-    WOOD_PLANKS,
+    ACACIA_LOG, ACACIA_PLANKS,
+    BIRCH_LOG, BIRCH_PLANKS,
+    DARK_OAK_LOG, DARK_OAK_PLANKS,
+    JUNGLE_LOG, JUNGLE_PLANKS,
+    SPRUCE_LOG, SPRUCE_PLANKS,
+    SANDSTONE, RED_SAND, RED_SANDSTONE,
+    BEDROCK,
     get_path,
 )
 
@@ -94,6 +110,22 @@ class Sounds:
             'walk': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
         }
 
+        wood_sounds = {
+            'break': [load(f'wood/Wood_dig{i}.ogg') for i in range(1, 5)],
+            'place': [load(f'wood/Wood_dig{i}.ogg') for i in range(1, 5)],
+            'breaking': [load(f'wood/Wood_mining{i}.ogg') for i in range(1, 7)],
+            'jump': [load(f'wood/Wood_hit{i}.ogg') for i in range(1, 7)],
+            'walk': [load(f'wood/Wood_hit{i}.ogg') for i in range(1, 7)],
+        }
+
+        glass_sounds = {
+            'break': [load(f'glass/Glass_dig{i}.ogg') for i in range(1, 4)],
+            'place': [load(f'stone/Stone_dig{i}.ogg') for i in range(1, 5)],
+            'breaking': [load(f'ice/Ice_mining{i}.ogg') for i in range(1, 7)],
+            'jump': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
+            'walk': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
+        }
+
         # SNOW
         self.sounds[SNOW] = {
             'break': [load(f'snow/Snow_dig{i}.ogg') for i in range(1, 5)],
@@ -104,52 +136,35 @@ class Sounds:
         }
 
         # LEAVES
-        self.sounds[LEAVES] = self.sounds[GRASS]
+        self.sounds[OAK_LEAVES] = self.sounds[GRASS]
 
         # WOOD
-        self.sounds[WOOD] = {
-            'break': [load(f'wood/Wood_dig{i}.ogg') for i in range(1, 5)],
-            'place': [load(f'wood/Wood_dig{i}.ogg') for i in range(1, 5)],
-            'breaking': [load(f'wood/Wood_mining{i}.ogg') for i in range(1, 7)],
-            'jump': [load(f'wood/Wood_hit{i}.ogg') for i in range(1, 7)],
-            'walk': [load(f'wood/Wood_hit{i}.ogg') for i in range(1, 7)],
-        }
+        self.sounds[OAK_LOG] = wood_sounds
+        self.sounds[SPRUCE_LOG] = wood_sounds
+        self.sounds[BIRCH_LOG] = wood_sounds
+        self.sounds[JUNGLE_LOG] = wood_sounds
+        self.sounds[ACACIA_LOG] = wood_sounds
+        self.sounds[DARK_OAK_LOG] = wood_sounds
 
         # DIRT
         self.sounds[DIRT] = self.sounds[GRAVEL]
 
         # GLASS
-        self.sounds[GLASS] = {
-            'break': [load(f'glass/Glass_dig{i}.ogg') for i in range(1, 4)],
-            'place': [load(f'stone/Stone_dig{i}.ogg') for i in range(1, 5)],
-            'breaking': [load(f'ice/Ice_mining{i}.ogg') for i in range(1, 7)],
-            'jump': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
-            'walk': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
-        }
+        self.sounds[GLASS] = glass_sounds
 
         # WOOD PLANKS
-        self.sounds[WOOD_PLANKS] = self.sounds[WOOD]
+        self.sounds[OAK_PLANKS] = wood_sounds
+        self.sounds[SPRUCE_PLANKS] = wood_sounds
+        self.sounds[BIRCH_PLANKS] = wood_sounds
+        self.sounds[JUNGLE_PLANKS] = wood_sounds
+        self.sounds[ACACIA_PLANKS] = wood_sounds
+        self.sounds[DARK_OAK_PLANKS] = wood_sounds
 
-        # COBBELSTONE
-        self.sounds[COBBELSTONE] = self.sounds[STONE]
+        # COBBLESTONE
+        self.sounds[COBBLESTONE] = self.sounds[STONE]
 
         # GLOWSTONE
-        self.sounds[GLOWSTONE] = {
-            'break': [load(f'glass/Glass_dig{i}.ogg') for i in range(1, 4)],
-            'place': [load(f'stone/Stone_dig{i}.ogg') for i in range(1, 5)],
-            'breaking': [load(f'ice/Ice_mining{i}.ogg') for i in range(1, 7)],
-            'jump': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
-            'walk': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
-        }
-
-        # GLASS
-        self.sounds[GLASS] = {
-            'break': [load(f'glass/Glass_dig{i}.ogg') for i in range(1, 4)],
-            'place': [load(f'stone/Stone_dig{i}.ogg') for i in range(1, 5)],
-            'breaking': [load(f'ice/Ice_mining{i}.ogg') for i in range(1, 7)],
-            'jump': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
-            'walk': [load(f'stone/Stone_hit{i}.ogg') for i in range(1, 7)],
-        }
+        self.sounds[GLOWSTONE] = glass_sounds
 
         # CACTUS
         self.sounds[CACTUS] = {
@@ -162,6 +177,21 @@ class Sounds:
 
         # STONE BRICKS
         self.sounds[STONE_BRICKS] = self.sounds[STONE]
+
+        # NEW BLOCKS
+        self.sounds[BEDROCK] = self.sounds[STONE]
+        self.sounds[SANDSTONE] = self.sounds[STONE]
+        self.sounds[RED_SAND] = self.sounds[SAND]
+        self.sounds[RED_SANDSTONE] = self.sounds[STONE]
+        self.sounds[CLAY] = self.sounds[GRAVEL]
+        self.sounds[ICE] = glass_sounds
+        self.sounds[COAL_ORE] = self.sounds[STONE]
+        self.sounds[IRON_ORE] = self.sounds[STONE]
+        self.sounds[GOLD_ORE] = self.sounds[STONE]
+        self.sounds[LAPIS_ORE] = self.sounds[STONE]
+        self.sounds[DIAMOND_ORE] = self.sounds[STONE]
+        self.sounds[EMERALD_ORE] = self.sounds[STONE]
+        self.sounds[REDSTONE_ORE] = self.sounds[STONE]
 
         self.hit_index: int = 0
         self.last_hit_time: int = 0

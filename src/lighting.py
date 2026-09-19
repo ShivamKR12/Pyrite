@@ -14,7 +14,7 @@ from numba import njit
 
 from meshes.chunk_mesh_builder import get_chunk_index
 from profiler import global_profiler
-from settings import AIR, CHUNK_AREA, CHUNK_SIZE, GLASS, GLOWSTONE, LEAVES, LIGHTING_QUEUE_SIZE, WATER, WORLD_HEIGHT
+from settings import AIR, CHUNK_AREA, CHUNK_SIZE, GLASS, GLOWSTONE, OAK_LEAVES, LIGHTING_QUEUE_SIZE, WATER, WORLD_HEIGHT
 
 # Pre-allocated global memory queues to prevent massive GC churn per interaction
 GLOBAL_QUEUE_A: Any = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
@@ -132,15 +132,15 @@ def propagate_light_queue(
                 voxel_id = get_voxel_fast(nx, ny, nz, world_voxels, chunk_positions)
                 n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)
 
-            if voxel_id != AIR and voxel_id != WATER and voxel_id != GLASS and voxel_id != LEAVES:
+            if voxel_id != AIR and voxel_id != WATER and voxel_id != GLASS and voxel_id != OAK_LEAVES:
                 continue
 
             n_L = (n_val >> 4) if is_sun else (n_val & 15)
 
-            if voxel_id == WATER or voxel_id == LEAVES:
+            if voxel_id == WATER or voxel_id == OAK_LEAVES:
                 diminish = 2
 
-            else:
+            elif voxel_id == OAK_LEAVES:
                 diminish = 1
 
             new_L = L - diminish
@@ -497,7 +497,7 @@ def _update_light_remove_block(
         while curr_y >= 0:
             voxel_id = get_voxel_fast(wx, curr_y, wz, world_voxels, chunk_positions)
 
-            if voxel_id != AIR and voxel_id != WATER and voxel_id != GLASS and voxel_id != LEAVES:
+            if voxel_id != AIR and voxel_id != WATER and voxel_id != GLASS and voxel_id != OAK_LEAVES:
                 break
 
             curr_val = get_light_fast(wx, curr_y, wz, world_lightmaps, chunk_positions)
@@ -505,7 +505,7 @@ def _update_light_remove_block(
             queue_sun[tail_sun] = (np.uint64(wx) << 32) | (np.uint64(curr_y) << 16) | np.uint64(wz)
             tail_sun += 1
 
-            if voxel_id == WATER or voxel_id == LEAVES:
+            if voxel_id == WATER or voxel_id == OAK_LEAVES:
                 break
 
             curr_y -= 1

@@ -56,8 +56,8 @@ from settings import (
     UI_SLOT_SELECTED_BG_COLOR,
     UI_SLOT_SELECTED_FRAME_COLOR,
     WINDOW_RESOLUTION,
-    WOOD,
-    WOOD_PLANKS,
+    OAK_LOG,
+    OAK_PLANKS,
     WOODEN_PICKAXE,
     get_path,
 )
@@ -404,15 +404,15 @@ class InventoryUI:
 
         recipes: Dict[Tuple[int, ...], Tuple[int, int]] = {
             # Wood -> 4 Planks
-            (WOOD, 0, 0, 0): (WOOD_PLANKS, 4),
-            (0, WOOD, 0, 0): (WOOD_PLANKS, 4),
-            (0, 0, WOOD, 0): (WOOD_PLANKS, 4),
-            (0, 0, 0, WOOD): (WOOD_PLANKS, 4),
+            (OAK_LOG, 0, 0, 0): (OAK_PLANKS, 4),
+            (0, OAK_LOG, 0, 0): (OAK_PLANKS, 4),
+            (0, 0, OAK_LOG, 0): (OAK_PLANKS, 4),
+            (0, 0, 0, OAK_LOG): (OAK_PLANKS, 4),
             # 2 Planks -> 4 Sticks (Vertical)
-            (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4),
-            (0, WOOD_PLANKS, 0, WOOD_PLANKS): (STICK, 4),
+            (OAK_PLANKS, 0, OAK_PLANKS, 0): (STICK, 4),
+            (0, OAK_PLANKS, 0, OAK_PLANKS): (STICK, 4),
             # Wooden Pickaxe -> Top row planks, Bottom left stick
-            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1),
+            (OAK_PLANKS, OAK_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1),
             # Glowstone!
             (SAND, SAND, SAND, SAND): (GLOWSTONE, 4),
             # Glass

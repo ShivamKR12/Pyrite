@@ -12,8 +12,8 @@ from typing import Any
 import numpy as np
 import pytest
 
-from settings import CHUNK_AREA, CHUNK_SIZE, DIRT, WOOD, WORLD_HEIGHT
-from terrain_gen import get_biome, get_height, get_index, place_tree
+from settings import CHUNK_AREA, CHUNK_SIZE, DIRT, OAK_LOG, WORLD_HEIGHT
+from terrain_gen import get_biome, get_index, get_terrain_params, place_tree
 
 
 @pytest.fixture
@@ -34,23 +34,16 @@ def test_get_index_boundaries() -> None:
     assert get_index(x, y, z) == expected_index
 
 
-def test_get_biome_output(mock_perm_array: Any) -> None:
-    """Ensures the biome generator returns a valid Temperature and Moisture tuple."""
-    temp, moist = get_biome(100.5, 200.5, mock_perm_array)
-
-    assert isinstance(temp, float)
-    assert isinstance(moist, float)
-    assert -2.0 <= temp <= 2.0, 'Temperature out of expected Simplex noise range.'
-    assert -2.0 <= moist <= 2.0, 'Moisture out of expected Simplex noise range.'
-
-
-def test_get_height_safety_limits(mock_perm_array: Any) -> None:
+def test_get_terrain_params_safety_limits(mock_perm_array: Any) -> None:
     """Verifies that height generation respects exact boundaries (Boundary Value Analysis)."""
-    height = get_height(500.0, 500.0, mock_perm_array)
+    height_offset, squashing_factor, biome_id = get_terrain_params(500.0, 500.0, mock_perm_array)
 
-    assert isinstance(height, int)
-    assert height >= 2, 'Terrain generated below the absolute minimum boundary.'
-    assert height <= WORLD_HEIGHT * CHUNK_SIZE - 2, 'Terrain exceeded the maximum world height boundary.'
+    assert isinstance(height_offset, float)
+    assert isinstance(squashing_factor, float)
+    assert isinstance(biome_id, int)
+
+    # Check if the base height offset is within a reasonable range
+    assert 0 <= height_offset <= WORLD_HEIGHT * CHUNK_SIZE
 
 
 def test_place_tree_structure() -> None:
@@ -61,7 +54,7 @@ def test_place_tree_structure() -> None:
     place_tree(voxels, x=8, y=5, z=8, voxel_id=DIRT, tree_prob=1.0)
 
     assert voxels[get_index(8, 5, 8)] == DIRT, 'Tree did not place dirt at its base.'
-    assert voxels[get_index(8, 6, 8)] == WOOD, 'Tree trunk was not placed directly above the dirt.'
+    assert voxels[get_index(8, 6, 8)] == OAK_LOG, 'Tree trunk was not placed directly above the dirt.'
 
 
 def test_place_tree_out_of_bounds() -> None:

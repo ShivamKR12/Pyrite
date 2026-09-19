@@ -9,7 +9,7 @@ lock-free to prevent main-thread latency.
 """
 
 # """
-from random import random
+import random
 from typing import Any, Tuple
 
 from numba import njit
@@ -17,15 +17,22 @@ from numba import njit
 from noise import noise2, noise3
 from settings import (
     AIR,
+    CENTER_XZ,
+    ACACIA_LOG,
+    BIRCH_LOG,
+    CHUNK_AREA,
     CENTER_Y,
     CHUNK_AREA,
     CHUNK_SIZE,
+    DARK_OAK_LOG,
+    JUNGLE_LOG,
     DIRT,
     GLASS,
     GRASS,
-    LEAVES,
+    OAK_LEAVES,
     SAND,
     SNOW,
+    SPRUCE_LOG,
     STONE,
     STONE_LVL,
     TREE_H_HEIGHT,
@@ -33,79 +40,160 @@ from settings import (
     TREE_HEIGHT,
     WATER,
     WATER_LINE,
-    WOOD,
+    OAK_LOG,
     WORLD_HEIGHT,
+)
+from terrain_data import (
+    BEACH,
+    BIRCH_FOREST,
+    DESERT,
+    FOREST,
+    JAGGED_PEAKS,
+    JUNGLE,
+    OCEAN,
+    SAVANNA,
+    SNOWY_BEACH,
+    SNOWY_PLAINS,
+    SNOWY_TAIGA,
+    STONY_PEAKS,
+    STONY_SHORE,
+    SWAMP,
+    TAIGA,
+    BIOME_TABLE,
+    CONTINENTALNESS_RANGES,
+    CONTINENTALNESS_SPLINE,
+    EROSION_RANGES,
+    HUMIDITY_RANGES,
+    PV_RANGES,
+    TEMPERATURE_RANGES,
 )
 
 
 # Terrain generator with temperature, moisture, and continentalness to create distinct biomes and landforms.
 # Has Biome Dithering to create more natural transitions and less blocky borders.
-@njit(cache=True, fastmath=True, nogil=True)
-def get_biome(x: float, z: float, perm_array: Any) -> Tuple[float, float]:
-    """
-    Evaluates Simplex noise to determine the overarching temperature and moisture
-    levels of a specific vertical column, shaping its respective biome.
-    """
-    # Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)
-    # Scaled down frequencies by 10x to create massive, sprawling biomes
-    temp = noise2(x * 0.002, z * 0.002, perm_array)
-    moist = noise2(x * 0.002 + 100.0, z * 0.002 + 100.0, perm_array)
-
-    return temp, moist
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def get_height(x: float, z: float, perm_array: Any) -> int:
+def get_terrain_factors(x: float, z: float, perm_array: Any) -> Tuple[float, float, float, float, float]:
     """
-    Calculates the absolute maximum surface elevation of the terrain at a specific
-    X,Z coordinate using fractional Brownian motion and continentalness modifiers.
+    Calculates the five abstract 2D noise fields that drive terrain and biome generation.
+
+    Returns:
+        A tuple containing (continentalness, erosion, pv, temperature, humidity).
     """
-    # Continentalness: Controls overall elevation independently from climate
-    # This creates distinct Plains, Hills, Plateaus, and Mountains!
-    cont = noise2(x * 0.003 + 100.0, z * 0.003 + 100.0, perm_array)
+    # 1. Continentalness: Low-frequency noise for large landmasses vs. oceans.
+    cont = noise2(x * 0.0032, z * 0.0032, perm_array)  # 4x frequency for smaller continents
 
-    # Base properties
-    a1 = CENTER_Y
-    a2, a4, a8 = a1 * 0.5, a1 * 0.25, a1 * 0.125
-    f1 = 0.005
-    f2, f4, f8 = f1 * 2, f1 * 4, f1 * 8
+    # 2. Erosion: Medium-frequency noise for jagged vs. smooth terrain.
+    erosion = noise2(x * 0.002, z * 0.002, perm_array)
 
-    base_h = noise2(x * f1, z * f1, perm_array) * a1 + a1
-    detail_1 = noise2(x * f2, z * f2, perm_array) * a2 - a2
-    detail_2 = noise2(x * f4, z * f4, perm_array) * a4 + a4
-    detail_3 = noise2(x * f8, z * f8, perm_array) * a8 - a8
+    # 3. Peaks & Valleys (PV): Higher-frequency noise for local hills and ridges.
+    pv_base = noise2(x * 0.005, z * 0.005, perm_array)  # Keep this for terrain detail
+    pv_detail = noise2(x * 0.02, z * 0.02, perm_array) * 0.25
+    pv = pv_base + pv_detail
 
-    height = base_h + detail_1 + detail_2 + detail_3
+    # 4. Temperature: Very low-frequency noise for broad climate zones.
+    temp = noise2(x * 0.002, z * 0.002, perm_array)  # 4x frequency for smaller climate zones
 
-    # Terrain Shaping based on Continentalness
-    if cont < -0.2:
-        # Deep Plains & Oceans (Flatter and lower)
-        w = min((-0.2 - cont) * 5.0, 1.0)
-        target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
-        height = height * (1.0 - w) + target_h * w
+    # 5. Humidity: Low-frequency noise for moisture levels (deserts vs. swamps).
+    humidity = noise2(x * 0.004, z * 0.004, perm_array)  # 4x frequency for smaller humidity zones
 
-    elif cont > 0.4:
-        # Extreme Mountains
-        w = min((cont - 0.4) * 5.0, 1.0)
-        target_h = base_h * 1.5 + detail_1 * 2.0 + detail_2 + detail_3 + 30
-        height = height * (1.0 - w) + target_h * w
+    return cont, erosion, pv, temp, humidity
 
-    elif 0.1 < cont <= 0.3:
-        # Plateaus (steep cliffs, flat tops)
-        w = min((cont - 0.1) * 10.0, 1.0) * min((0.3 - cont) * 10.0, 1.0)
-        plat_h = CENTER_Y + 12
 
-        if height > plat_h:
-            flattened = plat_h + (height - plat_h) * 0.1
-            height = height * (1.0 - w) + flattened * w
+@njit(cache=True, fastmath=True, nogil=True)
+def interpolate_spline(value: float, spline: Any) -> Tuple[float, float]:
+    """
+    Performs linear interpolation on a 2D spline data structure.
 
-    height = max(height, noise2(x * f8, z * f8, perm_array) + 2)
+    Finds the two points in the spline that bracket the input value and
+    interpolates the two corresponding output values.
 
-    # Absolute safety nets: prevent terrain from ever exceeding the chunk limits
-    height = min(height, WORLD_HEIGHT * CHUNK_SIZE - 2)
-    height = max(height, 2.0)
+    Args:
+        value (float): The input noise value to interpolate.
+        spline (Any): A Numba-compatible 2D NumPy array representing the spline.
 
-    return int(height)
+    Returns:
+        A tuple containing the two interpolated output values.
+    """
+    # Find the segment of the spline that the value falls into
+    for i in range(len(spline) - 1):
+        x1, y1_out1, y1_out2 = spline[i]
+        x2, y2_out1, y2_out2 = spline[i + 1]
+
+        if x1 <= value <= x2:
+            # Linear interpolation factor
+            t = (value - x1) / (x2 - x1)
+
+            # Interpolate both output values
+            out1 = y1_out1 + t * (y2_out1 - y1_out1)
+            out2 = y1_out2 + t * (y2_out2 - y1_out2)
+            return out1, out2
+
+    # If value is outside the spline's range, clamp to the nearest end
+    if value < spline[0][0]:
+        return spline[0][1], spline[0][2]
+    return spline[-1][1], spline[-1][2]
+
+
+@njit(cache=True, fastmath=True, nogil=True)
+def get_slice_index(value: float, ranges: Any) -> int:
+    """
+    Converts a continuous noise value (-1.0 to 1.0) into a discrete index
+    by finding where it falls within the provided slicing ranges.
+    """
+    for i in range(len(ranges)):
+        if value <= ranges[i]:
+            return i
+    return len(ranges)  # Return the last slice index if value is greater than all ranges
+
+
+@njit(cache=True, fastmath=True, nogil=True)
+def get_biome(cont: float, erosion: float, pv: float, temp: float, humidity: float) -> int:
+    """
+    Determines the biome for a location using the 5D Biome Matrix.
+
+    Takes the five continuous noise values, converts them to discrete indices,
+    and performs a lookup in the BIOME_TABLE to get the final biome ID.
+
+    Returns:
+        The integer ID of the determined biome.
+    """
+    temp_idx = get_slice_index(temp, TEMPERATURE_RANGES)
+    hum_idx = get_slice_index(humidity, HUMIDITY_RANGES)
+    cont_idx = get_slice_index(cont, CONTINENTALNESS_RANGES)
+    ero_idx = get_slice_index(erosion, EROSION_RANGES)
+    pv_idx = get_slice_index(pv, PV_RANGES)
+
+    # Perform the 5D lookup
+    biome_id = BIOME_TABLE[temp_idx, hum_idx, cont_idx, ero_idx, pv_idx]
+    return biome_id
+
+
+@njit(cache=True, fastmath=True, nogil=True)
+def get_terrain_params(x: float, z: float, perm_array: Any) -> Tuple[float, float, int]:
+    """
+    Calculates the final terrain parameters by blending noise fields through splines.
+
+    Args:
+        x (float): World-space X coordinate.
+        z (float): World-space Z coordinate.
+        perm_array (Any): The Numba-compatible noise permutation array.
+
+    Returns:
+        A tuple containing (height_offset, squashing_factor, biome_id).
+    """
+    cont, erosion, pv, temp, humidity = get_terrain_factors(x, z, perm_array)
+
+    # Use the new spline system to determine height and squashing
+    height_offset, squashing_factor = interpolate_spline(cont, CONTINENTALNESS_SPLINE)
+
+    # Add peaks and valleys for detail
+    height_offset += pv * 10
+
+    biome_id = get_biome(cont, erosion, pv, temp, humidity)
+
+    return height_offset, squashing_factor, biome_id
 
 
 @njit(cache=True, fastmath=True, nogil=True)
@@ -127,121 +215,83 @@ def set_voxel_column(
     """
     wx = x + cx
     wz = z + cz
-    world_height = get_height(wx, wz, perm_array)
 
-    max_h = max(world_height, int(WATER_LINE) + 1)
-    local_height = min(max_h - cy, CHUNK_SIZE)
+    height_offset, squashing_factor, biome_id = get_terrain_params(wx, wz, perm_array)
 
-    if local_height <= 0:
-        return
+    # Determine surface blocks based on biome ID
+    surface_id = GRASS
+    tree_type = OAK_LOG
 
-    # Determine biome and surface blocks ONCE per column (Huge Optimization)
-    temp, moist = get_biome(wx, wz, perm_array)
-
-    # Add natural dithering to the biome borders so blocks mix organically
-    dither = noise2(wx * 0.2, wz * 0.2, perm_array) * 0.05 + noise2(wx * 0.8, wz * 0.8, perm_array) * 0.03
-    temp += dither
-    moist += dither
-
-    is_desert = temp > 0.3 and moist < -0.2
-    is_snow = temp < -0.2
-
-    # Define Water bodies and Beaches based on height!
-    # Any terrain dipping below WATER_LINE naturally acts as a lake/ocean.
-    is_underwater = world_height <= WATER_LINE
-    is_beach = world_height <= WATER_LINE + 2 and not is_underwater
-
-    # Exactly as requested: Sand ONLY in deserts, lakes, oceans, and beaches!
-    if is_underwater or is_beach or is_desert:
+    if biome_id in (OCEAN, BEACH):
         surface_id = SAND
+    elif biome_id in (DESERT, SAVANNA):
+        surface_id = SAND
+        tree_type = ACACIA_LOG
+    elif biome_id in (SNOWY_PLAINS, SNOWY_TAIGA, SNOWY_BEACH):
+        surface_id = SNOW
+        tree_type = SPRUCE_LOG
+    elif biome_id in (JAGGED_PEAKS, STONY_PEAKS, STONY_SHORE):
+        surface_id = STONE
+    elif biome_id == TAIGA:
+        tree_type = SPRUCE_LOG
+    elif biome_id == BIRCH_FOREST:
+        tree_type = BIRCH_LOG
+    elif biome_id == JUNGLE:
+        tree_type = JUNGLE_LOG
+
+    # Determine subsurface block
+    subsurface_id = DIRT
+    if biome_id in (DESERT, SAVANNA, BEACH):
         subsurface_id = SAND
 
-    elif is_snow:
-        surface_id = SNOW
-        subsurface_id = DIRT
-
-    else:
-        surface_id = GRASS
-        subsurface_id = DIRT
-
-    # Depth logic
-    # Deterministic noise for dirt depth mapping from 3 to 8 blocks deep
     dirt_depth = int((noise2(wx * 0.1, wz * 0.1, perm_array) * 0.5 + 0.5) * 5) + 3
 
-    # Pre-calculate 2D masks once per column instead of every Y block
-    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0, perm_array)
-    crust = noise2(wx * 0.1, wz * 0.1, perm_array) * 3 + 3
-
-    for y in range(local_height):
+    placed_tree = False
+    for y in range(CHUNK_SIZE):
         wy = y + cy
-        voxel_id = 0
 
-        if wy > world_height - 1:
-            if wy <= WATER_LINE:
-                voxel_id = WATER
+        # 1. Calculate 3D density noise
+        density = noise3(wx * 0.01, wy * 0.01, wz * 0.01, perm_array, perm_grad_array)
+
+        # 2. Apply height bias (squashing)
+        density -= (wy - height_offset) * squashing_factor
+
+        # 3. Determine if the block is solid or air based on density
+        if density > 0:
+            # Find the surface to apply grass/dirt
+            density_above = noise3(wx * 0.01, (wy + 1) * 0.01, wz * 0.01, perm_array, perm_grad_array)
+            density_above -= ((wy + 1) - height_offset) * squashing_factor
+
+            # Place Tree: No trees underwater, no trees on high mountains, no trees on snow, no floating trees!
+            if not placed_tree and density_above <= 0 and wy > WATER_LINE and wy < STONE_LVL and surface_id == GRASS:
+                if random.random() < 0.005:
+                    place_tree_at(voxels, x, y, z, tree_type)
+                    placed_tree = True
+            # Determine block type based on depth from the surface
+            if density_above <= 0:
+                voxels[get_index(x, y, z)] = surface_id
+            else:
+                # Check density a few blocks down to determine if it's subsurface or deep stone
+                density_below = noise3(wx * 0.01, (wy - dirt_depth) * 0.01, wz * 0.01, perm_array, perm_grad_array)
+                density_below -= ((wy - dirt_depth) - height_offset) * squashing_factor
+                if density_below > 0:
+                    voxels[get_index(x, y, z)] = STONE
+                else:
+                    voxels[get_index(x, y, z)] = subsurface_id
 
         else:
-            # Determine default solid block type
-            if wy == world_height - 1:
-                voxel_id = surface_id
-
-            elif wy >= world_height - dirt_depth:
-                voxel_id = subsurface_id
-
+            # It's air, but check if it should be water
+            if wy <= WATER_LINE:
+                voxels[get_index(x, y, z)] = WATER
             else:
-                voxel_id = STONE
-
-            if wy > crust:
-                surface_dist = world_height - wy
-
-                # Keep water/beaches intact by blocking cave generation entirely in the top sand/dirt layers
-                if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
-                    # Cave Carving using 3D noise
-                    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09, perm_array, perm_grad_array)
-                    cave_threshold = 0.0
-
-                    # Taper the cave noise threshold near the surface to create natural, narrow cave mouths
-                    if surface_dist < 14:
-                        # Smoothly increase the threshold as we get closer to the surface
-                        taper_factor = (14 - surface_dist) / 14.0
-                        target_threshold = 0.3 + max(0.0, 0.5 - entrance_mask) * 4.0
-                        cave_threshold = target_threshold * taper_factor
-
-                    if cave_noise > cave_threshold:
-                        voxel_id = 0
-
-        # setting ID
-        if voxel_id:
-            voxels[get_index(x, y, z)] = voxel_id
-
-        # Place Tree: No trees underwater, no trees on high mountains, no trees on snow, no floating trees!
-        if wy == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and wy < STONE_LVL:
-            tree_prob = 0.0
-
-            if surface_id == GRASS:
-                if moist > 0.4:
-                    tree_prob = 0.04  # Dense forest
-
-                elif moist > 0.0:
-                    tree_prob = 0.005  # Sparse woods
-
-                else:
-                    tree_prob = 0.0001  # Extreme plains (~1 tree every 5 chunks)
-
-            if tree_prob > 0:
-                place_tree(voxels, x, y, z, surface_id, tree_prob)
+                voxels[get_index(x, y, z)] = AIR
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def place_tree(voxels: Any, x: int, y: int, z: int, voxel_id: int, tree_prob: float) -> None:
+def place_oak_tree(voxels: Any, x: int, y: int, z: int, trunk_id: int) -> None:
     """
-    Constructs a localized tree structure (wood trunk and spherical leaf crown)
-    within the chunk volume if probability and physical boundaries allow for it.
+    Constructs a standard oak-like tree with a spherical leaf crown.
     """
-    rnd = random()
-    if rnd > tree_prob:
-        return None
-
     if y + TREE_HEIGHT >= CHUNK_SIZE:
         return None
 
@@ -258,55 +308,142 @@ def place_tree(voxels: Any, x: int, y: int, z: int, voxel_id: int, tree_prob: fl
     m = 0
     for n, iy in enumerate(range(TREE_H_HEIGHT, TREE_HEIGHT - 1)):
         k = iy % 2
-        rng = int(random() * 2)
+        rng = int(random.random() * 2)
 
         for ix in range(-TREE_H_WIDTH + m, TREE_H_WIDTH - m * rng):
             for iz in range(-TREE_H_WIDTH + m * rng, TREE_H_WIDTH - m):
                 if (ix + iz) % 4:
-                    voxels[get_index(x + ix + k, y + iy, z + iz + k)] = LEAVES
+                    voxels[get_index(x + ix + k, y + iy, z + iz + k)] = OAK_LEAVES
 
         m += 1 if n > 0 else 3 if n > 1 else 0
 
     # tree trunk
     for iy in range(1, TREE_HEIGHT - 2):
-        voxels[get_index(x, y + iy, z)] = WOOD
+        voxels[get_index(x, y + iy, z)] = trunk_id
 
     # top
-    voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
+    voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = OAK_LEAVES
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def fill_initial_sunlight(voxels: Any, lightmap: Any, cx: int, cy: int, cz: int, perm_array: Any) -> None:
+def place_spruce_tree(voxels: Any, x: int, y: int, z: int, trunk_id: int) -> None:
+    """
+    Constructs a conical spruce/pine tree.
+    """
+    height = TREE_HEIGHT + 2
+    if y + height >= CHUNK_SIZE:
+        return None
+
+    voxels[get_index(x, y, z)] = DIRT
+
+    # Conical leaves
+    radius = 0
+    for iy in range(height, 2, -1):
+        if iy % 2 == 0:
+            radius += 1
+        for ix in range(-radius, radius + 1):
+            for iz in range(-radius, radius + 1):
+                if ix * ix + iz * iz <= radius * radius:
+                    if 0 <= x + ix < CHUNK_SIZE and 0 <= z + iz < CHUNK_SIZE:
+                        voxels[get_index(x + ix, y + iy, z + iz)] = OAK_LEAVES
+
+    # Trunk
+    for iy in range(1, height):
+        voxels[get_index(x, y + iy, z)] = trunk_id
+
+
+@njit(cache=True, fastmath=True, nogil=True)
+def place_acacia_tree(voxels: Any, x: int, y: int, z: int, trunk_id: int) -> None:
+    """
+    Constructs an acacia-style tree with a forked trunk and a flat top.
+    """
+    height = TREE_HEIGHT - 1
+    if y + height + 2 >= CHUNK_SIZE:
+        return
+
+    voxels[get_index(x, y, z)] = DIRT
+
+    # Forked trunk
+    for i in range(height // 2):
+        voxels[get_index(x, y + 1 + i, z)] = trunk_id
+
+    voxels[get_index(x + 1, y + 1 + height // 2, z + 1)] = trunk_id
+    voxels[get_index(x + 1, y + 2 + height // 2, z + 2)] = trunk_id
+    voxels[get_index(x, y + 3 + height // 2, z + 2)] = trunk_id
+
+    # Flat canopy
+    canopy_y = y + height
+    for ix in range(-2, 3):
+        for iz in range(-3, 3):
+            if 0 <= x + ix < CHUNK_SIZE and 0 <= z + iz < CHUNK_SIZE:
+                voxels[get_index(x + ix, canopy_y, z + iz)] = OAK_LEAVES
+                if random.random() < 0.5:
+                    voxels[get_index(x + ix, canopy_y + 1, z + iz)] = OAK_LEAVES
+
+
+@njit(cache=True, fastmath=True, nogil=True)
+def place_jungle_tree(voxels: Any, x: int, y: int, z: int, trunk_id: int) -> None:
+    """
+    Constructs a tall jungle tree.
+    """
+    height = TREE_HEIGHT + 6
+    if y + height >= CHUNK_SIZE:
+        return
+
+    voxels[get_index(x, y, z)] = DIRT
+
+    # Trunk
+    for iy in range(1, height):
+        voxels[get_index(x, y + iy, z)] = trunk_id
+
+    # Canopy
+    for iy in range(height - 3, height + 1):
+        radius = 2 if iy < height else 1
+        for ix in range(-radius, radius + 1):
+            for iz in range(-radius, radius + 1):
+                if ix != 0 or iz != 0:  # Leave center hollow for trunk
+                    if 0 <= x + ix < CHUNK_SIZE and 0 <= z + iz < CHUNK_SIZE:
+                        voxels[get_index(x + ix, iy + y, z + iz)] = OAK_LEAVES
+
+
+@njit(cache=True, fastmath=True, nogil=True)
+def place_tree_at(voxels: Any, x: int, y: int, z: int, tree_type: int) -> None:
+    """
+    Dispatcher function that calls the correct tree generation logic based on the tree type ID.
+    """
+    if tree_type == SPRUCE_LOG:
+        place_spruce_tree(voxels, x, y, z, tree_type)
+    elif tree_type == ACACIA_LOG:
+        place_acacia_tree(voxels, x, y, z, tree_type)
+    elif tree_type == JUNGLE_LOG:
+        place_jungle_tree(voxels, x, y, z, tree_type)
+    else:  # Default to Oak/Birch style
+        place_oak_tree(voxels, x, y, z, tree_type)
+
+
+@njit(cache=True, fastmath=True, nogil=True)
+def fill_initial_sunlight(voxels: Any, lightmap: Any, cx: int, cy: int, cz: int, perm_array: Any, seed: int) -> None:
     """
     Initializes a newly generated chunk's lightmap by simulating direct,
     overhead sunlight falling vertically onto the procedural terrain layout.
     """
+    # Seed the random generator for deterministic tree placement
+    # Numba requires this to be done inside the JIT-compiled function
+    random.seed(seed ^ cx ^ cy ^ cz)
+
     for x in range(CHUNK_SIZE):
         for z in range(CHUNK_SIZE):
-            wx = x + cx
-            wz = z + cz
-            world_height = get_height(wx, wz, perm_array)
-
-            for y in range(CHUNK_SIZE):
-                wy = y + cy
+            sun_level = 15
+            for y in range(CHUNK_SIZE - 1, -1, -1):
                 index = get_index(x, y, z)
+                voxel_id = voxels[index]
 
-                if wy >= world_height:
-                    voxel_id = voxels[index]
+                if sun_level > 0:
+                    lightmap[index] = (sun_level << 4) | (lightmap[index] & 0x0F)
 
-                    if voxel_id == AIR or voxel_id == GLASS:
-                        lightmap[index] = (15 << 4) | 0
-
-                    elif voxel_id == WATER:
-                        depth = world_height - wy
-                        sun = max(0, 15 + depth * 2)
-                        lightmap[index] = (sun << 4) | 0
-
-                    elif voxel_id == LEAVES:
-                        lightmap[index] = (14 << 4) | 0
-
-                    else:
-                        lightmap[index] = 0
-
+                if voxel_id == WATER or voxel_id == OAK_LEAVES:
+                    sun_level = max(0, sun_level - 2)
+                elif voxel_id == AIR or voxel_id == GLASS:
+                    sun_level = 15  # Sunlight passes through air/glass without losing strength
                 else:
-                    lightmap[index] = 0
+                    sun_level = 0  # Opaque block, stop all light

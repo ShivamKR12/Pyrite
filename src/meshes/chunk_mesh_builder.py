@@ -18,7 +18,7 @@ from settings import (
     CHUNK_SIZE,
     CHUNK_VOLUME,
     GLASS,
-    LEAVES,
+    OAK_LEAVES,
     WATER,
     WORLD_AREA,
     WORLD_DEPTH,
@@ -326,7 +326,7 @@ def is_transparent(voxel_id: int) -> bool:
     Checks if a given voxel ID corresponds to a transparent block (like air, water, glass, or leaves).
     Transparent blocks do not cull adjacent faces and do not cast hard ambient occlusion shadows.
     """
-    return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
+    return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == OAK_LEAVES
 
 
 @njit(cache=True, nogil=True)
