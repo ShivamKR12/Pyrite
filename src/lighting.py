@@ -69,16 +69,14 @@ def set_light_fast(wx: int, wy: int, wz: int, val: int, world_lightmaps: Any, ch
         world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA] = val
 
 
-# ============================================================================
 # Voxel Flood-Fill Lighting (BFS)
-# ============================================================================
 # This function is the heart of the engine's dynamic lighting. It uses a
 # Breadth-First Search (BFS) to "flood-fill" light from a source to its neighbors.
-# 
+#
 # How it works:
 # 1. We start with a queue of "light nodes" (e.g., a newly placed torch).
 # 2. We pop a node, check its 6 neighbors (Up, Down, North, South, East, West).
-# 3. If the neighbor is transparent (Air, Glass) and its current light level is 
+# 3. If the neighbor is transparent (Air, Glass) and its current light level is
 #    less than the current node's light minus 1 (or 2 for water/leaves), we update
 #    it and push it onto the queue.
 # 4. We repeat this until the queue is empty (light reaches 0 intensity).
@@ -91,7 +89,7 @@ def set_light_fast(wx: int, wy: int, wz: int, val: int, world_lightmaps: Any, ch
 # - Flood-Fill Algorithm: https://en.wikipedia.org/wiki/Flood_fill
 # - Bitwise Packing: https://wiki.python.org/moin/BitwiseOperators
 # - General Discussions: https://www.reddit.com/r/VoxelGameDev/
-# ============================================================================
+
 
 @njit(cache=True, nogil=True)
 def propagate_light_queue(
@@ -108,65 +106,50 @@ def propagate_light_queue(
     cx_base, cy_base, cz_base = -1, -1, -1
 
     head = 0
-    # ========================================================================
     # LOOP UNTIL QUEUE IS EMPTY (head catches up to tail).
     # We also have a safety check `tail < LIGHTING_QUEUE_SIZE - 10` to prevent
     # a queue overflow crash if the light spreads too far (buffer overflow protection).
-    # ========================================================================
     while head < tail and tail < LIGHTING_QUEUE_SIZE - 10:
-        
-        # ====================================================================
         # READ PACKED 64-BIT INTEGER FROM QUEUE
-        # `packed` is a 64-bit unsigned integer containing the X, Y, and Z 
+        # `packed` is a 64-bit unsigned integer containing the X, Y, and Z
         # coordinates squashed together to save memory and avoid Python object overhead.
-        # ====================================================================
         packed = queue[head]
         head += 1
 
-        # ====================================================================
         # BITWISE UNPACKING (X Coordinate)
-        # 1. `packed >> 32`: This bitwise Right Shift moves the binary bits 32 places 
+        # 1. `packed >> 32`: This bitwise Right Shift moves the binary bits 32 places
         #    to the right. This pushes the 16 bits representing X down to the bottom.
-        # 2. `& 0xFFFF`: This is a Bitwise AND mask. 0xFFFF is hexadecimal for 
-        #    65535, which in binary is sixteen 1s (1111111111111111). 
-        #    Applying this mask deletes any data above the first 16 bits, giving 
+        # 2. `& 0xFFFF`: This is a Bitwise AND mask. 0xFFFF is hexadecimal for
+        #    65535, which in binary is sixteen 1s (1111111111111111).
+        #    Applying this mask deletes any data above the first 16 bits, giving
         #    us the clean, isolated X coordinate.
-        # ====================================================================
         x = int((packed >> 32) & 0xFFFF)
-        
-        # ====================================================================
+
         # BITWISE UNPACKING (Y Coordinate)
-        # 1. `packed >> 16`: We shift the integer right by 16 places, putting the 
+        # 1. `packed >> 16`: We shift the integer right by 16 places, putting the
         #    Y data at the bottom of the bit sequence.
         # 2. `& 0xFFFF`: Again, we mask it with sixteen 1s to isolate the Y value.
-        # ====================================================================
         y = int((packed >> 16) & 0xFFFF)
-        
-        # ====================================================================
+
         # BITWISE UNPACKING (Z Coordinate)
         # The Z coordinate was stored at the very bottom of the 64-bit integer,
-        # so we don't need to shift it at all. We just apply the `& 0xFFFF` mask 
+        # so we don't need to shift it at all. We just apply the `& 0xFFFF` mask
         # to wipe out the X and Y data, leaving only Z.
-        # ====================================================================
         z = int(packed & 0xFFFF)
 
-        # ====================================================================
         # GET COMBINED LIGHT VALUE
-        # Retrieve the packed lightmap data. The `val` variable holds BOTH 
+        # Retrieve the packed lightmap data. The `val` variable holds BOTH
         # the sunlight and blocklight levels crammed into a single 8-bit integer (byte).
-        # ====================================================================
         val = get_light_fast(x, y, z, world_lightmaps, chunk_positions)
-        
-        # ====================================================================
+
         # BITWISE LIGHT UNPACKING
         # Sunlight and Blocklight each take up 4 bits (values 0-15).
         # If calculating Sunlight (`is_sun` is True):
         #    `val >> 4` shifts the top 4 bits down to the bottom, giving us the sunlight.
         # If calculating Blocklight (`is_sun` is False):
-        #    `val & 15` (15 is binary 1111) masks out the top 4 bits, leaving just 
+        #    `val & 15` (15 is binary 1111) masks out the top 4 bits, leaving just
         #    the bottom 4 bits (the blocklight).
         # We store the final intensity in `L`.
-        # ====================================================================
         L = (val >> 4) if is_sun else (val & 15)
 
         chunk_idx = get_chunk_index((x, y, z), chunk_positions)

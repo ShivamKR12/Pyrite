@@ -60,19 +60,17 @@ class Camera:
         """
         self.m_view = glm.lookAt(self.position, self.position + self.forward, self.up)
 
-    # ============================================================================
     # Euler Angles & Spherical Coordinates (3D Camera Math)
-    # ============================================================================
     # How does moving the mouse translate into a 3D looking direction?
-    # This function converts "Euler Angles" (Yaw and Pitch in radians) into a 
+    # This function converts "Euler Angles" (Yaw and Pitch in radians) into a
     # 3D directional vector (self.forward) using Spherical Coordinates trigonometry.
     #
     # How it works:
     # 1. Forward Vector: We use `cos()` and `sin()` to project a 3D sphere onto
-    #    the X, Y, and Z axes based on where the player is looking. 
-    # 2. Right Vector: We use a "Cross Product" between our new Forward vector 
-    #    and the absolute World Up vector (0, 1, 0). The cross product mathematically 
-    #    returns a 3D vector that is perfectly perpendicular to both, giving us 
+    #    the X, Y, and Z axes based on where the player is looking.
+    # 2. Right Vector: We use a "Cross Product" between our new Forward vector
+    #    and the absolute World Up vector (0, 1, 0). The cross product mathematically
+    #    returns a 3D vector that is perfectly perpendicular to both, giving us
     #    our "Right" direction!
     # 3. Up Vector: We do one last cross product between Right and Forward to get
     #    the camera's local "Up" direction.
@@ -80,59 +78,46 @@ class Camera:
     # References:
     # - Camera Math Tutorial: https://learnopengl.com/Getting-started/Camera
     # - Cross Product visualizer: https://en.wikipedia.org/wiki/Cross_product
-    # ============================================================================
     @global_profiler.profile_func('Camera_UpdateVectors')
     def update_vectors(self) -> None:
         """
         Recalculates the forward, right, and up vectors using spherical coordinates
         derived from the current yaw and pitch.
         """
-        # ====================================================================
         # SPHERICAL TO CARTESIAN CONVERSION (X-AXIS)
-        # To find how much we are looking left/right (X), we use `cos(yaw)`. 
-        # But if we look straight up or down, the X length should shrink to 0. 
+        # To find how much we are looking left/right (X), we use `cos(yaw)`.
+        # But if we look straight up or down, the X length should shrink to 0.
         # So we multiply it by `cos(pitch)`.
-        # ====================================================================
         self.forward.x = glm.cos(self.yaw) * glm.cos(self.pitch)
-        
-        # ====================================================================
+
         # SPHERICAL TO CARTESIAN CONVERSION (Y-AXIS)
-        # The vertical Y axis is purely controlled by the Pitch (looking up/down). 
-        # `sin(pitch)` returns exactly 1.0 when looking straight up (90 degrees), 
+        # The vertical Y axis is purely controlled by the Pitch (looking up/down).
+        # `sin(pitch)` returns exactly 1.0 when looking straight up (90 degrees),
         # 0.0 when looking flat (0 degrees), and -1.0 when looking down.
-        # ====================================================================
         self.forward.y = glm.sin(self.pitch)
-        
-        # ====================================================================
+
         # SPHERICAL TO CARTESIAN CONVERSION (Z-AXIS)
-        # Similar to X, the Z (depth) axis is controlled by `sin(yaw)`. 
-        # It must also be scaled by `cos(pitch)` so that looking straight up/down 
+        # Similar to X, the Z (depth) axis is controlled by `sin(yaw)`.
+        # It must also be scaled by `cos(pitch)` so that looking straight up/down
         # completely nullifies depth movement.
-        # ====================================================================
         self.forward.z = glm.sin(self.yaw) * glm.cos(self.pitch)
 
-        # ====================================================================
         # VECTOR NORMALIZATION
-        # `glm.normalize` ensures the Forward vector's total length is exactly 1.0. 
+        # `glm.normalize` ensures the Forward vector's total length is exactly 1.0.
         # If we didn't normalize, moving diagonally might be faster than moving straight!
-        # ====================================================================
         self.forward = glm.normalize(self.forward)
-        
-        # ====================================================================
+
         # THE CROSS PRODUCT (CALCULATING 'RIGHT')
-        # We know which way we are looking (Forward), and we know which way is 
-        # the sky (World Up: 0, 1, 0). The `cross` product of these two vectors 
+        # We know which way we are looking (Forward), and we know which way is
+        # the sky (World Up: 0, 1, 0). The `cross` product of these two vectors
         # generates a 3rd vector that is exactly perpendicular (90 degrees) to both.
         # This gives us our exact 'Right' vector for strafing left/right!
-        # ====================================================================
         self.right = glm.normalize(glm.cross(self.forward, glm.vec3(0, 1, 0)))
-        
-        # ====================================================================
+
         # THE CROSS PRODUCT (CALCULATING 'LOCAL UP')
-        # We cross 'Right' and 'Forward' to get our Local 'Up' vector. 
-        # This is used so if we look down, 'Up' correctly points behind our head 
+        # We cross 'Right' and 'Forward' to get our Local 'Up' vector.
+        # This is used so if we look down, 'Up' correctly points behind our head
         # instead of straight into the sky. This is crucial for the OpenGL lookAt matrix.
-        # ====================================================================
         self.up = glm.normalize(glm.cross(self.right, self.forward))
 
     @global_profiler.profile_func('Camera_RotatePitch')

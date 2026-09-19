@@ -325,29 +325,26 @@ class World:
 
         self.process_mesh_queue()
 
-    # ============================================================================
-    # REAL-WORLD CONTEXT: OpenGL Thread-Safety & VBO Pooling
-    # ============================================================================
-    # In this engine, meshing (calculating the 3D geometry of chunks) happens on 
+    # OpenGL Thread-Safety & VBO Pooling
+    # In this engine, meshing (calculating the 3D geometry of chunks) happens on
     # background threads. However, there is a strict rule in graphics programming:
     # **You cannot communicate with the GPU (OpenGL) outside of the Main Thread.**
     #
     # How we solve this:
     # 1. Background threads calculate the raw vertex arrays (`vertex_data`).
     # 2. They pass this array to the `mesh_queue`.
-    # 3. This function (`process_mesh_queue`) runs strictly on the Main Thread. 
+    # 3. This function (`process_mesh_queue`) runs strictly on the Main Thread.
     #    It grabs the data and safely creates the OpenGL Vertex Buffer Objects (VBOs).
     #
     # The VBO Recycling Pool:
-    # Creating and destroying VBOs constantly as chunks load/unload causes massive 
-    # VRAM fragmentation and GC stutters. Instead, when a chunk unloads, we throw 
-    # its VBO pointer into a `vbo_pool`. When a new chunk needs a VBO, it simply 
+    # Creating and destroying VBOs constantly as chunks load/unload causes massive
+    # VRAM fragmentation and GC stutters. Instead, when a chunk unloads, we throw
+    # its VBO pointer into a `vbo_pool`. When a new chunk needs a VBO, it simply
     # pulls an old one from the pool and overwrites it. Memory stays perfectly flat!
     #
     # References:
     # - OpenGL Thread Safety: https://www.khronos.org/opengl/wiki/OpenGL_and_multithreading
     # - Object Pooling Pattern: https://gameprogrammingpatterns.com/object-pool.html
-    # ============================================================================
     @global_profiler.profile_func('Process_Mesh_Queue')
     def process_mesh_queue(self) -> None:
         """

@@ -248,29 +248,26 @@ class VoxelHandler:
         """
         self.ray_cast()
 
-    # ============================================================================
     # Fast Voxel Traversal Algorithm (3D DDA)
-    # ============================================================================
-    # How does the game know exactly which block you are looking at? 
+    # How does the game know exactly which block you are looking at?
     # It uses a technique called 3D Digital Differential Analyzer (DDA), specifically
     # the "Amanatides & Woo" algorithm for fast voxel traversal.
     #
     # How it works:
-    # Instead of "stepping" forward by tiny amounts and checking if we hit a block 
+    # Instead of "stepping" forward by tiny amounts and checking if we hit a block
     # (which is slow and can "skip" through thin corners), this algorithm calculates
-    # exactly how far the ray must travel to hit the next X, Y, or Z grid boundary 
+    # exactly how far the ray must travel to hit the next X, Y, or Z grid boundary
     # (`max_x`, `max_y`, `max_z`).
     #
-    # We step into the grid along whichever axis is closest, update the boundary 
-    # distance (`delta_x`, `delta_y`, `delta_z`), and repeat until we hit a solid 
-    # block. It guarantees we never miss a block and runs incredibly fast since 
+    # We step into the grid along whichever axis is closest, update the boundary
+    # distance (`delta_x`, `delta_y`, `delta_z`), and repeat until we hit a solid
+    # block. It guarantees we never miss a block and runs incredibly fast since
     # it only evaluates grid intersections!
     #
     # References:
     # - 3D DDA Visualized: https://www.youtube.com/watch?v=NbSee-cg7Ig
     # - Original Amanatides & Woo Paper: http://www.cse.yorku.ca/~amana/research/grid.pdf
     # - LodeV's Raycasting Tutorial: https://lodev.org/cgtutor/raycasting.html
-    # ============================================================================
     @global_profiler.profile_func('VoxelHandler_RayCast')
     def ray_cast(self) -> bool:
         """
@@ -294,44 +291,33 @@ class VoxelHandler:
         self.voxel_normal = glm.ivec3(0)
         step_dir: int = -1
 
-        # ====================================================================
         # DDA INITIALIZATION (X-AXIS)
-        # ====================================================================
-        # 1. `dx`: Direction of the ray on the X axis. `glm.sign(x2 - x1)` 
-        #    returns exactly 1.0 if the ray is pointing positive (Right), or -1.0 
+        # 1. `dx`: Direction of the ray on the X axis. `glm.sign(x2 - x1)`
+        #    returns exactly 1.0 if the ray is pointing positive (Right), or -1.0
         #    if pointing negative (Left). If the ray is perfectly straight, it returns 0.
-        # ====================================================================
         dx: float = float(glm.sign(x2 - x1))
-        
-        # ====================================================================
-        # 2. `delta_x`: The total distance the ray must travel along its path to 
-        #    move exactly 1.0 unit on the X grid. 
+
+        # 2. `delta_x`: The total distance the ray must travel along its path to
+        #    move exactly 1.0 unit on the X grid.
         #    We calculate this by dividing the sign (dx) by the absolute delta (x2 - x1).
         #    If dx is 0, we cap it at 10,000,000 to prevent a Divide-By-Zero crash (infinity).
-        # ====================================================================
         delta_x: float = min(dx / (x2 - x1), 10000000.0) if dx != 0 else 10000000.0
-        
-        # ====================================================================
-        # 3. `max_x`: The total distance the ray must travel from its CURRENT starting 
+
+        # 3. `max_x`: The total distance the ray must travel from its CURRENT starting
         #    position to hit the VERY FIRST vertical grid line on the X axis.
         #    - `glm.fract(x1)` gives the decimal part of the player's position inside the block.
         #    - If moving positive (dx > 0), we need the distance to the RIGHT edge `(1.0 - fract)`.
         #    - If moving negative (dx < 0), we need the distance to the LEFT edge `(fract)`.
-        # ====================================================================
         max_x: float = delta_x * (1.0 - glm.fract(x1)) if dx > 0 else delta_x * glm.fract(x1)
 
-        # ====================================================================
         # DDA INITIALIZATION (Y-AXIS)
         # We repeat the exact same trigonometric step-distance math for the Y-axis.
-        # ====================================================================
         dy: float = float(glm.sign(y2 - y1))
         delta_y: float = min(dy / (y2 - y1), 10000000.0) if dy != 0 else 10000000.0
         max_y: float = delta_y * (1.0 - glm.fract(y1)) if dy > 0 else delta_y * glm.fract(y1)
 
-        # ====================================================================
         # DDA INITIALIZATION (Z-AXIS)
         # We repeat the exact same trigonometric step-distance math for the Z-axis.
-        # ====================================================================
         dz: float = float(glm.sign(z2 - z1))
         delta_z: float = min(dz / (z2 - z1), 10000000.0) if dz != 0 else 10000000.0
         max_z: float = delta_z * (1.0 - glm.fract(z1)) if dz > 0 else delta_z * glm.fract(z1)

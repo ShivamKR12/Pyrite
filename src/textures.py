@@ -67,25 +67,22 @@ class Textures:
 
         texture = pg.transform.flip(texture, flip_x=flip_x, flip_y=flip_y)
 
-        # ============================================================================
-        # REAL-WORLD CONTEXT: Texture Arrays vs Texture Atlases
-        # ============================================================================
-        # In old voxel engines (like early Minecraft), all block textures were packed 
-        # into one massive image called a "Texture Atlas". However, when looking at 
-        # blocks far away, OpenGL generates smaller versions of the texture (Mipmaps). 
-        # Because the textures are packed tightly, the colors from neighboring blocks 
+        # Texture Arrays vs Texture Atlases
+        # In old voxel engines (like early Minecraft), all block textures were packed
+        # into one massive image called a "Texture Atlas". However, when looking at
+        # blocks far away, OpenGL generates smaller versions of the texture (Mipmaps).
+        # Because the textures are packed tightly, the colors from neighboring blocks
         # in the atlas would "bleed" into each other at a distance, creating ugly seams.
         #
         # Modern engines solve this using OpenGL "Texture Arrays" (GL_TEXTURE_2D_ARRAY).
-        # We load a stacked image, but OpenGL treats each block texture as an entirely 
-        # separate "layer" in 3D space. This completely eliminates Mipmap bleeding 
-        # while still allowing us to pass hundreds of textures to the shader in a 
+        # We load a stacked image, but OpenGL treats each block texture as an entirely
+        # separate "layer" in 3D space. This completely eliminates Mipmap bleeding
+        # while still allowing us to pass hundreds of textures to the shader in a
         # single draw call!
         #
         # References:
         # - Texture Atlases vs Arrays: https://www.khronos.org/opengl/wiki/Array_Texture
         # - Mipmapping & Filtering: https://learnopengl.com/Getting-started/Textures
-        # ============================================================================
         if is_tex_array:
             num_layers = 3 * texture.get_height() // texture.get_width()  # 3 textures per layer
             texture = self.app.ctx.texture_array(
