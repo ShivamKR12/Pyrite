@@ -126,8 +126,15 @@ class Hotbar:
         s: float = HOTBAR_SCALE
         slot_s: float = SLOT_SCALE
 
+        # The gap between each slot in the hotbar, specified in normalized device coordinates (NDC).
         gap: float = 0.01
+        # To compute the horizontal spacing, we take the full width of a slot (slot_s * 2) and add the gap.
+        # We then divide by the screen's ASPECT_RATIO to ensure the slots appear square on screen,
+        # counteracting the stretching effect of a non-square screen resolution (e.g. 16:9).
         x_spacing: float = (slot_s * 2 + gap) / ASPECT_RATIO
+        # Calculate the starting X coordinate for the first slot.
+        # Since the hotbar is centered and has 9 slots, the middle slot is at X = 0.
+        # This shifts the starting point 4 full slot widths to the left to properly center the entire hotbar.
         start_x: float = -4 * x_spacing
 
         y: float = HOTBAR_Y
@@ -139,8 +146,11 @@ class Hotbar:
 
             if is_selected:
                 # Draw white outline frame
+                # Expand the selected slot's scale slightly (by 0.006 in NDC) to create a visible border.
                 sel_s: float = slot_s + 0.006
+                # Scale the outline mesh. Divide the X scale by ASPECT_RATIO to maintain a square shape.
                 self.color_mesh.program['u_scale'] = (sel_s / ASPECT_RATIO, sel_s)
+                # Position the outline frame at the computed screen coordinate (x, y).
                 self.color_mesh.program['u_offset'] = (x, y)
                 self.color_mesh.program['u_color'] = UI_SLOT_SELECTED_FRAME_COLOR
                 self.color_mesh.render()
@@ -293,7 +303,11 @@ class HeldBlock:
             return
 
         # 1. View bobbing
+        # Calculate vertical view bobbing using a sine wave based on the player's step counter.
+        # This creates an up-and-down motion as the player walks.
         bob_offset_y: float = glm.sin(player.step_counter) * HELD_ITEM_BOB_OFFSET_Y_MULT
+        # Calculate horizontal view bobbing using a cosine wave at half the frequency (0.5 multiplier).
+        # This creates a slight side-to-side sway, complementing the vertical bobbing for realism.
         bob_offset_x: float = glm.cos(player.step_counter * 0.5) * HELD_ITEM_BOB_OFFSET_X_MULT
 
         # 2. Swinging animation
@@ -445,14 +459,24 @@ class InventoryUI:
         y_spacing: float = SLOT_SCALE * 2 + gap
 
         if i < HOTBAR_SIZE:
+            # For the hotbar (slots 0-8), calculate the column index (0 through 8).
             col: int = i % HOTBAR_SIZE
+            # Calculate the X coordinate: start 4 spaces left of center (-4 * x_spacing)
+            # and add the column offset to position each slot sequentially from left to right.
             x = -4 * x_spacing + col * x_spacing
+            # The Y coordinate is fixed to the hotbar's predefined Y position (usually bottom of screen).
             y = HOTBAR_Y  # Hotbar
 
         elif i < 36:
+            # For the main inventory (slots 9-35), calculate the column index (0 through 8).
             col = i % HOTBAR_SIZE
+            # Calculate the row index (0 through 2). Subtract from 2 to invert the row order,
+            # so the lower inventory slots appear closer to the hotbar visually on the screen.
             row: int = 2 - ((i - HOTBAR_SIZE) // HOTBAR_SIZE)
+            # Calculate the Y coordinate by offsetting upwards from the hotbar.
+            # The +1.5 adds a visual gap between the hotbar and the main inventory block.
             y = HOTBAR_Y + (row + 1.5) * y_spacing
+            # Calculate the X coordinate similarly to the hotbar, starting from the left edge.
             x = -4 * x_spacing + col * x_spacing
 
         elif i < 40:  # 2x2 Crafting Grid

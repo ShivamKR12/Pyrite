@@ -47,8 +47,15 @@ class Chunk:
         self.mesh: Optional[ChunkMesh] = None
         self.is_empty: bool = True
 
+        # We generate an OpenGL asynchronous occlusion query object.
+        # This hardware query counts the number of fragments (pixels) that pass the depth test.
+        # If the result is 0, the chunk is entirely obscured by other geometry and can be skipped in future frames.
         self.query: Any = self.app.ctx.query(samples=True)
+
+        # We start by assuming the chunk is visible until proven otherwise by the query.
         self.is_visible: bool = True
+
+        # Tracks whether an occlusion query is currently in flight on the GPU to prevent redundant queries.
         self.query_submitted: bool = False
 
         self.center: Any = (glm.vec3(self.position) + 0.5) * CHUNK_SIZE
@@ -103,9 +110,14 @@ class Chunk:
         """
         Helper function to allocate an empty array and immediately invoke the terrain generator.
         """
+        # Allocate a continuous block of 1D memory representing the 3D volume.
+        # Using uint8 minimizes memory overhead, as voxel IDs range from 0 to 255.
         voxels: NDArray[np.uint8] = np.zeros(CHUNK_VOLUME, dtype='uint8')
 
+        # Convert the chunk's grid position into absolute world block coordinates.
+        # cx, cy, cz represent the exact minimum bounds (bottom-left-back corner) of the chunk.
         cx, cy, cz = map(int, glm.ivec3(self.position) * CHUNK_SIZE)
+
         self.generate_terrain(voxels, cx, cy, cz)
 
         if np.any(voxels):
@@ -122,13 +134,24 @@ class Chunk:
         A highly parallelized Numba wrapper that populates a chunk's voxel and lighting arrays
         deterministically based on the world seed.
         """
+        # We compute a unique hash for this specific chunk by bitwise XORing the world seed
+        # with the chunk's absolute spatial coordinates (cx, cy, cz).
+        # This guarantees that the local RNG state is identically initialized every time this
+        # exact chunk is generated, preventing structural seams between adjacent chunks.
         np.random.seed(seed ^ cx ^ cy ^ cz)
         random.seed(seed ^ cx ^ cy ^ cz)
 
+        # We iterate over the 2D local plane (x, z) of the chunk.
+        # For each vertical column, we evaluate the 2D and 3D noise functions.
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
+                # set_voxel_column computes the heightmap, applies biome rules, and fills
+                # the 1D voxels array from the bottom (cy) to the computed surface height.
                 set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)
 
+        # After the physical blocks are placed, we run a top-down raycasting pass.
+        # This traces from the sky downwards, marking blocks with sunlight (level 15)
+        # until an opaque block is hit, populating the parallel lightmap array.
         fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
 
     @staticmethod
