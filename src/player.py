@@ -549,6 +549,27 @@ class Player(Camera):
         self.feet_pos.z += self.velocity.z * self.app.delta_time
         self.resolve_axis('z')
 
+    # ============================================================================
+    # REAL-WORLD CONTEXT: AABB Physics & Grid Collision
+    # ============================================================================
+    # In a voxel game, calculating collision between the player and millions of 
+    # blocks could be horribly slow. We solve this using "AABB" (Axis-Aligned 
+    # Bounding Box) physics and "Per-Axis Resolution".
+    #
+    # How it works:
+    # 1. The player is treated as an invisible 3D box (AABB) that cannot rotate.
+    # 2. Instead of moving diagonally and getting stuck on block corners, we move 
+    #    the player on the X axis, check for a collision, and push them out if they 
+    #    hit a block. Then we do the Y axis, then the Z axis.
+    # 3. Because blocks are locked to a 1x1x1 integer grid, we use `floor()` to 
+    #    instantly convert the player's float coordinates into the integer coordinates 
+    #    of the exact blocks they are touching. We only test collision against those 
+    #    few blocks, completely ignoring the rest of the world!
+    #
+    # References:
+    # - AABB Collision Mathematics: https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+    # - Voxel physics / Swept AABB: https://www.gamedev.net/tutorials/programming/general-and-gameplay-programming/swept-aabb-collision-detection-and-response-r3084/
+    # ============================================================================
     @global_profiler.profile_func('Player_ResolveAxis')
     def resolve_axis(self, axis: str) -> None:
         """

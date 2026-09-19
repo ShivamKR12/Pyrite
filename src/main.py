@@ -273,6 +273,25 @@ class Pyrite:
 
         pg.display.flip()
 
+    # ============================================================================
+    # REAL-WORLD CONTEXT: Frame Rate Independence & Delta Time Clamping
+    # ============================================================================
+    # Why don't physics speed up when you get 144 FPS or slow down at 30 FPS?
+    # Because of `delta_time` (the time elapsed since the last frame). 
+    # Everything in the game (velocity, falling, camera rotating) is multiplied 
+    # by `delta_time` so it moves at a constant speed regardless of framerate.
+    #
+    # The "Clamping" Fix:
+    # If the player minimizes the game window or their PC freezes for a second, 
+    # `delta_time` would become massive. If we multiplied gravity by 1.0 seconds 
+    # instead of 0.016 seconds, the player would clip straight through the floor!
+    # By capping it to 50ms (min(tick, 50)), we ensure the physics engine never 
+    # tries to simulate a massive time jump, preventing clipping glitches.
+    #
+    # References:
+    # - Fix Your Timestep!: https://gafferongames.com/post/fix_your_timestep/
+    # - Game Loop Architecture: https://gameprogrammingpatterns.com/game-loop.html
+    # ============================================================================
     @global_profiler.profile_func('Pyrite_Update')
     def update(self) -> None:
         """
