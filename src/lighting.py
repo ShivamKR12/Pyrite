@@ -69,6 +69,30 @@ def set_light_fast(wx: int, wy: int, wz: int, val: int, world_lightmaps: Any, ch
         world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA] = val
 
 
+# ============================================================================
+# REAL-WORLD CONTEXT: Voxel Flood-Fill Lighting (BFS)
+# ============================================================================
+# This function is the heart of the engine's dynamic lighting. It uses a
+# Breadth-First Search (BFS) to "flood-fill" light from a source to its neighbors.
+# 
+# How it works:
+# 1. We start with a queue of "light nodes" (e.g., a newly placed torch).
+# 2. We pop a node, check its 6 neighbors (Up, Down, North, South, East, West).
+# 3. If the neighbor is transparent (Air, Glass) and its current light level is 
+#    less than the current node's light minus 1 (or 2 for water/leaves), we update
+#    it and push it onto the queue.
+# 4. We repeat this until the queue is empty (light reaches 0 intensity).
+#
+# Memory Optimization:
+# To make this insanely fast and avoid Python object overhead, we "pack" the
+# x, y, z coordinates into a single 64-bit integer using bitwise shifts (>>).
+#
+# References:
+# - Flood-Fill Algorithm: https://en.wikipedia.org/wiki/Flood_fill
+# - Bitwise Packing: https://wiki.python.org/moin/BitwiseOperators
+# - General Discussions: https://www.reddit.com/r/VoxelGameDev/
+# ============================================================================
+
 @njit(cache=True, nogil=True)
 def propagate_light_queue(
     queue: Any, tail: int, is_sun: bool, world_voxels: Any, world_lightmaps: Any, chunk_positions: Any

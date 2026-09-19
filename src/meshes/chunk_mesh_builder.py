@@ -27,6 +27,28 @@ from settings import (
 )
 
 
+# ============================================================================
+# REAL-WORLD CONTEXT: Voxel Ambient Occlusion (AO)
+# ============================================================================
+# This function calculates "Ambient Occlusion" for a specific face of a voxel.
+# AO is a shading technique used to simulate how light gets trapped in corners
+# and crevices, giving depth to the geometry. 
+#
+# How it works in a Voxel Engine:
+# Since Voxels are on a strict grid, we don't need expensive ray-tracing or SSAO. 
+# Instead, we do "Per-Vertex AO". For a given block face (e.g., the Top face 'Y'), 
+# we check the 8 neighboring blocks surrounding that face. If a neighbor is solid, 
+# it casts a small "shadow" on the corresponding corner/vertex.
+#
+# The result is passed to the chunk shader, which darkens the corners of blocks
+# that are touching other blocks, creating the iconic "soft shadows" seen in 
+# Minecraft-like games.
+#
+# References:
+# - Ambient Occlusion: https://en.wikipedia.org/wiki/Ambient_occlusion
+# - Voxel Meshing & Shading concepts: https://www.reddit.com/r/VoxelGameDev/
+# ============================================================================
+
 @njit(cache=True, nogil=True)
 def get_ao(
     local_pos: Tuple[int, int, int],

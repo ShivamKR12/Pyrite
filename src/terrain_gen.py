@@ -54,6 +54,27 @@ def get_biome(x: float, z: float, perm_array: Any) -> Tuple[float, float]:
     return temp, moist
 
 
+# ============================================================================
+# REAL-WORLD CONTEXT: Procedural Terrain Generation using Noise
+# ============================================================================
+# This function calculates the Y-height of the terrain for any given (X, Z) coordinate.
+# 
+# How it works:
+# 1. It uses Fractional Brownian Motion (fBm) by layering multiple "octaves" of 
+#    Simplex noise. Each subsequent octave has double the frequency (f2, f4, f8) 
+#    and half the amplitude (a2, a4, a8). 
+# 2. Summing these layers creates natural-looking fractal terrain, where the first 
+#    layer defines the massive mountains/valleys, and the last layer defines small bumps.
+# 3. We then use a "Continentalness" noise map to warp the final height. If the 
+#    continentalness is low, we forcefully squash the height map to create flat 
+#    oceans. If it's high, we amplify the amplitude to create towering peaks.
+#
+# References:
+# - Making Maps with Noise (Amazing visual guide): https://www.redblobgames.com/maps/terrain-from-noise/
+# - Fractional Brownian Motion: https://en.wikipedia.org/wiki/Fractional_Brownian_motion
+# - Simplex Noise overview: https://en.wikipedia.org/wiki/Simplex_noise
+# ============================================================================
+
 @njit(cache=True, fastmath=True, nogil=True)
 def get_height(x: float, z: float, perm_array: Any) -> int:
     """

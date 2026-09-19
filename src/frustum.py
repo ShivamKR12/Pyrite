@@ -89,6 +89,28 @@ class Frustum:
         return True
 
 
+# ============================================================================
+# REAL-WORLD CONTEXT: Camera Frustum Culling (3D Math)
+# ============================================================================
+# This function determines which chunks the player can actually see so we don't
+# waste time rendering chunks behind their head. 
+#
+# How it works:
+# The "Frustum" is a 3D pyramid shape representing the camera's field of view.
+# To check if a chunk is inside this pyramid, we calculate the dot product of 
+# the vector pointing from the camera to the chunk against the camera's Up, 
+# Right, and Forward vectors.
+# 
+# Using basic trigonometry (tangent of the Field of View), we define planes 
+# for the Left, Right, Top, Bottom, Near, and Far boundaries. If the chunk's 
+# bounding sphere is completely outside any of these planes, it gets "culled" 
+# (removed from the render queue).
+#
+# References:
+# - Dot Product in 3D: https://en.wikipedia.org/wiki/Dot_product
+# - Frustum Culling Math: https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
+# ============================================================================
+
 @njit(cache=True, fastmath=True, parallel=True, nogil=True)
 def frustum_cull_fast(
     chunk_centers: Any,

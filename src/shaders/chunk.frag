@@ -64,7 +64,26 @@ void main() {
 
     tex_col = pow(tex_col, inv_gamma);
 
-    //fog
+    // ============================================================================
+    // REAL-WORLD CONTEXT: Exponential Squared Fog & Gamma Correction
+    // ============================================================================
+    // Fog is essential in voxel games to hide the sudden "pop-in" of chunks 
+    // at the edge of the render distance. 
+    //
+    // How it works:
+    // We use the depth buffer distance (gl_FragCoord.z / gl_FragCoord.w) to 
+    // find how far the pixel is from the camera. Instead of a linear fade, we 
+    // use an "Exponential Squared" (exp2) curve. This means objects close to 
+    // the camera stay crisp, but the fog rapidly thickens at a distance, 
+    // simulating realistic atmospheric scattering.
+    // 
+    // The final color is "mixed" (lerped) between the original texture color 
+    // and the sky background color based on this fog factor.
+    //
+    // References:
+    // - Volumetric Fog: https://learnopengl.com/Guest-Articles/2022/Compute-Shaders/Volumetric-Clouds
+    // - Depth Testing: https://learnopengl.com/Advanced-OpenGL/Depth-testing
+    // ============================================================================
     float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
     float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
     
