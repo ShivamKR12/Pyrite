@@ -77,31 +77,44 @@ class Scene:
         if self.app.wireframe:
             self.app.ctx.wireframe = True
 
-        # skybox rendering FIRST, entirely in the background
+        # Skybox pass
+        # The skybox is drawn first without any depth testing constraints.
+        # It sits firmly in the background at the maximum depth of 1.0.
         self.sky.render()
 
-        # Disable face culling so we can see the inside of glass and leaves!
+        # Opaque Solid Pass
+        # We explicitly ENABLE face culling (CULL_FACE).
+        # This tells OpenGL to throw away any triangles facing away from the camera.
+        # If we are looking at the outside of a cube, the 3 back faces are instantly culled
+        # mathematically before rasterization, saving 50% of our fragment shader cost!
         self.app.ctx.enable(mgl.CULL_FACE)
 
-        # chunks rendering
+        # Draw all opaque chunks and entities. These will write to the depth buffer.
         self.world.render()
         self.item_manager.render()
 
-        # rendering without cull face
+        # Transparent Cloud Pass
+        # We explicitly DISABLE face culling here.
+        # Clouds are mathematically 2D planes hovering in the sky. If we culled back-faces, 
+        # the clouds would suddenly turn completely invisible if we flew above them and looked down!
         self.app.ctx.disable(mgl.CULL_FACE)
         self.clouds.render()
 
-        # Enable face-culling and blend mode to draw semi-transparent water chunks cleanly!
+        # Transparent Water Pass
+        # We RE-ENABLE face culling for water. 
+        # Water blocks are full 3D cubes. If we didn't cull back-faces, the semi-transparent 
+        # blending equation would draw the bottom of the water block *through* the top surface, 
+        # making it look like a weird double-layered box instead of a solid volume of liquid.
         self.app.ctx.enable(mgl.CULL_FACE)
         self.world.render_water()
 
         if self.app.wireframe:
             self.app.ctx.wireframe = False
 
-        # voxel selection
+        # Voxel Selection Marker (Draws over everything else)
         self.voxel_marker.render()
 
-        # view model (held block)
+        # View Model (Held Block)
         self.held_block.render()
 
         # UI rendering (disable depth testing so it draws over everything)
