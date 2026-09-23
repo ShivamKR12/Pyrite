@@ -2,11 +2,14 @@ name: Build Release
 
 on:
   push:
-    tags:
-      - 'v*'
-  release:
-    types: [published]
-  workflow_dispatch: # Allows you to manually click a "Build" button on GitHub!
+    paths:
+      - '**.py'
+      - '**.spec'
+      - '**.ini'
+      - 'requirements.txt'
+      - 'setup.py'
+      - '.github/workflows/*.yml'
+  workflow_dispatch:
 
 jobs:
   build:
