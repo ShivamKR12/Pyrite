@@ -11,11 +11,13 @@ uniform vec3 player_pos;
 
 
 void main() {
+    // Position scaling and centering
     vec3 pos = vec3(in_position);
     pos.xz -= center;
     pos.xz *= cloud_scale;
     pos.xz += player_pos.xz;
 
+    // Wind animation and final position
     float time = 300 * sin(0.01 * u_time);
     pos.xz += time;
     gl_Position = m_proj * m_view * vec4(pos, 1.0);
