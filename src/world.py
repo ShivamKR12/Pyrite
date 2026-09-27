@@ -556,17 +556,18 @@ class World:
         Initializes a Chunk instance at the given coordinates and dispatches
         an asynchronous task to fetch or generate its actual voxel data.
         """
+        # Register chunk
         chunk_index = (x % WORLD_WIDTH) + WORLD_WIDTH * (z % WORLD_DEPTH) + WORLD_AREA * (y % WORLD_HEIGHT)
-
         old_chunk = self.chunks[chunk_index]
         if old_chunk:
             self.unload_chunk(old_chunk.position)
 
+        # Create chunk
         chunk = Chunk(self, position=(x, y, z))
         self.chunks[chunk_index] = chunk
         self.active_chunks[(x, y, z)] = chunk
 
-        # Send the heavy load task to the background thread pool
+        # Dispatch load task
         future = self.executor.submit(self._fetch_or_generate_voxels, x, y, z)
         self.load_queue.append((chunk, future))
 
@@ -760,14 +761,14 @@ class World:
         player coordinates, and world metadata safely to the SQLite disk on exit.
         """
         try:
-            # Save all currently active chunks synchronously
+            # Save active chunks synchronously
             for chunk in self.active_chunks.values():
                 if not chunk.is_empty and chunk.voxels is not None:
                     self.save_chunk_to_db(
                         chunk.position[0], chunk.position[1], chunk.position[2], chunk.voxels, chunk.lightmap
                     )
 
-            # Save player inventory, hotbar state & position
+            # Save player state and inventory
             p_data = {
                 'inventory': [int(item) for item in self.app.player.inventory],
                 'counts': [int(count) for count in self.app.player.inventory_counts],
@@ -784,9 +785,10 @@ class World:
                 'oxygen': float(self.app.player.oxygen),
                 'time_played': float(self.app.world_session_time),
             }
-
             now = datetime.datetime.now().isoformat()
+
             with self.db_lock:
+                # Update database records
                 self.cursor.execute(
                     'UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1', (now, self.app.player.game_mode)
                 )
@@ -798,7 +800,6 @@ class World:
                 if self.app.scene and hasattr(self.app.scene, 'item_manager'):
                     self.cursor.execute('DELETE FROM dropped_items')
                     item_data = []
-
                     for item in self.app.scene.item_manager.items:
                         item_data.append(
                             (
@@ -811,37 +812,30 @@ class World:
                                 float(item.velocity.z),
                             )
                         )
-
                     self.cursor.executemany(
                         'INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)',
                         item_data,
                     )
-
                 self.connection.commit()
 
         except Exception as e:
             print(f'[SYSTEM] Error during World.save(): {e}')
 
         finally:
-            # Wait for any pending asynchronous saves from unload_chunk to complete
+            # Shutdown executor and threads
             self.executor.shutdown(wait=True)
-
-            # Close all background thread cursors
             for cur in self.thread_cursors:
                 try:
                     cur.close()
                 except Exception as e:
                     print(f'[SYSTEM] Error closing background cursor: {e}')
             self.thread_cursors.clear()
-
-            # Close all background thread connections
             for conn in self.thread_connections:
                 try:
                     conn.close()
                 except Exception as e:
                     print(f'[SYSTEM] Error closing background connection: {e}')
             self.thread_connections.clear()
-
             try:
                 self.cursor.close()
             except Exception as e:
@@ -851,16 +845,14 @@ class World:
             except Exception as e:
                 print(f'[SYSTEM] Error closing connection: {e}')
 
-            # Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu
+            # Release OpenGL resources
             for vbo, vao in self.vbo_pool:
                 try:
                     vbo.release()
                     vao.release()
                 except Exception as e:
                     print(f'[SYSTEM] Error releasing VBO/VAO from pool: {e}')
-
             self.vbo_pool.clear()
-
             for ch in self.chunks:
                 if ch:
                     if ch.mesh:
@@ -869,13 +861,11 @@ class World:
                                 ch.mesh.vao.release()
                             except Exception as e:
                                 print(f'[SYSTEM] Error releasing chunk VAO: {e}')
-
                         if ch.mesh.vbo:
                             try:
                                 ch.mesh.vbo.release()
                             except Exception as e:
                                 print(f'[SYSTEM] Error releasing chunk VBO: {e}')
-
             if self.bbox_mesh and self.bbox_mesh.vao:
                 try:
                     self.bbox_mesh.vao.release()

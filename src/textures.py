@@ -34,17 +34,18 @@ class Textures:
         Instantiates and assigns the various textures to their respective OpenGL
         texture locations so shaders can access them simultaneously.
         """
+        # Initialize context
         self.app: Any = app
         self.ctx: Any = app.ctx
 
-        # load textures
+        # Load textures
         self.texture_0: Any = self.load('textures/uis/frame.png')
         self.texture_array_0: Any = self.load('textures/arrays/texture-array-2.png', is_tex_array=True)
         self.texture_breaking: Any = self.load('textures/effects/block-breaking.png')
         self.texture_stick: Any = self.load('models/items/stick/stick.png')
         self.texture_pickaxe: Any = self.load('models/items/wooden-pickaxe/wooden_pickaxe.png', rotation=-90)
 
-        # assign texture unit
+        # Assign texture units
         self.texture_0.use(location=0)
         self.texture_array_0.use(location=1)
         self.texture_breaking.use(location=3)
@@ -60,29 +61,15 @@ class Textures:
         Applies requested rotations/flips and automatically calculates 3D texture array
         dimensions if the image contains vertical strips.
         """
+        # Load base image
         texture: Any = pg.image.load(get_path(f'assets/{file_name}'))
 
+        # Apply transformations
         if rotation != 0:
             texture = pg.transform.rotate(texture, rotation)
-
         texture = pg.transform.flip(texture, flip_x=flip_x, flip_y=flip_y)
 
-        # Texture Arrays vs Texture Atlases
-        # In old voxel engines (like early Minecraft), all block textures were packed
-        # into one massive image called a "Texture Atlas". However, when looking at
-        # blocks far away, OpenGL generates smaller versions of the texture (Mipmaps).
-        # Because the textures are packed tightly, the colors from neighboring blocks
-        # in the atlas would "bleed" into each other at a distance, creating ugly seams.
-        #
-        # Modern engines solve this using OpenGL "Texture Arrays" (GL_TEXTURE_2D_ARRAY).
-        # We load a stacked image, but OpenGL treats each block texture as an entirely
-        # separate "layer" in 3D space. This completely eliminates Mipmap bleeding
-        # while still allowing us to pass hundreds of textures to the shader in a
-        # single draw call!
-        #
-        # References:
-        # - Texture Atlases vs Arrays: https://www.khronos.org/opengl/wiki/Array_Texture
-        # - Mipmapping & Filtering: https://learnopengl.com/Getting-started/Textures
+        # Create texture object
         if is_tex_array:
             num_layers = 3 * texture.get_height() // texture.get_width()  # 3 textures per layer
             texture = self.app.ctx.texture_array(
@@ -90,12 +77,12 @@ class Textures:
                 components=4,
                 data=pg.image.tobytes(texture, 'RGBA', False),
             )
-
         else:
             texture = self.ctx.texture(
                 size=texture.get_size(), components=4, data=pg.image.tobytes(texture, 'RGBA', False)
             )
 
+        # Configure texture filtering
         texture.anisotropy = 32.0
         texture.build_mipmaps()
         texture.filter = (mgl.NEAREST, mgl.NEAREST)
