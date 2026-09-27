@@ -9,9 +9,10 @@ uniform mat4 m_inv_view;
 
 
 void main() {
+    // Set static vertex position
     gl_Position = vec4(in_position, 1.0, 1.0);
-    
-    // Calculate the view ray direction for this specific pixel
+
+    // Compute view direction for fragment interpolation
     vec4 t = m_inv_proj * vec4(in_position, 1.0, 1.0);
-    view_dir = (m_inv_view * vec4(t.xyz, 0.0)).xyz; // 0.0 ignores translation, keeping only rotation
+    view_dir = (m_inv_view * vec4(t.xyz, 0.0)).xyz;
 }
