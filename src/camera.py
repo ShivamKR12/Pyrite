@@ -32,6 +32,7 @@ class Camera:
         Initializes the camera at a given position and orientation, and creates
         the perspective projection matrix and viewing frustum.
         """
+        # Variable assignments
         self.position: Any = glm.vec3(position)
         self.yaw: float = float(glm.radians(yaw))
         self.pitch: float = float(glm.radians(pitch))
@@ -50,6 +51,7 @@ class Camera:
         """
         Updates the camera's directional vectors and view matrix for the current frame.
         """
+        # Execute expressions
         self.update_vectors()
         self.update_view_matrix()
 
@@ -58,6 +60,7 @@ class Camera:
         """
         Calculates the OpenGL lookAt view matrix based on the camera's position and forward vector.
         """
+        # Variable assignments
         self.m_view = glm.lookAt(self.position, self.position + self.forward, self.up)
 
     # Euler Angles & Spherical Coordinates (3D Camera Math)
@@ -84,40 +87,17 @@ class Camera:
         Recalculates the forward, right, and up vectors using spherical coordinates
         derived from the current yaw and pitch.
         """
-        # SPHERICAL TO CARTESIAN CONVERSION (X-AXIS)
-        # To find how much we are looking left/right (X), we use `cos(yaw)`.
-        # But if we look straight up or down, the X length should shrink to 0.
-        # So we multiply it by `cos(pitch)`.
+        # Variable assignments
         self.forward.x = glm.cos(self.yaw) * glm.cos(self.pitch)
 
-        # SPHERICAL TO CARTESIAN CONVERSION (Y-AXIS)
-        # The vertical Y axis is purely controlled by the Pitch (looking up/down).
-        # `sin(pitch)` returns exactly 1.0 when looking straight up (90 degrees),
-        # 0.0 when looking flat (0 degrees), and -1.0 when looking down.
         self.forward.y = glm.sin(self.pitch)
 
-        # SPHERICAL TO CARTESIAN CONVERSION (Z-AXIS)
-        # Similar to X, the Z (depth) axis is controlled by `sin(yaw)`.
-        # It must also be scaled by `cos(pitch)` so that looking straight up/down
-        # completely nullifies depth movement.
         self.forward.z = glm.sin(self.yaw) * glm.cos(self.pitch)
 
-        # VECTOR NORMALIZATION
-        # `glm.normalize` ensures the Forward vector's total length is exactly 1.0.
-        # If we didn't normalize, moving diagonally might be faster than moving straight!
         self.forward = glm.normalize(self.forward)
 
-        # THE CROSS PRODUCT (CALCULATING 'RIGHT')
-        # We know which way we are looking (Forward), and we know which way is
-        # the sky (World Up: 0, 1, 0). The `cross` product of these two vectors
-        # generates a 3rd vector that is exactly perpendicular (90 degrees) to both.
-        # This gives us our exact 'Right' vector for strafing left/right!
         self.right = glm.normalize(glm.cross(self.forward, glm.vec3(0, 1, 0)))
 
-        # THE CROSS PRODUCT (CALCULATING 'LOCAL UP')
-        # We cross 'Right' and 'Forward' to get our Local 'Up' vector.
-        # This is used so if we look down, 'Up' correctly points behind our head
-        # instead of straight into the sky. This is crucial for the OpenGL lookAt matrix.
         self.up = glm.normalize(glm.cross(self.right, self.forward))
 
     @global_profiler.profile_func('Camera_RotatePitch')
@@ -125,6 +105,7 @@ class Camera:
         """
         Adjusts the camera's pitch (up/down rotation), clamping it to prevent flipping over.
         """
+        # Variable assignments
         self.pitch -= delta_y
         self.pitch = float(glm.clamp(self.pitch, -PITCH_MAX, PITCH_MAX))
 
@@ -133,6 +114,7 @@ class Camera:
         """
         Adjusts the camera's yaw (left/right rotation).
         """
+        # Variable assignments
         self.yaw += delta_x
 
     @global_profiler.profile_func('Camera_MoveLeft')
@@ -140,6 +122,7 @@ class Camera:
         """
         Translates the camera leftward along its right vector.
         """
+        # Variable assignments
         self.position -= self.right * velocity
 
     @global_profiler.profile_func('Camera_MoveRight')
@@ -147,6 +130,7 @@ class Camera:
         """
         Translates the camera rightward along its right vector.
         """
+        # Variable assignments
         self.position += self.right * velocity
 
     @global_profiler.profile_func('Camera_MoveUp')
@@ -154,6 +138,7 @@ class Camera:
         """
         Translates the camera upward along its up vector.
         """
+        # Variable assignments
         self.position += self.up * velocity
 
     @global_profiler.profile_func('Camera_MoveDown')
@@ -161,6 +146,7 @@ class Camera:
         """
         Translates the camera downward along its up vector.
         """
+        # Variable assignments
         self.position -= self.up * velocity
 
     @global_profiler.profile_func('Camera_MoveForward')
@@ -168,6 +154,7 @@ class Camera:
         """
         Translates the camera forward along its forward vector.
         """
+        # Variable assignments
         self.position += self.forward * velocity
 
     @global_profiler.profile_func('Camera_MoveBack')
@@ -175,4 +162,5 @@ class Camera:
         """
         Translates the camera backward along its forward vector.
         """
+        # Variable assignments
         self.position -= self.forward * velocity

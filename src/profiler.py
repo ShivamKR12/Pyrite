@@ -37,13 +37,11 @@ class ThreadSampleBuffer:
         Args:
             max_samples: Maximum retained samples per profiling category.
         """
-        # Store the strict numerical cap for how many samples this buffer will retain per category
+        # Variable assignments
         self.max_samples: int = max_samples
 
-        # A dictionary mapping string category names to fixed-length double-ended queues (deques)
         self.categories: Dict[str, deque[float]] = {}
 
-        # A lightweight mutex lock utilized exclusively during the initialization of a new category key
         self.lock: threading.Lock = threading.Lock()
 
     def record(self, category: str, elapsed_time: float) -> None:
@@ -54,17 +52,16 @@ class ThreadSampleBuffer:
             category: Logical category name for the timing sample.
             elapsed_time: Elapsed time in nanoseconds to record.
         """
-        # Fast-path check: if the category is not yet tracked, we must safely initialize it
+        # Conditional logic
         if category not in self.categories:  # pragma: no mutate
-            # Acquire the thread lock to prevent a race condition where two threads might initialize the same key
+            # Context management
             with self.lock:
-                # Double-checked locking pattern: verify the category is still absent after acquiring the lock
+                # Conditional logic
                 if category not in self.categories:  # pragma: no mutate
-                    # Allocate a new deque with a strict memory bound (maxlen) to automatically eject old samples
+                    # Variable assignments
                     self.categories[category] = deque(maxlen=self.max_samples)
 
-        # In CPython, appending to a deque is an atomic operation, meaning it is inherently thread-safe
-        # We push the new nanosecond timing sample onto the end of the queue without needing a lock
+        # Execute expressions
         self.categories[category].append(elapsed_time)
 
 
@@ -89,68 +86,66 @@ class Profiler:
         Args:
             max_samples_per_category: Limit on retained samples to bound memory usage.
         """
-        # Define the global threshold for how many samples each thread buffer is permitted to hold
+        # Variable assignments
         self.max_samples: int = max_samples_per_category
 
-        # A global mutex lock utilized when a brand new thread needs to register itself with the profiler
         self.registry_lock: threading.Lock = threading.Lock()
 
-        # A mapping of OS-level Thread IDs (integers) to their respective isolated ThreadSampleBuffers
         self.thread_buffers: Dict[int, ThreadSampleBuffer] = {}
 
-        # Main-thread specific tracking variable used to measure the absolute duration of an entire game loop frame
         self.frame_start_time: float = 0.0
 
     def _get_buffer(self) -> ThreadSampleBuffer:
         """Retrieves or registers a dedicated data buffer for the calling thread."""
-        # Query the operating system for the current executing thread's unique integer ID
+        # Variable assignments
         thread_id: int = threading.get_ident()
 
-        # Fast-path check: If this thread has already been registered, return its buffer immediately (no lock needed)
+        # Conditional logic
         if thread_id in self.thread_buffers:  # pragma: no mutate
+            # Return result
             return self.thread_buffers[thread_id]
 
-        # If this is the thread's first time profiling, acquire the global registry lock to safely mutate the dictionary
+        # Context management
         with self.registry_lock:
-            # Double-checked locking pattern: ensure another thread didn't register this ID while we were waiting
+            # Conditional logic
             if thread_id not in self.thread_buffers:  # pragma: no mutate
-                # Instantiate a fresh, memory-bounded ThreadSampleBuffer specifically for this Thread ID
+                # Variable assignments
                 self.thread_buffers[thread_id] = ThreadSampleBuffer(self.max_samples)
 
-            # Return the newly allocated or verified thread buffer
+            # Return result
             return self.thread_buffers[thread_id]
 
     def start_frame(self) -> None:
         """Called exclusively on the main game loop thread."""
-        # Capture the absolute, high-resolution hardware nanosecond timestamp for the start of the frame
+        # Variable assignments
         self.frame_start_time = time.perf_counter_ns()
 
     def end_frame(self) -> None:
         """Called exclusively on the main game loop thread."""
-        # Ensure that start_frame was actually called and we have a valid baseline timestamp
+        # Conditional logic
         if self.frame_start_time > 0:
-            # Calculate the total elapsed nanoseconds and submit it to the 'Frame_Total' category
+            # Execute expressions
             self.record('Frame_Total', time.perf_counter_ns() - self.frame_start_time)
 
     def record(self, category: str, elapsed_time: float) -> None:
         """Records metrics completely lock-free relative to other concurrent threads."""
-        # Dynamically fetch the isolated data buffer belonging to the current executing thread
+        # Variable assignments
         buf: ThreadSampleBuffer = self._get_buffer()
 
-        # Delegate the actual storage of the timing sample to the thread-local buffer
+        # Execute expressions
         buf.record(category, elapsed_time)
 
     @contextmanager
     def measure(self, category: str) -> Generator[None, None, None]:
         """Context manager for clean block profiling."""
-        # Capture the initial high-resolution hardware clock timestamp in nanoseconds
+        # Variable assignments
         start_time: float = time.perf_counter_ns()
+        # Error handling
         try:
-            # Yield execution control back to the inner block of code encapsulated by the `with` statement
+            # Execute expressions
             yield
         finally:
-            # Once the inner block terminates (even if it throws an exception), capture the new timestamp
-            # Calculate the delta (elapsed time in nanoseconds) and dispatch it to the profiler registry
+            # Execute expressions
             self.record(category, time.perf_counter_ns() - start_time)
 
     def profile_func(self, category: Optional[str] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
@@ -165,24 +160,30 @@ class Profiler:
             A decorator that wraps callables and records timing samples.
         """
 
-        # This outer function takes the optional category argument and returns the actual decorator mechanism
+        # Define function
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-            # Determine the categorization string: use the explicit argument if provided, otherwise default to the function's internal name
+            # Variable assignments
+            # Variable assignments
             cat: str = category or func.__name__
 
-            # The @wraps decorator preserves the original function's metadata (docstrings, name) through the wrapping process
             @wraps(func)
+            # Define function
+            # Define function
             def wrapper(*args: Any, **kwargs: Any) -> Any:
-                # Intercept the function invocation and wrap it within our custom `measure` context manager
-                # This ensures the call stack is tracked and the execution time is automatically logged under the calculated category
+                # Context management
+                # Context management
+                # Context management
                 with self.measure(cat):
-                    # Forward all positional and keyword arguments to the original function and return its result
+                    # Return result
+                    # Return result
+                    # Return result
                     return func(*args, **kwargs)
 
-            # Return the newly wrapped, telemetry-enabled function
+            # Return result
+            # Return result
             return wrapper
 
-        # Return the decorator generator
+        # Return result
         return decorator
 
     def save_report(self, filename: str = 'profiling_results.json') -> None:
@@ -190,64 +191,59 @@ class Profiler:
         Consolidates metrics across ALL active and dead background worker loops,
         and saves synchronously to prevent file corruption on application exit.
         """
+        # Execute expressions
         print('\n[TELEMETRY] Compiling engine metrics from all threads...')
 
-        # Initialize a master dictionary to aggregate samples across all distinct ThreadSampleBuffers
-        # Structure: Category Name -> Flat List of all recorded nanosecond timings
+        # Variable assignments
         master_records: Dict[str, List[float]] = {}
 
-        # Acquire the global registry lock to freeze thread registration while we harvest data
+        # Context management
         with self.registry_lock:
-            # Iterate over every registered thread ID and its corresponding data buffer
+            # Loop processing
             for thread_id, buf in self.thread_buffers.items():
-                # Acquire the specific thread buffer's lock to prevent category mutation during iteration
+                # Context management
                 with buf.lock:
-                    # Iterate over all categories and their respective deques of timing samples
+                    # Loop processing
                     for category, samples in buf.categories.items():
-                        # If the master record doesn't have this category yet, initialize an empty list
+                        # Conditional logic
                         if category not in master_records:
+                            # Variable assignments
                             master_records[category] = []
-                        # Safely cast the deque to a list and extend the master record with these thread-specific samples
+                        # Execute expressions
                         master_records[category].extend(list(samples))
 
-        # Initialize the final dictionary that will be serialized into the JSON report
+        # Variable assignments
         report: Dict[str, Dict[str, Any]] = {}
 
-        # Iterate over the fully aggregated master records
+        # Loop processing
         for category, times in master_records.items():
-            # If a category was registered but received zero timing samples, skip it to keep the report clean
+            # Conditional logic
             if not times:
+                # Loop control
                 continue
 
-            # Convert the raw Python list into a high-performance NumPy array for vectorized mathematics
-            # We divide by 1,000,000.0 to convert the raw nanosecond inputs into human-readable milliseconds
+            # Variable assignments
             arr: NDArray[np.float64] = np.array(times, dtype=np.float64) / 1_000_000.0
 
-            # Calculate comprehensive statistical metrics for this category using NumPy's built-in C-optimized functions
             report[category] = {
-                # The absolute number of times this category was executed and measured
                 'Calls': len(arr),
-                # The arithmetic mean (average) execution time in milliseconds, rounded to 3 decimal places
                 'Avg_ms': round(float(np.mean(arr)), 3),
-                # The fastest single execution time recorded in milliseconds
                 'Min_ms': round(float(np.min(arr)), 3),
-                # The slowest single execution time recorded in milliseconds
                 'Max_ms': round(float(np.max(arr)), 3),
-                # The 99th percentile execution time (removes the top 1% of outliers/spikes)
                 'P99_ms': round(float(np.percentile(arr, 99)), 3),
-                # The cumulative time spent inside this category across all threads
                 'Total_Time_ms': round(float(np.sum(arr)), 3),
             }
 
-        # Attempt to synchronously write the aggregated dictionary out to a file
-        # Synchronous blocking here is acceptable because this function is only invoked during engine teardown
+        # Error handling
         try:
+            # Context management
             with open(filename, 'w', encoding='utf-8') as f:
-                # Serialize the dictionary to a nicely formatted JSON string and write it to disk
+                # Execute expressions
                 json.dump(report, f, indent=4)
+            # Execute expressions
             print(f'[TELEMETRY] Report successfully saved to {filename}')
         except Exception as e:
-            # Catch any filesystem permissions or IO errors and log them to the console to avoid a silent crash
+            # Execute expressions
             print(f'[TELEMETRY] ERROR: Failed to write report file: {e}')
 
 

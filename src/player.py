@@ -87,14 +87,18 @@ class Player(Camera):
         Initializes the player's attributes, camera orientation, physics state,
         inventory system, and survival stats.
         """
+        # Variable assignments
         self.app: Any = app
 
+        # Conditional logic
         if position is None:
+            # Variable assignments
             position = self.find_spawn_position()
 
+        # Execute expressions
         super().__init__(position, yaw, pitch)
 
-        # physics state
+        # Variable assignments
         self.velocity: Any = glm.vec3(0)
         self.on_ground: bool = False
         self.in_water: bool = False
@@ -118,7 +122,6 @@ class Player(Camera):
         self.fov: float = float(glm.radians(self.app.config['fov']))
         self.is_sprinting: bool = False
 
-        # Survival Stats
         self.max_health: int = MAX_HEALTH
         self.health: float = float(self.max_health)
         self.max_hunger: int = MAX_HUNGER
@@ -137,23 +140,29 @@ class Player(Camera):
         Locates a valid surface spawn position near the center of the world
         by scanning outward iteratively until a solid block above water is found.
         """
+        # Variable assignments
         center_x: int = int(CENTER_XZ)
         center_z: int = int(CENTER_XZ)
 
-        # Expanding grid search for the closest solid block
+        # Loop processing
         for radius in range(0, SPAWN_SEARCH_RADIUS):
+            # Loop processing
             for dx in range(-radius, radius + 1):
+                # Loop processing
                 for dz in range(-radius, radius + 1):
-                    # Check only the perimeter of the current radius to expand outward layer by layer
+                    # Conditional logic
                     if abs(dx) == radius or abs(dz) == radius:
+                        # Variable assignments
                         x: int = center_x + dx
                         z: int = center_z + dz
                         y: int = get_height(x, z, noise.perm)
 
-                        # Ensure the player doesn't spawn underwater
+                        # Conditional logic
                         if y > WATER_LINE:
+                            # Return result
                             return glm.vec3(x + 0.5, y, z + 0.5)
 
+        # Return result
         return glm.vec3(PLAYER_POS)
 
     @global_profiler.profile_func('Player_Update')
@@ -162,17 +171,21 @@ class Player(Camera):
         Called every frame. Updates player inputs, physics logic, view bobbing,
         dynamic FOV for sprinting, fluid dynamics, and core survival metric drains.
         """
+        # Conditional logic
         if self.app.game_state == 'IN_GAME':
+            # Execute expressions
             self.mouse_control()
 
         if self.game_mode == CREATIVE:
-            # free camera mode — NO PHYSICS
+            # Conditional logic
             if self.app.game_state == 'IN_GAME':
+                # Execute expressions
                 self.keyboard_control()
             else:
+                # Variable assignments
                 self.velocity = glm.vec3(0)
 
-            # Check if player HEAD is in water so the blue fog shader updates properly in creative mode!
+            # Variable assignments
             head_pos: Any = glm.ivec3(
                 glm.floor(self.position.x), glm.floor(self.position.y), glm.floor(self.position.z)
             )
@@ -180,31 +193,39 @@ class Player(Camera):
             self.head_in_water = voxel_head == WATER
 
         else:
-            # player mode — physics + collisions
+            # Variable assignments
             was_on_ground: bool = self.on_ground
 
+            # Conditional logic
             if self.app.game_state == 'IN_GAME':
+                # Execute expressions
                 self.keyboard_control()
             else:
+                # Variable assignments
                 self.velocity.x = self.velocity.z = 0.0
                 self.is_sprinting = False
 
+            # Execute expressions
             self.apply_gravity()
+            # Variable assignments
             self.on_ground = False
 
             prev_feet_pos: Any = glm.vec3(self.feet_pos)
+            # Execute expressions
             self.move_and_collide()
 
-            # Get block under player
+            # Variable assignments
             block_under_pos: Any = glm.ivec3(
                 glm.floor(self.feet_pos.x), glm.floor(self.feet_pos.y - 0.05), glm.floor(self.feet_pos.z)
             )
             voxel_under, *_ = self.app.scene.world.voxel_handler.get_voxel_id(block_under_pos)
 
+            # Conditional logic
             if not voxel_under:
+                # Variable assignments
                 voxel_under = GRASS
 
-            # Check if player body is in water
+            # Variable assignments
             body_pos: Any = glm.ivec3(
                 glm.floor(self.position.x),
                 glm.floor(self.position.y - PLAYER_EYE_HEIGHT * 0.5),
@@ -212,7 +233,6 @@ class Player(Camera):
             )
             voxel_body, *_ = self.app.scene.world.voxel_handler.get_voxel_id(body_pos)
 
-            # Check if player feet are in water
             feet_block_pos: Any = glm.ivec3(
                 glm.floor(self.feet_pos.x), glm.floor(self.feet_pos.y), glm.floor(self.feet_pos.z)
             )
@@ -220,47 +240,55 @@ class Player(Camera):
 
             self.in_water = (voxel_body == WATER) or (voxel_feet == WATER)
 
-            # Check if player HEAD is in water
             head_pos = glm.ivec3(glm.floor(self.position.x), glm.floor(self.position.y), glm.floor(self.position.z))
             voxel_head, *_ = self.app.scene.world.voxel_handler.get_voxel_id(head_pos)
             self.head_in_water = voxel_head == WATER
 
+            # Conditional logic
             if self.on_ground and not was_on_ground:
+                # Execute expressions
                 self.app.sounds.play_jump(voxel_under)
 
-                # Apply fall damage
+                # Variable assignments
                 fall_dist: float = self.highest_y - self.position.y
 
+                # Conditional logic
                 if self.spawn_immunity:
+                    # Variable assignments
                     self.spawn_immunity = False
 
                 else:
+                    # Conditional logic
                     if fall_dist > FALL_DAMAGE_THRESHOLD and not self.in_water:
+                        # Variable assignments
                         damage: int = int(math.floor(fall_dist - FALL_DAMAGE_THRESHOLD))
 
+                        # Conditional logic
                         if damage > 0:
+                            # Execute expressions
                             self.take_damage(damage)
 
+                # Variable assignments
                 self.highest_y = self.position.y
 
-            # Update highest Y for fall damage
             if self.velocity.y > 0 or self.in_water or self.position.y > self.highest_y:
+                # Variable assignments
                 self.highest_y = self.position.y
 
-            # View Bobbing
+            # Variable assignments
             bob_offset: float = 0.0
 
-            # Calculate actual horizontal distance moved to prevent footsteps when stuck against a wall
             actual_move_dist: float = float(
                 glm.length(glm.vec2(self.feet_pos.x - prev_feet_pos.x, self.feet_pos.z - prev_feet_pos.z))
             )
             is_walking: bool = self.on_ground and actual_move_dist > 0.0001
 
+            # Conditional logic
             if is_walking:
+                # Variable assignments
                 self.step_counter += actual_move_dist * VIEW_BOBBING_STEP_FREQUENCY
                 bob_offset = float(glm.sin(self.step_counter) * VIEW_BOBBING_AMPLITUDE)
 
-                # Drain hunger
                 hunger_drain: float = (
                     HUNGER_DRAIN_SPRINT if self.is_sprinting else HUNGER_DRAIN_WALK
                 ) * self.app.delta_time
@@ -268,14 +296,16 @@ class Player(Camera):
 
                 current_time: int = pg.time.get_ticks()
 
+                # Conditional logic
                 if current_time - self.last_step_time > 400:  # ms between steps
+                    # Execute expressions
                     self.app.sounds.play_walk(voxel_under)
+                    # Variable assignments
                     self.last_step_time = current_time
 
-            # Dynamic FOV for sprinting
+            # Variable assignments
             base_fov: float = float(glm.radians(self.app.config['fov']))
 
-            # Use horizontal movement instead of is_walking so FOV doesn't snap when going up/down blocks
             is_moving_horizontally: bool = actual_move_dist > 0.0001
             target_fov: float = (
                 base_fov + float(glm.radians(SPRINT_FOV_BOOST))
@@ -283,40 +313,54 @@ class Player(Camera):
                 else base_fov
             )
 
-            # Cap the lerp factor to 1.0 to prevent mathematical overshoot/camera shaking on lower framerates!
             self.fov += (target_fov - self.fov) * min(1.0, SPRINT_FOV_LERP_SPEED * self.app.delta_time)
             self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
 
             h_fov: float = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
+            # Execute expressions
             self.frustum.update_factors(self.fov, h_fov)
 
+            # Variable assignments
             self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT + bob_offset, 0)
 
+            # Conditional logic
             if self.app.game_state == 'IN_GAME':
+                # Execute expressions
                 self.handle_interaction()
 
-            # Oxygen & Drowning Logic
+            # Variable assignments
             current_time = pg.time.get_ticks()
+            # Conditional logic
             if self.head_in_water:
+                # Conditional logic
                 if current_time - self.oxygen_timer > OXYGEN_LOSE_TIMER:
+                    # Variable assignments
                     self.oxygen -= 1
                     self.oxygen_timer = current_time
 
+                    # Conditional logic
                     if self.oxygen < 0:
+                        # Variable assignments
                         self.oxygen = 0
+                        # Execute expressions
                         self.take_damage(1)
 
             else:
+                # Conditional logic
                 if self.oxygen < self.max_oxygen and current_time - self.oxygen_timer > OXYGEN_GAIN_TIMER:
+                    # Variable assignments
                     self.oxygen += 1
                     self.oxygen_timer = current_time
 
-            # Void Fall Damage
             if self.position.y < VOID_DEATH_Y:
+                # Conditional logic
                 if current_time - self.last_damage_time > VOID_DAMAGE_INTERVAL:  # Take damage every half second
+                    # Execute expressions
                     self.take_damage(VOID_DAMAGE)
+                    # Variable assignments
                     self.last_damage_time = current_time
 
+        # Execute expressions
         super().update()
 
     @global_profiler.profile_func('Player_HandleEvent')
@@ -325,38 +369,48 @@ class Player(Camera):
         Processes discrete user inputs such as key presses (mode toggling, hotbar selection)
         and mouse clicks (block mining and placing).
         """
+        # Conditional logic
         if event.type == pg.KEYDOWN:
+            # Conditional logic
             if event.key == pg.K_f:
+                # Variable assignments
                 self.game_mode = SURVIVAL if self.game_mode == CREATIVE else CREATIVE
 
+                # Conditional logic
                 if self.game_mode == CREATIVE:
-                    # sync feet to camera when entering creative
+                    # Variable assignments
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
 
                 else:
-                    # sync camera to feet when exiting creative
+                    # Variable assignments
                     self.feet_pos = glm.vec3(self.position)
                     self.velocity = glm.vec3(0)
 
+                # Variable assignments
                 self.highest_y = self.position.y
 
-            # Hotbar numeric keys
             if pg.K_1 <= event.key <= pg.K_1 + HOTBAR_SIZE - 1:
+                # Variable assignments
                 self.hotbar_index = event.key - pg.K_1
 
-        # adding and removing voxels with clicks
         if event.type == pg.MOUSEBUTTONDOWN:
+            # Variable assignments
             voxel_handler: Any = self.app.scene.world.voxel_handler
 
+            # Conditional logic
             if event.button == 3:  # Right click to place
+                # Execute expressions
                 voxel_handler.set_voxel(mode='add')
+                # Variable assignments
                 self.interaction_timer = pg.time.get_ticks()
 
             if event.button == 4:  # Scroll Up
+                # Variable assignments
                 self.hotbar_index = (self.hotbar_index - 1) % HOTBAR_SIZE
 
             if event.button == 5:  # Scroll Down
+                # Variable assignments
                 self.hotbar_index = (self.hotbar_index + 1) % HOTBAR_SIZE
 
     @global_profiler.profile_func('Player_MouseControl')
@@ -365,15 +419,19 @@ class Player(Camera):
         Retrieves relative mouse movement and adjusts the camera's yaw and pitch
         based on the configured sensitivity.
         """
+        # Variable assignments
         mouse_dx: int
         mouse_dy: int
         mouse_dx, mouse_dy = pg.mouse.get_rel()
         sens: float = self.app.config['sensitivity']
 
+        # Conditional logic
         if mouse_dx:
+            # Execute expressions
             self.rotate_yaw(delta_x=mouse_dx * sens)
 
         if mouse_dy:
+            # Execute expressions
             self.rotate_pitch(delta_y=mouse_dy * sens)
 
     @global_profiler.profile_func('Player_HandleInteraction')
@@ -382,55 +440,75 @@ class Player(Camera):
         Processes continuous block interactions (mining and placing).
         Factoring in tool requirements, block hardness, and interaction delays.
         """
+        # Variable assignments
         mouse_pressed: Tuple[bool, bool, bool] = pg.mouse.get_pressed()
         voxel_handler: Any = self.app.scene.world.voxel_handler
 
         current_time: int = pg.time.get_ticks()
 
-        # Mining logic (Left click)
+        # Conditional logic
         if mouse_pressed[0] and voxel_handler.voxel_id:
+            # Conditional logic
             if self.target_voxel_pos == voxel_handler.voxel_world_pos:
+                # Variable assignments
                 self.mining_time += self.app.delta_time
+                # Execute expressions
                 self.app.sounds.play_breaking(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
 
+                # Conditional logic
                 if (
                     self.mining_time >= self.mining_duration
                     and current_time - self.interaction_timer > self.interaction_delay
                 ):
+                    # Execute expressions
                     voxel_handler.set_voxel(mode='remove')
+                    # Variable assignments
                     self.mining_time = 0.0
                     self.interaction_timer = current_time
 
             else:
+                # Variable assignments
                 self.target_voxel_pos = voxel_handler.voxel_world_pos
                 self.mining_time = 0.0
                 hardness: float = float(BLOCK_HARDNESS.get(voxel_handler.voxel_id, 600.0))
                 held_id: int = self.inventory[self.hotbar_index]
 
+                # Conditional logic
                 if voxel_handler.voxel_id in (STONE, COBBELSTONE):
+                    # Conditional logic
                     if held_id == WOODEN_PICKAXE:
+                        # Variable assignments
                         hardness /= PICKAXE_MINING_MULTIPLIER  # 5x faster WITH a pickaxe!
                     else:
+                        # Variable assignments
                         hardness *= BAREHAND_MINING_PENALTY  # 5x slower without a pickaxe!
 
+                # Variable assignments
                 self.mining_duration = 0.0 if self.game_mode == CREATIVE else hardness
+                # Execute expressions
                 self.app.sounds.play_breaking(voxel_handler.voxel_id, self.mining_time, self.mining_duration)
 
+                # Conditional logic
                 if (
                     self.mining_time >= self.mining_duration
                     and current_time - self.interaction_timer > self.interaction_delay
                 ):
+                    # Execute expressions
                     voxel_handler.set_voxel(mode='remove')
+                    # Variable assignments
                     self.mining_time = 0.0
                     self.interaction_timer = current_time
 
         else:
+            # Variable assignments
             self.mining_time = 0.0
 
-        # Placing logic (Right click)
         if mouse_pressed[2]:
+            # Conditional logic
             if current_time - self.interaction_timer > self.interaction_delay:
+                # Execute expressions
                 voxel_handler.set_voxel(mode='add')
+                # Variable assignments
                 self.interaction_timer = current_time
 
     @global_profiler.profile_func('Player_KeyboardControl')
@@ -439,28 +517,38 @@ class Player(Camera):
         Calculates movement vectors based on keyboard input. Adapts movement
         physics depending on whether the player is in Creative or Survival mode.
         """
+        # Conditional logic
         if self.game_mode == CREATIVE:
+            # Variable assignments
             key_state: Any = pg.key.get_pressed()
             vel: float = PLAYER_SPEED * 5 * self.app.delta_time
 
+            # Conditional logic
             if key_state[pg.K_w]:
+                # Execute expressions
                 self.move_forward(vel)
 
             if key_state[pg.K_s]:
+                # Execute expressions
                 self.move_back(vel)
 
             if key_state[pg.K_d]:
+                # Execute expressions
                 self.move_right(vel)
 
             if key_state[pg.K_a]:
+                # Execute expressions
                 self.move_left(vel)
 
             if key_state[pg.K_SPACE]:
+                # Execute expressions
                 self.move_up(vel)
 
             if key_state[pg.K_LSHIFT]:
+                # Execute expressions
                 self.move_down(vel)
         else:
+            # Variable assignments
             keys: Any = pg.key.get_pressed()
 
             speed: float = PLAYER_SPEED
@@ -469,49 +557,67 @@ class Player(Camera):
             move_dir: Any = glm.vec3(0)
             flat_forward: Any = glm.vec3(self.forward.x, 0, self.forward.z)
 
+            # Conditional logic
             if glm.length(flat_forward) > 0:
+                # Variable assignments
                 flat_forward = glm.normalize(flat_forward)
 
             if keys[pg.K_w]:
+                # Variable assignments
                 move_dir += flat_forward
 
             if keys[pg.K_s]:
+                # Variable assignments
                 move_dir -= flat_forward
 
             if keys[pg.K_d]:
+                # Variable assignments
                 move_dir += self.right
 
             if keys[pg.K_a]:
+                # Variable assignments
                 move_dir -= self.right
 
             if glm.length(move_dir):
+                # Variable assignments
                 move_dir = glm.normalize(move_dir)
 
             if keys[pg.K_LSHIFT]:
+                # Variable assignments
                 speed *= PLAYER_SPRINT_MULTIPLIER
                 self.is_sprinting = True
 
+            # Variable assignments
             self.velocity.x = move_dir.x * speed
             self.velocity.z = move_dir.z * speed
 
+            # Conditional logic
             if self.in_water:
+                # Variable assignments
                 self.velocity.x *= PLAYER_WATER_DRAG_MULTIPLIER  # Water drag
                 self.velocity.z *= PLAYER_WATER_DRAG_MULTIPLIER
 
+                # Conditional logic
                 if self.on_ground and keys[pg.K_SPACE]:
+                    # Variable assignments
                     self.velocity.y = JUMP_VELOCITY
                     self.on_ground = False
 
+                # Conditional logic
                 elif keys[pg.K_SPACE]:
-                    # Dolphin leap out of water if near the surface, otherwise normal swim!
+                    # Conditional logic
                     if not getattr(self, 'head_in_water', False):
+                        # Variable assignments
                         self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * PLAYER_DOLPHIN_LEAP_MULTIPLIER)
 
                     else:
+                        # Variable assignments
                         self.velocity.y = max(self.velocity.y, JUMP_VELOCITY * 0.8)  # Swim up
 
             else:
+                # Conditional logic
                 if self.on_ground and keys[pg.K_SPACE]:
+                    # Variable assignments
                     self.velocity.y = JUMP_VELOCITY
                     self.on_ground = False
 
@@ -521,11 +627,14 @@ class Player(Camera):
         Applies downward gravitational acceleration to the player's vertical velocity,
         accounting for drag if the player is swimming in water.
         """
+        # Conditional logic
         if self.in_water:
+            # Variable assignments
             self.velocity.y += GRAVITY * PLAYER_UNDERWATER_GRAVITY_MULTIPLIER * self.app.delta_time
             self.velocity.y *= max(0.0, 1.0 - PLAYER_VERTICAL_WATER_DRAG * self.app.delta_time)  # vertical water drag
 
         else:
+            # Variable assignments
             self.velocity.y += GRAVITY * self.app.delta_time
 
     @global_profiler.profile_func('Player_MoveAndCollide')
@@ -534,19 +643,19 @@ class Player(Camera):
         Moves the player incrementally along the X, Y, and Z axes,
         resolving collision clipping individually for each axis.
         """
-        # Step 1: Apply velocity along the X-axis by multiplying by the frame delta time.
-        # This isolates horizontal movement to independently solve X-axis collisions.
+        # Variable assignments
         self.feet_pos.x += self.velocity.x * self.app.delta_time
+        # Execute expressions
         self.resolve_axis('x')
 
-        # Step 2: Apply velocity along the Y-axis (gravity/jumping).
-        # We process Y independently so that a player can slide along a wall (X/Z) while falling (Y).
+        # Variable assignments
         self.feet_pos.y += self.velocity.y * self.app.delta_time
+        # Execute expressions
         self.resolve_axis('y')
 
-        # Step 3: Apply velocity along the Z-axis.
-        # This completes the 3D movement step by checking depth collisions.
+        # Variable assignments
         self.feet_pos.z += self.velocity.z * self.app.delta_time
+        # Execute expressions
         self.resolve_axis('z')
 
     @global_profiler.profile_func('Player_ResolveAxis')
@@ -556,19 +665,16 @@ class Player(Camera):
         solid voxels. Stops the player's velocity along the tested axis if
         a collision is detected to prevent clipping.
         """
-        # If the player is not moving along this axis, there is no new collision to resolve.
+        # Conditional logic
         if getattr(self.velocity, axis) == 0:
+            # Return result
             return
 
+        # Variable assignments
         aabb_min: Any
         aabb_max: Any
-        # Retrieve the player's current Axis-Aligned Bounding Box (AABB) using the updated position.
-        # The AABB is defined by a minimum corner (x,y,z) and a maximum corner (x,y,z).
         aabb_min, aabb_max = self.get_aabb()
 
-        # To find which grid voxels the player's continuous (float) AABB overlaps, we apply the floor function.
-        # glm.floor() maps float coordinates down to the nearest integer grid coordinates.
-        # This restricts our collision check to the discrete set of voxel coordinates the player touches.
         min_x: int = int(glm.floor(aabb_min.x))
         max_x: int = int(glm.floor(aabb_max.x))
         min_y: int = int(glm.floor(aabb_min.y))
@@ -576,85 +682,96 @@ class Player(Camera):
         min_z: int = int(glm.floor(aabb_min.z))
         max_z: int = int(glm.floor(aabb_max.z))
 
-        # We optimize the search volume by only checking the leading face of the player's AABB
-        # along the axis of movement. If moving positively, we only check the 'max' face.
+        # Conditional logic
         if axis == 'x':
+            # Conditional logic
             if self.velocity.x > 0:
+                # Variable assignments
                 min_x = max_x
             else:
+                # Variable assignments
                 max_x = min_x
+        # Conditional logic
         elif axis == 'y':
+            # Conditional logic
             if self.velocity.y > 0:
+                # Variable assignments
                 min_y = max_y
             else:
+                # Variable assignments
                 max_y = min_y
+        # Conditional logic
         elif axis == 'z':
+            # Conditional logic
             if self.velocity.z > 0:
+                # Variable assignments
                 min_z = max_z
             else:
+                # Variable assignments
                 max_z = min_z
 
+        # Variable assignments
         world: Any = self.app.scene.world
 
-        # Iterate strictly over the calculated subset of voxels that could potentially cause a collision.
-        # This reduces our collision tests from millions of voxels down to usually 1-4 per axis.
+        # Loop processing
         for x in range(min_x, max_x + 1):
+            # Loop processing
             for y in range(min_y, max_y + 1):
+                # Loop processing
                 for z in range(min_z, max_z + 1):
+                    # Variable assignments
                     voxel_id: int
-                    # Query the global world array to get the block ID at this integer coordinate.
                     voxel_id, *_ = world.voxel_handler.get_voxel_id(glm.ivec3(x, y, z))
 
-                    # If the block is empty (air/None) or non-solid (WATER), it does not cause collision.
+                    # Conditional logic
                     if not voxel_id or voxel_id == WATER:
+                        # Loop control
                         continue
 
-                    # Define the voxel's AABB. Since voxels are 1x1x1 cubes on integer grids,
-                    # the min bounds are exactly (x, y, z) and max bounds are exactly (x+1, y+1, z+1).
+                    # Variable assignments
                     voxel_min: Any = glm.vec3(x, y, z)
                     voxel_max: Any = voxel_min + 1
 
-                    # Check mathematically if the player's AABB overlaps with the voxel's AABB.
+                    # Conditional logic
                     if self.aabb_intersect(aabb_min, aabb_max, voxel_min, voxel_max):
-                        # If a collision occurred on the X-axis...
+                        # Conditional logic
                         if axis == 'x':
+                            # Conditional logic
                             if self.velocity.x > 0:
-                                # We are moving right. Snap the player's feet_pos precisely outside the left face
-                                # of the voxel by subtracting PLAYER_HALF_W.
+                                # Variable assignments
                                 self.feet_pos.x = voxel_min.x - PLAYER_HALF_W
                             else:
-                                # We are moving left. Snap the player's feet_pos outside the right face.
+                                # Variable assignments
                                 self.feet_pos.x = voxel_max.x + PLAYER_HALF_W
-                            # Nullify the velocity so the player stops penetrating the block.
+                            # Variable assignments
                             self.velocity.x = 0
 
-                        # If a collision occurred on the Y-axis...
+                        # Conditional logic
                         elif axis == 'y':
+                            # Conditional logic
                             if self.velocity.y > 0:
-                                # Moving up (jumping). Snap position just below the ceiling block's bottom face.
+                                # Variable assignments
                                 self.feet_pos.y = voxel_min.y - PLAYER_HEIGHT
                             else:
-                                # Moving down (falling). Snap position perfectly atop the floor block.
+                                # Variable assignments
                                 self.feet_pos.y = voxel_max.y
-                                # Because we hit the floor, update state so the player can jump again.
                                 self.on_ground = True
-                            # Cancel Y velocity (gravity stops accumulating when standing).
+                            # Variable assignments
                             self.velocity.y = 0
 
-                        # If a collision occurred on the Z-axis...
+                        # Conditional logic
                         elif axis == 'z':
+                            # Conditional logic
                             if self.velocity.z > 0:
-                                # Moving forward. Snap position behind the voxel's front face.
+                                # Variable assignments
                                 self.feet_pos.z = voxel_min.z - PLAYER_HALF_W
                             else:
-                                # Moving backward. Snap position in front of the voxel's back face.
+                                # Variable assignments
                                 self.feet_pos.z = voxel_max.z + PLAYER_HALF_W
-                            # Cancel Z velocity to halt depth penetration.
+                            # Variable assignments
                             self.velocity.z = 0
 
-                        # After resolving the collision and shifting feet_pos, recalculate the AABB.
-                        # This updated bounding box is essential if the loop continues, as the player
-                        # might still be penetrating other blocks (e.g. corner cases).
+                        # Variable assignments
                         aabb_min, aabb_max = self.get_aabb()
 
     @global_profiler.profile_func('Player_GetAABB')
@@ -663,24 +780,20 @@ class Player(Camera):
         Calculates and returns the minimum and maximum boundaries of the
         Axis-Aligned Bounding Box representing the player's physical volume.
         """
+        # Variable assignments
         min_v: Any = glm.vec3(
-            # self.position.x - PLAYER_HALF_W,
             self.feet_pos.x - PLAYER_HALF_W,
-            # self.position.y,
             self.feet_pos.y,
-            # self.position.z - PLAYER_HALF_W
             self.feet_pos.z - PLAYER_HALF_W,
         )
 
         max_v: Any = glm.vec3(
-            # self.position.x + PLAYER_HALF_W,
             self.feet_pos.x + PLAYER_HALF_W,
-            # self.position.y + PLAYER_HEIGHT,
             self.feet_pos.y + PLAYER_HEIGHT,
-            # self.position.z + PLAYER_HALF_W
             self.feet_pos.z + PLAYER_HALF_W,
         )
 
+        # Return result
         return min_v, max_v
 
     @staticmethod
@@ -689,6 +802,7 @@ class Player(Camera):
         Static helper that determines if two given 3D Axis-Aligned Bounding
         Boxes overlap with each other.
         """
+        # Return result
         return bool(
             a_min.x < b_max.x
             and a_max.x > b_min.x
@@ -704,21 +818,27 @@ class Player(Camera):
         Attempts to add an item to the player's inventory by stacking onto
         existing slots or finding an empty one. Returns True if successful.
         """
-        # Check if we already have a stack of this item
+        # Loop processing
         for i in range(36):  # Only check the main 36 storage slots
+            # Conditional logic
             if self.inventory[i] == voxel_id and self.inventory_counts[i] < 64:
+                # Variable assignments
                 self.inventory_counts[i] += 1
 
+                # Return result
                 return True
 
-        # Find an empty slot
         for i in range(36):
+            # Conditional logic
             if self.inventory[i] == 0:
+                # Variable assignments
                 self.inventory[i] = voxel_id
                 self.inventory_counts[i] = 1
 
+                # Return result
                 return True
 
+        # Return result
         return False  # Inventory is full!
 
     @global_profiler.profile_func('Player_TakeDamage')
@@ -727,13 +847,19 @@ class Player(Camera):
         Reduces player health by the specified amount (if in Survival mode),
         triggering a respawn sequence if health is completely depleted.
         """
+        # Conditional logic
         if self.game_mode == CREATIVE:
+            # Return result
             return
 
+        # Variable assignments
         self.health -= amount
+        # Execute expressions
         self.app.sounds.play_walk(GRASS)  # Generic damage sound
 
+        # Conditional logic
         if self.health <= 0:
+            # Execute expressions
             self.respawn()
 
     @global_profiler.profile_func('Player_Respawn')
@@ -742,6 +868,7 @@ class Player(Camera):
         Resets survival statistics and teleports the player back to a
         safe, auto-calculated spawn position on the surface.
         """
+        # Variable assignments
         self.health = self.max_health
         self.hunger = self.max_hunger
         self.oxygen = self.max_oxygen

@@ -33,11 +33,13 @@ class Frustum:
         Computes and stores precomputed tangent/factor values used for
         frustum checks and keeps a reference to the camera object.
         """
+        # Variable assignments
         self.cam: Any = camera
         self.factor_y: float = 0.0
         self.tan_y: float = 0.0
         self.factor_x: float = 0.0
         self.tan_x: float = 0.0
+        # Execute expressions
         self.update_factors(VERTICAL_FOV, HORIZONTAL_FOV)
 
     @global_profiler.profile_func('Frustum_UpdateFactors')
@@ -49,6 +51,7 @@ class Frustum:
             v_fov: Vertical field-of-view in radians.
             h_fov: Horizontal field-of-view in radians.
         """
+        # Variable assignments
         self.factor_y = 1.0 / math.cos(half_y := v_fov * 0.5)
         self.tan_y = math.tan(half_y)
 
@@ -66,29 +69,32 @@ class Frustum:
         Returns:
             True if the chunk is (partially) inside the camera frustum, False otherwise.
         """
-        # vector to sphere center
+        # Variable assignments
         sphere_vec = chunk.center - self.cam.position
 
-        # outside the NEAR and FAR planes?
         sz = glm.dot(sphere_vec, self.cam.forward)
-        # Check against the near and far planes of the frustum.
-        # If the chunk's depth minus its radius is farther than the FAR plane,
-        # or its depth plus its radius is closer than the NEAR plane, it's outside.
+        # Conditional logic
         if not (NEAR - CHUNK_SPHERE_RADIUS <= sz <= FAR + CHUNK_SPHERE_RADIUS):
+            # Return result
             return False
 
-        # outside the TOP and BOTTOM planes?
+        # Variable assignments
         sy = glm.dot(sphere_vec, self.cam.up)
         dist = self.factor_y * CHUNK_SPHERE_RADIUS + sz * self.tan_y
+        # Conditional logic
         if not (-dist <= sy <= dist):
+            # Return result
             return False
 
-        # outside the LEFT and RIGHT planes?
+        # Variable assignments
         sx = glm.dot(sphere_vec, self.cam.right)
         dist = self.factor_x * CHUNK_SPHERE_RADIUS + sz * self.tan_x
+        # Conditional logic
         if not (-dist <= sx <= dist):
+            # Return result
             return False
 
+        # Return result
         return True
 
 
@@ -146,70 +152,64 @@ def frustum_cull_fast(
     Returns:
         The `out_mask` array with booleans indicating visibility for each center.
     """
-    # Total number of chunks we need to evaluate in parallel
+    # Variable assignments
     n = len(chunk_centers)
 
-    # Extract the camera's world-space position into scalar variables for fast parallel access
     cpx, cpy, cpz = cam_pos[0], cam_pos[1], cam_pos[2]
-    # Extract the camera's forward-pointing normal vector
     cfx, cfy, cfz = cam_forward[0], cam_forward[1], cam_forward[2]
-    # Extract the camera's right-pointing normal vector
     crx, cry, crz = cam_right[0], cam_right[1], cam_right[2]
-    # Extract the camera's up-pointing normal vector
     cux, cuy, cuz = cam_up[0], cam_up[1], cam_up[2]
 
-    # Precalculate the squared radius of the chunk bounding sphere.
-    # Multiplying by 1.2 adds a 20% margin of error to prevent popping artifacts at the edge of the screen.
     radius_sq = (CHUNK_SPHERE_RADIUS * 1.2) ** 2
 
-    # Loop over all chunk centers using Numba's prange for multithreading
+    # Loop processing
     for i in prange(n):
-        # Calculate the direction vector from the camera to the chunk center (sphere center)
+        # Variable assignments
         svx = chunk_centers[i, 0] - cpx
         svy = chunk_centers[i, 1] - cpy
         svz = chunk_centers[i, 2] - cpz
 
-        # Calculate the squared distance (magnitude squared) from the camera to the chunk
         dist_sq = svx * svx + svy * svy + svz * svz
-        # If the chunk is so close to the camera that it lies within its bounding sphere radius,
-        # it is trivially visible and we can skip the plane checks entirely
+        # Conditional logic
         if dist_sq < radius_sq:
+            # Variable assignments
             out_mask[i] = True
+            # Loop control
             continue
 
-        # Project the sphere vector onto the camera's forward vector using the dot product.
-        # This gives us the scalar depth of the chunk relative to the camera's facing direction.
+        # Variable assignments
         sz = svx * cfx + svy * cfy + svz * cfz
-        # Check against the near and far planes of the frustum.
-        # If the chunk's depth minus its radius is farther than the FAR plane,
-        # or its depth plus its radius is closer than the NEAR plane, it's outside.
+        # Conditional logic
         if not (NEAR - CHUNK_SPHERE_RADIUS <= sz <= FAR + CHUNK_SPHERE_RADIUS):
+            # Variable assignments
             out_mask[i] = False
+            # Loop control
             continue
 
-        # Clamp the depth to 0.0 to prevent inverted frustum culling when chunks are behind the camera
+        # Variable assignments
         sz = max(0.0, sz)
 
-        # Project the sphere vector onto the camera's up vector (dot product) to get its local Y position
         sy = svx * cux + svy * cuy + svz * cuz
-        # Calculate the half-height of the frustum at the chunk's depth (sz * tan_y).
-        # We add the bounding sphere radius (scaled by factor_y) to expand the top/bottom planes.
         dist_y = factor_y * CHUNK_SPHERE_RADIUS + sz * tan_y
-        # Check if the chunk's local Y position falls outside the expanded top or bottom planes
+        # Conditional logic
         if not (-dist_y <= sy <= dist_y):
+            # Variable assignments
             out_mask[i] = False
+            # Loop control
             continue
 
-        # Project the sphere vector onto the camera's right vector (dot product) to get its local X position
+        # Variable assignments
         sx = svx * crx + svy * cry + svz * crz
-        # Calculate the half-width of the frustum at the chunk's depth (sz * tan_x).
-        # We add the bounding sphere radius (scaled by factor_x) to expand the left/right planes.
         dist_x = factor_x * CHUNK_SPHERE_RADIUS + sz * tan_x
-        # Check if the chunk's local X position falls outside the expanded left or right planes
+        # Conditional logic
         if not (-dist_x <= sx <= dist_x):
+            # Variable assignments
             out_mask[i] = False
+            # Loop control
             continue
 
+        # Variable assignments
         out_mask[i] = True
 
+    # Return result
     return out_mask

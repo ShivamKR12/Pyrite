@@ -46,11 +46,11 @@ class ShaderProgram:
         Retrieves the GLSL source code for chunks, markers, UI elements, and environments,
         then registers them into ModernGL programs.
         """
+        # Variable assignments
         self.app: Any = app
         self.ctx: Any = app.ctx
         self.player: Any = app.player
 
-        # -------- shaders -------- #
         self.chunk: Any = self.get_program(shader_name='chunk')
         self.voxel_marker: Any = self.get_program(shader_name='voxel_marker')
         self.clouds: Any = self.get_program('clouds')
@@ -62,7 +62,7 @@ class ShaderProgram:
         self.item: Any = self.get_program('item')
         self.obj: Any = self.get_program('obj')
 
-        # ------------------------- #
+        # Execute expressions
         self.set_uniforms_on_init()
 
     @global_profiler.profile_func('ShaderProgram_SetUniformsOnInit')
@@ -71,75 +71,98 @@ class ShaderProgram:
         Initializes static shader uniforms (like texture assignments, texture mapping arrays,
         and basic projection matrices) that only need to be uploaded once.
         """
-        # Build the fast lookup array for the shaders
+        # Variable assignments
         tex_map: NDArray[np.int32] = np.zeros(256, dtype='int32')
 
+        # Loop processing
         for uid, tex_id in TEXTURE_MAP.items():
+            # Variable assignments
             tex_map[uid] = tex_id
+        # Variable assignments
         tex_map_bytes: bytes = tex_map.tobytes()
 
-        # chunk
+        # Execute expressions
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
+        # Variable assignments
         self.chunk['u_texture_array_0'] = 1
+        # Execute expressions
         self.chunk['bg_color'].write(BG_COLOR)
 
+        # Conditional logic
         if 'u_texture_map' in self.chunk:
+            # Execute expressions
             self.chunk['u_texture_map'].write(tex_map_bytes)
 
-        # marker
+        # Execute expressions
         self.voxel_marker['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_model'].write(glm.mat4())
+        # Variable assignments
         self.voxel_marker['u_texture_0'] = 0
         self.voxel_marker['u_texture_breaking'] = 3
         self.voxel_marker['mining_progress'] = 0.0
         self.voxel_marker['is_bbox'] = 0
 
-        # clouds
+        # Execute expressions
         self.clouds['m_proj'].write(self.player.m_proj)
+        # Variable assignments
         self.clouds['center'] = CENTER_XZ
+        # Execute expressions
         self.clouds['bg_color'].write(BG_COLOR)
+        # Variable assignments
         self.clouds['cloud_scale'] = CLOUD_SCALE
 
-        # sky
+        # Execute expressions
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
         self.sky['bg_color'].write(BG_COLOR)
 
-        # quad (used for 2D UI)
         self.quad['m_proj'].write(glm.mat4())
         self.quad['m_view'].write(glm.mat4())
         self.quad['m_model'].write(glm.mat4())
 
-        # ui block
+        # Variable assignments
         self.ui_block['u_texture_array_0'] = 1
+        # Conditional logic
         if 'u_texture_map' in self.ui_block:
+            # Execute expressions
             self.ui_block['u_texture_map'].write(tex_map_bytes)
 
-        # ui text
+        # Variable assignments
         self.ui_text['u_texture_0'] = 4
+        # Conditional logic
         if 'u_alpha' in self.ui_text:
+            # Variable assignments
             self.ui_text['u_alpha'] = 1.0
         if 'u_color' in self.ui_text:
+            # Variable assignments
             self.ui_text['u_color'] = (1.0, 1.0, 1.0, 1.0)
 
         if 'u_clip' in self.ui_color:
+            # Variable assignments
             self.ui_color['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
         if 'u_clip' in self.ui_text:
+            # Variable assignments
             self.ui_text['u_clip'] = (-2.0, -2.0, 2.0, 2.0)
 
-        # item
+        # Execute expressions
         self.item['m_proj'].write(self.player.m_proj)
         self.item['m_model'].write(glm.mat4())
+        # Variable assignments
         self.item['u_texture_array_0'] = 1
+        # Execute expressions
         self.item['bg_color'].write(BG_COLOR)
+        # Conditional logic
         if 'u_texture_map' in self.item:
+            # Execute expressions
             self.item['u_texture_map'].write(tex_map_bytes)
 
-        # obj
+        # Execute expressions
         self.obj['m_proj'].write(self.player.m_proj)
         self.obj['m_model'].write(glm.mat4())
+        # Variable assignments
         self.obj['u_use_texture'] = False
+        # Execute expressions
         self.obj['bg_color'].write(BG_COLOR)
 
     @global_profiler.profile_func('ShaderProgram_Update')
@@ -149,40 +172,36 @@ class ShaderProgram:
         calculates dynamic sun direction/fog density based on the day-night cycle,
         and syncs UI animations (like mining progress).
         """
-        # Upload the player's view matrix to the chunk shader.
-        # This matrix represents the camera's position and rotation, transforming world coordinates into camera-relative coordinates.
+        # Execute expressions
         self.chunk['m_view'].write(self.player.m_view)
 
-        # Check if the 'u_time' uniform exists in the compiled chunk shader program before attempting to write to it
+        # Conditional logic
         if 'u_time' in self.chunk:
-            # Pass the elapsed world session time, which can be used in the shader for procedural animations like waving grass
+            # Variable assignments
             self.chunk['u_time'] = (
                 self.app.world_session_time
             )  # Make sure the shader actually has the uniform before writing
 
-        # Send the view matrix to other shaders so all elements render from the same camera perspective
+        # Execute expressions
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
-        # Push the exact player 3D position to the clouds shader, likely used to offset the cloud generation algorithm
         self.clouds['player_pos'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
         self.obj['m_view'].write(self.player.m_view)
 
-        # Update projection matrix dynamically for FOV zooming
-        # The projection matrix handles perspective, making further objects appear smaller.
-        # It's updated every frame because mechanics like sprinting or using a spyglass can alter the field of view on the fly.
         self.chunk['m_proj'].write(self.player.m_proj)
         self.voxel_marker['m_proj'].write(self.player.m_proj)
         self.clouds['m_proj'].write(self.player.m_proj)
         self.item['m_proj'].write(self.player.m_proj)
         self.obj['m_proj'].write(self.player.m_proj)
-        # The sky shader requires inverse matrices to calculate the exact direction of each pixel relative to the camera
         self.sky['m_inv_proj'].write(glm.inverse(self.player.m_proj))
         self.sky['m_inv_view'].write(glm.inverse(self.player.m_view))
-        # Provide time to the sky shader to animate dynamic elements like moving stars or shifting auroras
+        # Conditional logic
         if 'u_time' in self.sky:
+            # Variable assignments
             self.sky['u_time'] = self.app.world_session_time
 
+        # Variable assignments
         time_speed: float = DAY_NIGHT_SPEED  # Adjust this to make the day longer or shorter based on world_session_time
         sun_y: float = float(glm.cos(self.app.world_session_time * time_speed))
 
@@ -192,14 +211,16 @@ class ShaderProgram:
         cloud_fog_density: float
         fog_max_opacity: float
 
+        # Conditional logic
         if is_underwater:
-            # Underwater fog!
+            # Variable assignments
             bg_color = UNDERWATER_FOG_COLOR
             fog_density = UNDERWATER_FOG_DENSITY
             cloud_fog_density = FOG_DENSITY_BASE / 10.0  # Make clouds just barely visible underwater
             fog_max_opacity = UNDERWATER_FOG_MAX_OPACITY  # Cap underwater fog so distant terrain remains visible
 
         else:
+            # Variable assignments
             bg_color = BG_COLOR * max(0.05, sun_y + 0.2)  # Sky gets dark when sun goes down
             render_dist: float = max(1.0, float(self.app.config.get('render_distance', 6)))
             fog_density = FOG_DENSITY_BASE / (render_dist**2)
@@ -207,53 +228,73 @@ class ShaderProgram:
             fog_max_opacity = 1.0  # Fully hide chunk boundaries above water
 
         if 'u_fog_density' in self.chunk:
+            # Variable assignments
             self.chunk['u_fog_density'] = fog_density
 
+            # Conditional logic
             if 'u_fog_max_opacity' in self.chunk:
+                # Variable assignments
                 self.chunk['u_fog_max_opacity'] = fog_max_opacity
 
         if 'u_fog_density' in self.item:
+            # Variable assignments
             self.item['u_fog_density'] = fog_density
 
+            # Conditional logic
             if 'u_fog_max_opacity' in self.item:
+                # Variable assignments
                 self.item['u_fog_max_opacity'] = fog_max_opacity
 
         if 'u_fog_density' in self.obj:
+            # Variable assignments
             self.obj['u_fog_density'] = fog_density
 
+            # Conditional logic
             if 'u_fog_max_opacity' in self.obj:
+                # Variable assignments
                 self.obj['u_fog_max_opacity'] = fog_max_opacity
 
         if 'u_fog_density' in self.clouds:
+            # Variable assignments
             self.clouds['u_fog_density'] = cloud_fog_density
 
+            # Conditional logic
             if 'u_fog_max_opacity' in self.clouds:
+                # Variable assignments
                 self.clouds['u_fog_max_opacity'] = fog_max_opacity
 
         if 'u_underwater_tint' in self.chunk:
+            # Variable assignments
             self.chunk['u_underwater_tint'] = self.app.config.get('underwater_tint', False)
 
+        # Variable assignments
         mining_progress: float = (
             self.player.mining_time / self.player.mining_duration if self.player.mining_time > 0 else 0.0
         )
         self.voxel_marker['mining_progress'] = mining_progress
 
-        # Day / Night Cycle Lighting
         sun_dir: Any = glm.normalize(glm.vec3(0.0, sun_y, glm.sin(self.app.world_session_time * time_speed)))
 
-        # Safely write sun direction only if the shader currently supports it
+        # Conditional logic
         if 'u_sun_direction' in self.chunk:
+            # Execute expressions
             self.chunk['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.item:
+            # Execute expressions
             self.item['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.obj:
+            # Execute expressions
             self.obj['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.sky:
+            # Execute expressions
             self.sky['u_sun_direction'].write(sun_dir)
         if 'u_sun_direction' in self.clouds:
+            # Execute expressions
             self.clouds['u_sun_direction'].write(sun_dir)
 
+        # Variable assignments
         self.app.bg_color = bg_color
+        # Execute expressions
         self.chunk['bg_color'].write(bg_color)
         self.clouds['bg_color'].write(bg_color)
         self.item['bg_color'].write(bg_color)
@@ -265,22 +306,17 @@ class ShaderProgram:
         """
         Helper function to load and compile a matching pair of .vert and .frag shader files from disk.
         """
-        # Open the vertex shader file with read permissions and utf-8 encoding to prevent text mangling
+        # Context management
         with open(get_path(f'src/shaders/{shader_name}.vert'), 'r', encoding='utf-8') as file:
-            # Read the entire raw GLSL source code into a Python string variable for the vertex stage
+            # Variable assignments
             vertex_shader: str = file.read()
 
-        # Open the fragment shader file, which computes the final color of each pixel
         with open(get_path(f'src/shaders/{shader_name}.frag'), 'r', encoding='utf-8') as file:
-            # Read the entire raw GLSL source code into a Python string variable for the fragment stage
+            # Variable assignments
             fragment_shader: str = file.read()
 
-        # ModernGL takes the raw string sources and performs several steps behind the scenes:
-        # 1. Parsing: It checks the GLSL syntax for both shaders to ensure they conform to the OpenGL version specified.
-        # 2. Compilation: The graphics driver compiles the text into GPU-specific machine code.
-        # 3. Linking: The compiled vertex and fragment shaders are linked together into a single executable pipeline.
-        # This pipeline dictates how 3D coordinates are transformed onto the 2D screen, and how they are colored.
+        # Variable assignments
         program: Any = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
 
-        # Return the linked program object, which can now be bound to uniforms and used in draw calls
+        # Return result
         return program

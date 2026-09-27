@@ -18,10 +18,14 @@ from pyglm import glm
 
 def get_path(relative_path: str) -> str:
     """Get absolute path to resource"""
+    # Error handling
     try:
+        # Variable assignments
         base_path: str = sys._MEIPASS  # type: ignore[attr-defined]
     except AttributeError:
+        # Variable assignments
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    # Return result
     return os.path.join(base_path, relative_path)
 
 
