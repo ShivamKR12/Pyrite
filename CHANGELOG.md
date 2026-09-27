@@ -1,34 +1,34 @@
-# Changelog
+# Pyrite Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to this project are documented in this file, grouped chronologically by date.
 
 
-## [Unreleased]
-
-### Added
-- **project**: Add Ruff, Mypy, and centralize config in pyproject.toml (2b066e0)
-- **core**: Implement global profiler, async lighting, and optimize chunk meshing (428e814)
-- **world**: Implement persistence for dropped items (f328ee7)
-- **docs**: Add diagram support with Mermaid and PlantUML (a826e43)
-- Change per-face lighting to per-vertex lighting for smoother, non-blocky looks. (76801b2)
-- Overhaul UI theme, add transitions, and dynamic background (6092e23)
-- Restructure project, add CI, assets, and UI system (1740f42)
-- Implement BFS light propagation, lightmap caching, and new blocks (cd284ad)
-- Implement BFS light propagation, lightmap caching, and new blocks (9bdce7f)
-- Complete world management menu and dynamic terrain seeding (bf81e93)
+## 2026-09-27
 
 ### Changed
+- **project**: Restructure CHANGELOG to follow Keep a Changelog standard (373d31b)
 - **project**: Generate automated CHANGELOG.md from git history (80ad74e)
 - **rules**: Enforce frequent atomic commits and plain text commit messages (5c021af)
+
+### Fixed
+- **tests**: Patch profiler nanosecond timing and generate exact-version API skills (7ff88b2)
+
+## 2026-09-23
+
+### Changed
 - Streamline CI workflows and update documentation (190e63c)
+
+## 2026-09-20
+
+### Changed
 - Add insanely detailed logical comments to profiler.py and item.py (f6667f5)
 - Add highly detailed logical comments to HUD math (0406ddf)
 - Add detailed logical comments for shaders and mathematical settings (48beefc)
 - Add subagent swarm and auto-execution rules to GEMINI.md (8e1ab9e)
+
+## 2026-09-19
+
+### Changed
 - Add detailed line-by-line comments for Sky shader math and Scene rendering pipeline (be0785f)
 - Cleanup formatting and add detailed line-by-line math comments to player collisions (0fc90f9)
 - Add insanely detailed line-by-line math comments to chunk meshing and frustum culling (c4990ea)
@@ -39,40 +39,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Real-World Context comments for DDA Raycasting, Camera Euler Math, and VBO Pooling (a1e4d3d)
 - Add Real-World Context and educational comments to core algorithms (c41bb2e)
 - Add Antigravity AI strict guidelines and Pyrite API Skill (55caf4c)
+
+## 2026-07-16
+
+### Changed
+- Merge branch 'master' of https://github.com/ShivamKR12/Pyrite (cadb8d4)
 - **contributing**: Align guide with centralized tooling (4eac3bf)
 - **readme**: Update test coverage badge (1ebcc65)
 - **tooling**: Centralize configuration and enforce docstrings (161f186)
+
+## 2026-06-22
+
+### Changed
+- Merge branch 'master' of https://github.com/ShivamKR12/Pyrite (68f9bd6)
 - Align added documentation style with existing voice. (97a4ee6)
+
+## 2026-06-14
+
+### Changed
 - **readme**: Update test coverage badge (1570007)
+- Merge branch 'master' of https://github.com/ShivamKR12/Pyrite (f419ac6)
 - **core**: Add explicit error logging (83f8916)
 - **readme**: Update test coverage badge (22c29a2)
 - **workflows**: Refine release asset upload (30a3674)
 - **workflows**: Trigger release builds on tags (92b156d)
+
+### Fixed
+- **core**: Resolve SQLite locks and type crashes (997eb34)
+
+## 2026-06-13
+
+### Changed
 - **settings**: Correct VERTICAL_FOV typo (8477df8)
 - **settings**: Expand abbreviated constant names (33e728e)
 - **guides**: Resolve formatting anomalies (20bb0a5)
 - **guides**: Establish chronological reading flow (79c2986)
 - **guides**: Replace pseudocode with actual code (5a80496)
 - **guides**: Expand core engine documentation (ff019fb)
+
+## 2026-06-10
+
+### Changed
 - **contributing**: Add detailed commit message guidelines (2394d8a)
+- Merge branch 'master' of https://github.com/ShivamKR12/Pyrite (3d820e7)
 - Overhaul documentation hierarchy (ab29f83)
+
+### Fixed
+- **meshes**: Resolve numba parallel performance warning (f34f0e5)
+
+## 2026-06-09
+
+### Changed
 - **readme**: Update test coverage badge (7e682bf)
 - Clear capsys buffer between profiler report test cases (c11b535)
 - Eliminate final surviving mutmut mutations in profiler (3093f57)
+- Merge branch 'master' of https://github.com/ShivamKR12/Pyrite (5699e60)
 - Harden assertions to kill surviving mutmut mutations (25c5eb6)
 - **readme**: Update test coverage badge (ef7b1bc)
+
+### Fixed
+- Ensure global Python and NumPy RNGs are seeded deterministically (852e907)
+- Sync global RNG states and resolve pylint stylistic warnings (919d2f3)
+
+## 2026-06-08
+
+### Changed
 - Expand test coverage and strengthen assertions to kill mutmut survivors (7435d56)
 - **readme**: Update test coverage badge (7c20736)
 - Standardize API reference generation and expand component docstrings (fd2328d)
 - **docs**: Remove redundant CI API index title normalization (d21afe6)
 - Normalize generated API index title during Sphinx build; fix workflow YAML (9e4c702)
 - **docs**: Add sphinx-apidoc step; fix ruff W191 in package __init__.py files (37a8ed5)
+- Merge branch 'master' of https://github.com/ShivamKR12/Pyrite (ea0dfd2)
 - Updated .gitignore, added .mypy_cache/ and .vscode/ to it. (a147975)
 - **readme**: Update test coverage badge (a5d2041)
 - Add package docstrings for UI, meshes, world_objects (d7cfa7a)
 - Add assets/audio/profiling pages and enable autogenerated API (c8237c7)
+
+## 2026-06-05
+
+### Changed
 - **tooling**: Implement pre-commit hooks for local code validation (403a774)
 - **readme**: Update test coverage badge (836497f)
+- Merge branch 'master' of https://github.com/ShivamKR12/Pyrite (73c07a7)
 - **linting**: Resolve Ruff formatting and whitespace errors (af16dc2)
 - **readme**: Update test coverage badge (9f0e4a3)
 - **coverage**: Replace coverage-badge with genbadge to fix workflow crash (7aec0ab)
@@ -85,6 +134,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **workflows**: Add mutmut results summary to mutation workflow (e08aa19)
 - **workflows**: Correct mutmut execution command in mutation test (863dd56)
 - **workflows**: Standardize triggers and refine job execution scope (65db434)
+
+### Fixed
+- **typing**: Resolve Mypy attribute and module import errors (e480c82)
+- **style**: Auto-format source code to resolve Ruff check (9f40fb7)
+- **style**: Apply ruff formatting across the codebase (8054027)
+- **typing**: Resolve strict Mypy errors in World class (7f286f4)
+- Resolved mypy union-attr errors by updating World class type hints (427fd00)
+
+## 2026-06-04
+
+### Added
+- **project**: Add Ruff, Mypy, and centralize config in pyproject.toml (2b066e0)
+
+### Changed
 - **workflows**: Add path filters to prevent unnecessary test runs (8e3e6e3)
 - **readme**: Add comprehensive CI/CD badges and update logo path (81c7cbb)
 - **test**: Update mutmut syntax and config for version 3 compatibility (f24f41d)
@@ -95,111 +158,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Overhaul GitHub Actions for quality gates (4e1ee1c)
 - **core**: Add type hints and docstrings across codebase (30aa038)
 - **assets**: Reorganize asset directory structure (6cea4b4)
-- Updated the docs (f06331d)
-- Updated the profiler. (23283a7)
-- Changed a Bit ( maybe alot ! ) of How the Code was Written. (1a1ec87)
-- Optimize chunk loading, VBO pooling, and culling (18a7028)
-- Added nested VBoxes in Main Menu, Changed the spacer in options menu and Updated VBox to support nesting. (d7d8f40)
-- Added VBox to the Main Menu as well ! (a02f535)
-- Chnaged the name of the main menu from just "Menu" to "MainMenu" (be707e2)
-- Seperated the background music's volume from the SFX's volume. Added Seperate sliders both in the Options menu. Added all the UIs in the Options menu into a VBox UINode and adjusted their spacings. (78aa842)
-- Fixed an issue where clicking the delete button to delete a world would launch the world beneth it automatically. Now, we have seperated the delete button clicks from the world button clicks. (d64671a)
-- Optimized UI VRAM usage, Added shader clipping, and implemented tooltips (9a9c198)
-- Added rounded buttons ! (0a18187)
-- Remove ISSUES.MD from tracking (05d0527)
-- Patched the crafting system, so now the items move back into the inventory when there are items in the crafting slots and the inventory is closed. (249b935)
-- Updated the workflows so they wouldn't run un-neccessarly (b00b045)
-- Configure Pylint and fix CI failures (317e454)
-- Added pylint linting test for the code (d47d117)
-- Refactor GitHub Actions workflow for documentation deployment (afcbca5)
-- Fixed test badge in README (9af1663)
-- Fixed testing.rst (bb4936a)
-- Changed workflow to deploy documentation to GitHub Pages (29385c7)
-- Updated the docs some more (5493720)
-- Chnaged the water line to 6, from 5.6 (f50843c)
-- Update gitignore, Added .venv and venv directories to it (b8020da)
-- Added a new screenshot (fd45ff6)
-- Updated dev dependencies (2c0cd00)
-- Fixed memory allocation issue, now a new array wouldn't be passed for the frustum_cull_fast function every frame, prevent GC crun (08630f1)
-- Updated the documentation massively (06a2e78)
-- Ignore temp.txt (9ad303e)
-- Fixed some lighting artifacts. (8965570)
-- Fix data race causing chunk corruption during background saves (4294456)
-- Add comprehensive docstrings across the project (3b8a50e)
-- **config**: Extract hardcoded magic numbers into settings.py (0a16fb1)
-- Fix various UI and gameplay issues (c477ef3)
-- Slowed down the time_speed to decrease the speed at which the time of the day elapses in the game world. now, the in-game world time are longer and so are the days and nights. smaller time_speed value means longer days and bigger time_speed value means shoter days. (8c9ab49)
-- Added automatic Mac and Linux release builds to CI (d3bb720)
-- Add the docs folder back. (6a52684)
-- Fixed the build workflow. (5836c28)
-- The BFS lighting engine was updated with several core performance optimizations focused on memory bandwidth and cache locality. The multi-dimensional coordinate queues were replaced with bit-packed uint64 integer arrays, reducing the overall memory footprint of the lighting operations and preventing bounding box overflow issues. An in-chunk fast path was introduced within the neighbor propagation loop, using direct 1D array index calculations to bypass repetitive modulo and division operations for local blocks. Finally, vertical sunlight propagation was adjusted to use a linear raycast approach instead of volumetric 3D expansion, decreasing the algorithmic complexity of vertical light shafts. These structural adjustments improve the efficiency and speed of large-scale terrain light updates. (0419768)
-- Turbocharged the core engine performance by aggressively applying advanced Numba compiler optimizations across the entire codebase! Replaced standard JIT compilation with true asynchronous concurrency by injecting the nogil=True flag into chunk_mesh_builder.py, lighting.py, and terrain_gen.py, successfully releasing the Python Global Interpreter Lock (GIL) to allow heavy background chunk processing without ever interrupting the main Pygame render loop. Massively accelerated complex floating-point arithmetic by enabling fastmath=True within noise.py, terrain_gen.py, and frustum.py, permitting the underlying LLVM compiler to bypass strict IEEE 754 compliance and heavily vectorize Simplex noise and camera calculations. Furthermore, unlocked true multi-core processing by integrating the parallel=True flag and prange iterators into frustum.py and cloud_mesh.py, seamlessly distributing massive, independent iterative loops across all available physical CPU cores. This comprehensive architectural upgrade drastically slashes chunk generation and meshing times by up to 8xâ€”dropping batch processing from ~250ms to a blistering ~30msâ€”guaranteeing buttery smooth, stutter-free framerates even while flying at maximum speed through the world ! (862c6c8)
-- Implemented foundational multi-world save architecture and metadata tracking! Replaced the hardcoded `save.db` approach with a dynamic system that automatically generates and manages distinct SQLite database files within a dedicated `saves/` directory. Expanded the database schema to include a new `world_meta` table, which perfectly tracks essential world information including the customized world name, underlying generation seed, active game mode, and precise timestamps for creation and recent play sessions. Refactored the core engine initialization pipeline across `main.py`, `scene.py`, and `world.py` to seamlessly route a `save_name` parameter down to the storage layer, currently defaulting to "Default_World" to ensure immediate backward compatibility. This crucial backend overhaul perfectly sets the stage for a fully interactive world selection and creation menu, allowing players to easily manage and switch between multiple independent blocky universes! (5a99e2f)
-- Resolved FOV sprint jitter and fixed a critical chunk unloading crash! Decoupled the dynamic sprint FOV from the strict `is_walking` ground check and instead tied it directly to horizontal movement distance. This smooths out the lerp transition and entirely eliminates the violent camera snapping that previously occurred when jumping, falling, or stepping up blocks while holding sprint. Additionally, removed invalid manual `.release()` calls on ModernGL occlusion queries in the world unloading logic. Since these specific hardware queries are natively managed by Python's garbage collector, manually releasing them triggered an `AttributeError` that crashed the engine when a player moved out of bounds or quit to the main menu. The engine is now silky smooth and perfectly stable during long play sessions! (90f60e6)
-- Optimize terrain noise, cull distant items, and fix VRAM leak (27ae2ba)
-- Engine-wide optimizations for meshing, disk I/O, rendering, and entity limits (40d1b09)
-- Optimize terrain generation and throttle debug UI rendering (89db633)
-- Heavily optimize frustum culling math for Numba JIT (30cca9e)
-- Fix VRAM leak and UI stutter by removing dynamic text caching (1650b52)
-- Implemented persistent player location and camera rotation saving! Expanded the SQLite `player_data` JSON payload to automatically record the player's exact XYZ world coordinates, yaw, and pitch when quitting to the menu. Updated the world loading sequence to unpack these values on startup, seamlessly restoring the camera angle and carefully syncing the `feet_pos` bounding box. Additionally, the loading logic now safely overwrites the `highest_y` fall-damage tracker to prevent the engine from dealing accidental massive damage if the player spawns deep underground. Players will now seamlessly resume their adventure exactly where they left off instead of being teleported back to the world origin! (9d0dade)
-- Implemented persistent player inventory saving! Upgraded the SQLite database system to include a new `player_data` table that seamlessly serializes and stores the player's entire inventory, crafting grid, item counts, and active hotbar slot as a JSON string when quitting the game. Added robust loading logic on startup with forward-compatible bounds checking to prevent crashes if the inventory size expands in future updates. Safely bypassed a JSON serialization crash by actively casting Numba's memory-efficient `uint8` block IDs into native Python integers before saving, and corrected an SQLite binding mismatch to ensure the data commits perfectly. Players will now safely keep all their hard-earned loot between play sessions! (549bb57)
-- Fixed application freezing during Numba JIT compilation! Offloaded the initial, highly CPU-intensive Numba compiler warm-up sequence to a background worker thread using the ThreadPoolExecutor. Previously, compiling the dummy chunk blocked the main thread entirely, which prevented the Pygame event queue from being processed and caused the OS to unexpectedly flag the window as "Not Responding" on fresh launches. Now, the main thread is free to continuously loop and pump events, maintaining a perfectly smooth and responsive loading screen while Numba seamlessly compiles and caches the terrain generation and meshing logic in the background! (deab8f7)
-- Overhauled water physics to fix the shallow water jump trap and improve surface breaching! Expanded the player's water detection to check the feet block, preventing premature exits from the swimming state when surfacing. Rewrote the underwater jumping logic to allow full normal jumps when wading on the ground, and replaced the hardcoded swimming velocity overwrite with a `max()` function to actively preserve upward momentum. Finally, introduced a satisfying new "Dolphin Leap" mechanicâ€”holding jump right at the water's surface now grants a slight velocity boost, allowing the player to seamlessly clear block edges and reliably jump out of lakes and rivers! (985acec)
 
 ### Fixed
-- **tests**: Patch profiler nanosecond timing and generate exact-version API skills (7ff88b2)
-- **core**: Resolve SQLite locks and type crashes (997eb34)
-- **meshes**: Resolve numba parallel performance warning (f34f0e5)
-- Ensure global Python and NumPy RNGs are seeded deterministically (852e907)
-- Sync global RNG states and resolve pylint stylistic warnings (919d2f3)
-- **typing**: Resolve Mypy attribute and module import errors (e480c82)
-- **style**: Auto-format source code to resolve Ruff check (9f40fb7)
-- **style**: Apply ruff formatting across the codebase (8054027)
-- **typing**: Resolve strict Mypy errors in World class (7f286f4)
-- Resolved mypy union-attr errors by updating World class type hints (427fd00)
 - **lint**: Resolve final Pylint warnings and add missing docstrings (c9cd90a)
 - **typing**: Resolve strict Mypy errors for chunk iteration queues (918a4f3)
 - **terrain**: Enforce absolute minimum terrain height boundary (b11d41a)
 - **lint**: Resolve Pylint warnings and update configuration (8cf9f79)
 - **types**: Resolve strict Mypy type-checking errors (a44379b)
-- Fix environment lighting propagation at chunk borders (9227167)
-- Remove annoying block light flickering (de8dbc7)
-- Fix yaw rotation bug in debug overlay (b9d6f81)
-- Player state persistence and creative mode bugs (f7ac5eb)
-- Resolve greedy mesher memory corruption, camera shake, and item physics (2d8b09d)
-- Patch severe VRAM memory leaks during chunk streaming (8a0a6b0)
 
-## [v1.1.0-beta] - 2026-04-16
+## 2026-06-02
 
-## [v1.2.0-beta] - 2026-04-23
+### Changed
+- Updated the docs (f06331d)
 
-## [v1.3.0-beta] - 2026-04-25
+## 2026-05-28
 
-## [v1.3.1-beta] - 2026-05-18
+### Changed
+- Updated the profiler. (23283a7)
 
-## [v1.4.0] - 2026-05-27
+## 2026-05-27
 
 ### Added
 - **core**: Implement global profiler, async lighting, and optimize chunk meshing (428e814)
-- **world**: Implement persistence for dropped items (f328ee7)
-- **docs**: Add diagram support with Mermaid and PlantUML (a826e43)
-- Change per-face lighting to per-vertex lighting for smoother, non-blocky looks. (76801b2)
-- Overhaul UI theme, add transitions, and dynamic background (6092e23)
-- Restructure project, add CI, assets, and UI system (1740f42)
-- Implement BFS light propagation, lightmap caching, and new blocks (cd284ad)
-- Implement BFS light propagation, lightmap caching, and new blocks (9bdce7f)
-- Complete world management menu and dynamic terrain seeding (bf81e93)
+
+## 2026-05-20
 
 ### Changed
 - Changed a Bit ( maybe alot ! ) of How the Code was Written. (1a1ec87)
 - Optimize chunk loading, VBO pooling, and culling (18a7028)
 - Added nested VBoxes in Main Menu, Changed the spacer in options menu and Updated VBox to support nesting. (d7d8f40)
+
+## 2026-05-19
+
+### Changed
 - Added VBox to the Main Menu as well ! (a02f535)
 - Chnaged the name of the main menu from just "Menu" to "MainMenu" (be707e2)
 - Seperated the background music's volume from the SFX's volume. Added Seperate sliders both in the Options menu. Added all the UIs in the Options menu into a VBox UINode and adjusted their spacings. (78aa842)
 - Fixed an issue where clicking the delete button to delete a world would launch the world beneth it automatically. Now, we have seperated the delete button clicks from the world button clicks. (d64671a)
 - Optimized UI VRAM usage, Added shader clipping, and implemented tooltips (9a9c198)
 - Added rounded buttons ! (0a18187)
+
+## 2026-05-18
+
+### Added
+- **world**: Implement persistence for dropped items (f328ee7)
+- **docs**: Add diagram support with Mermaid and PlantUML (a826e43)
+
+### Changed
 - Remove ISSUES.MD from tracking (05d0527)
 - Patched the crafting system, so now the items move back into the inventory when there are items in the crafting slots and the inventory is closed. (249b935)
 - Updated the workflows so they wouldn't run un-neccessarly (b00b045)
@@ -207,6 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added pylint linting test for the code (d47d117)
 - Refactor GitHub Actions workflow for documentation deployment (afcbca5)
 - Fixed test badge in README (9af1663)
+- Merge branch 'master' of https://github.com/ShivamKR12/Pyrite (84cd233)
 - Fixed testing.rst (bb4936a)
 - Changed workflow to deploy documentation to GitHub Pages (29385c7)
 - Updated the docs some more (5493720)
@@ -217,30 +223,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed memory allocation issue, now a new array wouldn't be passed for the frustum_cull_fast function every frame, prevent GC crun (08630f1)
 - Updated the documentation massively (06a2e78)
 - Ignore temp.txt (9ad303e)
+
+## 2026-05-05
+
+### Changed
 - Fixed some lighting artifacts. (8965570)
 - Fix data race causing chunk corruption during background saves (4294456)
+
+## 2026-05-04
+
+### Changed
 - Add comprehensive docstrings across the project (3b8a50e)
+
+## 2026-05-03
+
+### Added
+- Change per-face lighting to per-vertex lighting for smoother, non-blocky looks. (76801b2)
+
+### Changed
 - **config**: Extract hardcoded magic numbers into settings.py (0a16fb1)
+
+## 2026-05-02
+
+### Fixed
+- Fix environment lighting propagation at chunk borders (9227167)
+- Remove annoying block light flickering (de8dbc7)
+- Fix yaw rotation bug in debug overlay (b9d6f81)
+
+## 2026-04-29
+
+### Added
+- Overhaul UI theme, add transitions, and dynamic background (6092e23)
+
+### Changed
 - Fix various UI and gameplay issues (c477ef3)
+
+## 2026-04-28
+
+### Added
+- Restructure project, add CI, assets, and UI system (1740f42)
+
+### Changed
 - Slowed down the time_speed to decrease the speed at which the time of the day elapses in the game world. now, the in-game world time are longer and so are the days and nights. smaller time_speed value means longer days and bigger time_speed value means shoter days. (8c9ab49)
 - Added automatic Mac and Linux release builds to CI (d3bb720)
 - Add the docs folder back. (6a52684)
 - Fixed the build workflow. (5836c28)
+
+## 2026-04-25
+
+### Changed
 - The BFS lighting engine was updated with several core performance optimizations focused on memory bandwidth and cache locality. The multi-dimensional coordinate queues were replaced with bit-packed uint64 integer arrays, reducing the overall memory footprint of the lighting operations and preventing bounding box overflow issues. An in-chunk fast path was introduced within the neighbor propagation loop, using direct 1D array index calculations to bypass repetitive modulo and division operations for local blocks. Finally, vertical sunlight propagation was adjusted to use a linear raycast approach instead of volumetric 3D expansion, decreasing the algorithmic complexity of vertical light shafts. These structural adjustments improve the efficiency and speed of large-scale terrain light updates. (0419768)
 - Turbocharged the core engine performance by aggressively applying advanced Numba compiler optimizations across the entire codebase! Replaced standard JIT compilation with true asynchronous concurrency by injecting the nogil=True flag into chunk_mesh_builder.py, lighting.py, and terrain_gen.py, successfully releasing the Python Global Interpreter Lock (GIL) to allow heavy background chunk processing without ever interrupting the main Pygame render loop. Massively accelerated complex floating-point arithmetic by enabling fastmath=True within noise.py, terrain_gen.py, and frustum.py, permitting the underlying LLVM compiler to bypass strict IEEE 754 compliance and heavily vectorize Simplex noise and camera calculations. Furthermore, unlocked true multi-core processing by integrating the parallel=True flag and prange iterators into frustum.py and cloud_mesh.py, seamlessly distributing massive, independent iterative loops across all available physical CPU cores. This comprehensive architectural upgrade drastically slashes chunk generation and meshing times by up to 8xâ€”dropping batch processing from ~250ms to a blistering ~30msâ€”guaranteeing buttery smooth, stutter-free framerates even while flying at maximum speed through the world ! (862c6c8)
+
+## 2026-04-24
+
+### Added
+- Implement BFS light propagation, lightmap caching, and new blocks (cd284ad)
+- Implement BFS light propagation, lightmap caching, and new blocks (9bdce7f)
+
+## 2026-04-23
+
+### Added
+- Complete world management menu and dynamic terrain seeding (bf81e93)
+
+### Fixed
+- Player state persistence and creative mode bugs (f7ac5eb)
+
+## 2026-04-18
+
+### Changed
 - Implemented foundational multi-world save architecture and metadata tracking! Replaced the hardcoded `save.db` approach with a dynamic system that automatically generates and manages distinct SQLite database files within a dedicated `saves/` directory. Expanded the database schema to include a new `world_meta` table, which perfectly tracks essential world information including the customized world name, underlying generation seed, active game mode, and precise timestamps for creation and recent play sessions. Refactored the core engine initialization pipeline across `main.py`, `scene.py`, and `world.py` to seamlessly route a `save_name` parameter down to the storage layer, currently defaulting to "Default_World" to ensure immediate backward compatibility. This crucial backend overhaul perfectly sets the stage for a fully interactive world selection and creation menu, allowing players to easily manage and switch between multiple independent blocky universes! (5a99e2f)
+
+## 2026-04-17
+
+### Changed
 - Resolved FOV sprint jitter and fixed a critical chunk unloading crash! Decoupled the dynamic sprint FOV from the strict `is_walking` ground check and instead tied it directly to horizontal movement distance. This smooths out the lerp transition and entirely eliminates the violent camera snapping that previously occurred when jumping, falling, or stepping up blocks while holding sprint. Additionally, removed invalid manual `.release()` calls on ModernGL occlusion queries in the world unloading logic. Since these specific hardware queries are natively managed by Python's garbage collector, manually releasing them triggered an `AttributeError` that crashed the engine when a player moved out of bounds or quit to the main menu. The engine is now silky smooth and perfectly stable during long play sessions! (90f60e6)
 - Optimize terrain noise, cull distant items, and fix VRAM leak (27ae2ba)
 - Engine-wide optimizations for meshing, disk I/O, rendering, and entity limits (40d1b09)
 - Optimize terrain generation and throttle debug UI rendering (89db633)
 - Heavily optimize frustum culling math for Numba JIT (30cca9e)
 - Fix VRAM leak and UI stutter by removing dynamic text caching (1650b52)
+
+### Fixed
+- Resolve greedy mesher memory corruption, camera shake, and item physics (2d8b09d)
+- Patch severe VRAM memory leaks during chunk streaming (8a0a6b0)
+
+## 2026-04-16
+
+### Changed
 - Implemented persistent player location and camera rotation saving! Expanded the SQLite `player_data` JSON payload to automatically record the player's exact XYZ world coordinates, yaw, and pitch when quitting to the menu. Updated the world loading sequence to unpack these values on startup, seamlessly restoring the camera angle and carefully syncing the `feet_pos` bounding box. Additionally, the loading logic now safely overwrites the `highest_y` fall-damage tracker to prevent the engine from dealing accidental massive damage if the player spawns deep underground. Players will now seamlessly resume their adventure exactly where they left off instead of being teleported back to the world origin! (9d0dade)
 - Implemented persistent player inventory saving! Upgraded the SQLite database system to include a new `player_data` table that seamlessly serializes and stores the player's entire inventory, crafting grid, item counts, and active hotbar slot as a JSON string when quitting the game. Added robust loading logic on startup with forward-compatible bounds checking to prevent crashes if the inventory size expands in future updates. Safely bypassed a JSON serialization crash by actively casting Numba's memory-efficient `uint8` block IDs into native Python integers before saving, and corrected an SQLite binding mismatch to ensure the data commits perfectly. Players will now safely keep all their hard-earned loot between play sessions! (549bb57)
 - Fixed application freezing during Numba JIT compilation! Offloaded the initial, highly CPU-intensive Numba compiler warm-up sequence to a background worker thread using the ThreadPoolExecutor. Previously, compiling the dummy chunk blocked the main thread entirely, which prevented the Pygame event queue from being processed and caused the OS to unexpectedly flag the window as "Not Responding" on fresh launches. Now, the main thread is free to continuously loop and pump events, maintaining a perfectly smooth and responsive loading screen while Numba seamlessly compiles and caches the terrain generation and meshing logic in the background! (deab8f7)
 - Overhauled water physics to fix the shallow water jump trap and improve surface breaching! Expanded the player's water detection to check the feet block, preventing premature exits from the swimming state when surfacing. Rewrote the underwater jumping logic to allow full normal jumps when wading on the ground, and replaced the hardcoded swimming velocity overwrite with a `max()` function to actively preserve upward momentum. Finally, introduced a satisfying new "Dolphin Leap" mechanicâ€”holding jump right at the water's surface now grants a slight velocity boost, allowing the player to seamlessly clear block edges and reliably jump out of lakes and rivers! (985acec)
 - Integrated 3D OBJ model rendering, optimized the texture atlas, and enhanced tool mechanics! Built a completely custom ObjMesh loader capable of parsing .mtl material colors, automatically triangulating quad-based geometry, and dynamically centering off-axis models. Applied this powerful new system to the Stick and Wooden Pickaxe, rendering them as fully 3D, correctly angled tools when held in-hand or dropped in the world, while seamlessly drawing them as crisp 2D sprites within the inventory UI. Highly optimized the chunk rendering pipeline by appending the water texture directly into the main block atlas, correcting voxel ID misalignments, and rewriting the fragment shader to animate water UVs natively from the array without needing a separate texture sampler. Finally, overhauled the mining physics to actively reward tool usageâ€”the Wooden Pickaxe now shreds through Stone and Cobblestone 5x faster, finalizing a highly satisfying survival progression loop! (84b6f0f)
+
+## 2026-04-15
+
+### Changed
 - Implemented Crafting & Tools with a fully functional 2x2 crafting system and progression loop! Expanded the inventory UI to feature a live 2x2 crafting grid and output slot seamlessly integrated into a new unified background window. Built a dynamic recipe dictionary that handles crafting logic, accurately consuming ingredients when a crafted item is picked up, and safely ejecting leftover materials back into the inventory or world when the menu is closed. Introduced Wood Planks, Sticks, and the Wooden Pickaxe, alongside a new rule system to prevent tools and crafting components from being placed as blocks. Finally, overhauled the mining physics to enforce tool dependenciesâ€”breaking Stone without a Pickaxe now takes 5 times longer and drops absolutely nothing, successfully establishing the core survival gameplay loop! (d6a4b07)
+
+## 2026-04-14
+
+### Changed
 - Refactored magic numbers and centralized game constants into settings! Extracted all hardcoded gameplay and UI magic numbers from the codebase and centralized them into settings.py for much easier balancing and theme customization. Moved survival mechanics like maximum health, fall damage thresholds, void depth, and hunger/oxygen drain rates to global constants. Abstracted inventory capacities, item pickup physics, and drop scales. Finally, created a unified UI palette by moving all font sizes, background colors, slot themes, and text shadows into the settings module, thoroughly cleaning up the UI, Player, Item, and Main classes! (fd02275)
 - Fixed the flooded cave generation by updating the terrain carver to carve pure air instead of water below the water line, leaving underground caverns completely dry! Refactored the underwater visual effects to only trigger the dense blue fog when the player's head is actually submerged in a water block. Reintroduced the underwater block tinting as a toggleable setting in the Options menu, and implemented a zero-cost memory bit-packing trick in the greedy mesher to flag block faces bordering water. This allows the shader to precisely tint only the lakebeds while leaving deep underground caves naturally lit and untouched. Finally, adjusted the UI layout in the Options menu so all buttons and sliders have perfectly uniform vertical spacing! (7d81f3d)
 - Implemented a fully functional 36-slot inventory system and UI! The player's hotbar has been expanded into a complete 36-slot inventory array, accessible by pressing 'E'. Opening the inventory shifts the game into a new state that safely pauses player inputs and frees the mouse cursor for UI interaction. Built a robust new Inventory screen featuring drag-and-drop item management, stack splitting with right-click, and smart slot snapping for easily organizing loot. The UI now dynamically calculates aspect-ratio-aware spacing so the slots remain perfectly proportioned and securely anchored just above the hotbar across any screen resolution. Finally, remapped the Creative mode flight controls to Space and Left-Shift to prevent overlapping with the new inventory key, and updated the block placement logic to seamlessly integrate with the new storage system! (c39c7e0)
@@ -251,83 +335,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expanded the loading screen with dynamic progress and prevented game freezing.The game now waits for the initial terrain chunks to fully generate and load before dropping the player into the world, so it isn't completely empty! Also added sub-text to show exactly what the engine is doing (compiling Numba, initializing UI, etc.) and uncapped the mesh generation limits during the loading state to make the terrain generation blazing fast. Finally, fixed the window freezing issue by processing the Pygame event queue during loading! (a9a491b)
 - Added chunk gen queue sorting back ! Hope this does causes performence issue later ! (6ff9620)
 - Implemented dynamic fog density and Fixed gamma correction (9ad1ac5)
-- Did some Anti-Aliasing and color work for the text (184b889)
-- Fixed snow sound (11fbdd5)
-- Added snow sound (620991c)
-- Updated slider UI to now allow outputing integers too. Made the FOV, Volume and Render Distance output only integers and not floats, as that didn't make any sense (315f376)
-- Commit the changes copied in temp.txt from the last commit too (05d0a5d)
-- Ignore save.db (f87ecee)
-- Stop tracking cache and generated files (7befc40)
-- Added True Asynchronous Chunk Loading by Move both SQLite DB loading and terrain generation into the ThreadPoolExecutor. Cached sorted chunks so we wouldn't have to resort everything again, every frame. Now, we calculate and resort the chunks only when crossing into a new chunk or when a chunk is loaded/unloaded. Vectorized Frustum Culling, so Instead of calling chunk.is_on_frustum() ~2,000 times in a Python loop, we extracted all the chunk center coordinates into a single Numpy array and used a Numba JIT-compiled function to cull thousands of chunks in a fraction of a millisecond. (32ae418)
-- Fixed occlusion culling issue (2c78e30)
-- Fix a JSONDecodeError when reading config.json, which occurs if the file gets corrupted or empty (0 bytes), And a MemoryError during terrain generation, which happens because the mesh builder retains the entire 8MB raw voxel array reference for each chunk in memory instead of freeing it. When loading multiple chunks simultaneously, this rapidly consumes all available system memory. (b7dece2)
-- Increased the total height of the world to 5 chunks and added a hard cap on heigh mountains generate upto, so that we don't get holes at the tops of the very high mountains (14b44df)
-- Added proper entrance to caves, with maximum changes being only 1 entrance per chunk (2dce1a6)
-- Modified terrain generation. so now, i hope that sand don't randomly generate below plains biome for no apperent region (09d5eea)
-- Added all the other old terrain generation systems back into the terrain_gen.py, though commented out. And we also not use the new terrain generation system as there are things in it that i still don't like! (acd2545)
-- Added sunrise and sunset affect the cloud's color, amking them look even more beautiful! (0c397b2)
-- Added Sun and Moon and Stars ( they twinkle too! ) (04868a2)
-- Finally! Added True infinite Terrain Generation (3888b5c)
-- Remove old unused pycache (a95ee9d)
-- Delete the old used save file (78c0138)
-- Enabled caching for the Numba-JIT-compiler, plus a few more improvements. Now the game loads in less than 1 sec! (f6c6273)
-- Finally! Added Occlusion Culling, i hope it's correct and working!? (849999a)
-- Added Greedy meshing (97c3c63)
-- Added VRAM Object Pool and Dynamic allocation of VAOs and VBOs (8688f4a)
-- Added wireframe and chunk streaming system (ef869dc)
-- Created and Added an Options Menu. connected it to the rest of the game. (97c41bf)
-- Created and Added a Pause menu to the game. (b311e07)
-- Created and Added a Main menu and a Loading screen0 (674e759)
-- Decrase item's intial velocity and pickup delay. And increases item's pickup radius (f582339)
-- Added a 3D block preview to show which block is being held in the hand by the player, and to also act like a hand. Loaded the pop sound seperaly and Increased it's volume to 1. Slowed the items bounce when it appears after mineing (9f05fa4)
-- Added text shader, dirt sounds, stone sounds. Created a new texture array with gravel texture. Fixed extra memory allocation for the chunk creation. Added texts to the hotbar (216349b)
-- Added a basic and function hotbar, Added item pickup sound (3dfff06)
-- Refactor audio engine and normalize sound assets to .ogg (4a4dd34)
-- Added item drops so now breaking blocks drops it as an item instead of just immediatly vanishing (ca809c9)
-- Created a new hotbar class, replaced the old block icon class with the new hotbar class. Added a semi-transparent grey background and a white border around the hotbar slots (4901c67)
-- Fixed the jump height issue. now, we jump the same height all the time (b8b9c72)
-- Fixed potential memory leak. now correctly clearing the VAO and VBO. Fixed the night time's lighting, now the environment darkens when the night comes (0b5a315)
-- Added block placement sound and Dynamic FOV (ea1a457)
-- Added Sounds like walking, jumping and breakin grass blocks. (add351b)
-- Added sprinting and Save functionality (2e2d354)
-- Added a UI base for hotbar (39c5db7)
-- Added a 2D icon on the bottom right corner of the window to show which block is currently selected by the player (8482042)
-- Added block hardness, now every block has a different breaking time. fixed and made the jumping and falling feel nice. (9182e87)
-- Added mining delay and bloack breaking animation (7b90612)
-- Added head bobbing to the player and change the block placing and breaking mechanics (12f8a57)
-- Created the UI module for creating and adding HUD (5f62b89)
-- Moved the mesh data calculation, AO calculation and Greedy meshing calculation to the background Threads (770e49e)
-- Added the base of a day-night cycle (42e93cf)
-- Updated water so now it  flows instead of just being static (1b54da9)
-- Added the ability to change the block being placed by scrolling the middle mouse button / scroll wheel (36eb2f5)
 
-### Fixed
-- Fix environment lighting propagation at chunk borders (9227167)
-- Remove annoying block light flickering (de8dbc7)
-- Fix yaw rotation bug in debug overlay (b9d6f81)
-- Player state persistence and creative mode bugs (f7ac5eb)
-- Resolve greedy mesher memory corruption, camera shake, and item physics (2d8b09d)
-- Patch severe VRAM memory leaks during chunk streaming (8a0a6b0)
-
-## [v0.0.1-alpha] - 2026-04-06
-
-## [v0.0.2-alpha] - 2026-04-08
-
-## [v0.1.0-alpha] - 2026-04-09
-
-## [v0.2.0-alpha] - 2026-04-10
-
-## [v0.3.0-alpha] - 2026-04-10
-
-## [v1.0.0] - 2026-04-14
+## 2026-04-13
 
 ### Changed
-- Implemented Survival Core, Health System, Damage System, and HUD (74140f4)
-- Implemented Game Modes and 3D Volumetric Water (0729d84)
-- Implemented F3 Debug Screen and refactored UI settings (013bb3b)
-- Expanded the loading screen with dynamic progress and prevented game freezing.The game now waits for the initial terrain chunks to fully generate and load before dropping the player into the world, so it isn't completely empty! Also added sub-text to show exactly what the engine is doing (compiling Numba, initializing UI, etc.) and uncapped the mesh generation limits during the loading state to make the terrain generation blazing fast. Finally, fixed the window freezing issue by processing the Pygame event queue during loading! (a9a491b)
-- Added chunk gen queue sorting back ! Hope this does causes performence issue later ! (6ff9620)
-- Implemented dynamic fog density and Fixed gamma correction (9ad1ac5)
 - Did some Anti-Aliasing and color work for the text (184b889)
 - Fixed snow sound (11fbdd5)
 - Added snow sound (620991c)
@@ -335,19 +346,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commit the changes copied in temp.txt from the last commit too (05d0a5d)
 - Ignore save.db (f87ecee)
 - Stop tracking cache and generated files (7befc40)
+
+## 2026-04-12
+
+### Changed
 - Added True Asynchronous Chunk Loading by Move both SQLite DB loading and terrain generation into the ThreadPoolExecutor. Cached sorted chunks so we wouldn't have to resort everything again, every frame. Now, we calculate and resort the chunks only when crossing into a new chunk or when a chunk is loaded/unloaded. Vectorized Frustum Culling, so Instead of calling chunk.is_on_frustum() ~2,000 times in a Python loop, we extracted all the chunk center coordinates into a single Numpy array and used a Numba JIT-compiled function to cull thousands of chunks in a fraction of a millisecond. (32ae418)
 - Fixed occlusion culling issue (2c78e30)
 - Fix a JSONDecodeError when reading config.json, which occurs if the file gets corrupted or empty (0 bytes), And a MemoryError during terrain generation, which happens because the mesh builder retains the entire 8MB raw voxel array reference for each chunk in memory instead of freeing it. When loading multiple chunks simultaneously, this rapidly consumes all available system memory. (b7dece2)
+
+## 2026-04-11
+
+### Changed
 - Increased the total height of the world to 5 chunks and added a hard cap on heigh mountains generate upto, so that we don't get holes at the tops of the very high mountains (14b44df)
 - Added proper entrance to caves, with maximum changes being only 1 entrance per chunk (2dce1a6)
 - Modified terrain generation. so now, i hope that sand don't randomly generate below plains biome for no apperent region (09d5eea)
 - Added all the other old terrain generation systems back into the terrain_gen.py, though commented out. And we also not use the new terrain generation system as there are things in it that i still don't like! (acd2545)
+
+## 2026-04-10
+
+### Changed
 - Added sunrise and sunset affect the cloud's color, amking them look even more beautiful! (0c397b2)
 - Added Sun and Moon and Stars ( they twinkle too! ) (04868a2)
 - Finally! Added True infinite Terrain Generation (3888b5c)
 - Remove old unused pycache (a95ee9d)
 - Delete the old used save file (78c0138)
 - Enabled caching for the Numba-JIT-compiler, plus a few more improvements. Now the game loads in less than 1 sec! (f6c6273)
+
+## 2026-04-09
+
+### Changed
 - Finally! Added Occlusion Culling, i hope it's correct and working!? (849999a)
 - Added Greedy meshing (97c3c63)
 - Added VRAM Object Pool and Dynamic allocation of VAOs and VBOs (8688f4a)
@@ -356,10 +383,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created and Added a Pause menu to the game. (b311e07)
 - Created and Added a Main menu and a Loading screen0 (674e759)
 - Decrase item's intial velocity and pickup delay. And increases item's pickup radius (f582339)
+
+## 2026-04-08
+
+### Changed
 - Added a 3D block preview to show which block is being held in the hand by the player, and to also act like a hand. Loaded the pop sound seperaly and Increased it's volume to 1. Slowed the items bounce when it appears after mineing (9f05fa4)
 - Added text shader, dirt sounds, stone sounds. Created a new texture array with gravel texture. Fixed extra memory allocation for the chunk creation. Added texts to the hotbar (216349b)
 - Added a basic and function hotbar, Added item pickup sound (3dfff06)
 - Refactor audio engine and normalize sound assets to .ogg (4a4dd34)
+
+## 2026-04-07
+
+### Changed
 - Added item drops so now breaking blocks drops it as an item instead of just immediatly vanishing (ca809c9)
 - Created a new hotbar class, replaced the old block icon class with the new hotbar class. Added a semi-transparent grey background and a white border around the hotbar slots (4901c67)
 - Fixed the jump height issue. now, we jump the same height all the time (b8b9c72)
@@ -370,6 +405,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a UI base for hotbar (39c5db7)
 - Added a 2D icon on the bottom right corner of the window to show which block is currently selected by the player (8482042)
 - Added block hardness, now every block has a different breaking time. fixed and made the jumping and falling feel nice. (9182e87)
+
+## 2026-04-06
+
+### Changed
 - Added mining delay and bloack breaking animation (7b90612)
 - Added head bobbing to the player and change the block placing and breaking mechanics (12f8a57)
 - Created the UI module for creating and adding HUD (5f62b89)
