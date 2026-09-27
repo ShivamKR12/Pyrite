@@ -243,9 +243,11 @@ def pack_data(
     Packs multiple pieces of vertex data (coordinates, voxel ID, face ID, AO ID, flip ID)
     into a single 32-bit unsigned integer to minimize memory usage and GPU bandwidth.
     """
+    # Map input attributes to variables
     # x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit
     a, b, c, d, e, f, g = x, y, z, voxel_id, face_id, ao_id, flip_id
 
+    # Compute bit offsets for packing
     b_bit, c_bit, d_bit, e_bit, f_bit, g_bit = 6, 6, 8, 3, 2, 1
     fg_bit = f_bit + g_bit
     efg_bit = e_bit + fg_bit
@@ -253,6 +255,7 @@ def pack_data(
     cdefg_bit = c_bit + defg_bit
     bcdefg_bit = b_bit + cdefg_bit
 
+    # Pack attributes into a single integer
     packed_data = a << bcdefg_bit | b << cdefg_bit | c << defg_bit | d << efg_bit | e << fg_bit | f << g_bit | g
 
     return packed_data, light_val
@@ -264,19 +267,23 @@ def get_chunk_index(world_voxel_pos: Tuple[int, int, int], chunk_positions: Any)
     Calculates the 1D index of a chunk in the global world arrays based on an absolute
     world voxel coordinate. Returns -1 if the chunk is not currently loaded or out of bounds.
     """
+    # Calculate chunk coordinates from global voxel position
     wx, wy, wz = world_voxel_pos
     cx = wx // CHUNK_SIZE
     cy = wy // CHUNK_SIZE
     cz = wz // CHUNK_SIZE
 
+    # Validate Y axis bounds
     if not (0 <= cy < WORLD_HEIGHT):
         return -1
 
+    # Calculate 1D chunk index and verify chunk existence
     index = (cx % WORLD_WIDTH) + WORLD_WIDTH * (cz % WORLD_DEPTH) + WORLD_AREA * (cy % WORLD_HEIGHT)
 
     if chunk_positions[index][0] == cx and chunk_positions[index][1] == cy and chunk_positions[index][2] == cz:
         return index
 
+    # Return -1 if chunk is out of bounds or unloaded
     return -1
 
 
@@ -292,10 +299,12 @@ def get_neighbor_voxel_id(
     Retrieves the voxel ID of a neighboring block given its local and world coordinates.
     Safely handles cross-chunk boundaries by looking up the appropriate chunk in the world arrays.
     """
+    # Check if voxel is within the current chunk boundaries
     x, y, z = local_voxel_pos
     if 0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE:
         return int(chunk_voxels[x + z * CHUNK_SIZE + y * CHUNK_AREA])
 
+    # Attempt to retrieve voxel from neighboring chunk
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
 
     if chunk_index == -1:
@@ -323,10 +332,12 @@ def get_neighbor_light(
     Retrieves the packed lighting value (sunlight and blocklight) of a neighboring block
     given its local and world coordinates, safely crossing chunk boundaries if needed.
     """
+    # Check if voxel is within the current chunk boundaries
     x, y, z = local_voxel_pos
     if 0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE:
         return int(chunk_lightmap[x + z * CHUNK_SIZE + y * CHUNK_AREA])
 
+    # Attempt to retrieve light value from neighboring chunk
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
 
     if chunk_index == -1:
@@ -348,6 +359,7 @@ def is_transparent(voxel_id: int) -> bool:
     Checks if a given voxel ID corresponds to a transparent block (like air, water, glass, or leaves).
     Transparent blocks do not cull adjacent faces and do not cast hard ambient occlusion shadows.
     """
+    # Check if voxel ID is a transparent block
     return voxel_id == AIR or voxel_id == WATER or voxel_id == GLASS or voxel_id == LEAVES
 
 
@@ -363,6 +375,7 @@ def is_void(
     Determines if a block at a given coordinate is empty or transparent, which is used
     specifically during the ambient occlusion calculation to see if a corner is occluded.
     """
+    # Get neighbor voxel ID
     val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, chunk_voxels, world_voxels, chunk_positions)
 
     # Transparent blocks do not cast AO shadows!
@@ -375,6 +388,7 @@ def add_data(vertex_data: Any, index: int, *vertices: Tuple[int, int]) -> int:
     Appends newly packed vertex data and its associated lighting value into the main
     mesh arrays, advancing the current index counter.
     """
+    # Append newly packed vertex data to mesh array
     for vertex in vertices:
         vertex_data[index] = vertex[0]
         vertex_data[index + 1] = vertex[1]
@@ -399,11 +413,13 @@ def build_chunk_mesh(
     into massive single polygons, calculating ambient occlusion and smoothed lighting
     along the way. Returns the combined vertex data for both opaque and water meshes.
     """
+    # Initialize vertex buffers and indices
     vertex_data = np.empty(CHUNK_VOLUME * 18 * format_size, dtype='uint32')
     water_data = np.empty(CHUNK_VOLUME * 18 * format_size, dtype='uint32')
     index = 0
     water_index = 0
 
+    # Extract chunk coordinates and initialize face masks
     cx, cy, cz = chunk_pos
     mask0 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint64)
     mask1 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint64)
@@ -1284,6 +1300,7 @@ def build_chunk_mesh(
                         for iy in range(h):
                             mask1[x + ix, y + iy] = 0
 
+    # Slice and combine opaque and transparent meshes
     opaque_mesh = vertex_data[:index]
     water_mesh = water_data[:water_index]
     combined_mesh = np.hstack((opaque_mesh, water_mesh))
