@@ -61,4 +61,4 @@ No exceptions. Do not try to predict what a function signature is. Do not halluc
 
 ## STRICT RULE: DOCUMENTATION SYNCHRONIZATION
 
-1. **UPDATE THE API SKILL & DOCS**: Whenever you modify, rename, or update the logic, parameters, or return type of a class, method, or function, you MUST automatically update its corresponding entry in `.agents/skills/pyrite-api/SKILL.md` and any relevant markdown files in the `docs/` directory. Do not wait for the user to explicitly ask you to update the documentation.
+1. **UPDATE THE API SKILL & DOCS**: Whenever you modify, rename, or update the logic, parameters, or return type of a class, method, or function, you MUST automatically update its corresponding entry in `.agents/skills/pyrite-api/SKILL.md` and any relevant markdown or reStructured files in the `docs/` directory. Do not wait for the user to explicitly ask you to update the documentation.
