@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/icons/icon+logo.png" alt="Pyrite Logo" width="600"/>
+  <img src="assets/banner.png" alt="Pyrite Logo" width="600"/>
   <br>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/build.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/build.yml/badge.svg" alt="Build Status"></a>
   <a href="https://github.com/ShivamKR12/Pyrite/actions/workflows/test.yml"><img src="https://github.com/ShivamKR12/Pyrite/actions/workflows/test.yml/badge.svg" alt="Test Status"></a>

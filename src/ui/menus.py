@@ -48,7 +48,7 @@ class MainMenu:
         self.title_mesh: Any = UITextMesh(app)
 
         try:
-            img: pg.Surface = pg.image.load(get_path('assets/textures/uis/pyrite-logo.png')).convert_alpha()
+            img: pg.Surface = pg.image.load(get_path('assets/pyrite-logo-upscaled.png')).convert_alpha()
             self.title_tex: Any = self.app.ctx.texture(img.get_size(), 4, pg.image.tobytes(img, 'RGBA', True))
             self.title_tex.build_mipmaps()
             self.title_tex.filter = (mgl.LINEAR_MIPMAP_LINEAR, mgl.LINEAR)
