@@ -172,7 +172,7 @@ pythonpath = ["src"]
 # Mutation testing configuration.
 [tool.mutmut]
 source_paths = ["src/"]
-pytest_add_cli_args_test_selection = ["tests/"]
+pytest_add_cli_args_test_selection = ["tests/", "--ignore=tests/test_docstrings.py"]
 
 # ============================================================================
 # Pylint
