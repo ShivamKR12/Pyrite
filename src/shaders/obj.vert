@@ -16,13 +16,16 @@ out vec3 frag_color;
 
 
 void main() {
+    // Pass attributes to fragment shader
     uv = in_tex_coord;
     frag_color = in_color;
-    
+
+    // Calculate normal and shading
     mat3 normal_matrix = transpose(inverse(mat3(m_model)));
     vec3 world_normal = normalize(normal_matrix * in_normal);
     float diffuse = max(0.0, dot(world_normal, u_sun_direction));
     shading = max(0.05, 0.3 * (u_sun_direction.y + 0.5)) + diffuse * 0.7;
 
+    // Calculate vertex position
     gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
 }

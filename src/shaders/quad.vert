@@ -11,6 +11,9 @@ out vec3 color;
 
 
 void main() {
+    // Pass attributes to fragment shader
     color = in_color;
+
+    // Calculate vertex position
     gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
 }

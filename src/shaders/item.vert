@@ -21,14 +21,16 @@ const vec3 face_normals[6] = vec3[6](
 
 
 void main() {
+    // Pass attributes to fragment shader
     uv = in_tex_coord;
-    
     face_id = int(in_face_id);
-    
+
+    // Calculate normal and shading
     mat3 normal_matrix = transpose(inverse(mat3(m_model)));
     vec3 world_normal = normalize(normal_matrix * face_normals[face_id]);
     float diffuse = max(0.0, dot(world_normal, u_sun_direction));
     shading = max(0.05, 0.3 * (u_sun_direction.y + 0.5)) + diffuse * 0.7;
 
-    gl_Position = m_proj * m_view * m_model * vec4(in_position - 0.5, 1.0); // Center at origin
+    // Calculate vertex position
+    gl_Position = m_proj * m_view * m_model * vec4(in_position - 0.5, 1.0);
 }
