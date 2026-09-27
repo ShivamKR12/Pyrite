@@ -58,3 +58,7 @@ No exceptions. Do not try to predict what a function signature is. Do not halluc
 ## STRICT RULE: WORKSPACE HYGIENE & CLEANUP
 
 1. **DELETE SINGLE-USE SCRIPTS**: Any temporary, single-use, or throwaway scripts created for tasks like generating files, testing hypotheses, or debugging (e.g., `build_changelog.py`) MUST be deleted immediately after they have served their purpose. Never leave them lingering in the workspace and never commit them to the repository.
+
+## STRICT RULE: DOCUMENTATION SYNCHRONIZATION
+
+1. **UPDATE THE API SKILL & DOCS**: Whenever you modify, rename, or update the logic, parameters, or return type of a class, method, or function, you MUST automatically update its corresponding entry in `.agents/skills/pyrite-api/SKILL.md` and any relevant markdown files in the `docs/` directory. Do not wait for the user to explicitly ask you to update the documentation.
