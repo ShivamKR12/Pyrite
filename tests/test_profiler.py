@@ -80,7 +80,7 @@ def test_profiler_record_and_frame() -> None:
     assert 'Frame_Total' not in p._get_buffer().categories
 
     # Explicitly test boundary of frame_start_time > 0 mutation
-    p.frame_start_time = 0.5
+    p.frame_start_time = 500_000_000
     p.end_frame()
     assert 'Frame_Total' in p._get_buffer().categories
     p._get_buffer().categories.pop('Frame_Total')
@@ -97,7 +97,7 @@ def test_profiler_record_and_frame() -> None:
     buf = p._get_buffer()
     assert 'Frame_Total' in buf.categories
     assert len(buf.categories['Frame_Total']) == 1
-    assert 0.004 < buf.categories['Frame_Total'][0] < 0.5
+    assert 4_000_000 < buf.categories['Frame_Total'][0] < 500_000_000
 
     p.record('Custom_Cat', 1.23)
     assert 'Custom_Cat' in buf.categories
@@ -139,8 +139,8 @@ def test_profiler_save_report(tmp_path: Any, capsys: Any, monkeypatch: Any) -> N
     p = Profiler(max_samples_per_category=5)
 
     # Use decimals that strictly enforce both rounding and percentile boundaries
-    p.record('Report_Cat', 0.10012345)
-    p.record('Report_Cat', 0.30034567)
+    p.record('Report_Cat', 100_123_450.0)
+    p.record('Report_Cat', 300_345_670.0)
 
     # Ensure empty times lists are properly handled
     p.record('Empty_Cat', 1.0)
