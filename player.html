@@ -660,14 +660,14 @@ self.oxygen: float
 </tbody>
 </table>
 <p><strong>Movement Calculation (Survival Mode)</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;W&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">+=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
-<span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">-=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">'W'</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">+=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">'S'</span><span class="p">]:</span> <span class="n">direction</span> <span class="o">-=</span> <span class="n">get_forward_vector</span><span class="p">()</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>Directional Vectors:</strong> Key matrices immediately transpose specific geometric coordinates normalized onto the velocity stack.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;Space&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">on_ground</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="s1">'Space'</span><span class="p">]</span> <span class="ow">and</span> <span class="n">on_ground</span><span class="p">:</span>
     <span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">JUMP_VELOCITY</span>
 </pre></div>
 </div>
@@ -696,9 +696,9 @@ self.oxygen: float
 </ul>
 <p><strong>Movement and Collision Resolution:</strong></p>
 <p>Movement is axis-separated to enable smooth wall-sliding:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
-<span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
-<span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">'X'</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
+<span class="n">resolve_axis</span><span class="p">(</span><span class="s1">'Y'</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
+<span class="n">resolve_axis</span><span class="p">(</span><span class="s1">'Z'</span><span class="p">,</span> <span class="n">feet_pos</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">

@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for world_objects.chunk</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Chunk data structures, voxel management, and rendering logic.</span>
 
 <span class="sd">This module defines the `Chunk` class, which serves as a volumetric container</span>
-<span class="sd">for a specific 3D region of the world. It manages the chunk&#39;s Numpy arrays</span>
+<span class="sd">for a specific 3D region of the world. It manages the chunk's Numpy arrays</span>
 <span class="sd">(voxels and lightmaps), hardware occlusion queries, and acts as the bridge</span>
 <span class="sd">between the Numba terrain generation and the OpenGL mesh builders.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -1011,7 +1011,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Chunk">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.chunk.Chunk">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Chunk</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Represents a 3D volumetric section of the world (e.g., 48x48x48 blocks).</span>
 
 <span class="sd">    Stores the voxel array, lightmap, and coordinates, and handles issuing draw calls</span>
@@ -1020,13 +1020,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Args:</span>
 <span class="sd">        world (Any): The parent `World` instance this chunk belongs to.</span>
 <span class="sd">        position (Tuple[int, int, int]): The spatial chunk coordinate (e.g., (0, 0, 0)).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Chunk_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Chunk_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes a chunk, preparing its occlusion queries and position boundaries.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">world</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">position</span>
@@ -1036,8 +1036,15 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChunkMesh</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 
+        <span class="c1"># We generate an OpenGL asynchronous occlusion query object.</span>
+        <span class="c1"># This hardware query counts the number of fragments (pixels) that pass the depth test.</span>
+        <span class="c1"># If the result is 0, the chunk is entirely obscured by other geometry and can be skipped in future frames.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">samples</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># We start by assuming the chunk is visible until proven otherwise by the query.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_visible</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Tracks whether an occlusion query is currently in flight on the GPU to prevent redundant queries.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query_submitted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
@@ -1047,44 +1054,44 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Chunk.get_model_matrix">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.chunk.Chunk.get_model_matrix">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Chunk_GetModelMatrix&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Chunk_GetModelMatrix'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculates the transformation matrix required to position this chunk</span>
 <span class="sd">        correctly within the global 3D world space.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">m_model</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">(),</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">m_model</span></div>
 
 
 <div class="viewcode-block" id="Chunk.set_uniform">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.chunk.Chunk.set_uniform">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Chunk_SetUniform&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Chunk_SetUniform'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Writes this chunk&#39;s model matrix to the active shader.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Writes this chunk's model matrix to the active shader.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">&#39;m_model&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m_model</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'m_model'</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m_model</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Chunk.build_mesh">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.chunk.Chunk.build_mesh">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Chunk_BuildMesh&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Chunk_BuildMesh'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_mesh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Instantiates a ChunkMesh object to begin the greedy meshing process.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">ChunkMesh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Chunk.render">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.chunk.Chunk.render">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Chunk_Render&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Chunk_Render'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Issues the draw call for the opaque geometry (stone, dirt, grass) of this chunk.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_uniform</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span></div>
@@ -1092,11 +1099,11 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Chunk.render_water">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.chunk.Chunk.render_water">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Chunk_RenderWater&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Chunk_RenderWater'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">render_water</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Issues the draw call for the transparent geometry (water) of this chunk.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_uniform</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">render_water</span><span class="p">()</span></div>
@@ -1104,14 +1111,19 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Chunk.build_voxels">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.chunk.Chunk.build_voxels">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Chunk_BuildVoxels&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Chunk_BuildVoxels'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_voxels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Helper function to allocate an empty array and immediately invoke the terrain generator.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">voxels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="c1"># Allocate a continuous block of 1D memory representing the 3D volume.</span>
+        <span class="c1"># Using uint8 minimizes memory overhead, as voxel IDs range from 0 to 255.</span>
+        <span class="n">voxels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint8'</span><span class="p">)</span>
 
+        <span class="c1"># Convert the chunk's grid position into absolute world block coordinates.</span>
+        <span class="c1"># cx, cy, cz represent the exact minimum bounds (bottom-left-back corner) of the chunk.</span>
         <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">generate_terrain</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">voxels</span><span class="p">):</span>
@@ -1127,17 +1139,28 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_terrain</span><span class="p">(</span>
         <span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        A highly parallelized Numba wrapper that populates a chunk&#39;s voxel and lighting arrays</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        A highly parallelized Numba wrapper that populates a chunk's voxel and lighting arrays</span>
 <span class="sd">        deterministically based on the world seed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="c1"># We compute a unique hash for this specific chunk by bitwise XORing the world seed</span>
+        <span class="c1"># with the chunk's absolute spatial coordinates (cx, cy, cz).</span>
+        <span class="c1"># This guarantees that the local RNG state is identically initialized every time this</span>
+        <span class="c1"># exact chunk is generated, preventing structural seams between adjacent chunks.</span>
         <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span> <span class="o">^</span> <span class="n">cx</span> <span class="o">^</span> <span class="n">cy</span> <span class="o">^</span> <span class="n">cz</span><span class="p">)</span>
         <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span> <span class="o">^</span> <span class="n">cx</span> <span class="o">^</span> <span class="n">cy</span> <span class="o">^</span> <span class="n">cz</span><span class="p">)</span>
 
+        <span class="c1"># We iterate over the 2D local plane (x, z) of the chunk.</span>
+        <span class="c1"># For each vertical column, we evaluate the 2D and 3D noise functions.</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
+                <span class="c1"># set_voxel_column computes the heightmap, applies biome rules, and fills</span>
+                <span class="c1"># the 1D voxels array from the bottom (cy) to the computed surface height.</span>
                 <span class="n">set_voxel_column</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">)</span>
 
+        <span class="c1"># After the physical blocks are placed, we run a top-down raycasting pass.</span>
+        <span class="c1"># This traces from the sky downwards, marking blocks with sunlight (level 15)</span>
+        <span class="c1"># until an opaque block is hit, populating the parallel lightmap array.</span>
         <span class="n">fill_initial_sunlight</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span></div>
 
 
@@ -1146,10 +1169,10 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@staticmethod</span>
     <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fill_initial_sunlight_only</span><span class="p">(</span><span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        A Numba-optimized function to fill sunlight in a chunk&#39;s lightmap without modifying the voxel data.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        A Numba-optimized function to fill sunlight in a chunk's lightmap without modifying the voxel data.</span>
 <span class="sd">        Used during world loading to quickly restore lighting without regenerating terrain.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">fill_initial_sunlight</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span></div>
 </div>
 

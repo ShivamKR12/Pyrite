@@ -592,14 +592,14 @@
 <h2>API Wrappers &amp; Integration<a class="headerlink" href="#api-wrappers-integration" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">src/profiler.py</span></code> - Execution Tracking</p>
 <p>Purpose: Provide clean, un-intrusive syntax for measuring engine subsystems.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;World_Update&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'World_Update'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>Decorator Syntax:</strong> Almost all primary class methods (like those in <code class="docutils literal notranslate"><span class="pre">chunk.py</span></code> or <code class="docutils literal notranslate"><span class="pre">player.py</span></code>) utilize the <code class="docutils literal notranslate"><span class="pre">&#64;profile_func()</span></code> decorator. It automatically intercepts the function call, starts a timer, executes the underlying logic, and records the duration under the specified string.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">global_profiler</span><span class="o">.</span><span class="n">measure</span><span class="p">(</span><span class="s1">&#39;Frustum_Culling&#39;</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">global_profiler</span><span class="o">.</span><span class="n">measure</span><span class="p">(</span><span class="s1">'Frustum_Culling'</span><span class="p">):</span>
     <span class="n">frustum_cull_fast</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -620,7 +620,7 @@
 <h2>Aggregation and Reporting<a class="headerlink" href="#aggregation-and-reporting" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">src/profiler.py</span></code> - Data Compilation</p>
 <p>Purpose: Safely merge the isolated thread data into a readable format on application exit.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">global_profiler</span><span class="o">.</span><span class="n">save_report</span><span class="p">(</span><span class="s1">&#39;profiling_results.json&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">global_profiler</span><span class="o">.</span><span class="n">save_report</span><span class="p">(</span><span class="s1">'profiling_results.json'</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -640,9 +640,9 @@
 <ul class="simple">
 <li><p><strong>Unit Conversion:</strong> Time arrays are converted to NumPy float64 types and multiplied by 1,000 to output milliseconds (ms).</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;Avg_ms&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="mi">3</span><span class="p">)</span>
-<span class="s1">&#39;Max_ms&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="mi">3</span><span class="p">)</span>
-<span class="s1">&#39;P99_ms&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="mi">99</span><span class="p">)),</span> <span class="mi">3</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">'Avg_ms'</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="mi">3</span><span class="p">)</span>
+<span class="s1">'Max_ms'</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="mi">3</span><span class="p">)</span>
+<span class="s1">'P99_ms'</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="mi">99</span><span class="p">)),</span> <span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">

@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for voxel_handler</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Block interaction handler for raycasting, placing, and breaking voxels.</span>
 
 <span class="sd">This module implements the mathematical DDA (Digital Differential Analyzer)</span>
-<span class="sd">raycasting algorithm to cleanly trace the player&#39;s line of sight through</span>
+<span class="sd">raycasting algorithm to cleanly trace the player's line of sight through</span>
 <span class="sd">the 3D chunk grid. It triggers multithreaded lighting and meshing updates</span>
 <span class="sd">whenever the player adds or destroys blocks in the world.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1016,23 +1016,23 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="VoxelHandler">
 <a class="viewcode-back" href="../api/voxel_handler.html#voxel_handler.VoxelHandler">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VoxelHandler</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Performs raycasting from the player&#39;s camera to interact with the voxel world.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Performs raycasting from the player's camera to interact with the voxel world.</span>
 <span class="sd">    Handles calculating the targeted block, removing blocks (mining), and adding</span>
 <span class="sd">    blocks (placing), while triggering necessary lighting and meshing updates.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        world (Any): The main world context containing the chunk array.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelHandler_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelHandler_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize the `VoxelHandler` for a world instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            world: The world object that owns this handler (provides app, chunks, etc.).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">chunks</span>
 
@@ -1049,18 +1049,18 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="VoxelHandler.add_voxel">
 <a class="viewcode-back" href="../api/voxel_handler.html#voxel_handler.VoxelHandler.add_voxel">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelHandler_AddVoxel&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelHandler_AddVoxel'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_voxel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Attempts to place the currently held block into the world at the targeted face.</span>
 <span class="sd">        Checks for player collision, updates lighting (e.g. for Glowstone),</span>
 <span class="sd">        and queues adjacent chunks for remeshing.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span>
             <span class="n">current_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">current_id</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">current_id</span> <span class="ow">in</span> <span class="n">NON_PLACEABLE</span><span class="p">:</span>
-                <span class="k">return</span>  <span class="c1"># Can&#39;t place empty air</span>
+                <span class="k">return</span>  <span class="c1"># Can't place empty air</span>
 
             <span class="c1"># check voxel id along normal</span>
             <span class="n">new_voxel_pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_normal</span>
@@ -1129,13 +1129,13 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="VoxelHandler.rebuild_adjacent_chunks">
 <a class="viewcode-back" href="../api/voxel_handler.html#voxel_handler.VoxelHandler.rebuild_adjacent_chunks">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelHandler_RebuildAdjacentChunks&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelHandler_RebuildAdjacentChunks'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">rebuild_adjacent_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world_pos</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">is_light_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Automatically queues neighboring chunks for mesh regeneration if a block</span>
 <span class="sd">        modification occurs near a chunk border, or if it creates a large lighting</span>
 <span class="sd">        update requiring neighbors to recalculate their block/sunlight visuals.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
         <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
@@ -1171,13 +1171,13 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="VoxelHandler.remove_voxel">
 <a class="viewcode-back" href="../api/voxel_handler.html#voxel_handler.VoxelHandler.remove_voxel">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelHandler_RemoveVoxel&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelHandler_RemoveVoxel'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">remove_voxel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Breaks the targeted voxel, updates local block lighting (stripping or</span>
 <span class="sd">        letting sunlight in), spawns a dropped item entity in Survival mode,</span>
 <span class="sd">        and queues chunks for remeshing.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span>
             <span class="n">wx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
             <span class="n">wy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
@@ -1227,40 +1227,60 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="VoxelHandler.set_voxel">
 <a class="viewcode-back" href="../api/voxel_handler.html#voxel_handler.VoxelHandler.set_voxel">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelHandler_SetVoxel&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_voxel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;remove&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelHandler_SetVoxel'</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_voxel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'remove'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Wrapper to call either add_voxel or remove_voxel based on the mode.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;add&#39;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">'add'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_voxel</span><span class="p">()</span>
 
-        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;remove&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">'remove'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remove_voxel</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="VoxelHandler.update">
 <a class="viewcode-back" href="../api/voxel_handler.html#voxel_handler.VoxelHandler.update">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelHandler_Update&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelHandler_Update'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Update per-frame voxel interaction state (casts the interaction ray).</span>
 
 <span class="sd">        This should be called from the main update loop to refresh the</span>
-<span class="sd">        targeted voxel based on the player&#39;s view.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        targeted voxel based on the player's view.</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ray_cast</span><span class="p">()</span></div>
 
 
+    <span class="c1"># Fast Voxel Traversal Algorithm (3D DDA)</span>
+    <span class="c1"># How does the game know exactly which block you are looking at?</span>
+    <span class="c1"># It uses a technique called 3D Digital Differential Analyzer (DDA), specifically</span>
+    <span class="c1"># the "Amanatides &amp; Woo" algorithm for fast voxel traversal.</span>
+    <span class="c1">#</span>
+    <span class="c1"># How it works:</span>
+    <span class="c1"># Instead of "stepping" forward by tiny amounts and checking if we hit a block</span>
+    <span class="c1"># (which is slow and can "skip" through thin corners), this algorithm calculates</span>
+    <span class="c1"># exactly how far the ray must travel to hit the next X, Y, or Z grid boundary</span>
+    <span class="c1"># (`max_x`, `max_y`, `max_z`).</span>
+    <span class="c1">#</span>
+    <span class="c1"># We step into the grid along whichever axis is closest, update the boundary</span>
+    <span class="c1"># distance (`delta_x`, `delta_y`, `delta_z`), and repeat until we hit a solid</span>
+    <span class="c1"># block. It guarantees we never miss a block and runs incredibly fast since</span>
+    <span class="c1"># it only evaluates grid intersections!</span>
+    <span class="c1">#</span>
+    <span class="c1"># References:</span>
+    <span class="c1"># - 3D DDA Visualized: https://www.youtube.com/watch?v=NbSee-cg7Ig</span>
+    <span class="c1"># - Original Amanatides &amp; Woo Paper: http://www.cse.yorku.ca/~amana/research/grid.pdf</span>
+    <span class="c1"># - LodeV's Raycasting Tutorial: https://lodev.org/cgtutor/raycasting.html</span>
 <div class="viewcode-block" id="VoxelHandler.ray_cast">
 <a class="viewcode-back" href="../api/voxel_handler.html#voxel_handler.VoxelHandler.ray_cast">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelHandler_RayCast&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelHandler_RayCast'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ray_cast</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Casts a ray forward from the camera&#39;s position through the voxel grid using</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Casts a ray forward from the camera's position through the voxel grid using</span>
 <span class="sd">        a fast voxel traversal algorithm. Determines the exact targeted voxel and</span>
 <span class="sd">        its normal face.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># start point</span>
         <span class="n">x1</span><span class="p">:</span> <span class="nb">float</span>
         <span class="n">y1</span><span class="p">:</span> <span class="nb">float</span>
@@ -1277,14 +1297,33 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_normal</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">step_dir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
+        <span class="c1"># DDA INITIALIZATION (X-AXIS)</span>
+        <span class="c1"># 1. `dx`: Direction of the ray on the X axis. `glm.sign(x2 - x1)`</span>
+        <span class="c1">#    returns exactly 1.0 if the ray is pointing positive (Right), or -1.0</span>
+        <span class="c1">#    if pointing negative (Left). If the ray is perfectly straight, it returns 0.</span>
         <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">))</span>
+
+        <span class="c1"># 2. `delta_x`: The total distance the ray must travel along its path to</span>
+        <span class="c1">#    move exactly 1.0 unit on the X grid.</span>
+        <span class="c1">#    We calculate this by dividing the sign (dx) by the absolute delta (x2 - x1).</span>
+        <span class="c1">#    If dx is 0, we cap it at 10,000,000 to prevent a Divide-By-Zero crash (infinity).</span>
         <span class="n">delta_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">),</span> <span class="mf">10000000.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">dx</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">10000000.0</span>
+
+        <span class="c1"># 3. `max_x`: The total distance the ray must travel from its CURRENT starting</span>
+        <span class="c1">#    position to hit the VERY FIRST vertical grid line on the X axis.</span>
+        <span class="c1">#    - `glm.fract(x1)` gives the decimal part of the player's position inside the block.</span>
+        <span class="c1">#    - If moving positive (dx &gt; 0), we need the distance to the RIGHT edge `(1.0 - fract)`.</span>
+        <span class="c1">#    - If moving negative (dx &lt; 0), we need the distance to the LEFT edge `(fract)`.</span>
         <span class="n">max_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">delta_x</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">x1</span><span class="p">))</span> <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">delta_x</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
 
+        <span class="c1"># DDA INITIALIZATION (Y-AXIS)</span>
+        <span class="c1"># We repeat the exact same trigonometric step-distance math for the Y-axis.</span>
         <span class="n">dy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">))</span>
         <span class="n">delta_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dy</span> <span class="o">/</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">),</span> <span class="mf">10000000.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">dy</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">10000000.0</span>
         <span class="n">max_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">delta_y</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">y1</span><span class="p">))</span> <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">delta_y</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">y1</span><span class="p">)</span>
 
+        <span class="c1"># DDA INITIALIZATION (Z-AXIS)</span>
+        <span class="c1"># We repeat the exact same trigonometric step-distance math for the Z-axis.</span>
         <span class="n">dz</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">z2</span> <span class="o">-</span> <span class="n">z1</span><span class="p">))</span>
         <span class="n">delta_z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dz</span> <span class="o">/</span> <span class="p">(</span><span class="n">z2</span> <span class="o">-</span> <span class="n">z1</span><span class="p">),</span> <span class="mf">10000000.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">dz</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">10000000.0</span>
         <span class="n">max_z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">delta_z</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">z1</span><span class="p">))</span> <span class="k">if</span> <span class="n">dz</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">delta_z</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">z1</span><span class="p">)</span>
@@ -1338,9 +1377,9 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="VoxelHandler.get_voxel_id">
 <a class="viewcode-back" href="../api/voxel_handler.html#voxel_handler.VoxelHandler.get_voxel_id">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelHandler_GetVoxelId&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelHandler_GetVoxelId'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_voxel_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voxel_world_pos</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve a world-space voxel position to its chunk-local index and id.</span>
 
 <span class="sd">        Args:</span>
@@ -1352,7 +1391,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            inside the chunk voxel array, `voxel_local_pos` is the local 3D</span>
 <span class="sd">            integer coordinate within the chunk, and `chunk` is the chunk object</span>
 <span class="sd">            containing the voxel (or None if out of loaded range).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
         <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
         <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>

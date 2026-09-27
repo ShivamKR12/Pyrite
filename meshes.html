@@ -574,7 +574,7 @@
 <p>Pyrite implements 6 distinct mesh classes to handle rendering. Each extends a foundational base class and handles specific GPU data formatting.</p>
 <p><strong>1. BaseMesh (Core Abstract Class)</strong></p>
 <p>Handles standardizing the Vertex Array Objects (VAOs) and Vertex Buffer Objects (VBOs) through the ModernGL pipeline.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">''</span>
 <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
 </pre></div>
 </div>
@@ -590,8 +590,8 @@
 </ul>
 <p><strong>2. ChunkMesh (Per-Chunk Geometry)</strong></p>
 <p>Manages the dense, greedy-meshed geometry for the voxel world.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;1u4 1u4&#39;</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;packed_data&#39;</span><span class="p">,</span> <span class="s1">&#39;light_data&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'1u4 1u4'</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'packed_data'</span><span class="p">,</span> <span class="s1">'light_data'</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -620,7 +620,7 @@
 </ul>
 <p><strong>3. CloudMesh (Procedural Clouds)</strong></p>
 <p>Generates the scrolling 3D cloud layer.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;3u2&#39;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'3u2'</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -649,8 +649,8 @@
 </ul>
 <p><strong>5. ItemMesh (Dropped Items)</strong></p>
 <p>Builds standard cubes for dropped items with explicitly mapped face IDs.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;3f 2f 1f&#39;</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;in_position&#39;</span><span class="p">,</span> <span class="s1">&#39;in_tex_coord&#39;</span><span class="p">,</span> <span class="s1">&#39;in_face_id&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'3f 2f 1f'</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'in_position'</span><span class="p">,</span> <span class="s1">'in_tex_coord'</span><span class="p">,</span> <span class="s1">'in_face_id'</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -665,10 +665,10 @@
 </ul>
 <p><strong>6. ObjMesh (Wavefront Models)</strong></p>
 <p>Parses standard <code class="docutils literal notranslate"><span class="pre">.obj</span></code> files to render custom 3D tools in-hand.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;newmtl&#39;</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'newmtl'</span><span class="p">):</span>
     <span class="n">current_material</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
-<span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;Kd&#39;</span><span class="p">):</span>
-    <span class="n">materials</span><span class="p">[</span><span class="n">current_material</span><span class="p">][</span><span class="s1">&#39;Kd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]]</span>
+<span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'Kd'</span><span class="p">):</span>
+    <span class="n">materials</span><span class="p">[</span><span class="n">current_material</span><span class="p">][</span><span class="s1">'Kd'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]]</span>
 </pre></div>
 </div>
 <ul class="simple">

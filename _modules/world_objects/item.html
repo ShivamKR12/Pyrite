@@ -985,15 +985,16 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for world_objects.item</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Physical dropped item entity management.</span>
 
 <span class="sd">This module manages the instantiation, 3D physics, collision handling, and rendering of</span>
 <span class="sd">items that pop out of broken blocks. The `ItemManager` utilizes a strict First-In-First-Out</span>
 <span class="sd">(FIFO) cap to forcefully limit active entities, guaranteeing smooth framerates regardless of</span>
 <span class="sd">how many blocks are exploded concurrently.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 
@@ -1020,7 +1021,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Item">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.item.Item">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Item</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Represents a physical, dropped 3D item entity in the world.</span>
 
 <span class="sd">    Handles gravity, sliding friction, bouncing, and player pickup detection.</span>
@@ -1030,71 +1031,116 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        app (Any): The main application instance.</span>
 <span class="sd">        position (Any): A PyGLM vec3 or tuple representing the initial world spawn coordinates.</span>
 <span class="sd">        voxel_id (int): The block or item UID that dictates its visual mesh and inventory value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Item_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Item_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Spawns an item bursting out of the specified position with a randomized velocity,</span>
 <span class="sd">        and applies a short pickup delay to prevent instant re-collection.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="c1"># Store a reference to the main application instance to access global state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">position</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>  <span class="c1"># Burst from the center of the block</span>
+
+        <span class="c1"># Offset the initial spawn position by 0.5 on all axes to center it within the broken block's coordinate space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">position</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
+
+        <span class="c1"># Generate a randomized ejection velocity to make the item burst outwards</span>
+        <span class="c1"># X and Z axes get a random spread, while Y gets a slight upward bump</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span>
             <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ITEM_SPAWN_VELOCITY_MULTIPLIER</span><span class="p">,</span>
             <span class="mf">0.005</span><span class="p">,</span>
             <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ITEM_SPAWN_VELOCITY_MULTIPLIER</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="c1"># Handle potential bytes from SQLite blobs (NumPy uint8 serialization mismatch)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="s1">&#39;little&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">)</span>
+
+        <span class="c1"># Handle type conversion for voxel_id, which may come in as raw bytes from the SQLite database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="s1">'little'</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">)</span>
+
+        <span class="c1"># Initialize the baseline Y-axis rotation (yaw) for the item's spinning animation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="c1"># Set the global scaling factor for how large dropped items appear in the world</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">ITEM_SCALE</span>
+
+        <span class="c1"># Flag to track whether this item should be garbage collected (e.g., if picked up or fallen into the void)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_dead</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Calculate the absolute timestamp (in milliseconds) when this item becomes eligible for pickup</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pickup_delay</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">+</span> <span class="n">ITEM_PICKUP_DELAY</span>
 
 <div class="viewcode-block" id="Item.update">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.item.Item.update">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Item_Update&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Item_Update'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Applies continuous gravity and velocity updates, handles simple ground collisions,</span>
 <span class="sd">        and destroys the item if it falls into the void or is collected by the player.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="c1"># Apply gravitational acceleration downwards, scaled by the time since the last frame</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">GRAVITY</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span>
+
+        <span class="c1"># Integrate the velocity vector into the current position to move the item through space</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span>
 
+        <span class="c1"># Retrieve a reference to the world state to check for block collisions</span>
         <span class="n">world</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span>
+
+        <span class="c1"># Calculate the integer coordinate directly below the item to check if it has hit the floor</span>
         <span class="n">check_pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
 
+        <span class="c1"># Query the voxel handler to see if the block at check_pos is solid (non-zero ID)</span>
         <span class="k">if</span> <span class="n">world</span><span class="o">.</span><span class="n">voxel_handler</span><span class="o">.</span><span class="n">get_voxel_id</span><span class="p">(</span><span class="n">check_pos</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="c1"># If a collision is detected, snap the item's Y position to rest precisely on top of the block surface</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">check_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">*=</span> <span class="mf">0.8</span>  <span class="c1"># Friction</span>
+
+            <span class="c1"># Apply a harsh dampening factor (friction) to the X and Z velocities so the item stops sliding</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">*=</span> <span class="mf">0.8</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">*=</span> <span class="mf">0.8</span>
+
+            <span class="c1"># Nullify the vertical velocity completely since it is now resting on the ground</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
 
+        <span class="c1"># Check if the item has fallen below the world boundary (-10 Y) and mark it for deletion</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">10</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_dead</span> <span class="o">=</span> <span class="kc">True</span>
 
+        <span class="c1"># Increment the item's yaw rotation continuously based on elapsed time to create a spinning effect</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span> <span class="o">+=</span> <span class="mf">0.003</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span>
 
+        <span class="c1"># Ensure the mandatory pickup cooldown period has elapsed before checking for player collision</span>
         <span class="k">if</span> <span class="n">pg</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">pickup_delay</span><span class="p">:</span>
+            <span class="c1"># Calculate the Euclidean distance between the item's center and the player's center</span>
             <span class="k">if</span> <span class="n">glm</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ITEM_PICKUP_RADIUS</span><span class="p">:</span>
+                <span class="c1"># Attempt to add the item's voxel ID to the player's inventory</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">add_item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">):</span>
+                    <span class="c1"># If the inventory accepted the item, mark this entity for destruction</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">is_dead</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">play_place_block</span><span class="p">()</span>  <span class="c1"># Pop sound!</span></div>
+                    <span class="c1"># Trigger the auditory feedback for a successful item pickup</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">play_place_block</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Item.get_model_matrix">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.item.Item.get_model_matrix">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Item_GetModelMatrix&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Item_GetModelMatrix'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns the transformation matrix required to position, rotate, and scale</span>
 <span class="sd">        the 3D item for rendering.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">m_model</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="c1"># Calculate a time-based bobbing offset using a continuous sine wave based on the system clock</span>
+        <span class="c1"># This provides the classic 3D hovering/floating effect for dropped items</span>
+        <span class="n">bobbing_offset</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.003</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+
+        <span class="c1"># Apply the computed bobbing offset to the item's absolute Y position</span>
+        <span class="n">bob_pos</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">bobbing_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+
+        <span class="c1"># Initialize a 4x4 identity matrix and apply a translation transformation to move the model to its world coordinates</span>
+        <span class="n">m_model</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">(),</span> <span class="n">bob_pos</span><span class="p">)</span>
+
+        <span class="c1"># Apply a rotational transformation around the global Y-axis (up vector) using the accumulated rotation angle</span>
         <span class="n">m_model</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">m_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
+        <span class="c1"># Finally, apply a uniform scaling transformation to shrink the model to the defined ITEM_SCALE size</span>
         <span class="k">return</span> <span class="n">glm</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">m_model</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">))</span></div>
 </div>
 
@@ -1103,7 +1149,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ItemManager">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.item.ItemManager">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ItemManager</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Manages all active Item entities in the scene.</span>
 
 <span class="sd">    Handles updating physics, batched rendering, and enforcing an entity cap</span>
@@ -1111,94 +1157,123 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Args:</span>
 <span class="sd">        app (Any): The main application instance.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ItemManager_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ItemManager_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the item list and pre-loads the meshes required to render</span>
 <span class="sd">        blocks and 3D models like pickaxes or sticks.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="c1"># Retain the application context</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
+
+        <span class="c1"># Initialize an empty list that will act as the live entity pool for all dropped items</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Item</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Instantiate the generic cubic mesh used for standard voxel block drops</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">ItemMesh</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stick_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">ObjMesh</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;assets/models/items/stick/stick.obj&#39;</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pickaxe_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">ObjMesh</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;assets/models/items/wooden-pickaxe/wooden_pickaxe.obj&#39;</span><span class="p">))</span>
+
+        <span class="c1"># Load the custom 3D Wavefront (.obj) model specifically for the stick item</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stick_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">ObjMesh</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">get_path</span><span class="p">(</span><span class="s1">'assets/models/items/stick/stick.obj'</span><span class="p">))</span>
+
+        <span class="c1"># Load the custom 3D Wavefront (.obj) model specifically for the wooden pickaxe item</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pickaxe_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">ObjMesh</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">get_path</span><span class="p">(</span><span class="s1">'assets/models/items/wooden-pickaxe/wooden_pickaxe.obj'</span><span class="p">))</span>
 
 <div class="viewcode-block" id="ItemManager.add_item">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.item.ItemManager.add_item">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ItemManager_AddItem&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ItemManager_AddItem'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Spawns a new item entity into the world. Enforces a First-In-First-Out (FIFO)</span>
 <span class="sd">        limit to automatically despawn old items if too many are active at once.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Prevent entity overflow crashes if too many blocks break at once</span>
+<span class="sd">        """</span>
+        <span class="c1"># Check if adding a new item would exceed the hardcoded global entity cap</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ITEM_ENTITY_CAP</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Automatically despawn the oldest item</span>
+            <span class="c1"># Forcefully remove the oldest item in the list (index 0) to maintain strict memory and CPU bounds</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
+        <span class="c1"># Instantiate a new Item object at the designated coordinates and append it to the active pool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="ItemManager.load_item">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.item.ItemManager.load_item">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ItemManager_LoadItem&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ItemManager_LoadItem'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">px</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">py</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">pz</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">vx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">vy</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">vz</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Restores a previously saved item entity into the world with its exact</span>
 <span class="sd">        former position and velocity to bypass the random spawn burst.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="c1"># Enforce the exact same entity cap logic as add_item to prevent save-scumming overload</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ITEM_ENTITY_CAP</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
+        <span class="c1"># Instantiate a shell Item object at the origin</span>
         <span class="n">item</span><span class="p">:</span> <span class="n">Item</span> <span class="o">=</span> <span class="n">Item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">voxel_id</span><span class="p">)</span>
+
+        <span class="c1"># Overwrite the random initial position with the exact coordinates loaded from the database</span>
         <span class="n">item</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span><span class="p">)</span>
+
+        <span class="c1"># Overwrite the random burst velocity with the preserved momentum vector</span>
         <span class="n">item</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">)</span>
+
+        <span class="c1"># Append the restored item to the active pool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ItemManager.update">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.item.ItemManager.update">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ItemManager_Update&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ItemManager_Update'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Updates physics for all active items and removes ones marked as dead.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="c1"># Iterate through every active item entity and invoke its internal physics/logic update step</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
             <span class="n">item</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
 
+        <span class="c1"># Rebuild the active items list, filtering out any entities that have flagged themselves as dead</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">is_dead</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="ItemManager.render">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.item.ItemManager.render">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ItemManager_Render&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ItemManager_Render'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Renders all items that fall within the specific item render distance.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">CULL_FACE</span><span class="p">)</span>  <span class="c1"># Don&#39;t cull rotating cubes</span>
+<span class="sd">        """</span>
+        <span class="c1"># Temporarily disable OpenGL backface culling because the items spin, exposing all geometric faces</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">CULL_FACE</span><span class="p">)</span>
 
+        <span class="c1"># Cache the player's current world position to calculate render distances efficiently</span>
         <span class="n">player_pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span>
+
+        <span class="c1"># Iterate through the entire active item pool for the render pass</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
-            <span class="c1"># Simple distance culling (don&#39;t render items further than 32 blocks away)</span>
+            <span class="c1"># Perform a fast squared-distance check to cull items that are too far away to be visible</span>
             <span class="k">if</span> <span class="n">glm</span><span class="o">.</span><span class="n">distance2</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="n">player_pos</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ITEM_RENDER_DISTANCE_SQUARED</span><span class="p">:</span>
                 <span class="k">continue</span>
 
+            <span class="c1"># Route the item to its appropriate 3D mesh based on its unique voxel ID</span>
             <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">voxel_id</span> <span class="o">==</span> <span class="n">STICK</span><span class="p">:</span>
                 <span class="n">mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stick_mesh</span>
-
             <span class="k">elif</span> <span class="n">item</span><span class="o">.</span><span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WOODEN_PICKAXE</span><span class="p">:</span>
                 <span class="n">mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pickaxe_mesh</span>
-
             <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Default to the generic cubic block mesh</span>
                 <span class="n">mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span>
 
-            <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">&#39;m_model&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get_model_matrix</span><span class="p">())</span>
+            <span class="c1"># Calculate the final Model matrix containing all position, rotation, and scaling data</span>
+            <span class="c1"># and write it directly into the shader's 'm_model' uniform</span>
+            <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'m_model'</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get_model_matrix</span><span class="p">())</span>
 
-            <span class="k">if</span> <span class="s1">&#39;voxel_id&#39;</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
-                <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">&#39;voxel_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">)</span>
+            <span class="c1"># If the shader requires texture indexing (for blocks), pass the voxel ID uniform</span>
+            <span class="k">if</span> <span class="s1">'voxel_id'</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
+                <span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'voxel_id'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">)</span>
 
+            <span class="c1"># Issue the final OpenGL draw call for this specific item mesh</span>
             <span class="n">mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span></div>
 </div>
 

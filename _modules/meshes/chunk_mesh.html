@@ -985,13 +985,13 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for meshes.chunk_mesh</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">OpenGL geometry wrapper and VRAM manager for active world chunks.</span>
 
 <span class="sd">This module links the generated Numba geometry data directly to the ModernGL VAO/VBO contexts.</span>
 <span class="sd">Crucially, it handles the dynamic VBO object pooling architecture, safely tracking and recycling</span>
 <span class="sd">massive GPU memory buffers on the fly to prevent strict VRAM memory leaking during chunk streaming.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -1004,7 +1004,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ChunkMesh">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh.ChunkMesh">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ChunkMesh</span><span class="p">(</span><span class="n">BaseMesh</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Manages the OpenGL geometry for a chunk, handling opaque and transparent meshes.</span>
 
 <span class="sd">    It interfaces with the greedy meshing builder to generate vertex data and utilizes</span>
@@ -1013,14 +1013,14 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Args:</span>
 <span class="sd">        chunk (Any): The parent chunk instance this mesh is visually representing.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ChunkMesh_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ChunkMesh_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the chunk mesh, linking it to its parent chunk and the appropriate shader program.</span>
 <span class="sd">        Sets up the vertex buffer format and prepares attributes for rendering.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chunk</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">chunk</span>
@@ -1028,9 +1028,9 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">chunk</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;1u4 1u4&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'1u4 1u4'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">format_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;packed_data&#39;</span><span class="p">,</span> <span class="s1">&#39;light_data&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'packed_data'</span><span class="p">,</span> <span class="s1">'light_data'</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vbo</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1040,37 +1040,37 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="ChunkMesh.render">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh.ChunkMesh.render">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ChunkMesh_Render&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ChunkMesh_Render'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Issues the draw call for the opaque portion of the chunk&#39;s mesh,</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Issues the draw call for the opaque portion of the chunk's mesh,</span>
 <span class="sd">        provided it has valid geometry to render.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vao</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">opaque_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">vertices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opaque_count</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ChunkMesh.render_water">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh.ChunkMesh.render_water">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ChunkMesh_RenderWater&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ChunkMesh_RenderWater'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">render_water</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Issues the draw call for the transparent water portion of the chunk&#39;s mesh,</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Issues the draw call for the transparent water portion of the chunk's mesh,</span>
 <span class="sd">        starting from the end of the opaque vertex data.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vao</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">water_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">vertices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">water_count</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opaque_count</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ChunkMesh.get_vao">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh.ChunkMesh.get_vao">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ChunkMesh_GetVAO&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ChunkMesh_GetVAO'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_vao</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Retrieves or builds the Vertex Array Object (VAO) for the chunk. It first generates</span>
 <span class="sd">        the raw vertex data, then attempts to recycle an appropriately sized VBO from</span>
 <span class="sd">        the global pool to prevent memory leaks, allocating a new one if necessary.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertex_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vertex_data</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vertex_data</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1085,7 +1085,7 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># Find the smallest VBO in the pool that can safely fit our new mesh data</span>
         <span class="n">best_i</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="n">best_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+        <span class="n">best_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'inf'</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">p_vbo</span><span class="p">,</span> <span class="n">p_vao</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pool</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">p_vbo</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">byte_size</span> <span class="ow">and</span> <span class="n">p_vbo</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">best_size</span><span class="p">:</span>
@@ -1115,12 +1115,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="ChunkMesh.get_vertex_data">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh.ChunkMesh.get_vertex_data">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;ChunkMesh_GetVertexData&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'ChunkMesh_GetVertexData'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_vertex_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Triggers the greedy meshing algorithm to construct the optimized vertex payload</span>
-<span class="sd">        (including ambient occlusion and lighting) from the chunk&#39;s 3D voxel array.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        (including ambient occlusion and lighting) from the chunk's 3D voxel array.</span>
+<span class="sd">        """</span>
         <span class="n">mesh</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">build_chunk_mesh</span><span class="p">(</span>
             <span class="n">chunk_voxels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span>
             <span class="n">chunk_lightmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk</span><span class="o">.</span><span class="n">lightmap</span><span class="p">,</span>

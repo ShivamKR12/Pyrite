@@ -912,13 +912,13 @@ bg_color:               Background color (sky blue, RGB)
 <h2>Uniform Management<a class="headerlink" href="#uniform-management" title="Link to this heading"></a></h2>
 <p>All uniforms are set from Python via ModernGL’s <code class="docutils literal notranslate"><span class="pre">program</span></code> object:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example: Setting chunk shader uniforms</span>
-<span class="n">program</span><span class="p">[</span><span class="s1">&#39;m_proj&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">projection_matrix</span><span class="p">)</span>
-<span class="n">program</span><span class="p">[</span><span class="s1">&#39;m_view&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">view_matrix</span><span class="p">)</span>
-<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_sun_direction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">sun_direction</span>  <span class="c1"># glm.vec3</span>
-<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_texture_map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">texture_map</span>      <span class="c1"># List[int]</span>
-<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">current_time</span>
-<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_fog_density&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">fog_start_distance</span>
-<span class="n">program</span><span class="p">[</span><span class="s1">&#39;bg_color&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.53</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">,</span> <span class="mf">0.92</span><span class="p">)</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">'m_proj'</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">projection_matrix</span><span class="p">)</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">'m_view'</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">view_matrix</span><span class="p">)</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">'u_sun_direction'</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">sun_direction</span>  <span class="c1"># glm.vec3</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">'u_texture_map'</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">texture_map</span>      <span class="c1"># List[int]</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">'u_time'</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">current_time</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">'u_fog_density'</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">fog_start_distance</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">'bg_color'</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.53</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">,</span> <span class="mf">0.92</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -926,11 +926,11 @@ bg_color:               Background color (sky blue, RGB)
 <h2>Texture Atlas Binding<a class="headerlink" href="#texture-atlas-binding" title="Link to this heading"></a></h2>
 <p>All block textures are combined into a single <code class="docutils literal notranslate"><span class="pre">sampler2DArray</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load texture atlas</span>
-<span class="n">atlas</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">texture_array</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>  <span class="c1"># 256 layers, 512x512 each</span>
+<span class="n">atlas</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">texture_array</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint8'</span><span class="p">)</span>  <span class="c1"># 256 layers, 512x512 each</span>
 
 <span class="c1"># Bind to shader</span>
 <span class="n">atlas</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">program</span><span class="p">[</span><span class="s1">&#39;u_texture_array_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">program</span><span class="p">[</span><span class="s1">'u_texture_array_0'</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
 </pre></div>
 </div>
 </section>

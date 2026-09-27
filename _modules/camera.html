@@ -985,13 +985,13 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for camera</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">3D Camera representation and mathematical matrix manipulation.</span>
 
-<span class="sd">This module handles the player&#39;s perspective, generating the View and Projection</span>
+<span class="sd">This module handles the player's perspective, generating the View and Projection</span>
 <span class="sd">matrices required by OpenGL to render the world. It provides movement vectors</span>
 <span class="sd">and rotational controls for exploring the 3D voxel space.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
@@ -1003,7 +1003,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Camera">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Camera</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Represents a 3D camera in the world.</span>
 
 <span class="sd">    Handles position, orientation (yaw/pitch), view matrix calculation,</span>
@@ -1013,14 +1013,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        position (Any): Initial (x, y, z) 3D coordinate vector.</span>
 <span class="sd">        yaw (float): Initial horizontal rotation in degrees.</span>
 <span class="sd">        pitch (float): Initial vertical rotation in degrees.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">yaw</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">pitch</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the camera at a given position and orientation, and creates</span>
 <span class="sd">        the perspective projection matrix and viewing frustum.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">yaw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">yaw</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">pitch</span><span class="p">))</span>
@@ -1036,120 +1036,166 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Camera.update">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.update">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_Update&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_Update'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the camera&#39;s directional vectors and view matrix for the current frame.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Updates the camera's directional vectors and view matrix for the current frame.</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_vectors</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_view_matrix</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Camera.update_view_matrix">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.update_view_matrix">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_UpdateViewMatrix&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_UpdateViewMatrix'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_view_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculates the OpenGL lookAt view matrix based on the camera&#39;s position and forward vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Calculates the OpenGL lookAt view matrix based on the camera's position and forward vector.</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">m_view</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">lookAt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">up</span><span class="p">)</span></div>
 
 
+    <span class="c1"># Euler Angles &amp; Spherical Coordinates (3D Camera Math)</span>
+    <span class="c1"># How does moving the mouse translate into a 3D looking direction?</span>
+    <span class="c1"># This function converts "Euler Angles" (Yaw and Pitch in radians) into a</span>
+    <span class="c1"># 3D directional vector (self.forward) using Spherical Coordinates trigonometry.</span>
+    <span class="c1">#</span>
+    <span class="c1"># How it works:</span>
+    <span class="c1"># 1. Forward Vector: We use `cos()` and `sin()` to project a 3D sphere onto</span>
+    <span class="c1">#    the X, Y, and Z axes based on where the player is looking.</span>
+    <span class="c1"># 2. Right Vector: We use a "Cross Product" between our new Forward vector</span>
+    <span class="c1">#    and the absolute World Up vector (0, 1, 0). The cross product mathematically</span>
+    <span class="c1">#    returns a 3D vector that is perfectly perpendicular to both, giving us</span>
+    <span class="c1">#    our "Right" direction!</span>
+    <span class="c1"># 3. Up Vector: We do one last cross product between Right and Forward to get</span>
+    <span class="c1">#    the camera's local "Up" direction.</span>
+    <span class="c1">#</span>
+    <span class="c1"># References:</span>
+    <span class="c1"># - Camera Math Tutorial: https://learnopengl.com/Getting-started/Camera</span>
+    <span class="c1"># - Cross Product visualizer: https://en.wikipedia.org/wiki/Cross_product</span>
 <div class="viewcode-block" id="Camera.update_vectors">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.update_vectors">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_UpdateVectors&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_UpdateVectors'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_vectors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Recalculates the forward, right, and up vectors using spherical coordinates</span>
 <span class="sd">        derived from the current yaw and pitch.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="c1"># SPHERICAL TO CARTESIAN CONVERSION (X-AXIS)</span>
+        <span class="c1"># To find how much we are looking left/right (X), we use `cos(yaw)`.</span>
+        <span class="c1"># But if we look straight up or down, the X length should shrink to 0.</span>
+        <span class="c1"># So we multiply it by `cos(pitch)`.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yaw</span><span class="p">)</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">)</span>
+
+        <span class="c1"># SPHERICAL TO CARTESIAN CONVERSION (Y-AXIS)</span>
+        <span class="c1"># The vertical Y axis is purely controlled by the Pitch (looking up/down).</span>
+        <span class="c1"># `sin(pitch)` returns exactly 1.0 when looking straight up (90 degrees),</span>
+        <span class="c1"># 0.0 when looking flat (0 degrees), and -1.0 when looking down.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">)</span>
+
+        <span class="c1"># SPHERICAL TO CARTESIAN CONVERSION (Z-AXIS)</span>
+        <span class="c1"># Similar to X, the Z (depth) axis is controlled by `sin(yaw)`.</span>
+        <span class="c1"># It must also be scaled by `cos(pitch)` so that looking straight up/down</span>
+        <span class="c1"># completely nullifies depth movement.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yaw</span><span class="p">)</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">)</span>
 
+        <span class="c1"># VECTOR NORMALIZATION</span>
+        <span class="c1"># `glm.normalize` ensures the Forward vector's total length is exactly 1.0.</span>
+        <span class="c1"># If we didn't normalize, moving diagonally might be faster than moving straight!</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">)</span>
+
+        <span class="c1"># THE CROSS PRODUCT (CALCULATING 'RIGHT')</span>
+        <span class="c1"># We know which way we are looking (Forward), and we know which way is</span>
+        <span class="c1"># the sky (World Up: 0, 1, 0). The `cross` product of these two vectors</span>
+        <span class="c1"># generates a 3rd vector that is exactly perpendicular (90 degrees) to both.</span>
+        <span class="c1"># This gives us our exact 'Right' vector for strafing left/right!</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
+
+        <span class="c1"># THE CROSS PRODUCT (CALCULATING 'LOCAL UP')</span>
+        <span class="c1"># We cross 'Right' and 'Forward' to get our Local 'Up' vector.</span>
+        <span class="c1"># This is used so if we look down, 'Up' correctly points behind our head</span>
+        <span class="c1"># instead of straight into the sky. This is crucial for the OpenGL lookAt matrix.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">up</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Camera.rotate_pitch">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.rotate_pitch">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_RotatePitch&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_RotatePitch'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">rotate_pitch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adjusts the camera&#39;s pitch (up/down rotation), clamping it to prevent flipping over.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Adjusts the camera's pitch (up/down rotation), clamping it to prevent flipping over.</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">-=</span> <span class="n">delta_y</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">,</span> <span class="o">-</span><span class="n">PITCH_MAX</span><span class="p">,</span> <span class="n">PITCH_MAX</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Camera.rotate_yaw">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.rotate_yaw">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_RotateYaw&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_RotateYaw'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">rotate_yaw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adjusts the camera&#39;s yaw (left/right rotation).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Adjusts the camera's yaw (left/right rotation).</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">yaw</span> <span class="o">+=</span> <span class="n">delta_x</span></div>
 
 
 <div class="viewcode-block" id="Camera.move_left">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.move_left">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_MoveLeft&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_MoveLeft'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">move_left</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera leftward along its right vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
 <div class="viewcode-block" id="Camera.move_right">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.move_right">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_MoveRight&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_MoveRight'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">move_right</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera rightward along its right vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
 <div class="viewcode-block" id="Camera.move_up">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.move_up">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_MoveUp&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_MoveUp'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">move_up</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera upward along its up vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">up</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
 <div class="viewcode-block" id="Camera.move_down">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.move_down">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_MoveDown&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_MoveDown'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">move_down</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera downward along its up vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">up</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
 <div class="viewcode-block" id="Camera.move_forward">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.move_forward">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_MoveForward&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_MoveForward'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">move_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera forward along its forward vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
 <div class="viewcode-block" id="Camera.move_back">
 <a class="viewcode-back" href="../api/camera.html#camera.Camera.move_back">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Camera_MoveBack&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Camera_MoveBack'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">move_back</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera backward along its forward vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="n">velocity</span></div>
 </div>
 

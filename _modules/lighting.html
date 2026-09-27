@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for lighting</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Volumetric BFS Lighting Engine for Pyrite.</span>
 
 <span class="sd">Implements a highly optimized Breadth-First Search (BFS) flood-fill algorithm</span>
 <span class="sd">for propagating sunlight and block light (glowstone) across the chunk grid.</span>
 <span class="sd">Utilizes Numba and 64-bit integer bit-packing to achieve near-native C++</span>
 <span class="sd">speeds lock-free across background CPU threads.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
@@ -1014,11 +1014,11 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/lighting.html#lighting.get_voxel_fast">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_voxel_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-optimized helper to quickly retrieve a voxel ID from the global</span>
 <span class="sd">    world arrays using absolute world coordinates. Returns a solid block (1)</span>
 <span class="sd">    if the queried chunk is unloaded or out of bounds.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
@@ -1034,10 +1034,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/lighting.html#lighting.get_light_fast">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-optimized helper to rapidly read the packed light level (Sunlight and Blocklight)</span>
 <span class="sd">    for a specific absolute world coordinate. Returns completely dark (0) if out of bounds.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
@@ -1053,10 +1053,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/lighting.html#lighting.set_light_fast">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-optimized helper to directly write a packed light value into the global</span>
 <span class="sd">    lightmap arrays at the specified absolute world coordinate.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">idx</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
@@ -1065,32 +1065,89 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="c1"># Voxel Flood-Fill Lighting (BFS)</span>
+<span class="c1"># This function is the heart of the engine's dynamic lighting. It uses a</span>
+<span class="c1"># Breadth-First Search (BFS) to "flood-fill" light from a source to its neighbors.</span>
+<span class="c1">#</span>
+<span class="c1"># How it works:</span>
+<span class="c1"># 1. We start with a queue of "light nodes" (e.g., a newly placed torch).</span>
+<span class="c1"># 2. We pop a node, check its 6 neighbors (Up, Down, North, South, East, West).</span>
+<span class="c1"># 3. If the neighbor is transparent (Air, Glass) and its current light level is</span>
+<span class="c1">#    less than the current node's light minus 1 (or 2 for water/leaves), we update</span>
+<span class="c1">#    it and push it onto the queue.</span>
+<span class="c1"># 4. We repeat this until the queue is empty (light reaches 0 intensity).</span>
+<span class="c1">#</span>
+<span class="c1"># Memory Optimization:</span>
+<span class="c1"># To make this insanely fast and avoid Python object overhead, we "pack" the</span>
+<span class="c1"># x, y, z coordinates into a single 64-bit integer using bitwise shifts (&gt;&gt;).</span>
+<span class="c1">#</span>
+<span class="c1"># References:</span>
+<span class="c1"># - Flood-Fill Algorithm: https://en.wikipedia.org/wiki/Flood_fill</span>
+<span class="c1"># - Bitwise Packing: https://wiki.python.org/moin/BitwiseOperators</span>
+<span class="c1"># - General Discussions: https://www.reddit.com/r/VoxelGameDev/</span>
+
+
 <div class="viewcode-block" id="propagate_light_queue">
 <a class="viewcode-back" href="../api/lighting.html#lighting.propagate_light_queue">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">propagate_light_queue</span><span class="p">(</span>
     <span class="n">queue</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">tail</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">is_sun</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-optimized Breadth-First Search (BFS) light propagation algorithm.</span>
 <span class="sd">    Consumes a queue of light nodes and spreads their brightness outward into adjacent</span>
 <span class="sd">    transparent blocks (air, water, glass) while respecting bounds and diminishing intensity.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Initialize with dummy arrays to satisfy Numba&#39;s strict type inference</span>
+<span class="sd">    """</span>
+    <span class="c1"># Initialize with dummy arrays to satisfy Numba's strict type inference</span>
     <span class="n">local_voxels</span> <span class="o">=</span> <span class="n">world_voxels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">local_lightmaps</span> <span class="o">=</span> <span class="n">world_lightmaps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">cx_base</span><span class="p">,</span> <span class="n">cy_base</span><span class="p">,</span> <span class="n">cz_base</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
 
     <span class="n">head</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># LOOP UNTIL QUEUE IS EMPTY (head catches up to tail).</span>
+    <span class="c1"># We also have a safety check `tail &lt; LIGHTING_QUEUE_SIZE - 10` to prevent</span>
+    <span class="c1"># a queue overflow crash if the light spreads too far (buffer overflow protection).</span>
     <span class="k">while</span> <span class="n">head</span> <span class="o">&lt;</span> <span class="n">tail</span> <span class="ow">and</span> <span class="n">tail</span> <span class="o">&lt;</span> <span class="n">LIGHTING_QUEUE_SIZE</span> <span class="o">-</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="c1"># READ PACKED 64-BIT INTEGER FROM QUEUE</span>
+        <span class="c1"># `packed` is a 64-bit unsigned integer containing the X, Y, and Z</span>
+        <span class="c1"># coordinates squashed together to save memory and avoid Python object overhead.</span>
         <span class="n">packed</span> <span class="o">=</span> <span class="n">queue</span><span class="p">[</span><span class="n">head</span><span class="p">]</span>
         <span class="n">head</span> <span class="o">+=</span> <span class="mi">1</span>
 
+        <span class="c1"># BITWISE UNPACKING (X Coordinate)</span>
+        <span class="c1"># 1. `packed &gt;&gt; 32`: This bitwise Right Shift moves the binary bits 32 places</span>
+        <span class="c1">#    to the right. This pushes the 16 bits representing X down to the bottom.</span>
+        <span class="c1"># 2. `&amp; 0xFFFF`: This is a Bitwise AND mask. 0xFFFF is hexadecimal for</span>
+        <span class="c1">#    65535, which in binary is sixteen 1s (1111111111111111).</span>
+        <span class="c1">#    Applying this mask deletes any data above the first 16 bits, giving</span>
+        <span class="c1">#    us the clean, isolated X coordinate.</span>
         <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">packed</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">)</span>
+
+        <span class="c1"># BITWISE UNPACKING (Y Coordinate)</span>
+        <span class="c1"># 1. `packed &gt;&gt; 16`: We shift the integer right by 16 places, putting the</span>
+        <span class="c1">#    Y data at the bottom of the bit sequence.</span>
+        <span class="c1"># 2. `&amp; 0xFFFF`: Again, we mask it with sixteen 1s to isolate the Y value.</span>
         <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">packed</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">)</span>
+
+        <span class="c1"># BITWISE UNPACKING (Z Coordinate)</span>
+        <span class="c1"># The Z coordinate was stored at the very bottom of the 64-bit integer,</span>
+        <span class="c1"># so we don't need to shift it at all. We just apply the `&amp; 0xFFFF` mask</span>
+        <span class="c1"># to wipe out the X and Y data, leaving only Z.</span>
         <span class="n">z</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">packed</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">)</span>
 
+        <span class="c1"># GET COMBINED LIGHT VALUE</span>
+        <span class="c1"># Retrieve the packed lightmap data. The `val` variable holds BOTH</span>
+        <span class="c1"># the sunlight and blocklight levels crammed into a single 8-bit integer (byte).</span>
         <span class="n">val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
+
+        <span class="c1"># BITWISE LIGHT UNPACKING</span>
+        <span class="c1"># Sunlight and Blocklight each take up 4 bits (values 0-15).</span>
+        <span class="c1"># If calculating Sunlight (`is_sun` is True):</span>
+        <span class="c1">#    `val &gt;&gt; 4` shifts the top 4 bits down to the bottom, giving us the sunlight.</span>
+        <span class="c1"># If calculating Blocklight (`is_sun` is False):</span>
+        <span class="c1">#    `val &amp; 15` (15 is binary 1111) masks out the top 4 bits, leaving just</span>
+        <span class="c1">#    the bottom 4 bits (the blocklight).</span>
+        <span class="c1"># We store the final intensity in `L`.</span>
         <span class="n">L</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_sun</span> <span class="k">else</span> <span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span>
 
         <span class="n">chunk_idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
@@ -1174,10 +1231,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">queue_sun</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">queue_block</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Internal Numba implementation for queuing initial light sources within a chunk.</span>
 <span class="sd">    Populates separate BFS queues for sunlight and blocklight.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">tail_sun</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">tail_block</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -1264,15 +1321,15 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="init_chunk_lighting">
 <a class="viewcode-back" href="../api/lighting.html#lighting.init_chunk_lighting">[docs]</a>
-<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Lighting_InitChunkLighting&#39;</span><span class="p">)</span>
+<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_InitChunkLighting'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_chunk_lighting</span><span class="p">(</span>
     <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Scans a newly loaded/generated chunk for sunlight blocks (level 15) and light-emitting</span>
 <span class="sd">    blocks (glowstone). Adds these blocks to a queue and triggers their initial internal</span>
 <span class="sd">    BFS propagation to light up the chunk.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_init_chunk_lighting</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_B</span><span class="p">)</span></div>
 
 
@@ -1288,10 +1345,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">queue_sun</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">queue_block</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Internal Numba implementation for sampling the borders of adjacent chunks</span>
 <span class="sd">    to determine if light should bleed across the boundaries.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">tail_sun</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">tail_block</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -1360,14 +1417,14 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="stitch_chunk_lighting">
 <a class="viewcode-back" href="../api/lighting.html#lighting.stitch_chunk_lighting">[docs]</a>
-<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Lighting_StitchChunkLighting&#39;</span><span class="p">)</span>
+<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_StitchChunkLighting'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">stitch_chunk_lighting</span><span class="p">(</span>
     <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Cross-chunk boundary light bleeding. Evaluates the outer borders of a given chunk against</span>
 <span class="sd">    its neighboring chunks to allow light to properly spill in or out seamlessly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_stitch_chunk_lighting</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_B</span><span class="p">)</span></div>
 
 
@@ -1387,11 +1444,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">tail_refill</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">queue</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Strips out lighting dynamically when a light source (or opening) is blocked/destroyed.</span>
 <span class="sd">    Removes any light dependent on the broken node, but captures any overlapping brighter light</span>
 <span class="sd">    nodes into a `refill_queue` so the space can be re-illuminated by surviving light sources.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">head</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">tail</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -1445,9 +1502,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">refill_queue</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">removal_queue</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Internal Numba implementation for removing light when an opaque block is placed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
     <span class="n">sun</span><span class="p">,</span> <span class="n">block</span> <span class="o">=</span> <span class="n">curr_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">,</span> <span class="n">curr_val</span> <span class="o">&amp;</span> <span class="mi">15</span>
     <span class="n">set_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
@@ -1467,14 +1524,14 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="update_light_place_block">
 <a class="viewcode-back" href="../api/lighting.html#lighting.update_light_place_block">[docs]</a>
-<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Lighting_PlaceLightBlock&#39;</span><span class="p">)</span>
+<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_PlaceLightBlock'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_light_place_block</span><span class="p">(</span>
     <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Executed when a player places a solid block. Strips existing light from the space</span>
 <span class="sd">    and propogates a refill sequence for neighbouring light source to compensate.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_update_light_place_block</span><span class="p">(</span>
         <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_B</span>
     <span class="p">)</span></div>
@@ -1492,10 +1549,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">queue_sun</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">queue_block</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Internal Numba implementation for propagating light when a block is removed.</span>
 <span class="sd">    Includes O(1) vertical raycast optimizations for direct sunlight exposure.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">tail_sun</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">tail_block</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -1543,15 +1600,15 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="update_light_remove_block">
 <a class="viewcode-back" href="../api/lighting.html#lighting.update_light_remove_block">[docs]</a>
-<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Lighting_RemoveLightBlock&#39;</span><span class="p">)</span>
+<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_RemoveLightBlock'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_light_remove_block</span><span class="p">(</span>
     <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Executed when a player destroys a block. Allows surrounding light to flood into the</span>
 <span class="sd">    newly opened space. Implements an O(1) verticle linear raycast optimization if the</span>
 <span class="sd">    block broken was covering directly top-down sunlight.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_update_light_remove_block</span><span class="p">(</span>
         <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_B</span>
     <span class="p">)</span></div>
@@ -1562,10 +1619,10 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">_place_torch</span><span class="p">(</span>
     <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">queue</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Internal Numba implementation for artificially injecting blocklight (level 14)</span>
 <span class="sd">    into the lightmap grid.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
     <span class="n">set_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="p">((</span><span class="n">curr_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="mi">14</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
@@ -1575,12 +1632,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="place_torch">
 <a class="viewcode-back" href="../api/lighting.html#lighting.place_torch">[docs]</a>
-<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Lighting_PlaceLightBlock&#39;</span><span class="p">)</span>
+<span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_PlaceLightBlock'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">place_torch</span><span class="p">(</span><span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Hardcodes a block light value of 14 into the grid and triggers a blocklight BFS</span>
 <span class="sd">    propogation. Used exclusively for placing items like Glowstone.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_place_torch</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">)</span></div>
 
 </pre></div>

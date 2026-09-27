@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for meshes.chunk_mesh_builder</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Numba-optimized Greedy Meshing algorithm and lighting evaluation.</span>
 
 <span class="sd">This module scans 3D voxel arrays and mathematically combines adjacent, coplanar</span>
 <span class="sd">block faces into massive single polygons to drastically reduce GPU draw calls.</span>
 <span class="sd">It evaluates Ambient Occlusion (AO) and volumetric Breadth-First Search (BFS)</span>
 <span class="sd">lighting at every vertex lock-free across multiple CPU threads.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1014,6 +1014,28 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span>
 
 
+<span class="c1"># ============================================================================</span>
+<span class="c1"># REAL-WORLD CONTEXT: Voxel Ambient Occlusion (AO)</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># This function calculates "Ambient Occlusion" for a specific face of a voxel.</span>
+<span class="c1"># AO is a shading technique used to simulate how light gets trapped in corners</span>
+<span class="c1"># and crevices, giving depth to the geometry. </span>
+<span class="c1">#</span>
+<span class="c1"># How it works in a Voxel Engine:</span>
+<span class="c1"># Since Voxels are on a strict grid, we don't need expensive ray-tracing or SSAO. </span>
+<span class="c1"># Instead, we do "Per-Vertex AO". For a given block face (e.g., the Top face 'Y'), </span>
+<span class="c1"># we check the 8 neighboring blocks surrounding that face. If a neighbor is solid, </span>
+<span class="c1"># it casts a small "shadow" on the corresponding corner/vertex.</span>
+<span class="c1">#</span>
+<span class="c1"># The result is passed to the chunk shader, which darkens the corners of blocks</span>
+<span class="c1"># that are touching other blocks, creating the iconic "soft shadows" seen in </span>
+<span class="c1"># Minecraft-like games.</span>
+<span class="c1">#</span>
+<span class="c1"># References:</span>
+<span class="c1"># - Ambient Occlusion: https://en.wikipedia.org/wiki/Ambient_occlusion</span>
+<span class="c1"># - Voxel Meshing &amp; Shading concepts: https://www.reddit.com/r/VoxelGameDev/</span>
+<span class="c1"># ============================================================================</span>
+
 <div class="viewcode-block" id="get_ao">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh_builder.get_ao">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1025,15 +1047,15 @@ window.runMermaid = runMermaid;</script>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">plane</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculates the ambient occlusion (AO) value for a specific vertex on a block face.</span>
 <span class="sd">    It checks the surrounding blocks in the specified plane to determine how occluded</span>
 <span class="sd">    the corner is, returning a tuple of AO values for the four vertices of the face.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">local_pos</span>
     <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">=</span> <span class="n">world_pos</span>
 
-    <span class="k">if</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;Y&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">'Y'</span><span class="p">:</span>
         <span class="n">a</span> <span class="o">=</span> <span class="n">is_void</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">is_void</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
         <span class="n">c</span> <span class="o">=</span> <span class="n">is_void</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
@@ -1043,7 +1065,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">g</span> <span class="o">=</span> <span class="n">is_void</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">is_void</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;X&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">'X'</span><span class="p">:</span>
         <span class="n">a</span> <span class="o">=</span> <span class="n">is_void</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">is_void</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
         <span class="n">c</span> <span class="o">=</span> <span class="n">is_void</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
@@ -1082,15 +1104,15 @@ window.runMermaid = runMermaid;</script>
     <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes the smoothed lighting value for a specific vertex by sampling and averaging</span>
 <span class="sd">    the sunlight and blocklight from the four surrounding blocks that share the vertex</span>
 <span class="sd">    in the given plane.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">local_vertex_pos</span>
     <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span> <span class="o">=</span> <span class="n">world_vertex_pos</span>
 
-    <span class="k">if</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;Y&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">'Y'</span><span class="p">:</span>
         <span class="c1"># Vertex is on an XZ plane, so we sample the 4 adjacent blocks in that plane.</span>
         <span class="n">b0</span> <span class="o">=</span> <span class="n">get_neighbor_voxel_id</span><span class="p">((</span><span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span><span class="p">),</span> <span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
         <span class="n">b1</span> <span class="o">=</span> <span class="n">get_neighbor_voxel_id</span><span class="p">((</span><span class="n">lx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span><span class="p">),</span> <span class="p">(</span><span class="n">vx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
@@ -1126,7 +1148,7 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;X&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">plane</span> <span class="o">==</span> <span class="s1">'X'</span><span class="p">:</span>
         <span class="c1"># Vertex is on a YZ plane</span>
         <span class="n">b0</span> <span class="o">=</span> <span class="n">get_neighbor_voxel_id</span><span class="p">((</span><span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span><span class="p">),</span> <span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
         <span class="n">b1</span> <span class="o">=</span> <span class="n">get_neighbor_voxel_id</span><span class="p">((</span><span class="n">lx</span><span class="p">,</span> <span class="n">ly</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">lz</span><span class="p">),</span> <span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">vz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
@@ -1212,10 +1234,10 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">pack_data</span><span class="p">(</span>
     <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">face_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ao_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">light_val</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Packs multiple pieces of vertex data (coordinates, voxel ID, face ID, AO ID, flip ID)</span>
 <span class="sd">    into a single 32-bit unsigned integer to minimize memory usage and GPU bandwidth.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># x: 6bit  y: 6bit  z: 6bit  voxel_id: 8bit  face_id: 3bit  ao_id: 2bit  flip_id: 1bit</span>
     <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">,</span> <span class="n">face_id</span><span class="p">,</span> <span class="n">ao_id</span><span class="p">,</span> <span class="n">flip_id</span>
 
@@ -1236,10 +1258,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh_builder.get_chunk_index">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_chunk_index</span><span class="p">(</span><span class="n">world_voxel_pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculates the 1D index of a chunk in the global world arrays based on an absolute</span>
 <span class="sd">    world voxel coordinate. Returns -1 if the chunk is not currently loaded or out of bounds.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">=</span> <span class="n">world_voxel_pos</span>
     <span class="n">cx</span> <span class="o">=</span> <span class="n">wx</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
     <span class="n">cy</span> <span class="o">=</span> <span class="n">wy</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
@@ -1267,10 +1289,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the voxel ID of a neighboring block given its local and world coordinates.</span>
 <span class="sd">    Safely handles cross-chunk boundaries by looking up the appropriate chunk in the world arrays.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">local_voxel_pos</span>
     <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">chunk_voxels</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">])</span>
@@ -1301,10 +1323,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the packed lighting value (sunlight and blocklight) of a neighboring block</span>
 <span class="sd">    given its local and world coordinates, safely crossing chunk boundaries if needed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">local_voxel_pos</span>
     <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">chunk_lightmap</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">])</span>
@@ -1329,10 +1351,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh_builder.is_transparent">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_transparent</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks if a given voxel ID corresponds to a transparent block (like air, water, glass, or leaves).</span>
 <span class="sd">    Transparent blocks do not cull adjacent faces and do not cast hard ambient occlusion shadows.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">AIR</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">GLASS</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">LEAVES</span></div>
 
 
@@ -1347,10 +1369,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Determines if a block at a given coordinate is empty or transparent, which is used</span>
 <span class="sd">    specifically during the ambient occlusion calculation to see if a corner is occluded.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">val</span> <span class="o">=</span> <span class="n">get_neighbor_voxel_id</span><span class="p">(</span><span class="n">local_voxel_pos</span><span class="p">,</span> <span class="n">world_voxel_pos</span><span class="p">,</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
     <span class="c1"># Transparent blocks do not cast AO shadows!</span>
@@ -1362,10 +1384,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../api/meshes.html#meshes.chunk_mesh_builder.add_data">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_data</span><span class="p">(</span><span class="n">vertex_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="n">vertices</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Appends newly packed vertex data and its associated lighting value into the main</span>
 <span class="sd">    mesh arrays, advancing the current index counter.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">for</span> <span class="n">vertex</span> <span class="ow">in</span> <span class="n">vertices</span><span class="p">:</span>
         <span class="n">vertex_data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">vertex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">vertex_data</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vertex</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -1387,14 +1409,14 @@ window.runMermaid = runMermaid;</script>
     <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The core greedy meshing algorithm. It scans through a chunk&#39;s voxel data slice by slice</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The core greedy meshing algorithm. It scans through a chunk's voxel data slice by slice</span>
 <span class="sd">    along the X, Y, and Z planes. It groups adjacent, identical, and coplanar block faces</span>
 <span class="sd">    into massive single polygons, calculating ambient occlusion and smoothed lighting</span>
 <span class="sd">    along the way. Returns the combined vertex data for both opaque and water meshes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">vertex_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">format_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint32&#39;</span><span class="p">)</span>
-    <span class="n">water_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">format_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint32&#39;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">vertex_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">format_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint32'</span><span class="p">)</span>
+    <span class="n">water_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">format_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint32'</span><span class="p">)</span>
     <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">water_index</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -1402,7 +1424,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">mask0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
     <span class="n">mask1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
 
-    <span class="c1"># ================== Y PLANES (Top/Bottom) ==================</span>
+    <span class="c1"># Y PLANES (Top/Bottom)</span>
     <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
         <span class="n">wy</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
 
@@ -1423,7 +1445,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_id</span><span class="p">)</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">neighbor_id</span><span class="p">:</span>
-                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">'Y'</span><span class="p">)</span>
 
                     <span class="c1"># flip_id = ao[1] + ao[3] &gt; ao[0] + ao[2]</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">|</span> <span class="mi">128</span><span class="p">)</span> <span class="k">if</span> <span class="n">neighbor_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="k">else</span> <span class="n">voxel_id</span>
@@ -1434,7 +1456,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l0</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                        <span class="s1">'Y'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1445,7 +1467,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l1</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                        <span class="s1">'Y'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1456,7 +1478,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l2</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                        <span class="s1">'Y'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1467,7 +1489,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l3</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                        <span class="s1">'Y'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1476,9 +1498,15 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
 
+                    <span class="c1"># Determine if the quad should be flipped to prevent anisotropic lighting artifacts.</span>
+                    <span class="c1"># We compare the total lighting (sun + block + ao) of the two diagonals.</span>
+                    <span class="c1"># The diagonal with the higher total light is split to create smoother gradients.</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l1</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">((</span><span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">l0</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l0</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="c1"># Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)</span>
+                    <span class="c1"># into a single 64-bit integer mask for efficient greedy meshing later.</span>
+                    <span class="c1"># 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id</span>
                     <span class="n">mask0</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">v_id</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">41</span><span class="p">)</span>
                         <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">33</span><span class="p">)</span>
@@ -1498,7 +1526,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_id</span><span class="p">)</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">neighbor_id</span><span class="p">:</span>
-                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">'Y'</span><span class="p">)</span>
 
                     <span class="c1"># flip_id = ao[1] + ao[3] &gt; ao[0] + ao[2]</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">|</span> <span class="mi">128</span><span class="p">)</span> <span class="k">if</span> <span class="n">neighbor_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="k">else</span> <span class="n">voxel_id</span>
@@ -1509,7 +1537,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l0</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                        <span class="s1">'Y'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1520,7 +1548,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l1</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                        <span class="s1">'Y'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1531,7 +1559,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l2</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                        <span class="s1">'Y'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1542,7 +1570,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l3</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                        <span class="s1">'Y'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1551,9 +1579,15 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
 
+                    <span class="c1"># Determine if the quad should be flipped to prevent anisotropic lighting artifacts.</span>
+                    <span class="c1"># We compare the total lighting (sun + block + ao) of the two diagonals.</span>
+                    <span class="c1"># The diagonal with the higher total light is split to create smoother gradients.</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l1</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">((</span><span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">l0</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l0</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="c1"># Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)</span>
+                    <span class="c1"># into a single 64-bit integer mask for efficient greedy meshing later.</span>
+                    <span class="c1"># 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id</span>
                     <span class="n">mask1</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">v_id</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">41</span><span class="p">)</span>
                         <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">33</span><span class="p">)</span>
@@ -1574,6 +1608,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">if</span> <span class="n">val</span><span class="p">:</span>
                     <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
 
+                    <span class="c1"># Greedy meshing: Find the maximum width (w) this face can extend along the first axis</span>
+                    <span class="c1"># where all faces share the exact same attributes (voxel ID, lighting, AO, etc).</span>
                     <span class="k">while</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span> <span class="ow">and</span> <span class="n">mask0</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">==</span> <span class="n">val</span><span class="p">:</span>
                         <span class="n">w</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -1589,6 +1625,7 @@ window.runMermaid = runMermaid;</script>
                             <span class="k">break</span>
                         <span class="n">h</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                    <span class="c1"># Unpack the chunked face attributes from the 64-bit mask value</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">41</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">33</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">25</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
@@ -1601,6 +1638,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">ao3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span>
 
+                    <span class="c1"># Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.</span>
                     <span class="n">v0</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l0</span><span class="p">)</span>
                     <span class="n">v1</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l1</span><span class="p">)</span>
                     <span class="n">v2</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span>
@@ -1645,6 +1683,7 @@ window.runMermaid = runMermaid;</script>
 
                         <span class="n">h</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                    <span class="c1"># Unpack the chunked face attributes from the 64-bit mask value</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">41</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">33</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">25</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
@@ -1657,6 +1696,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">ao3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span>
 
+                    <span class="c1"># Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.</span>
                     <span class="n">v0</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l0</span><span class="p">)</span>
                     <span class="n">v1</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l1</span><span class="p">)</span>
                     <span class="n">v2</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span>
@@ -1678,7 +1718,7 @@ window.runMermaid = runMermaid;</script>
                         <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
                             <span class="n">mask1</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">ix</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">iz</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c1"># ================== X PLANES (Right/Left) ==================</span>
+    <span class="c1"># X PLANES (Right/Left)</span>
     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
         <span class="n">wx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">cx</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
 
@@ -1698,7 +1738,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_id</span><span class="p">)</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">neighbor_id</span><span class="p">:</span>
-                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">)</span>
+                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">'X'</span><span class="p">)</span>
 
                     <span class="c1"># flip_id = ao[1] + ao[3] &gt; ao[0] + ao[2]</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">|</span> <span class="mi">128</span><span class="p">)</span> <span class="k">if</span> <span class="n">neighbor_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="k">else</span> <span class="n">voxel_id</span>
@@ -1709,7 +1749,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l0</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                        <span class="s1">'X'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1720,7 +1760,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l1</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                        <span class="s1">'X'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1731,7 +1771,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l2</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                        <span class="s1">'X'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1742,7 +1782,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l3</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                        <span class="s1">'X'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1751,9 +1791,15 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
 
+                    <span class="c1"># Determine if the quad should be flipped to prevent anisotropic lighting artifacts.</span>
+                    <span class="c1"># We compare the total lighting (sun + block + ao) of the two diagonals.</span>
+                    <span class="c1"># The diagonal with the higher total light is split to create smoother gradients.</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l1</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">((</span><span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">l0</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l0</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="c1"># Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)</span>
+                    <span class="c1"># into a single 64-bit integer mask for efficient greedy meshing later.</span>
+                    <span class="c1"># 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id</span>
                     <span class="n">mask0</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">v_id</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">41</span><span class="p">)</span>
                         <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">33</span><span class="p">)</span>
@@ -1772,7 +1818,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_id</span><span class="p">)</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">neighbor_id</span><span class="p">:</span>
-                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">)</span>
+                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">'X'</span><span class="p">)</span>
 
                     <span class="c1"># flip_id = ao[1] + ao[3] &gt; ao[0] + ao[2]</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">|</span> <span class="mi">128</span><span class="p">)</span> <span class="k">if</span> <span class="n">neighbor_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="k">else</span> <span class="n">voxel_id</span>
@@ -1783,7 +1829,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l0</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                        <span class="s1">'X'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1794,7 +1840,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l1</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                        <span class="s1">'X'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1805,7 +1851,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l2</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                        <span class="s1">'X'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1816,7 +1862,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l3</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                        <span class="s1">'X'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1825,9 +1871,15 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
 
+                    <span class="c1"># Determine if the quad should be flipped to prevent anisotropic lighting artifacts.</span>
+                    <span class="c1"># We compare the total lighting (sun + block + ao) of the two diagonals.</span>
+                    <span class="c1"># The diagonal with the higher total light is split to create smoother gradients.</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l1</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">((</span><span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">l0</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l0</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="c1"># Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)</span>
+                    <span class="c1"># into a single 64-bit integer mask for efficient greedy meshing later.</span>
+                    <span class="c1"># 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id</span>
                     <span class="n">mask1</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">v_id</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">41</span><span class="p">)</span>
                         <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">33</span><span class="p">)</span>
@@ -1864,6 +1916,7 @@ window.runMermaid = runMermaid;</script>
 
                         <span class="n">h</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                    <span class="c1"># Unpack the chunked face attributes from the 64-bit mask value</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">41</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">33</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">25</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
@@ -1876,6 +1929,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">ao3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span>
 
+                    <span class="c1"># Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.</span>
                     <span class="n">v0</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l0</span><span class="p">)</span>
                     <span class="n">v1</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l1</span><span class="p">)</span>
                     <span class="n">v2</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span>
@@ -1920,6 +1974,7 @@ window.runMermaid = runMermaid;</script>
 
                         <span class="n">h</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                    <span class="c1"># Unpack the chunked face attributes from the 64-bit mask value</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">41</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">33</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">25</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
@@ -1932,6 +1987,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">ao3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span>
 
+                    <span class="c1"># Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.</span>
                     <span class="n">v0</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l0</span><span class="p">)</span>
                     <span class="n">v1</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l1</span><span class="p">)</span>
                     <span class="n">v2</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span>
@@ -1953,7 +2009,7 @@ window.runMermaid = runMermaid;</script>
                         <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
                             <span class="n">mask1</span><span class="p">[</span><span class="n">y</span> <span class="o">+</span> <span class="n">iy</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">iz</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c1"># ================== Z PLANES (Back/Front) ==================</span>
+    <span class="c1"># Z PLANES (Back/Front)</span>
     <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
         <span class="n">wz</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="n">cz</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
 
@@ -1973,7 +2029,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_id</span><span class="p">)</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">neighbor_id</span><span class="p">:</span>
-                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">)</span>
+                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">'Z'</span><span class="p">)</span>
 
                     <span class="c1"># flip_id = ao[1] + ao[3] &gt; ao[0] + ao[2]</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">|</span> <span class="mi">128</span><span class="p">)</span> <span class="k">if</span> <span class="n">neighbor_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="k">else</span> <span class="n">voxel_id</span>
@@ -1984,7 +2040,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l0</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;Z&#39;</span><span class="p">,</span>
+                        <span class="s1">'Z'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -1995,7 +2051,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l1</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;Z&#39;</span><span class="p">,</span>
+                        <span class="s1">'Z'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -2006,7 +2062,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l2</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;Z&#39;</span><span class="p">,</span>
+                        <span class="s1">'Z'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -2017,7 +2073,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l3</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span>
-                        <span class="s1">&#39;Z&#39;</span><span class="p">,</span>
+                        <span class="s1">'Z'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -2026,9 +2082,15 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
 
+                    <span class="c1"># Determine if the quad should be flipped to prevent anisotropic lighting artifacts.</span>
+                    <span class="c1"># We compare the total lighting (sun + block + ao) of the two diagonals.</span>
+                    <span class="c1"># The diagonal with the higher total light is split to create smoother gradients.</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l1</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">((</span><span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">l0</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l0</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="c1"># Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)</span>
+                    <span class="c1"># into a single 64-bit integer mask for efficient greedy meshing later.</span>
+                    <span class="c1"># 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id</span>
                     <span class="n">mask0</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">v_id</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">41</span><span class="p">)</span>
                         <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">33</span><span class="p">)</span>
@@ -2047,7 +2109,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">is_transparent</span><span class="p">(</span><span class="n">neighbor_id</span><span class="p">)</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">neighbor_id</span><span class="p">:</span>
-                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">)</span>
+                    <span class="n">ao</span> <span class="o">=</span> <span class="n">get_ao</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">chunk_voxels</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">'Z'</span><span class="p">)</span>
 
                     <span class="c1"># flip_id = ao[1] + ao[3] &gt; ao[0] + ao[2]</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">voxel_id</span> <span class="o">|</span> <span class="mi">128</span><span class="p">)</span> <span class="k">if</span> <span class="n">neighbor_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="k">else</span> <span class="n">voxel_id</span>
@@ -2058,7 +2120,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l0</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;Z&#39;</span><span class="p">,</span>
+                        <span class="s1">'Z'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -2069,7 +2131,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l1</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;Z&#39;</span><span class="p">,</span>
+                        <span class="s1">'Z'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -2080,7 +2142,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l2</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;Z&#39;</span><span class="p">,</span>
+                        <span class="s1">'Z'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -2091,7 +2153,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">l3</span> <span class="o">=</span> <span class="n">get_vertex_light</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                        <span class="s1">&#39;Z&#39;</span><span class="p">,</span>
+                        <span class="s1">'Z'</span><span class="p">,</span>
                         <span class="n">face_light</span><span class="p">,</span>
                         <span class="n">chunk_voxels</span><span class="p">,</span>
                         <span class="n">chunk_lightmap</span><span class="p">,</span>
@@ -2100,9 +2162,15 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
 
+                    <span class="c1"># Determine if the quad should be flipped to prevent anisotropic lighting artifacts.</span>
+                    <span class="c1"># We compare the total lighting (sun + block + ao) of the two diagonals.</span>
+                    <span class="c1"># The diagonal with the higher total light is split to create smoother gradients.</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">l1</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l1</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">((</span><span class="n">l3</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l3</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">l0</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l0</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">l2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">l2</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">+</span> <span class="n">ao</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="c1"># Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)</span>
+                    <span class="c1"># into a single 64-bit integer mask for efficient greedy meshing later.</span>
+                    <span class="c1"># 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id</span>
                     <span class="n">mask1</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">v_id</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">41</span><span class="p">)</span>
                         <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">l0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">33</span><span class="p">)</span>
@@ -2139,6 +2207,7 @@ window.runMermaid = runMermaid;</script>
 
                         <span class="n">h</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                    <span class="c1"># Unpack the chunked face attributes from the 64-bit mask value</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">41</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">33</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">25</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
@@ -2151,6 +2220,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">ao3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span>
 
+                    <span class="c1"># Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.</span>
                     <span class="n">v0</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l0</span><span class="p">)</span>
                     <span class="n">v1</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l1</span><span class="p">)</span>
                     <span class="n">v2</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span>
@@ -2195,6 +2265,7 @@ window.runMermaid = runMermaid;</script>
 
                         <span class="n">h</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                    <span class="c1"># Unpack the chunked face attributes from the 64-bit mask value</span>
                     <span class="n">v_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">41</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">33</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
                     <span class="n">l1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">25</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
@@ -2207,6 +2278,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">ao3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span>
                     <span class="n">flip_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span>
 
+                    <span class="c1"># Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.</span>
                     <span class="n">v0</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">ao0</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l0</span><span class="p">)</span>
                     <span class="n">v1</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">ao1</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l1</span><span class="p">)</span>
                     <span class="n">v2</span> <span class="o">=</span> <span class="n">pack_data</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">v_id</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">ao2</span><span class="p">,</span> <span class="n">flip_id</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span>

@@ -985,13 +985,13 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for meshes.cloud_mesh</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Procedural cloud mesh generation and greedy meshing.</span>
 
 <span class="sd">This module manages the volumetric cloud layer by generating 2D noise-based</span>
 <span class="sd">density maps and using a specialized 2D greedy meshing algorithm to compile</span>
 <span class="sd">optimized, low-polygon chunks of clouds that scroll across the sky.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1009,7 +1009,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="CloudMesh">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.cloud_mesh.CloudMesh">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CloudMesh</span><span class="p">(</span><span class="n">BaseMesh</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generates the geometry for the procedural 3D cloud layer.</span>
 
 <span class="sd">    Utilizes simplex noise to map cloud density and a 2D greedy meshing algorithm</span>
@@ -1017,31 +1017,31 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Args:</span>
 <span class="sd">        app (Any): The main application instance providing the ModernGL context.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;CloudMesh_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'CloudMesh_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the cloud mesh, setting up the shader program and vertex buffer</span>
 <span class="sd">        configuration required to render the volumetric clouds.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">clouds</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;3u2&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;in_position&#39;</span><span class="p">,)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'3u2'</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'in_position'</span><span class="p">,)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vao</span><span class="p">()</span>
 
 <div class="viewcode-block" id="CloudMesh.get_vertex_data">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.cloud_mesh.CloudMesh.get_vertex_data">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;CloudMesh_GetVertexData&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'CloudMesh_GetVertexData'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_vertex_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Coordinates the generation of the raw cloud density data and subsequently</span>
 <span class="sd">        constructs the optimized 3D mesh vertex data required for rendering.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">cloud_data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">cloud_data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint8'</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gen_clouds</span><span class="p">(</span><span class="n">cloud_data</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">perm</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_mesh</span><span class="p">(</span><span class="n">cloud_data</span><span class="p">)</span>  <span class="c1"># type: ignore[no-any-return]</span></div>
@@ -1052,10 +1052,10 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@staticmethod</span>
     <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">gen_clouds</span><span class="p">(</span><span class="n">cloud_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Populates a 2D density grid using multi-octave simplex noise to procedurally</span>
 <span class="sd">        determine the exact locations where clouds should form in the sky.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">WORLD_DEPTH</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">noise2</span><span class="p">(</span><span class="mf">0.13</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span> <span class="mf">0.13</span> <span class="o">*</span> <span class="n">z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.2</span><span class="p">:</span>
@@ -1069,12 +1069,12 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@staticmethod</span>
     <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_mesh</span><span class="p">(</span><span class="n">cloud_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        A specialized 2D greedy meshing algorithm that scans the generated cloud density grid.</span>
 <span class="sd">        It mathematically combines adjacent, identical cloud blocks into massive single</span>
 <span class="sd">        polygonal faces, drastically reducing the total number of vertices sent to the GPU.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="mi">6</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint16&#39;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="mi">6</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint16'</span><span class="p">)</span>
         <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">width</span> <span class="o">=</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
         <span class="n">depth</span> <span class="o">=</span> <span class="n">WORLD_DEPTH</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>

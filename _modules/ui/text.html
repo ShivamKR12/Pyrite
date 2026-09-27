@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for ui.text</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Text rendering and caching for OpenGL textures.</span>
 
 <span class="sd">This module provides the TextRenderer class, which converts strings into</span>
 <span class="sd">Pygame surfaces with drop shadows, and then uploads them to the GPU as</span>
 <span class="sd">ModernGL textures. It supports both caching for static text and immediate</span>
 <span class="sd">generation for dynamic, single-frame text.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
@@ -1006,36 +1006,36 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="TextRenderer">
 <a class="viewcode-back" href="../../api/ui.html#ui.text.TextRenderer">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TextRenderer</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Handles the rendering of text strings into OpenGL textures.</span>
 
 <span class="sd">    Provides methods for caching static text and generating single-frame dynamic text.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        app (Any): The main application context.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;TextRenderer_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'TextRenderer_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the text renderer, setting up the default font and preparing</span>
 <span class="sd">        the texture cache.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">SysFont</span><span class="p">(</span><span class="s1">&#39;arial&#39;</span><span class="p">,</span> <span class="n">FONT_SIZE_STATS</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">SysFont</span><span class="p">(</span><span class="s1">'arial'</span><span class="p">,</span> <span class="n">FONT_SIZE_STATS</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
 <div class="viewcode-block" id="TextRenderer.get_texture">
 <a class="viewcode-back" href="../../api/ui.html#ui.text.TextRenderer.get_texture">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;TextRenderer_GetTexture&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'TextRenderer_GetTexture'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_texture</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generates and returns an OpenGL texture for the specified text string.</span>
 <span class="sd">        Caches the generated texture so subsequent requests for the same text</span>
 <span class="sd">        are returned instantly without re-rendering.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="p">[</span><span class="n">text</span><span class="p">]</span>
 
@@ -1051,7 +1051,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">bg_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shadow</span><span class="p">,</span> <span class="p">(</span><span class="n">shadow_offset</span><span class="p">,</span> <span class="n">shadow_offset</span><span class="p">))</span>
         <span class="n">bg_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">bg_surf</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">bg_surf</span><span class="p">,</span> <span class="s1">&#39;RGBA&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">bg_surf</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">bg_surf</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
         <span class="n">texture</span><span class="o">.</span><span class="n">build_mipmaps</span><span class="p">()</span>
         <span class="n">texture</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR_MIPMAP_LINEAR</span><span class="p">,</span> <span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="p">[</span><span class="n">text</span><span class="p">]</span> <span class="o">=</span> <span class="n">texture</span>
@@ -1061,13 +1061,13 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="TextRenderer.get_dynamic_texture">
 <a class="viewcode-back" href="../../api/ui.html#ui.text.TextRenderer.get_dynamic_texture">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;TextRenderer_GetDynamicTexture&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'TextRenderer_GetDynamicTexture'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_dynamic_texture</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generates and returns an OpenGL texture for text that changes frequently.</span>
 <span class="sd">        Does not cache the texture or build mipmaps, saving memory and processing</span>
 <span class="sd">        time for single-frame usage.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">surf</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">UI_TEXT_COLOR</span><span class="p">)</span>
 
         <span class="n">shadow_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">//</span> <span class="mi">15</span><span class="p">)</span>
@@ -1081,8 +1081,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">bg_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shadow</span><span class="p">,</span> <span class="p">(</span><span class="n">shadow_offset</span><span class="p">,</span> <span class="n">shadow_offset</span><span class="p">))</span>
         <span class="n">bg_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">bg_surf</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">bg_surf</span><span class="p">,</span> <span class="s1">&#39;RGBA&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
-        <span class="c1"># Dynamic textures don&#39;t need mipmaps since they are only used for one frame</span>
+        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">bg_surf</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">bg_surf</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        <span class="c1"># Dynamic textures don't need mipmaps since they are only used for one frame</span>
         <span class="n">texture</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">,</span> <span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">texture</span></div>

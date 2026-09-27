@@ -644,13 +644,13 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
 <ul class="simple">
 <li><p><strong>Windows:</strong></p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pygame, moderngl, numpy, numba, glm, opensimplex; print(&#39;All dependencies loaded successfully!&#39;)&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import pygame, moderngl, numpy, numba, glm, opensimplex; print('All dependencies loaded successfully!')"</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>macOS/Linux:</strong></p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pygame, moderngl, numpy, numba, glm, opensimplex; print(&#39;All dependencies loaded successfully!&#39;)&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import pygame, moderngl, numpy, numba, glm, opensimplex; print('All dependencies loaded successfully!')"</span>
 </pre></div>
 </div>
 </li>
@@ -662,11 +662,11 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
 <p>Pyrite reads user preferences from <code class="docutils literal notranslate"><span class="pre">config.json</span></code> in the root directory at startup. If not present, defaults are used.</p>
 <p>Structure:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;fov&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;sensitivity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.002</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;volume&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;render_distance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;underwater_tint&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">    </span><span class="nt">"fov"</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"sensitivity"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.002</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"volume"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"render_distance"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"underwater_tint"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -709,11 +709,11 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
 <li><p><strong>Build Configuration</strong></p>
 <p>Edit <code class="docutils literal notranslate"><span class="pre">build.spec</span></code> (auto-generated, or use existing):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">Analysis</span><span class="p">(</span>
-    <span class="p">[</span><span class="s1">&#39;run.py&#39;</span><span class="p">],</span>
-    <span class="n">pathex</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;D:</span><span class="se">\\</span><span class="s1">Pyrite&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">'run.py'</span><span class="p">],</span>
+    <span class="n">pathex</span><span class="o">=</span><span class="p">[</span><span class="s1">'D:</span><span class="se">\\</span><span class="s1">Pyrite'</span><span class="p">],</span>
     <span class="n">binaries</span><span class="o">=</span><span class="p">[],</span>
-    <span class="n">datas</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;assets&#39;</span><span class="p">,</span> <span class="s1">&#39;assets&#39;</span><span class="p">)],</span>
-    <span class="n">hiddenimports</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;numba&#39;</span><span class="p">,</span> <span class="s1">&#39;moderngl&#39;</span><span class="p">,</span> <span class="s1">&#39;glm&#39;</span><span class="p">],</span>
+    <span class="n">datas</span><span class="o">=</span><span class="p">[(</span><span class="s1">'src'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span> <span class="p">(</span><span class="s1">'assets'</span><span class="p">,</span> <span class="s1">'assets'</span><span class="p">)],</span>
+    <span class="n">hiddenimports</span><span class="o">=</span><span class="p">[</span><span class="s1">'numba'</span><span class="p">,</span> <span class="s1">'moderngl'</span><span class="p">,</span> <span class="s1">'glm'</span><span class="p">],</span>
     <span class="n">hookspath</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">runtime_hooks</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">excludedimports</span><span class="o">=</span><span class="p">[],</span>
@@ -730,7 +730,7 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
     <span class="n">a</span><span class="o">.</span><span class="n">zipfiles</span><span class="p">,</span>
     <span class="n">a</span><span class="o">.</span><span class="n">datas</span><span class="p">,</span>
     <span class="p">[],</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Pyrite&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'Pyrite'</span><span class="p">,</span>
     <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">bootloader_ignore_signals</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">strip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>

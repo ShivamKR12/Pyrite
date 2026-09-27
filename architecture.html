@@ -617,20 +617,20 @@
 <h2>SQLite Write-Ahead Logging (WAL)<a class="headerlink" href="#sqlite-write-ahead-logging-wal" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> - Database Initialization</p>
 <p>Purpose: Provide async-like, high-performance disk writes for massive voxel datasets.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA journal_mode = WAL&#39;</span><span class="p">)</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA synchronous = NORMAL&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'PRAGMA journal_mode = WAL'</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'PRAGMA synchronous = NORMAL'</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>WAL Configuration:</strong> Python’s standard file handling is too slow for millions of blocks. Enabling Write-Ahead Logging allows SQLite to append writes to a separate log file, drastically reducing I/O blocking.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">l_data</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'INSERT OR REPLACE INTO chunks (x, y, z, data, lightmap) VALUES (?, ?, ?, ?, ?)'</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">l_data</span><span class="p">))</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>Chunk Serialization:</strong> When a chunk unloads, its 1D <code class="docutils literal notranslate"><span class="pre">uint8</span></code> Numpy arrays for Voxels and Lightmaps are compressed using <code class="docutils literal notranslate"><span class="pre">zlib.compress()</span></code> and stored as raw binary <code class="docutils literal notranslate"><span class="pre">BLOB</span></code> data mapped to its XYZ coordinate.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'SELECT data, lightmap FROM chunks WHERE x=? AND y=? AND z=?'</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
 </pre></div>
 </div>
 <ul class="simple">

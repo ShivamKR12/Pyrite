@@ -985,7 +985,7 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for terrain_gen</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Core procedural terrain and biome generation mechanics.</span>
 
 <span class="sd">This module utilizes high-performance `@njit` (Numba) compilation to execute</span>
@@ -993,9 +993,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">It dictates the shaping of landmasses, continentalness modifiers, biome distributions</span>
 <span class="sd">(sand, snow, grass), cave carving logic, and structural tree generation entirely</span>
 <span class="sd">lock-free to prevent main-thread latency.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
-<span class="c1"># &quot;&quot;&quot;</span>
+<span class="c1"># """</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1031,72 +1031,167 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/terrain_gen.html#terrain_gen.get_biome">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_biome</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Evaluates Simplex noise to determine the overarching temperature and moisture</span>
 <span class="sd">    levels of a specific vertical column, shaping its respective biome.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Temperature and Moisture noise to determine biome type (returns approx -1.0 to 1.0)</span>
-    <span class="c1"># Scaled down frequencies by 10x to create massive, sprawling biomes</span>
+<span class="sd">    """</span>
+    <span class="c1"># Calculate temperature by evaluating 2D Simplex noise at the given (x, z) coordinates.</span>
+    <span class="c1"># The coordinate scaling factor of 0.002 represents the frequency of the noise.</span>
+    <span class="c1"># A smaller frequency stretches the noise out, resulting in massive, sprawling biomes</span>
+    <span class="c1"># rather than rapidly alternating hot/cold patches. The noise output inherently ranges</span>
+    <span class="c1"># from approximately -1.0 to 1.0.</span>
     <span class="n">temp</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.002</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.002</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
+
+    <span class="c1"># Calculate moisture using the same 2D Simplex noise function and frequency scaling (0.002).</span>
+    <span class="c1"># We add a fixed offset of 100.0 to both the x and z coordinates before evaluation.</span>
+    <span class="c1"># This acts as a spatial translation, sampling the noise field from a distant region.</span>
+    <span class="c1"># Since Simplex noise is deterministic but pseudorandom, this effectively generates a</span>
+    <span class="c1"># completely independent, uncorrelated moisture map using the same permutation array,</span>
+    <span class="c1"># ensuring temperature and moisture don't mirror each other.</span>
     <span class="n">moist</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.002</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.002</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">temp</span><span class="p">,</span> <span class="n">moist</span></div>
 
 
 
+<span class="c1"># Procedural Terrain Generation using Noise</span>
+<span class="c1"># This function calculates the Y-height of the terrain for any given (X, Z) coordinate.</span>
+<span class="c1">#</span>
+<span class="c1"># How it works:</span>
+<span class="c1"># 1. It uses Fractional Brownian Motion (fBm) by layering multiple "octaves" of</span>
+<span class="c1">#    Simplex noise. Each subsequent octave has double the frequency (f2, f4, f8)</span>
+<span class="c1">#    and half the amplitude (a2, a4, a8).</span>
+<span class="c1"># 2. Summing these layers creates natural-looking fractal terrain, where the first</span>
+<span class="c1">#    layer defines the massive mountains/valleys, and the last layer defines small bumps.</span>
+<span class="c1"># 3. We then use a "Continentalness" noise map to warp the final height. If the</span>
+<span class="c1">#    continentalness is low, we forcefully squash the height map to create flat</span>
+<span class="c1">#    oceans. If it's high, we amplify the amplitude to create towering peaks.</span>
+<span class="c1">#</span>
+<span class="c1"># References:</span>
+<span class="c1"># - Making Maps with Noise (Amazing visual guide): https://www.redblobgames.com/maps/terrain-from-noise/</span>
+<span class="c1"># - Fractional Brownian Motion: https://en.wikipedia.org/wiki/Fractional_Brownian_motion</span>
+<span class="c1"># - Simplex Noise overview: https://en.wikipedia.org/wiki/Simplex_noise</span>
+
+
 <div class="viewcode-block" id="get_height">
 <a class="viewcode-back" href="../api/terrain_gen.html#terrain_gen.get_height">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_height</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculates the absolute maximum surface elevation of the terrain at a specific</span>
 <span class="sd">    X,Z coordinate using fractional Brownian motion and continentalness modifiers.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Continentalness: Controls overall elevation independently from climate</span>
-    <span class="c1"># This creates distinct Plains, Hills, Plateaus, and Mountains!</span>
+<span class="sd">    """</span>
+    <span class="c1"># Calculate continentalness using 2D Simplex noise, acting as an overarching</span>
+    <span class="c1"># macro-scale terrain modifier. The frequency 0.003 dictates very broad geographical</span>
+    <span class="c1"># features (continents and oceans). We apply a spatial offset of +100.0 to x and z</span>
+    <span class="c1"># to decouple this noise map from the temperature/moisture maps, preventing correlation.</span>
     <span class="n">cont</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.003</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.003</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
 
-    <span class="c1"># Base properties</span>
+    <span class="c1"># Base properties for the first octave (the fundamental shape of the terrain).</span>
+    <span class="c1"># a1 represents the amplitude (maximum vertical displacement) of the primary base terrain.</span>
     <span class="n">a1</span> <span class="o">=</span> <span class="n">CENTER_Y</span>
+
+    <span class="c1"># Calculate the amplitudes for the subsequent octaves (detail layers).</span>
+    <span class="c1"># In standard fractional Brownian motion (fBm), amplitude halves with each octave</span>
+    <span class="c1"># (persistence = 0.5), meaning finer details have progressively less vertical impact.</span>
     <span class="n">a2</span><span class="p">,</span> <span class="n">a4</span><span class="p">,</span> <span class="n">a8</span> <span class="o">=</span> <span class="n">a1</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">a1</span> <span class="o">*</span> <span class="mf">0.25</span><span class="p">,</span> <span class="n">a1</span> <span class="o">*</span> <span class="mf">0.125</span>
+
+    <span class="c1"># f1 represents the frequency (horizontal stretching) of the primary base terrain.</span>
     <span class="n">f1</span> <span class="o">=</span> <span class="mf">0.005</span>
+
+    <span class="c1"># Calculate the frequencies for the subsequent octaves.</span>
+    <span class="c1"># In standard fBm, frequency doubles with each octave (lacunarity = 2.0),</span>
+    <span class="c1"># meaning each new layer adds smaller, more tightly packed details.</span>
     <span class="n">f2</span><span class="p">,</span> <span class="n">f4</span><span class="p">,</span> <span class="n">f8</span> <span class="o">=</span> <span class="n">f1</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">f1</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span> <span class="n">f1</span> <span class="o">*</span> <span class="mi">8</span>
 
+    <span class="c1"># Evaluate the first octave (base height). We multiply the noise output [-1, 1]</span>
+    <span class="c1"># by amplitude a1 to scale it to [-a1, a1]. We then add a1 to shift the range to [0, 2*a1],</span>
+    <span class="c1"># ensuring the base terrain sits entirely above y=0, centered around a1.</span>
     <span class="n">base_h</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f1</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f1</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">a1</span> <span class="o">+</span> <span class="n">a1</span>
+
+    <span class="c1"># Evaluate the second octave (first detail pass). Multiplied by its smaller amplitude a2</span>
+    <span class="c1"># for a range of [-a2, a2]. We subtract a2 to shift the range downwards to [-2*a2, 0].</span>
+    <span class="c1"># This creates a bias towards carving out valleys and lowering peaks relative to the base height.</span>
     <span class="n">detail_1</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f2</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f2</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">a2</span> <span class="o">-</span> <span class="n">a2</span>
+
+    <span class="c1"># Evaluate the third octave. Multiplied by a4, yielding [-a4, a4]. Adding a4 shifts</span>
+    <span class="c1"># the range upwards to [0, 2*a4], adding small bumps and localized ridges.</span>
     <span class="n">detail_2</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f4</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f4</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">a4</span> <span class="o">+</span> <span class="n">a4</span>
+
+    <span class="c1"># Evaluate the fourth octave. Multiplied by a8, yielding [-a8, a8]. Subtracting a8 shifts</span>
+    <span class="c1"># the range downwards to [-2*a8, 0], etching fine erosion patterns and micro-valleys.</span>
     <span class="n">detail_3</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f8</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f8</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">a8</span> <span class="o">-</span> <span class="n">a8</span>
 
+    <span class="c1"># Superimpose all the fractional Brownian motion octaves together. This linear combination</span>
+    <span class="c1"># fuses the massive base structure with the progressively finer surface details.</span>
     <span class="n">height</span> <span class="o">=</span> <span class="n">base_h</span> <span class="o">+</span> <span class="n">detail_1</span> <span class="o">+</span> <span class="n">detail_2</span> <span class="o">+</span> <span class="n">detail_3</span>
 
     <span class="c1"># Terrain Shaping based on Continentalness</span>
     <span class="k">if</span> <span class="n">cont</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">:</span>
         <span class="c1"># Deep Plains &amp; Oceans (Flatter and lower)</span>
+        <span class="c1"># Calculate a blending weight 'w'. We measure how deep the continentalness goes below -0.2.</span>
+        <span class="c1"># Multiplying by 5.0 scales this penetration such that cont values from -0.2 to -0.4</span>
+        <span class="c1"># map to weights from 0.0 to 1.0. The min() clamps the maximum weight at 1.0.</span>
         <span class="n">w</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="o">-</span><span class="mf">0.2</span> <span class="o">-</span> <span class="n">cont</span><span class="p">)</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="c1"># Define the target height for oceans/plains. We start near the WATER_LINE,</span>
+        <span class="c1"># and only include the smallest detail octaves (scaled down by 0.3) to keep the seabed flat.</span>
         <span class="n">target_h</span> <span class="o">=</span> <span class="n">WATER_LINE</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">detail_2</span> <span class="o">*</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="n">detail_3</span> <span class="o">*</span> <span class="mf">0.3</span>
+
+        <span class="c1"># Linearly interpolate (lerp) between the original highly-varied height and the flattened</span>
+        <span class="c1"># target_h, using the blend weight w. As continentalness decreases, the terrain flattens out.</span>
         <span class="n">height</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">target_h</span> <span class="o">*</span> <span class="n">w</span>
 
     <span class="k">elif</span> <span class="n">cont</span> <span class="o">&gt;</span> <span class="mf">0.4</span><span class="p">:</span>
         <span class="c1"># Extreme Mountains</span>
+        <span class="c1"># Calculate blending weight 'w' measuring how far continentalness exceeds 0.4.</span>
+        <span class="c1"># Scaled by 5.0, cont values from 0.4 to 0.6 map to weights from 0.0 to 1.0. Clamped to 1.0.</span>
         <span class="n">w</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">cont</span> <span class="o">-</span> <span class="mf">0.4</span><span class="p">)</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="c1"># Define the target mountain height. We heavily exaggerate the base height (x1.5)</span>
+        <span class="c1"># and the largest detail layer (x2.0), while keeping smaller details normal.</span>
+        <span class="c1"># A static +30 offset ensures these peaks definitively tower over everything else.</span>
         <span class="n">target_h</span> <span class="o">=</span> <span class="n">base_h</span> <span class="o">*</span> <span class="mf">1.5</span> <span class="o">+</span> <span class="n">detail_1</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">detail_2</span> <span class="o">+</span> <span class="n">detail_3</span> <span class="o">+</span> <span class="mi">30</span>
+
+        <span class="c1"># Linearly interpolate between the standard terrain height and the exaggerated</span>
+        <span class="c1"># mountain height using weight w, causing terrain to soar smoothly upwards.</span>
         <span class="n">height</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">target_h</span> <span class="o">*</span> <span class="n">w</span>
 
     <span class="k">elif</span> <span class="mf">0.1</span> <span class="o">&lt;</span> <span class="n">cont</span> <span class="o">&lt;=</span> <span class="mf">0.3</span><span class="p">:</span>
         <span class="c1"># Plateaus (steep cliffs, flat tops)</span>
+        <span class="c1"># Calculate a dual-sided weight using a bell-curve-like mapping.</span>
+        <span class="c1"># (cont - 0.1) * 10.0 goes from 0 to 1 as cont goes 0.1 -&gt; 0.2.</span>
+        <span class="c1"># (0.3 - cont) * 10.0 goes from 0 to 1 as cont goes 0.3 -&gt; 0.2.</span>
+        <span class="c1"># Multiplying these clamps shapes a peak weight of ~1.0 at cont=0.2, fading to 0 at the edges.</span>
         <span class="n">w</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">cont</span> <span class="o">-</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">min</span><span class="p">((</span><span class="mf">0.3</span> <span class="o">-</span> <span class="n">cont</span><span class="p">)</span> <span class="o">*</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="c1"># Define the fixed plateau altitude, hovering just above the world center.</span>
         <span class="n">plat_h</span> <span class="o">=</span> <span class="n">CENTER_Y</span> <span class="o">+</span> <span class="mi">12</span>
 
+        <span class="c1"># If the underlying raw terrain attempts to poke above the plateau altitude,</span>
+        <span class="c1"># we forcefully squash it down.</span>
         <span class="k">if</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="n">plat_h</span><span class="p">:</span>
+            <span class="c1"># Compress any height exceeding plat_h to only 10% of its original overage,</span>
+            <span class="c1"># effectively shearing the tops off mountains to create flat plateau surfaces.</span>
             <span class="n">flattened</span> <span class="o">=</span> <span class="n">plat_h</span> <span class="o">+</span> <span class="p">(</span><span class="n">height</span> <span class="o">-</span> <span class="n">plat_h</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+
+            <span class="c1"># Interpolate between the raw towering height and the sheared plateau surface</span>
+            <span class="c1"># using our localized plateau weight w.</span>
             <span class="n">height</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">flattened</span> <span class="o">*</span> <span class="n">w</span>
 
+    <span class="c1"># A final micro-noise perturbation at the highest frequency (f8) is evaluated and added to 2.</span>
+    <span class="c1"># The terrain height is then clamped via max() to never drop below this noisy floor.</span>
+    <span class="c1"># This prevents the absolute lowest bedrock layers from being perfectly flat.</span>
     <span class="n">height</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">f8</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">f8</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
 
     <span class="c1"># Absolute safety nets: prevent terrain from ever exceeding the chunk limits</span>
+    <span class="c1"># Cap the maximum height slightly below the total world chunk volume limit to avoid Out-Of-Bounds errors.</span>
     <span class="n">height</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">WORLD_HEIGHT</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Cap the absolute minimum height to 2.0 to ensure a solid, unbreakable bedrock floor always exists.</span>
     <span class="n">height</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
 
+    <span class="c1"># Cast the floating-point height evaluation into an integer index to align with the voxel grid.</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">)</span></div>
 
 
@@ -1105,10 +1200,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/terrain_gen.html#terrain_gen.get_index">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_index</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Translates a localized 3D chunk coordinate (x, y, z) into a flattened</span>
 <span class="sd">    1D array index for highly optimized, contiguous memory access.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">CHUNK_SIZE</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="n">y</span></div>
 
 
@@ -1119,10 +1214,10 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_voxel_column</span><span class="p">(</span>
     <span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Procedurally generates a single vertical column of blocks within a chunk.</span>
 <span class="sd">    Applies complex biome mapping, depth stratification, and 3D cave carving logic.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">wx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">cx</span>
     <span class="n">wz</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="n">cz</span>
     <span class="n">world_height</span> <span class="o">=</span> <span class="n">get_height</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
@@ -1235,10 +1330,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/terrain_gen.html#terrain_gen.place_tree">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">place_tree</span><span class="p">(</span><span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tree_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Constructs a localized tree structure (wood trunk and spherical leaf crown)</span>
 <span class="sd">    within the chunk volume if probability and physical boundaries allow for it.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">rnd</span> <span class="o">=</span> <span class="n">random</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">rnd</span> <span class="o">&gt;</span> <span class="n">tree_prob</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
@@ -1281,10 +1376,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/terrain_gen.html#terrain_gen.fill_initial_sunlight">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fill_initial_sunlight</span><span class="p">(</span><span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Initializes a newly generated chunk&#39;s lightmap by simulating direct,</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Initializes a newly generated chunk's lightmap by simulating direct,</span>
 <span class="sd">    overhead sunlight falling vertically onto the procedural terrain layout.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
             <span class="n">wx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">cx</span>

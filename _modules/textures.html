@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for textures</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Texture loading and OpenGL binding management.</span>
 
 <span class="sd">This module is responsible for loading 2D image assets via Pygame, applying transforms,</span>
 <span class="sd">and safely mapping them into ModernGL `Texture` and `TextureArray` objects.</span>
 <span class="sd">It enforces strict mipmap generation and anisotropic filtering to guarantee crisp</span>
 <span class="sd">pixel art visuals across all rendering distances.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
@@ -1006,7 +1006,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Textures">
 <a class="viewcode-back" href="../api/textures.html#textures.Textures">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Textures</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Loads, configures, and binds OpenGL textures and texture arrays.</span>
 
 <span class="sd">    Handles mipmapping, anisotropic filtering, and texture units for crisp rendering.</span>
@@ -1015,23 +1015,23 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Args:</span>
 <span class="sd">        app (Any): The main application instance containing the Pygame and ModernGL contexts.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Textures_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Textures_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Instantiates and assigns the various textures to their respective OpenGL</span>
 <span class="sd">        texture locations so shaders can access them simultaneously.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
 
         <span class="c1"># load textures</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">texture_0</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;textures/uis/frame.png&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">texture_array_0</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;textures/arrays/texture-array-2.png&#39;</span><span class="p">,</span> <span class="n">is_tex_array</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">texture_breaking</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;textures/effects/block-breaking.png&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">texture_stick</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;models/items/stick/stick.png&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">texture_pickaxe</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;models/items/wooden-pickaxe/wooden_pickaxe.png&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=-</span><span class="mi">90</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">texture_0</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'textures/uis/frame.png'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">texture_array_0</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'textures/arrays/texture-array-2.png'</span><span class="p">,</span> <span class="n">is_tex_array</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">texture_breaking</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'textures/effects/block-breaking.png'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">texture_stick</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'models/items/stick/stick.png'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">texture_pickaxe</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'models/items/wooden-pickaxe/wooden_pickaxe.png'</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=-</span><span class="mi">90</span><span class="p">)</span>
 
         <span class="c1"># assign texture unit</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">texture_0</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1042,33 +1042,49 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Textures.load">
 <a class="viewcode-back" href="../api/textures.html#textures.Textures.load">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Textures_Load&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Textures_Load'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">is_tex_array</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">rotation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flip_x</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">flip_y</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Reads an image file and converts it into an OpenGL Texture or TextureArray.</span>
 <span class="sd">        Applies requested rotations/flips and automatically calculates 3D texture array</span>
 <span class="sd">        dimensions if the image contains vertical strips.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">get_path</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;assets/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">))</span>
+<span class="sd">        """</span>
+        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">get_path</span><span class="p">(</span><span class="sa">f</span><span class="s1">'assets/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s1">'</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">rotation</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">texture</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">texture</span><span class="p">,</span> <span class="n">rotation</span><span class="p">)</span>
 
         <span class="n">texture</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">texture</span><span class="p">,</span> <span class="n">flip_x</span><span class="o">=</span><span class="n">flip_x</span><span class="p">,</span> <span class="n">flip_y</span><span class="o">=</span><span class="n">flip_y</span><span class="p">)</span>
 
+        <span class="c1"># Texture Arrays vs Texture Atlases</span>
+        <span class="c1"># In old voxel engines (like early Minecraft), all block textures were packed</span>
+        <span class="c1"># into one massive image called a "Texture Atlas". However, when looking at</span>
+        <span class="c1"># blocks far away, OpenGL generates smaller versions of the texture (Mipmaps).</span>
+        <span class="c1"># Because the textures are packed tightly, the colors from neighboring blocks</span>
+        <span class="c1"># in the atlas would "bleed" into each other at a distance, creating ugly seams.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Modern engines solve this using OpenGL "Texture Arrays" (GL_TEXTURE_2D_ARRAY).</span>
+        <span class="c1"># We load a stacked image, but OpenGL treats each block texture as an entirely</span>
+        <span class="c1"># separate "layer" in 3D space. This completely eliminates Mipmap bleeding</span>
+        <span class="c1"># while still allowing us to pass hundreds of textures to the shader in a</span>
+        <span class="c1"># single draw call!</span>
+        <span class="c1">#</span>
+        <span class="c1"># References:</span>
+        <span class="c1"># - Texture Atlases vs Arrays: https://www.khronos.org/opengl/wiki/Array_Texture</span>
+        <span class="c1"># - Mipmapping &amp; Filtering: https://learnopengl.com/Getting-started/Textures</span>
         <span class="k">if</span> <span class="n">is_tex_array</span><span class="p">:</span>
             <span class="n">num_layers</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">texture</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">//</span> <span class="n">texture</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>  <span class="c1"># 3 textures per layer</span>
             <span class="n">texture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture_array</span><span class="p">(</span>
                 <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">texture</span><span class="o">.</span><span class="n">get_width</span><span class="p">(),</span> <span class="n">texture</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">//</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">),</span>
                 <span class="n">components</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">=</span><span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">texture</span><span class="p">,</span> <span class="s1">&#39;RGBA&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">texture</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">texture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span>
-                <span class="n">size</span><span class="o">=</span><span class="n">texture</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="n">components</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">texture</span><span class="p">,</span> <span class="s1">&#39;RGBA&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">texture</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="n">components</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">texture</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="n">texture</span><span class="o">.</span><span class="n">anisotropy</span> <span class="o">=</span> <span class="mf">32.0</span>

@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for world_objects.voxel_marker</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Dynamic 3D cursor block highlighting.</span>
 
-<span class="sd">This module tracks the player&#39;s active raycast target via the voxel handler and</span>
+<span class="sd">This module tracks the player's active raycast target via the voxel handler and</span>
 <span class="sd">renders a real-time floating 3D wireframe box. It shifts its position dynamically</span>
 <span class="sd">based on whether the player is currently aiming to break a block or place a new</span>
 <span class="sd">one attached to a targeted face.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
@@ -1005,22 +1005,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="VoxelMarker">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.voxel_marker.VoxelMarker">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VoxelMarker</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Renders a 3D wireframe highlight around the voxel currently targeted by the player.</span>
 
-<span class="sd">    It tracks the voxel handler&#39;s targeted position and visually outlines it.</span>
+<span class="sd">    It tracks the voxel handler's targeted position and visually outlines it.</span>
 <span class="sd">    The marker adapts its position dynamically based on the interaction mode (breaking vs. placing).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        voxel_handler (Any): The world&#39;s voxel handler instance tracking player raycasts.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        voxel_handler (Any): The world's voxel handler instance tracking player raycasts.</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelMarker_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelMarker_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voxel_handler</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the voxel marker, binding it to the world&#39;s voxel handler</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Initializes the voxel marker, binding it to the world's voxel handler</span>
 <span class="sd">        and preparing its wireframe cube mesh.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">voxel_handler</span><span class="o">.</span><span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">voxel_handler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -1029,12 +1029,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="VoxelMarker.update">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.voxel_marker.VoxelMarker.update">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelMarker_Update&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelMarker_Update'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the marker&#39;s 3D position to match the currently targeted voxel.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Updates the marker's 3D position to match the currently targeted voxel.</span>
 <span class="sd">        Adjusts position based on whether the player is aiming to break or place a block.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="o">.</span><span class="n">interaction_mode</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="o">.</span><span class="n">voxel_world_pos</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="o">.</span><span class="n">voxel_normal</span>
@@ -1044,36 +1044,36 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="VoxelMarker.set_uniform">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.voxel_marker.VoxelMarker.set_uniform">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelMarker_SetUniform&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelMarker_SetUniform'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sends the interaction mode and the calculated model transformation matrix</span>
-<span class="sd">        to the voxel marker&#39;s shader program.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">&#39;mode_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="o">.</span><span class="n">interaction_mode</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">&#39;m_model&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_model_matrix</span><span class="p">())</span></div>
+<span class="sd">        to the voxel marker's shader program.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'mode_id'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="o">.</span><span class="n">interaction_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'m_model'</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_model_matrix</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="VoxelMarker.get_model_matrix">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.voxel_marker.VoxelMarker.get_model_matrix">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelMarker_GetModelMatrix&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelMarker_GetModelMatrix'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculates the transformation matrix required to position the wireframe</span>
-<span class="sd">        marker correctly at the targeted voxel&#39;s world space coordinates.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        marker correctly at the targeted voxel's world space coordinates.</span>
+<span class="sd">        """</span>
         <span class="n">m_model</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">(),</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">m_model</span></div>
 
 
 <div class="viewcode-block" id="VoxelMarker.render">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.voxel_marker.VoxelMarker.render">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;VoxelMarker_Render&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'VoxelMarker_Render'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Issues the draw call for the wireframe cube if the player is actively</span>
 <span class="sd">        targeting a valid block in the world.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_uniform</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span></div>

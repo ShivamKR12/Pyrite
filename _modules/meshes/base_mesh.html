@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for meshes.base_mesh</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Base class architecture for OpenGL mesh generation.</span>
 
 <span class="sd">This module provides the foundational `BaseMesh` class that all 2D and 3D</span>
 <span class="sd">renderable objects in Pyrite inherit from. It standardizes the creation</span>
 <span class="sd">of Vertex Array Objects (VAOs) and Vertex Buffer Objects (VBOs) through</span>
 <span class="sd">the ModernGL pipeline.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1000,29 +1000,29 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="BaseMesh">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.base_mesh.BaseMesh">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseMesh</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Abstract base class for all OpenGL geometry meshes.</span>
 
 <span class="sd">    Subclasses must implement the `get_vertex_data` method to supply the raw</span>
 <span class="sd">    Numpy array data. The base class automatically handles uploading this data</span>
 <span class="sd">    to the GPU and configuring the vertex attributes for the shader program.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the empty mesh attributes. Subclasses should override these</span>
 <span class="sd">        with their specific ModernGL contexts, shaders, and VBO formats.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># OpenGL context</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># shader program</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># vertex buffer data type format: &quot;3f 3f&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="c1"># vertex buffer data type format: "3f 3f"</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">''</span>
 
-        <span class="c1"># attribute names according to the format: (&quot;in_position&quot;, &quot;in_color&quot;)</span>
+        <span class="c1"># attribute names according to the format: ("in_position", "in_color")</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
 
         <span class="c1"># vertex array object</span>
@@ -1031,20 +1031,20 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="BaseMesh.get_vertex_data">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.base_mesh.BaseMesh.get_vertex_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_vertex_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Abstract method to be overridden by subclasses. Should return a contiguous</span>
 <span class="sd">        Numpy array containing the vertex data formatted according to `self.vbo_format`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="BaseMesh.get_vao">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.base_mesh.BaseMesh.get_vao">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_vao</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Constructs the OpenGL Vertex Buffer Object (VBO) and Vertex Array Object (VAO)</span>
 <span class="sd">        by pulling the geometry data from `get_vertex_data()`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">vertex_data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vertex_data</span><span class="p">()</span>
 
         <span class="n">vbo</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">vertex_data</span><span class="p">)</span>
@@ -1057,9 +1057,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="BaseMesh.render">
 <a class="viewcode-back" href="../../api/meshes.html#meshes.base_mesh.BaseMesh.render">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Issues the draw call to the GPU for this mesh&#39;s geometry.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Issues the draw call to the GPU for this mesh's geometry.</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">render</span><span class="p">()</span></div>
 </div>
 

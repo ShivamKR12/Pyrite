@@ -1104,7 +1104,7 @@ window.runMermaid = runMermaid;</script>
 
    OPTIONS --&gt; PAUSED : Back
     </pre><p><strong>State Handler Implementation:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;MAIN_MENU&#39;</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">'MAIN_MENU'</span><span class="p">:</span>
     <span class="n">main_menu</span><span class="o">.</span><span class="n">handle_events</span><span class="p">()</span>
     <span class="n">main_menu</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
 </pre></div>
@@ -1112,7 +1112,7 @@ window.runMermaid = runMermaid;</script>
 <ul class="simple">
 <li><p><strong>State Delegation:</strong> The engine acts as a pure router, dispatching logic and polling events directly to independent GUI instances or 3D scene objects based on the current finite state.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;LOADING&#39;</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">'LOADING'</span><span class="p">:</span>
     <span class="k">while</span> <span class="ow">not</span> <span class="n">loading_complete</span><span class="p">:</span>
         <span class="n">check_loading_progress</span><span class="p">()</span>
 </pre></div>
@@ -1150,7 +1150,7 @@ window.runMermaid = runMermaid;</script>
 <ul class="simple">
 <li><p><strong>Polling Inputs:</strong> Every frame, raw hardware events from the operating system are pulled and flushed through the <cite>pygame.event</cite> queue.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">'IN_GAME'</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 </pre></div>
 </div>

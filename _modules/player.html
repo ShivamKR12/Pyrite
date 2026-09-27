@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for player</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Player entity management and physics controller.</span>
 
 <span class="sd">This module defines the `Player` class, which extends the base `Camera` to add</span>
 <span class="sd">AABB (Axis-Aligned Bounding Box) collision detection, gravity, fluid dynamics,</span>
 <span class="sd">inventory state, and survival statistics (health, hunger, oxygen). It acts as</span>
 <span class="sd">the primary interface between user input and the 3D voxel world.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -1057,7 +1057,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Player">
 <a class="viewcode-back" href="../api/player.html#player.Player">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Player</span><span class="p">(</span><span class="n">Camera</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Represents the player entity in the world.</span>
 
 <span class="sd">    Handles movement physics, collision detection, block interaction,</span>
@@ -1068,14 +1068,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        position (Optional[Any]): The initial spawn coordinates. If None, it automatically calculates a safe spawn.</span>
 <span class="sd">        yaw (float): Initial horizontal rotation in degrees.</span>
 <span class="sd">        pitch (float): Initial vertical rotation in degrees.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_Init&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_Init'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">yaw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">90.0</span><span class="p">,</span> <span class="n">pitch</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the player&#39;s attributes, camera orientation, physics state,</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Initializes the player's attributes, camera orientation, physics state,</span>
 <span class="sd">        inventory system, and survival stats.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
 
         <span class="k">if</span> <span class="n">position</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1104,7 +1104,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">INVENTORY_SIZE</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">fov</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;fov&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fov</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'fov'</span><span class="p">]))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># Survival Stats</span>
@@ -1122,12 +1122,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.find_spawn_position">
 <a class="viewcode-back" href="../api/player.html#player.Player.find_spawn_position">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_FindSpawnPosition&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_FindSpawnPosition'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">find_spawn_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Locates a valid surface spawn position near the center of the world</span>
 <span class="sd">        by scanning outward iteratively until a solid block above water is found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">center_x</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">CENTER_XZ</span><span class="p">)</span>
         <span class="n">center_z</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">CENTER_XZ</span><span class="p">)</span>
 
@@ -1141,7 +1141,7 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">z</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">center_z</span> <span class="o">+</span> <span class="n">dz</span>
                         <span class="n">y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">get_height</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">perm</span><span class="p">)</span>
 
-                        <span class="c1"># Ensure the player doesn&#39;t spawn underwater</span>
+                        <span class="c1"># Ensure the player doesn't spawn underwater</span>
                         <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">WATER_LINE</span><span class="p">:</span>
                             <span class="k">return</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
 
@@ -1150,18 +1150,18 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.update">
 <a class="viewcode-back" href="../api/player.html#player.Player.update">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_Update&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_Update'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Called every frame. Updates player inputs, physics logic, view bobbing,</span>
 <span class="sd">        dynamic FOV for sprinting, fluid dynamics, and core survival metric drains.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">'IN_GAME'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mouse_control</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_mode</span> <span class="o">==</span> <span class="n">CREATIVE</span><span class="p">:</span>
             <span class="c1"># free camera mode — NO PHYSICS</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">'IN_GAME'</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">keyboard_control</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -1177,7 +1177,7 @@ window.runMermaid = runMermaid;</script>
             <span class="c1"># player mode — physics + collisions</span>
             <span class="n">was_on_ground</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_ground</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">'IN_GAME'</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">keyboard_control</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -1267,9 +1267,9 @@ window.runMermaid = runMermaid;</script>
                     <span class="bp">self</span><span class="o">.</span><span class="n">last_step_time</span> <span class="o">=</span> <span class="n">current_time</span>
 
             <span class="c1"># Dynamic FOV for sprinting</span>
-            <span class="n">base_fov</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;fov&#39;</span><span class="p">]))</span>
+            <span class="n">base_fov</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'fov'</span><span class="p">]))</span>
 
-            <span class="c1"># Use horizontal movement instead of is_walking so FOV doesn&#39;t snap when going up/down blocks</span>
+            <span class="c1"># Use horizontal movement instead of is_walking so FOV doesn't snap when going up/down blocks</span>
             <span class="n">is_moving_horizontally</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">actual_move_dist</span> <span class="o">&gt;</span> <span class="mf">0.0001</span>
             <span class="n">target_fov</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">base_fov</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">SPRINT_FOV_BOOST</span><span class="p">))</span>
@@ -1286,7 +1286,7 @@ window.runMermaid = runMermaid;</script>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span> <span class="o">+</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">PLAYER_EYE_HEIGHT</span> <span class="o">+</span> <span class="n">bob_offset</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">&#39;IN_GAME&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">'IN_GAME'</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">handle_interaction</span><span class="p">()</span>
 
             <span class="c1"># Oxygen &amp; Drowning Logic</span>
@@ -1316,12 +1316,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.handle_event">
 <a class="viewcode-back" href="../api/player.html#player.Player.handle_event">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_HandleEvent&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_HandleEvent'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Processes discrete user inputs such as key presses (mode toggling, hotbar selection)</span>
 <span class="sd">        and mouse clicks (block mining and placing).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pg</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pg</span><span class="o">.</span><span class="n">K_f</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">game_mode</span> <span class="o">=</span> <span class="n">SURVIVAL</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_mode</span> <span class="o">==</span> <span class="n">CREATIVE</span> <span class="k">else</span> <span class="n">CREATIVE</span>
@@ -1347,7 +1347,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">voxel_handler</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">voxel_handler</span>
 
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># Right click to place</span>
-                <span class="n">voxel_handler</span><span class="o">.</span><span class="n">set_voxel</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;add&#39;</span><span class="p">)</span>
+                <span class="n">voxel_handler</span><span class="o">.</span><span class="n">set_voxel</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">'add'</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">interaction_timer</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
 
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>  <span class="c1"># Scroll Up</span>
@@ -1359,16 +1359,16 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.mouse_control">
 <a class="viewcode-back" href="../api/player.html#player.Player.mouse_control">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_MouseControl&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_MouseControl'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mouse_control</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves relative mouse movement and adjusts the camera&#39;s yaw and pitch</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Retrieves relative mouse movement and adjusts the camera's yaw and pitch</span>
 <span class="sd">        based on the configured sensitivity.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">mouse_dx</span><span class="p">:</span> <span class="nb">int</span>
         <span class="n">mouse_dy</span><span class="p">:</span> <span class="nb">int</span>
         <span class="n">mouse_dx</span><span class="p">,</span> <span class="n">mouse_dy</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_rel</span><span class="p">()</span>
-        <span class="n">sens</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sensitivity&#39;</span><span class="p">]</span>
+        <span class="n">sens</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'sensitivity'</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">mouse_dx</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rotate_yaw</span><span class="p">(</span><span class="n">delta_x</span><span class="o">=</span><span class="n">mouse_dx</span> <span class="o">*</span> <span class="n">sens</span><span class="p">)</span>
@@ -1379,12 +1379,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.handle_interaction">
 <a class="viewcode-back" href="../api/player.html#player.Player.handle_interaction">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_HandleInteraction&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_HandleInteraction'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">handle_interaction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Processes continuous block interactions (mining and placing).</span>
 <span class="sd">        Factoring in tool requirements, block hardness, and interaction delays.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">mouse_pressed</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pressed</span><span class="p">()</span>
         <span class="n">voxel_handler</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">voxel_handler</span>
 
@@ -1400,7 +1400,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="bp">self</span><span class="o">.</span><span class="n">mining_time</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mining_duration</span>
                     <span class="ow">and</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_timer</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_delay</span>
                 <span class="p">):</span>
-                    <span class="n">voxel_handler</span><span class="o">.</span><span class="n">set_voxel</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;remove&#39;</span><span class="p">)</span>
+                    <span class="n">voxel_handler</span><span class="o">.</span><span class="n">set_voxel</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">'remove'</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">mining_time</span> <span class="o">=</span> <span class="mf">0.0</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">interaction_timer</span> <span class="o">=</span> <span class="n">current_time</span>
 
@@ -1423,7 +1423,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="bp">self</span><span class="o">.</span><span class="n">mining_time</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mining_duration</span>
                     <span class="ow">and</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_timer</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_delay</span>
                 <span class="p">):</span>
-                    <span class="n">voxel_handler</span><span class="o">.</span><span class="n">set_voxel</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;remove&#39;</span><span class="p">)</span>
+                    <span class="n">voxel_handler</span><span class="o">.</span><span class="n">set_voxel</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">'remove'</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">mining_time</span> <span class="o">=</span> <span class="mf">0.0</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">interaction_timer</span> <span class="o">=</span> <span class="n">current_time</span>
 
@@ -1433,18 +1433,18 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># Placing logic (Right click)</span>
         <span class="k">if</span> <span class="n">mouse_pressed</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_timer</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_delay</span><span class="p">:</span>
-                <span class="n">voxel_handler</span><span class="o">.</span><span class="n">set_voxel</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;add&#39;</span><span class="p">)</span>
+                <span class="n">voxel_handler</span><span class="o">.</span><span class="n">set_voxel</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">'add'</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">interaction_timer</span> <span class="o">=</span> <span class="n">current_time</span></div>
 
 
 <div class="viewcode-block" id="Player.keyboard_control">
 <a class="viewcode-back" href="../api/player.html#player.Player.keyboard_control">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_KeyboardControl&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_KeyboardControl'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">keyboard_control</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculates movement vectors based on keyboard input. Adapts movement</span>
 <span class="sd">        physics depending on whether the player is in Creative or Survival mode.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_mode</span> <span class="o">==</span> <span class="n">CREATIVE</span><span class="p">:</span>
             <span class="n">key_state</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">get_pressed</span><span class="p">()</span>
             <span class="n">vel</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">PLAYER_SPEED</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span>
@@ -1510,7 +1510,7 @@ window.runMermaid = runMermaid;</script>
 
                 <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">K_SPACE</span><span class="p">]:</span>
                     <span class="c1"># Dolphin leap out of water if near the surface, otherwise normal swim!</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;head_in_water&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'head_in_water'</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">JUMP_VELOCITY</span> <span class="o">*</span> <span class="n">PLAYER_DOLPHIN_LEAP_MULTIPLIER</span><span class="p">)</span>
 
                     <span class="k">else</span><span class="p">:</span>
@@ -1524,12 +1524,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.apply_gravity">
 <a class="viewcode-back" href="../api/player.html#player.Player.apply_gravity">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_ApplyGravity&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_ApplyGravity'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_gravity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Applies downward gravitational acceleration to the player&#39;s vertical velocity,</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Applies downward gravitational acceleration to the player's vertical velocity,</span>
 <span class="sd">        accounting for drag if the player is swimming in water.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_water</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">GRAVITY</span> <span class="o">*</span> <span class="n">PLAYER_UNDERWATER_GRAVITY_MULTIPLIER</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">PLAYER_VERTICAL_WATER_DRAG</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span><span class="p">)</span>  <span class="c1"># vertical water drag</span>
@@ -1540,44 +1540,50 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.move_and_collide">
 <a class="viewcode-back" href="../api/player.html#player.Player.move_and_collide">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_MoveAndCollide&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_MoveAndCollide'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">move_and_collide</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Moves the player incrementally along the X, Y, and Z axes,</span>
 <span class="sd">        resolving collision clipping individually for each axis.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># X axis</span>
-        <span class="c1"># self.position.x += self.velocity.x</span>
+<span class="sd">        """</span>
+        <span class="c1"># Step 1: Apply velocity along the X-axis by multiplying by the frame delta time.</span>
+        <span class="c1"># This isolates horizontal movement to independently solve X-axis collisions.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">'x'</span><span class="p">)</span>
 
-        <span class="c1"># Y axis</span>
-        <span class="c1"># self.position.y += self.velocity.y</span>
+        <span class="c1"># Step 2: Apply velocity along the Y-axis (gravity/jumping).</span>
+        <span class="c1"># We process Y independently so that a player can slide along a wall (X/Z) while falling (Y).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">'y'</span><span class="p">)</span>
 
-        <span class="c1"># Z axis</span>
-        <span class="c1"># self.position.z += self.velocity.z</span>
+        <span class="c1"># Step 3: Apply velocity along the Z-axis.</span>
+        <span class="c1"># This completes the 3D movement step by checking depth collisions.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolve_axis</span><span class="p">(</span><span class="s1">'z'</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Player.resolve_axis">
 <a class="viewcode-back" href="../api/player.html#player.Player.resolve_axis">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_ResolveAxis&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_ResolveAxis'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">resolve_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Checks for intersection between the player&#39;s AABB and the surrounding</span>
-<span class="sd">        solid voxels. Stops the player&#39;s velocity along the tested axis if</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Checks for intersection between the player's AABB and the surrounding</span>
+<span class="sd">        solid voxels. Stops the player's velocity along the tested axis if</span>
 <span class="sd">        a collision is detected to prevent clipping.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="c1"># If the player is not moving along this axis, there is no new collision to resolve.</span>
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">aabb_min</span><span class="p">:</span> <span class="n">Any</span>
         <span class="n">aabb_max</span><span class="p">:</span> <span class="n">Any</span>
+        <span class="c1"># Retrieve the player's current Axis-Aligned Bounding Box (AABB) using the updated position.</span>
+        <span class="c1"># The AABB is defined by a minimum corner (x,y,z) and a maximum corner (x,y,z).</span>
         <span class="n">aabb_min</span><span class="p">,</span> <span class="n">aabb_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_aabb</span><span class="p">()</span>
 
+        <span class="c1"># To find which grid voxels the player's continuous (float) AABB overlaps, we apply the floor function.</span>
+        <span class="c1"># glm.floor() maps float coordinates down to the nearest integer grid coordinates.</span>
+        <span class="c1"># This restricts our collision check to the discrete set of voxel coordinates the player touches.</span>
         <span class="n">min_x</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
         <span class="n">max_x</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
         <span class="n">min_y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
@@ -1585,17 +1591,19 @@ window.runMermaid = runMermaid;</script>
         <span class="n">min_z</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_min</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
         <span class="n">max_z</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">aabb_max</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span>
+        <span class="c1"># We optimize the search volume by only checking the leading face of the player's AABB</span>
+        <span class="c1"># along the axis of movement. If moving positively, we only check the 'max' face.</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">'x'</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">min_x</span> <span class="o">=</span> <span class="n">max_x</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">max_x</span> <span class="o">=</span> <span class="n">min_x</span>
-        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">'y'</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">min_y</span> <span class="o">=</span> <span class="n">max_y</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">max_y</span> <span class="o">=</span> <span class="n">min_y</span>
-        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">'z'</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">min_z</span> <span class="o">=</span> <span class="n">max_z</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1603,64 +1611,76 @@ window.runMermaid = runMermaid;</script>
 
         <span class="n">world</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span>
 
+        <span class="c1"># Iterate strictly over the calculated subset of voxels that could potentially cause a collision.</span>
+        <span class="c1"># This reduces our collision tests from millions of voxels down to usually 1-4 per axis.</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_z</span><span class="p">,</span> <span class="n">max_z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span>
+                    <span class="c1"># Query the global world array to get the block ID at this integer coordinate.</span>
                     <span class="n">voxel_id</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">voxel_handler</span><span class="o">.</span><span class="n">get_voxel_id</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
 
+                    <span class="c1"># If the block is empty (air/None) or non-solid (WATER), it does not cause collision.</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">voxel_id</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span><span class="p">:</span>
                         <span class="k">continue</span>
 
+                    <span class="c1"># Define the voxel's AABB. Since voxels are 1x1x1 cubes on integer grids,</span>
+                    <span class="c1"># the min bounds are exactly (x, y, z) and max bounds are exactly (x+1, y+1, z+1).</span>
                     <span class="n">voxel_min</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
                     <span class="n">voxel_max</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">voxel_min</span> <span class="o">+</span> <span class="mi">1</span>
 
+                    <span class="c1"># Check mathematically if the player's AABB overlaps with the voxel's AABB.</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aabb_intersect</span><span class="p">(</span><span class="n">aabb_min</span><span class="p">,</span> <span class="n">aabb_max</span><span class="p">,</span> <span class="n">voxel_min</span><span class="p">,</span> <span class="n">voxel_max</span><span class="p">):</span>
-                        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span>
+                        <span class="c1"># If a collision occurred on the X-axis...</span>
+                        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">'x'</span><span class="p">:</span>
                             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                                <span class="c1"># self.position.x = voxel_min.x - PLAYER_HALF_W</span>
+                                <span class="c1"># We are moving right. Snap the player's feet_pos precisely outside the left face</span>
+                                <span class="c1"># of the voxel by subtracting PLAYER_HALF_W.</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">voxel_min</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">PLAYER_HALF_W</span>
-
                             <span class="k">else</span><span class="p">:</span>
-                                <span class="c1"># self.position.x = voxel_max.x + PLAYER_HALF_W</span>
+                                <span class="c1"># We are moving left. Snap the player's feet_pos outside the right face.</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">voxel_max</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">PLAYER_HALF_W</span>
-
+                            <span class="c1"># Nullify the velocity so the player stops penetrating the block.</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
 
-                        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+                        <span class="c1"># If a collision occurred on the Y-axis...</span>
+                        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">'y'</span><span class="p">:</span>
                             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                                <span class="c1"># self.position.y = voxel_min.y - PLAYER_HEIGHT</span>
+                                <span class="c1"># Moving up (jumping). Snap position just below the ceiling block's bottom face.</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">voxel_min</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">PLAYER_HEIGHT</span>
-
                             <span class="k">else</span><span class="p">:</span>
-                                <span class="c1"># self.position.y = voxel_max.y</span>
+                                <span class="c1"># Moving down (falling). Snap position perfectly atop the floor block.</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">voxel_max</span><span class="o">.</span><span class="n">y</span>
+                                <span class="c1"># Because we hit the floor, update state so the player can jump again.</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">on_ground</span> <span class="o">=</span> <span class="kc">True</span>
-
+                            <span class="c1"># Cancel Y velocity (gravity stops accumulating when standing).</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
 
-                        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span>
+                        <span class="c1"># If a collision occurred on the Z-axis...</span>
+                        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s1">'z'</span><span class="p">:</span>
                             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                                <span class="c1"># self.position.z = voxel_min.z - PLAYER_HALF_W</span>
+                                <span class="c1"># Moving forward. Snap position behind the voxel's front face.</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">voxel_min</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">PLAYER_HALF_W</span>
-
                             <span class="k">else</span><span class="p">:</span>
-                                <span class="c1"># self.position.z = voxel_max.z + PLAYER_HALF_W</span>
+                                <span class="c1"># Moving backward. Snap position in front of the voxel's back face.</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">voxel_max</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">PLAYER_HALF_W</span>
-
+                            <span class="c1"># Cancel Z velocity to halt depth penetration.</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="mi">0</span>
 
+                        <span class="c1"># After resolving the collision and shifting feet_pos, recalculate the AABB.</span>
+                        <span class="c1"># This updated bounding box is essential if the loop continues, as the player</span>
+                        <span class="c1"># might still be penetrating other blocks (e.g. corner cases).</span>
                         <span class="n">aabb_min</span><span class="p">,</span> <span class="n">aabb_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_aabb</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Player.get_aabb">
 <a class="viewcode-back" href="../api/player.html#player.Player.get_aabb">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_GetAABB&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_GetAABB'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_aabb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculates and returns the minimum and maximum boundaries of the</span>
-<span class="sd">        Axis-Aligned Bounding Box representing the player&#39;s physical volume.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Axis-Aligned Bounding Box representing the player's physical volume.</span>
+<span class="sd">        """</span>
         <span class="n">min_v</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span>
             <span class="c1"># self.position.x - PLAYER_HALF_W,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">feet_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">PLAYER_HALF_W</span><span class="p">,</span>
@@ -1686,10 +1706,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/player.html#player.Player.aabb_intersect">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">aabb_intersect</span><span class="p">(</span><span class="n">a_min</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">a_max</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">b_min</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">b_max</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Static helper that determines if two given 3D Axis-Aligned Bounding</span>
 <span class="sd">        Boxes overlap with each other.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span>
             <span class="n">a_min</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">b_max</span><span class="o">.</span><span class="n">x</span>
             <span class="ow">and</span> <span class="n">a_max</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">b_min</span><span class="o">.</span><span class="n">x</span>
@@ -1702,12 +1722,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.add_item">
 <a class="viewcode-back" href="../api/player.html#player.Player.add_item">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_AddItem&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_AddItem'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Attempts to add an item to the player&#39;s inventory by stacking onto</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Attempts to add an item to the player's inventory by stacking onto</span>
 <span class="sd">        existing slots or finding an empty one. Returns True if successful.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Check if we already have a stack of this item</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">36</span><span class="p">):</span>  <span class="c1"># Only check the main 36 storage slots</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">voxel_id</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">:</span>
@@ -1728,12 +1748,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.take_damage">
 <a class="viewcode-back" href="../api/player.html#player.Player.take_damage">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_TakeDamage&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_TakeDamage'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Reduces player health by the specified amount (if in Survival mode),</span>
 <span class="sd">        triggering a respawn sequence if health is completely depleted.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_mode</span> <span class="o">==</span> <span class="n">CREATIVE</span><span class="p">:</span>
             <span class="k">return</span>
 
@@ -1746,12 +1766,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Player.respawn">
 <a class="viewcode-back" href="../api/player.html#player.Player.respawn">[docs]</a>
-    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">&#39;Player_Respawn&#39;</span><span class="p">)</span>
+    <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Player_Respawn'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">respawn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resets survival statistics and teleports the player back to a</span>
 <span class="sd">        safe, auto-calculated spawn position on the surface.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">health</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_health</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hunger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hunger</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">oxygen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_oxygen</span>

@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for noise</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Procedural noise generation and deterministic seeding.</span>
 
 <span class="sd">This module provides Numba-optimized wrappers around OpenSimplex noise functions.</span>
 <span class="sd">It manages the global permutation arrays and ensures that both standard Python</span>
-<span class="sd">random and Numba&#39;s internal RNG are perfectly synchronized to the world seed</span>
+<span class="sd">random and Numba's internal RNG are perfectly synchronized to the world seed</span>
 <span class="sd">for 100% deterministic terrain generation.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
@@ -1009,24 +1009,39 @@ window.runMermaid = runMermaid;</script>
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_seed_numba</span><span class="p">(</span><span class="n">new_seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Internal helper to seed Numba&#39;s random number generator and standard Python random.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Internal helper to seed Numba's random number generator and standard Python random.</span>
+<span class="sd">    """</span>
+    <span class="c1"># Numba maintains its own internal PRNG state independent of Python's `random` or NumPy's global state.</span>
+    <span class="c1"># By calling np.random.seed inside a JIT-compiled function, we explicitly overwrite Numba's internal</span>
+    <span class="c1"># state with the deterministic seed, ensuring that any random operations inside @njit blocks are reproducible.</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">)</span>
+
+    <span class="c1"># Similarly, we seed Python's standard `random` module for any non-NumPy randomization.</span>
     <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="set_seed">
 <a class="viewcode-back" href="../api/noise.html#noise.set_seed">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Updates the global OpenSimplex permutation arrays with a deterministic seed,</span>
 <span class="sd">    ensuring identical noise generation for a given world seed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">global</span> <span class="n">perm</span><span class="p">,</span> <span class="n">perm_grad_index3</span>
+
+    <span class="c1"># _init generates the canonical 256-element permutation table used in Simplex noise,</span>
+    <span class="c1"># extended to 512 elements to avoid modulo wrap-around during index lookups.</span>
+    <span class="c1"># It also generates the gradient index array for 3D noise vectors.</span>
     <span class="n">perm</span><span class="p">,</span> <span class="n">perm_grad_index3</span> <span class="o">=</span> <span class="n">_init</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">new_seed</span><span class="p">)</span>
+
+    <span class="c1"># We must synchronize Numba's isolated RNG state with the newly provided world seed.</span>
     <span class="n">_seed_numba</span><span class="p">(</span><span class="n">new_seed</span><span class="p">)</span>
+
+    <span class="c1"># We also synchronize the global NumPy RNG state which is accessible from standard Python execution.</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">)</span>
+
+    <span class="c1"># Finally, we synchronize the standard Python random module's state.</span>
     <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">)</span></div>
 
 
@@ -1035,9 +1050,13 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/noise.html#noise.noise2">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">noise2</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Evaluates 2D Simplex Noise using the pre-compiled permutation array.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
+    <span class="c1"># _noise2 computes the 2D simplex noise by determining the skewed simplex grid cell containing (x, y).</span>
+    <span class="c1"># It calculates the contribution from the 3 vertices of the simplex (a triangle in 2D) using a</span>
+    <span class="c1"># distance-based attenuation function. The perm_array hashes the vertex coordinates to select</span>
+    <span class="c1"># pseudo-random gradient vectors, which are then dot-producted with the distance vectors.</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">_noise2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">))</span></div>
 
 
@@ -1046,9 +1065,14 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/noise.html#noise.noise3">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">noise3</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Evaluates 3D Simplex Noise using the pre-compiled permutation arrays.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
+    <span class="c1"># _noise3 projects the 3D coordinate (x, y, z) into the 3D simplex grid (a tetrahedron).</span>
+    <span class="c1"># It identifies the 4 vertices of the enclosing simplex and computes their gradient contributions.</span>
+    <span class="c1"># perm_array provides the hashed lookup indices, while perm_grad_array maps those indices</span>
+    <span class="c1"># directly to one of the 12 edges of a cube (or midpoints), acting as the gradient vectors.</span>
+    <span class="c1"># The final noise value is the sum of these 4 attenuated dot products.</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">_noise3</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">))</span></div>
 
 </pre></div>

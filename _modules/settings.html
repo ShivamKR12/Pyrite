@@ -985,14 +985,14 @@ window.runMermaid = runMermaid;</script>
            <div itemprop="articleBody">
              
   <h1>Source code for settings</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Global settings and configuration constants for the Pyrite voxel engine.</span>
 
 <span class="sd">This module acts as the central repository for engine configurations, including</span>
 <span class="sd">OpenGL parameters, camera constraints, player physics, terrain thresholds, block IDs,</span>
 <span class="sd">color palettes, and performance caps (e.g., ThreadPool limits and VRAM pool sizes).</span>
 <span class="sd">It also provides a helper for resolving absolute asset paths in bundled PyInstaller builds.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -1006,11 +1006,11 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="get_path">
 <a class="viewcode-back" href="../api/settings.html#settings.get_path">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_path</span><span class="p">(</span><span class="n">relative_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get absolute path to resource&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Get absolute path to resource"""</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">base_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_MEIPASS</span>  <span class="c1"># type: ignore[attr-defined]</span>
     <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-        <span class="n">base_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;..&#39;</span><span class="p">))</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">'..'</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="n">relative_path</span><span class="p">)</span></div>
 
 
@@ -1022,37 +1022,64 @@ window.runMermaid = runMermaid;</script>
 <span class="n">NUM_SAMPLES</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># antialiasing</span>
 
 <span class="c1"># resolution</span>
+<span class="c1"># Initialize pygame briefly just to grab the current display information from the OS</span>
 <span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
 <span class="n">info</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">Info</span><span class="p">()</span>
+<span class="c1"># Create a 2D vector representing the screen width and height in pixels</span>
 <span class="n">WINDOW_RESOLUTION</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec2</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">current_w</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">current_h</span><span class="p">)</span>
 <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
 
 <span class="c1"># ray casting</span>
+<span class="c1"># The maximum distance in blocks/meters that the player's crosshair can interact with</span>
 <span class="n">MAX_RAY_DISTANCE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
 
 <span class="c1"># chunk</span>
+<span class="c1"># The number of blocks along each axis (X, Y, Z) in a single chunk</span>
 <span class="n">CHUNK_SIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48</span>
+<span class="c1"># Half the chunk size, often used as an offset to find the center of a chunk</span>
 <span class="n">HALF_CHUNK_SIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_SIZE</span> <span class="o">//</span> <span class="mi">2</span>
+<span class="c1"># The 2D area (X * Z) of a chunk slice, useful for iterating over vertical columns</span>
 <span class="n">CHUNK_AREA</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_SIZE</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
+<span class="c1"># The total number of blocks in a chunk (X * Y * Z), used for sizing flat arrays</span>
 <span class="n">CHUNK_VOLUME</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
+<span class="c1"># The radius of a bounding sphere that perfectly encapsulates a cubic chunk.</span>
+<span class="c1"># Calculated using the 3D Pythagorean theorem: r = sqrt((L/2)^2 + (W/2)^2 + (H/2)^2)</span>
+<span class="c1"># Since chunks are perfect cubes, this simplifies to r = (Size/2) * sqrt(3).</span>
+<span class="c1"># Used for frustum culling to quickly check if a chunk is visible on screen.</span>
 <span class="n">CHUNK_SPHERE_RADIUS</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">HALF_CHUNK_SIZE</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 
 <span class="c1"># world</span>
+<span class="c1"># The number of chunks along the X axis</span>
 <span class="n">WORLD_WIDTH</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="c1"># The number of chunks along the Y (vertical) axis</span>
 <span class="n">WORLD_HEIGHT</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="c1"># The number of chunks along the Z axis (typically same as width for a square world)</span>
 <span class="n">WORLD_DEPTH</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_WIDTH</span>
+<span class="c1"># The total number of chunks in a horizontal slice of the world</span>
 <span class="n">WORLD_AREA</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="n">WORLD_DEPTH</span>
+<span class="c1"># The total number of chunks loaded in the entire world</span>
 <span class="n">WORLD_VOLUME</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="n">WORLD_HEIGHT</span>
+<span class="c1"># The exact center point of the world on the X and Z axes, calculated in block coordinates</span>
 <span class="n">CENTER_XZ</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="n">HALF_CHUNK_SIZE</span>
+<span class="c1"># The base vertical level for flat terrain generation</span>
 <span class="n">CENTER_Y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48</span>
 
 <span class="c1"># camera</span>
+<span class="c1"># The ratio of the window's width to its height, required to prevent the rendered image from stretching</span>
 <span class="n">ASPECT_RATIO</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WINDOW_RESOLUTION</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">WINDOW_RESOLUTION</span><span class="o">.</span><span class="n">y</span>
+<span class="c1"># The base vertical field of view in degrees, defining how much the camera can see up and down</span>
 <span class="n">FOV_DEGREE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="n">VERTICAL_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">FOV_DEGREE</span><span class="p">)</span>  <span class="c1"># vertical FOV</span>
-<span class="n">HORIZONTAL_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">VERTICAL_FOV</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">)</span>  <span class="c1"># horizontal FOV</span>
+<span class="c1"># ModernGL and GLM require angles in radians, so we convert the degree value here</span>
+<span class="n">VERTICAL_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">FOV_DEGREE</span><span class="p">)</span>
+<span class="c1"># Calculates the horizontal FOV based on the vertical FOV and screen aspect ratio.</span>
+<span class="c1"># This uses basic trigonometry: tan(fov_h / 2) = tan(fov_v / 2) * aspect_ratio.</span>
+<span class="c1"># We multiply by 2 at the end because the tangent calculation only gives half the angle.</span>
+<span class="n">HORIZONTAL_FOV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">VERTICAL_FOV</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">)</span>
+<span class="c1"># The closest distance the camera will render objects; anything closer is clipped</span>
 <span class="n">NEAR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="c1"># The maximum distance the camera will render objects; anything further is clipped</span>
 <span class="n">FAR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2000.0</span>
+<span class="c1"># The maximum angle in radians the camera can look up or down, capped just shy of 90 degrees to prevent gimbal lock</span>
 <span class="n">PITCH_MAX</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">89</span><span class="p">)</span>
 
 <span class="c1"># player</span>
@@ -1189,7 +1216,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">SNOW</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
     <span class="n">LEAVES</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
     <span class="n">WOOD</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
-    <span class="n">WATER</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># Water can&#39;t be normally mined</span>
+    <span class="n">WATER</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># Water can't be normally mined</span>
     <span class="n">GLOWSTONE</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
     <span class="n">GLASS</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
     <span class="n">CACTUS</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
