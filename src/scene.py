@@ -95,15 +95,15 @@ class Scene:
 
         # Transparent Cloud Pass
         # We explicitly DISABLE face culling here.
-        # Clouds are mathematically 2D planes hovering in the sky. If we culled back-faces, 
+        # Clouds are mathematically 2D planes hovering in the sky. If we culled back-faces,
         # the clouds would suddenly turn completely invisible if we flew above them and looked down!
         self.app.ctx.disable(mgl.CULL_FACE)
         self.clouds.render()
 
         # Transparent Water Pass
-        # We RE-ENABLE face culling for water. 
-        # Water blocks are full 3D cubes. If we didn't cull back-faces, the semi-transparent 
-        # blending equation would draw the bottom of the water block *through* the top surface, 
+        # We RE-ENABLE face culling for water.
+        # Water blocks are full 3D cubes. If we didn't cull back-faces, the semi-transparent
+        # blending equation would draw the bottom of the water block *through* the top surface,
         # making it look like a weird double-layered box instead of a solid volume of liquid.
         self.app.ctx.enable(mgl.CULL_FACE)
         self.world.render_water()
