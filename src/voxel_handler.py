@@ -44,10 +44,11 @@ class VoxelHandler:
         Args:
             world: The world object that owns this handler (provides app, chunks, etc.).
         """
+        # World references
         self.app: Any = world.app
         self.chunks: Any = world.chunks
 
-        # ray casting result
+        # Ray casting result state
         self.chunk: Any = None
         self.voxel_id: int = 0
         self.voxel_index: int = 0
@@ -55,7 +56,7 @@ class VoxelHandler:
         self.voxel_world_pos: Any = None
         self.voxel_normal: Any = None
 
-        # Keep for voxel_marker compatibility, permanently set to 0 for standard Minecraft highlighting
+        # Interaction settings
         self.interaction_mode: int = 0
 
     @global_profiler.profile_func('VoxelHandler_AddVoxel')
@@ -66,35 +67,32 @@ class VoxelHandler:
         and queues adjacent chunks for remeshing.
         """
         if self.voxel_id:
+            # Check selected item
             current_id: int = self.app.player.inventory[self.app.player.hotbar_index]
-
             if current_id == 0 or current_id in NON_PLACEABLE:
-                return  # Can't place empty air
+                return
 
-            # check voxel id along normal
+            # Check placement target validity
             new_voxel_pos: Any = self.voxel_world_pos + self.voxel_normal
             result: Tuple[int, int, Any, Any] = self.get_voxel_id(new_voxel_pos)
 
-            # is the new place empty?
             if not result[0]:
-                # prevent placing blocks inside the player
-                player_min: Any
-                player_max: Any
+                # Verify player intersection bounds
                 player_min, player_max = self.app.player.get_aabb()
                 voxel_min: Any = glm.vec3(new_voxel_pos)
                 voxel_max: Any = voxel_min + 1.0
-
                 if self.app.player.aabb_intersect(player_min, player_max, voxel_min, voxel_max):
                     return
 
+                # Apply block to chunk
                 voxel_index: int = result[1]
                 chunk: Any = result[3]
                 chunk.voxels[voxel_index] = current_id
-
                 wx: float = float(new_voxel_pos.x)
                 wy: float = float(new_voxel_pos.y)
                 wz: float = float(new_voxel_pos.z)
 
+                # Dispatch async lighting and mesh updates
                 def async_add_voxel(
                     wx: float = wx, wy: float = wy, wz: float = wz, cid: int = current_id, ch: Any = chunk
                 ) -> None:
@@ -115,23 +113,18 @@ class VoxelHandler:
                             self.app.scene.world.lightmaps,
                             self.app.scene.world.chunk_positions,
                         )
-
                     if ch not in self.app.scene.world.build_queue:
                         self.app.scene.world.build_queue.append(ch)
                     self.rebuild_adjacent_chunks(glm.vec3(wx, wy, wz), is_light_update=True)
 
                 self.app.scene.world.executor.submit(async_add_voxel)
 
+                # Process interaction effects
                 self.app.sounds.play_place(current_id)
-
-                # Consume item from hotbar if in Survival mode
                 if self.app.player.game_mode == SURVIVAL:
                     self.app.player.inventory_counts[self.app.player.hotbar_index] -= 1
-
                     if self.app.player.inventory_counts[self.app.player.hotbar_index] <= 0:
                         self.app.player.inventory[self.app.player.hotbar_index] = 0
-
-                # was it an empty chunk
                 if chunk.is_empty:
                     chunk.is_empty = False
 
@@ -142,35 +135,30 @@ class VoxelHandler:
         modification occurs near a chunk border, or if it creates a large lighting
         update requiring neighbors to recalculate their block/sunlight visuals.
         """
+        # Calculate update radii and bounds
         wx: int = int(world_pos.x)
         wy: int = int(world_pos.y)
         wz: int = int(world_pos.z)
         cx: int = wx // CHUNK_SIZE
         cy: int = wy // CHUNK_SIZE
         cz: int = wz // CHUNK_SIZE
-
-        # Light updates (breaking a block, placing a light source) can travel up to 15 blocks
         radius: int = 15 if is_light_update else 1
-
         min_cx: int = (wx - radius) // CHUNK_SIZE
         max_cx: int = (wx + radius) // CHUNK_SIZE
         min_cz: int = (wz - radius) // CHUNK_SIZE
         max_cz: int = (wz + radius) // CHUNK_SIZE
-
-        # Sunlight casts shadows all the way down, so update everything below!
         min_cy: int = 0 if is_light_update else (wy - radius) // CHUNK_SIZE
         max_cy: int = (wy + radius) // CHUNK_SIZE
 
+        # Queue chunks in range
         for x in range(min_cx, max_cx + 1):
             for y in range(min_cy, max_cy + 1):
                 for z in range(min_cz, max_cz + 1):
                     if x == cx and y == cy and z == cz:
-                        continue  # Main chunk is already in the build queue
-
+                        continue
                     chunk_pos: Tuple[int, int, int] = (x, y, z)
                     if chunk_pos in self.app.scene.world.active_chunks:
                         chunk: Any = self.app.scene.world.active_chunks[chunk_pos]
-
                         if chunk not in self.app.scene.world.build_queue:
                             self.app.scene.world.build_queue.append(chunk)
 
@@ -182,12 +170,13 @@ class VoxelHandler:
         and queues chunks for remeshing.
         """
         if self.voxel_id:
+            # Clear targeted block
             wx: float = float(self.voxel_world_pos.x)
             wy: float = float(self.voxel_world_pos.y)
             wz: float = float(self.voxel_world_pos.z)
-
             self.chunk.voxels[self.voxel_index] = 0
 
+            # Dispatch async lighting and mesh updates
             def async_remove_voxel(
                 wx: float = wx, wy: float = wy, wz: float = wz, vid: int = self.voxel_id, ch: Any = self.chunk
             ) -> None:
@@ -200,7 +189,6 @@ class VoxelHandler:
                         self.app.scene.world.lightmaps,
                         self.app.scene.world.chunk_positions,
                     )
-
                 update_light_remove_block(
                     int(wx),
                     int(wy),
@@ -209,21 +197,18 @@ class VoxelHandler:
                     self.app.scene.world.lightmaps,
                     self.app.scene.world.chunk_positions,
                 )
-
                 if ch not in self.app.scene.world.build_queue:
                     self.app.scene.world.build_queue.append(ch)
                 self.rebuild_adjacent_chunks(glm.vec3(wx, wy, wz), is_light_update=True)
 
             self.app.scene.world.executor.submit(async_remove_voxel)
 
+            # Process interaction effects
             self.app.sounds.play_break(self.voxel_id)
-
-            # Spawn dropped item only in Survival mode
             if self.app.player.game_mode == SURVIVAL:
                 held_id: int = self.app.player.inventory[self.app.player.hotbar_index]
-
                 if self.voxel_id == STONE and held_id != WOODEN_PICKAXE:
-                    pass  # Break but drop nothing!
+                    pass
                 else:
                     self.app.scene.item_manager.add_item(self.voxel_world_pos, self.voxel_id)
 
@@ -232,9 +217,9 @@ class VoxelHandler:
         """
         Wrapper to call either add_voxel or remove_voxel based on the mode.
         """
+        # Execute voxel action
         if mode == 'add':
             self.add_voxel()
-
         elif mode == 'remove':
             self.remove_voxel()
 
@@ -246,6 +231,7 @@ class VoxelHandler:
         This should be called from the main update loop to refresh the
         targeted voxel based on the player's view.
         """
+        # Execute frame interaction
         self.ray_cast()
 
     # Fast Voxel Traversal Algorithm (3D DDA)
@@ -275,92 +261,59 @@ class VoxelHandler:
         a fast voxel traversal algorithm. Determines the exact targeted voxel and
         its normal face.
         """
-        # start point
-        x1: float
-        y1: float
-        z1: float
+        # Define ray boundaries
         x1, y1, z1 = self.app.player.position
-        # end point
-        x2: float
-        y2: float
-        z2: float
         x2, y2, z2 = self.app.player.position + self.app.player.forward * MAX_RAY_DISTANCE
-
         current_voxel_pos: Any = glm.ivec3(x1, y1, z1)
         self.voxel_id = 0
         self.voxel_normal = glm.ivec3(0)
         step_dir: int = -1
 
-        # DDA INITIALIZATION (X-AXIS)
-        # 1. `dx`: Direction of the ray on the X axis. `glm.sign(x2 - x1)`
-        #    returns exactly 1.0 if the ray is pointing positive (Right), or -1.0
-        #    if pointing negative (Left). If the ray is perfectly straight, it returns 0.
+        # Initialize DDA variables
         dx: float = float(glm.sign(x2 - x1))
-
-        # 2. `delta_x`: The total distance the ray must travel along its path to
-        #    move exactly 1.0 unit on the X grid.
-        #    We calculate this by dividing the sign (dx) by the absolute delta (x2 - x1).
-        #    If dx is 0, we cap it at 10,000,000 to prevent a Divide-By-Zero crash (infinity).
         delta_x: float = min(dx / (x2 - x1), 10000000.0) if dx != 0 else 10000000.0
-
-        # 3. `max_x`: The total distance the ray must travel from its CURRENT starting
-        #    position to hit the VERY FIRST vertical grid line on the X axis.
-        #    - `glm.fract(x1)` gives the decimal part of the player's position inside the block.
-        #    - If moving positive (dx > 0), we need the distance to the RIGHT edge `(1.0 - fract)`.
-        #    - If moving negative (dx < 0), we need the distance to the LEFT edge `(fract)`.
         max_x: float = delta_x * (1.0 - glm.fract(x1)) if dx > 0 else delta_x * glm.fract(x1)
-
-        # DDA INITIALIZATION (Y-AXIS)
-        # We repeat the exact same trigonometric step-distance math for the Y-axis.
         dy: float = float(glm.sign(y2 - y1))
         delta_y: float = min(dy / (y2 - y1), 10000000.0) if dy != 0 else 10000000.0
         max_y: float = delta_y * (1.0 - glm.fract(y1)) if dy > 0 else delta_y * glm.fract(y1)
-
-        # DDA INITIALIZATION (Z-AXIS)
-        # We repeat the exact same trigonometric step-distance math for the Z-axis.
         dz: float = float(glm.sign(z2 - z1))
         delta_z: float = min(dz / (z2 - z1), 10000000.0) if dz != 0 else 10000000.0
         max_z: float = delta_z * (1.0 - glm.fract(z1)) if dz > 0 else delta_z * glm.fract(z1)
 
+        # Traverse grid
         while not (max_x > 1.0 and max_y > 1.0 and max_z > 1.0):
             result: Tuple[int, int, Any, Any] = self.get_voxel_id(voxel_world_pos=current_voxel_pos)
 
-            # Ignore water blocks for raycasting so the player can break blocks underwater!
+            # Check for solid block intersection
             if result[0] and result[0] != WATER:
                 self.voxel_id = result[0]
                 self.voxel_index = result[1]
                 self.voxel_local_pos = result[2]
                 self.chunk = result[3]
                 self.voxel_world_pos = current_voxel_pos
-
                 if step_dir == 0:
                     self.voxel_normal.x = -dx
-
                 elif step_dir == 1:
                     self.voxel_normal.y = -dy
-
                 else:
                     self.voxel_normal.z = -dz
-
                 return True
 
+            # Step along shortest distance
             if max_x < max_y:
                 if max_x < max_z:
                     current_voxel_pos.x += int(dx)
                     max_x += delta_x
                     step_dir = 0
-
                 else:
                     current_voxel_pos.z += int(dz)
                     max_z += delta_z
                     step_dir = 2
-
             else:
                 if max_y < max_z:
                     current_voxel_pos.y += int(dy)
                     max_y += delta_y
                     step_dir = 1
-
                 else:
                     current_voxel_pos.z += int(dz)
                     max_z += delta_z
@@ -383,27 +336,20 @@ class VoxelHandler:
             integer coordinate within the chunk, and `chunk` is the chunk object
             containing the voxel (or None if out of loaded range).
         """
+        # Determine target chunk
         cx: int = int(glm.floor(voxel_world_pos.x / CHUNK_SIZE))
         cy: int = int(glm.floor(voxel_world_pos.y / CHUNK_SIZE))
         cz: int = int(glm.floor(voxel_world_pos.z / CHUNK_SIZE))
         chunk_pos: Tuple[int, int, int] = (cx, cy, cz)
 
+        # Fetch local voxel data
         if chunk_pos in self.app.scene.world.active_chunks:
             chunk: Any = self.app.scene.world.active_chunks[chunk_pos]
-
-            # Prevent errors if interacting with a chunk that is still loading asynchronously
             if chunk.voxels is None:
                 return 0, 0, None, None
-
-            lx: int
-            ly: int
-            lz: int
-            voxel_local_pos: Any
             lx, ly, lz = voxel_local_pos = glm.ivec3(voxel_world_pos) - glm.ivec3(cx, cy, cz) * CHUNK_SIZE
-
             voxel_index: int = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
             voxel_id: int = chunk.voxels[voxel_index]
-
             return voxel_id, voxel_index, voxel_local_pos, chunk
 
         return 0, 0, None, None

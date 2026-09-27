@@ -236,28 +236,31 @@ def _init_chunk_lighting(
     Internal Numba implementation for queuing initial light sources within a chunk.
     Populates separate BFS queues for sunlight and blocklight.
     """
+    # Initialize queues
     tail_sun = 0
     tail_block = 0
-
     chunk_idx = get_chunk_index((cx, cy, cz), chunk_positions)
 
     if chunk_idx != -1:
+        # Load local maps
         local_lightmap = world_lightmaps[chunk_idx]
         local_voxels = world_voxels[chunk_idx]
 
+        # Scan chunk volume
         for y in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
                 for x in range(CHUNK_SIZE):
-                    # Calculate the raw 1D array index instantly
+                    # Fetch block properties
                     idx = x + z * CHUNK_SIZE + y * CHUNK_AREA
                     val = local_lightmap[idx]
                     voxel_id = local_voxels[idx]
 
-                    # Fallback for old save files: Ignite un-cached Glowstone blocks!
+                    # Ignite glowstone
                     if voxel_id == GLOWSTONE:
-                        val = (val & 240) | 14  # Preserve sunlight (240), set block light to 14
+                        val = (val & 240) | 14
                         local_lightmap[idx] = val
 
+                    # Enqueue sunlight
                     sun = val >> 4
                     if sun > 0:
                         if (
@@ -272,7 +275,6 @@ def _init_chunk_lighting(
                                 (np.uint64(x + cx) << 32) | (np.uint64(y + cy) << 16) | np.uint64(z + cz)
                             )
                             tail_sun += 1
-
                         else:
                             if (
                                 (local_lightmap[(x - 1) + z * CHUNK_SIZE + y * CHUNK_AREA] >> 4) < sun
@@ -287,6 +289,7 @@ def _init_chunk_lighting(
                                 )
                                 tail_sun += 1
 
+                    # Enqueue blocklight
                     block = val & 15
                     if block > 0:
                         if (
@@ -301,7 +304,6 @@ def _init_chunk_lighting(
                                 (np.uint64(x + cx) << 32) | (np.uint64(y + cy) << 16) | np.uint64(z + cz)
                             )
                             tail_block += 1
-
                         else:
                             if (
                                 (local_lightmap[(x - 1) + z * CHUNK_SIZE + y * CHUNK_AREA] & 15) < block
@@ -316,6 +318,7 @@ def _init_chunk_lighting(
                                 )
                                 tail_block += 1
 
+    # Propagate lighting
     propagate_light_queue(queue_sun, tail_sun, True, world_voxels, world_lightmaps, chunk_positions)
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
@@ -329,6 +332,7 @@ def init_chunk_lighting(
     blocks (glowstone). Adds these blocks to a queue and triggers their initial internal
     BFS propagation to light up the chunk.
     """
+    # Trigger internal init
     _init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B)
 
 
@@ -347,68 +351,65 @@ def _stitch_chunk_lighting(
     Internal Numba implementation for sampling the borders of adjacent chunks
     to determine if light should bleed across the boundaries.
     """
+    # Initialize queues
     tail_sun = 0
     tail_block = 0
 
+    # Scan adjacent chunks
     for dir_idx in range(6):
         dx = DIRS[dir_idx][0]
         dy = DIRS[dir_idx][1]
         dz = DIRS[dir_idx][2]
-
         nx_c = cx + dx * CHUNK_SIZE
         ny_c = cy + dy * CHUNK_SIZE
         nz_c = cz + dz * CHUNK_SIZE
 
+        # Stitch borders if neighbor exists
         if get_chunk_index((nx_c, ny_c, nz_c), chunk_positions) != -1:
             for i in range(CHUNK_SIZE):
                 for j in range(CHUNK_SIZE):
+                    # Calculate border coordinates
                     if dx != 0:
                         wx_n = cx + (CHUNK_SIZE - 1 if dx == 1 else 0) + dx
                         wy_n = cy + i
                         wz_n = cz + j
-
                         wx_c = cx + (CHUNK_SIZE - 1 if dx == 1 else 0)
                         wy_c = cy + i
                         wz_c = cz + j
-
                     elif dy != 0:
                         wx_n = cx + i
                         wy_n = cy + (CHUNK_SIZE - 1 if dy == 1 else 0) + dy
                         wz_n = cz + j
-
                         wx_c = cx + i
                         wy_c = cy + (CHUNK_SIZE - 1 if dy == 1 else 0)
                         wz_c = cz + j
-
                     else:
                         wx_n = cx + i
                         wy_n = cy + j
                         wz_n = cz + (CHUNK_SIZE - 1 if dz == 1 else 0) + dz
-
                         wx_c = cx + i
                         wy_c = cy + j
                         wz_c = cz + (CHUNK_SIZE - 1 if dz == 1 else 0)
 
+                    # Enqueue neighbor border light
                     val_n = get_light_fast(wx_n, wy_n, wz_n, world_lightmaps, chunk_positions)
-
                     if (val_n >> 4) > 0:
                         queue_sun[tail_sun] = (np.uint64(wx_n) << 32) | (np.uint64(wy_n) << 16) | np.uint64(wz_n)
                         tail_sun += 1
-
                     if (val_n & 15) > 0:
                         queue_block[tail_block] = (np.uint64(wx_n) << 32) | (np.uint64(wy_n) << 16) | np.uint64(wz_n)
                         tail_block += 1
 
+                    # Enqueue current chunk border light
                     val_c = get_light_fast(wx_c, wy_c, wz_c, world_lightmaps, chunk_positions)
-
                     if (val_c >> 4) > 0:
                         queue_sun[tail_sun] = (np.uint64(wx_c) << 32) | (np.uint64(wy_c) << 16) | np.uint64(wz_c)
                         tail_sun += 1
-
                     if (val_c & 15) > 0:
                         queue_block[tail_block] = (np.uint64(wx_c) << 32) | (np.uint64(wy_c) << 16) | np.uint64(wz_c)
                         tail_block += 1
 
+    # Propagate stitched lighting
     propagate_light_queue(queue_sun, tail_sun, True, world_voxels, world_lightmaps, chunk_positions)
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
@@ -421,6 +422,7 @@ def stitch_chunk_lighting(
     Cross-chunk boundary light bleeding. Evaluates the outer borders of a given chunk against
     its neighboring chunks to allow light to properly spill in or out seamlessly.
     """
+    # Trigger internal stitch
     _stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B)
 
 
@@ -442,40 +444,39 @@ def remove_light_node(
     Removes any light dependent on the broken node, but captures any overlapping brighter light
     nodes into a `refill_queue` so the space can be re-illuminated by surviving light sources.
     """
+    # Initialize queue with root node
     head = 0
     tail = 0
-
     queue[tail] = (np.uint64(wx) << 40) | (np.uint64(wy) << 24) | (np.uint64(wz) << 8) | np.uint64(light_level)
     tail += 1
 
+    # Process removal queue
     while head < tail and tail < LIGHTING_QUEUE_SIZE - 10:
         packed = queue[head]
         head += 1
-
         x = int((packed >> 40) & 0xFFFF)
         y = int((packed >> 24) & 0xFFFF)
         z = int((packed >> 8) & 0xFFFF)
         L = int(packed & 0xFF)
 
+        # Check neighbors
         for i in range(6):
             nx, ny, nz = x + DIRS[i][0], y + DIRS[i][1], z + DIRS[i][2]
-
             if ny < 0 or ny >= WORLD_HEIGHT * CHUNK_SIZE:
                 continue
 
             n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)
             n_L = (n_val >> 4) if is_sun else (n_val & 15)
 
+            # Strip darker dependent light
             if n_L != 0 and n_L < L:
                 if is_sun:
                     set_light_fast(nx, ny, nz, (0 << 4) | (n_val & 15), world_lightmaps, chunk_positions)
-
                 else:
                     set_light_fast(nx, ny, nz, ((n_val >> 4) << 4) | 0, world_lightmaps, chunk_positions)
-
                 queue[tail] = (np.uint64(nx) << 40) | (np.uint64(ny) << 24) | (np.uint64(nz) << 8) | np.uint64(n_L)
                 tail += 1
-
+            # Save brighter overlapping light for refill
             elif n_L >= L:
                 refill_queue[tail_refill] = (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
                 tail_refill += 1
@@ -497,16 +498,19 @@ def _update_light_place_block(
     """
     Internal Numba implementation for removing light when an opaque block is placed.
     """
+    # Fetch current light and reset
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     sun, block = curr_val >> 4, curr_val & 15
     set_light_fast(wx, wy, wz, 0, world_lightmaps, chunk_positions)
 
+    # Process sunlight removal
     if sun > 0:
         tail_refill = remove_light_node(
             wx, wy, wz, sun, True, world_lightmaps, chunk_positions, refill_queue, 0, removal_queue
         )
         propagate_light_queue(refill_queue, tail_refill, True, world_voxels, world_lightmaps, chunk_positions)
 
+    # Process blocklight removal
     if block > 0:
         tail_refill = remove_light_node(
             wx, wy, wz, block, False, world_lightmaps, chunk_positions, refill_queue, 0, removal_queue
@@ -522,6 +526,7 @@ def update_light_place_block(
     Executed when a player places a solid block. Strips existing light from the space
     and propogates a refill sequence for neighbouring light source to compensate.
     """
+    # Trigger internal update
     _update_light_place_block(
         wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B
     )
@@ -542,47 +547,41 @@ def _update_light_remove_block(
     Internal Numba implementation for propagating light when a block is removed.
     Includes O(1) vertical raycast optimizations for direct sunlight exposure.
     """
+    # Initialize queues
     tail_sun = 0
     tail_block = 0
 
+    # Process vertical sunlight raycast
     up_val = get_light_fast(wx, wy + 1, wz, world_lightmaps, chunk_positions)
-
     if (up_val >> 4) == 15:
-        # Optimization: Vertical Raycast! (Turns O(N^3) expansion into O(1) linear line!)
         curr_y = wy
-
         while curr_y >= 0:
             voxel_id = get_voxel_fast(wx, curr_y, wz, world_voxels, chunk_positions)
-
             if voxel_id != AIR and voxel_id != WATER and voxel_id != GLASS and voxel_id != LEAVES:
                 break
-
             curr_val = get_light_fast(wx, curr_y, wz, world_lightmaps, chunk_positions)
             set_light_fast(wx, curr_y, wz, (15 << 4) | (curr_val & 15), world_lightmaps, chunk_positions)
             queue_sun[tail_sun] = (np.uint64(wx) << 32) | (np.uint64(curr_y) << 16) | np.uint64(wz)
             tail_sun += 1
-
             if voxel_id == WATER or voxel_id == LEAVES:
                 break
-
             curr_y -= 1
 
+    # Check neighbors for light sources
     for i in range(6):
         nx, ny, nz = wx + DIRS[i][0], wy + DIRS[i][1], wz + DIRS[i][2]
-
         if ny < 0 or ny >= WORLD_HEIGHT * CHUNK_SIZE:
             continue
 
         n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)
-
         if (n_val >> 4) > 0:
             queue_sun[tail_sun] = (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
             tail_sun += 1
-
         if (n_val & 15) > 0:
             queue_block[tail_block] = (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
             tail_block += 1
 
+    # Propagate new lighting
     propagate_light_queue(queue_sun, tail_sun, True, world_voxels, world_lightmaps, chunk_positions)
     propagate_light_queue(queue_block, tail_block, False, world_voxels, world_lightmaps, chunk_positions)
 
@@ -596,6 +595,7 @@ def update_light_remove_block(
     newly opened space. Implements an O(1) verticle linear raycast optimization if the
     block broken was covering directly top-down sunlight.
     """
+    # Trigger internal update
     _update_light_remove_block(
         wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B
     )
@@ -609,9 +609,11 @@ def _place_torch(
     Internal Numba implementation for artificially injecting blocklight (level 14)
     into the lightmap grid.
     """
+    # Set torch blocklight
     curr_val = get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)
     set_light_fast(wx, wy, wz, ((curr_val >> 4) << 4) | 14, world_lightmaps, chunk_positions)
 
+    # Propagate new light
     queue[0] = (np.uint64(wx) << 32) | (np.uint64(wy) << 16) | np.uint64(wz)
     propagate_light_queue(queue, 1, False, world_voxels, world_lightmaps, chunk_positions)
 
@@ -622,4 +624,5 @@ def place_torch(wx: int, wy: int, wz: int, world_voxels: Any, world_lightmaps: A
     Hardcodes a block light value of 14 into the grid and triggers a blocklight BFS
     propogation. Used exclusively for placing items like Glowstone.
     """
+    # Trigger internal placement
     _place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A)
