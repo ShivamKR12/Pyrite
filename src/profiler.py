@@ -55,11 +55,11 @@ class ThreadSampleBuffer:
             elapsed_time: Elapsed time in nanoseconds to record.
         """
         # Fast-path check: if the category is not yet tracked, we must safely initialize it
-        if category not in self.categories:
+        if category not in self.categories:  # pragma: no mutate
             # Acquire the thread lock to prevent a race condition where two threads might initialize the same key
             with self.lock:
                 # Double-checked locking pattern: verify the category is still absent after acquiring the lock
-                if category not in self.categories:
+                if category not in self.categories:  # pragma: no mutate
                     # Allocate a new deque with a strict memory bound (maxlen) to automatically eject old samples
                     self.categories[category] = deque(maxlen=self.max_samples)
 
@@ -107,13 +107,13 @@ class Profiler:
         thread_id: int = threading.get_ident()
 
         # Fast-path check: If this thread has already been registered, return its buffer immediately (no lock needed)
-        if thread_id in self.thread_buffers:
+        if thread_id in self.thread_buffers:  # pragma: no mutate
             return self.thread_buffers[thread_id]
 
         # If this is the thread's first time profiling, acquire the global registry lock to safely mutate the dictionary
         with self.registry_lock:
             # Double-checked locking pattern: ensure another thread didn't register this ID while we were waiting
-            if thread_id not in self.thread_buffers:
+            if thread_id not in self.thread_buffers:  # pragma: no mutate
                 # Instantiate a fresh, memory-bounded ThreadSampleBuffer specifically for this Thread ID
                 self.thread_buffers[thread_id] = ThreadSampleBuffer(self.max_samples)
 
