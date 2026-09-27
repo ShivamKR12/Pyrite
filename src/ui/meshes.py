@@ -6,16 +6,12 @@ for generating screen-space flat meshes. It provides the geometry structures for
 the crosshair, the 2D scaled block inventory icons, text fonts, and solid-color backgrounds
 that compose the Pyrite game overlay.
 """
-
 from typing import Any, Tuple
-
 import numpy as np
 from numpy.typing import NDArray
-
 from meshes.base_mesh import BaseMesh
 from profiler import global_profiler
 from settings import ASPECT_RATIO
-
 
 class CrosshairMesh(BaseMesh):
     """
@@ -33,12 +29,18 @@ class CrosshairMesh(BaseMesh):
         """
         Initializes the crosshair mesh, binding it to the solid-color quad shader.
         """
+
+        # Execute expression statement
         super().__init__()
+
+        # Process logic block
         self.app: Any = app
         self.ctx: Any = self.app.ctx
         self.program: Any = self.app.shader_program.quad
         self.vbo_format: str = '3f 3f'
         self.attrs: Tuple[str, ...] = ('in_position', 'in_color')
+
+        # Process logic block
         self.vao: Any = self.get_vao()
 
     @global_profiler.profile_func('CrosshairMesh_GetVertexData')
@@ -48,31 +50,15 @@ class CrosshairMesh(BaseMesh):
         horizontal and vertical lines of the crosshair, scaling it properly
         to match the window's aspect ratio.
         """
+
+        # Initialize and update variables
         w = 0.015
         h = w * ASPECT_RATIO
-
-        # Creates a perfect '+' sign in the center of the screen
-        vertices = [
-            # Horizontal line
-            (-w, -0.002 * ASPECT_RATIO, 0.0),
-            (w, -0.002 * ASPECT_RATIO, 0.0),
-            (w, 0.002 * ASPECT_RATIO, 0.0),
-            (-w, -0.002 * ASPECT_RATIO, 0.0),
-            (w, 0.002 * ASPECT_RATIO, 0.0),
-            (-w, 0.002 * ASPECT_RATIO, 0.0),
-            # Vertical line
-            (-0.002, -h, 0.0),
-            (0.002, -h, 0.0),
-            (0.002, h, 0.0),
-            (-0.002, -h, 0.0),
-            (0.002, h, 0.0),
-            (-0.002, h, 0.0),
-        ]
-
+        vertices = [(-w, -0.002 * ASPECT_RATIO, 0.0), (w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0), (-w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0), (-w, 0.002 * ASPECT_RATIO, 0.0), (-0.002, -h, 0.0), (0.002, -h, 0.0), (0.002, h, 0.0), (-0.002, -h, 0.0), (0.002, h, 0.0), (-0.002, h, 0.0)]
         colors = [(0.9, 0.9, 0.9) for _ in vertices]
 
+        # Return computed result
         return np.hstack([vertices, colors]).astype('float32')
-
 
 class BlockIconMesh(BaseMesh):
     """
@@ -90,12 +76,18 @@ class BlockIconMesh(BaseMesh):
         """
         Initializes the block icon mesh and connects it to the block UI shader.
         """
+
+        # Execute expression statement
         super().__init__()
+
+        # Process logic block
         self.app: Any = app
         self.ctx: Any = self.app.ctx
         self.program: Any = self.app.shader_program.ui_block
         self.vbo_format: str = '2f 2f'
         self.attrs: Tuple[str, ...] = ('in_position', 'in_tex_coord')
+
+        # Process logic block
         self.vao: Any = self.get_vao()
 
     @global_profiler.profile_func('BlockIconMesh_GetVertexData')
@@ -104,13 +96,13 @@ class BlockIconMesh(BaseMesh):
         Returns the vertices and texture coordinates for a standard full-screen quad,
         which is later scaled and positioned by the shader based on uniform offsets.
         """
-        # Standard normalized quad [-1, 1]
-        vertices = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
 
+        # Initialize and update variables
+        vertices = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
 
+        # Return computed result
         return np.hstack([vertices, tex_coords]).astype('float32')
-
 
 class UIColorMesh(BaseMesh):
     """
@@ -129,12 +121,18 @@ class UIColorMesh(BaseMesh):
         Initializes the UI color mesh, attaching it to a simple shader that applies
         flat color uniforms instead of textures.
         """
+
+        # Execute expression statement
         super().__init__()
+
+        # Process logic block
         self.app: Any = app
         self.ctx: Any = self.app.ctx
         self.program: Any = self.app.shader_program.ui_color
         self.vbo_format: str = '2f'
         self.attrs: Tuple[str, ...] = ('in_position',)
+
+        # Process logic block
         self.vao: Any = self.get_vao()
 
     @global_profiler.profile_func('UIColorMesh_GetVertexData')
@@ -143,10 +141,12 @@ class UIColorMesh(BaseMesh):
         Returns the raw vertex positions for a 2D quad without texture coordinates,
         as the shape relies solely on color uniforms.
         """
+
+        # Initialize and update variables
         vertices = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
 
+        # Return computed result
         return np.array(vertices, dtype='float32')
-
 
 class UITextMesh(BaseMesh):
     """
@@ -165,12 +165,18 @@ class UITextMesh(BaseMesh):
         Initializes the UI text mesh, binding it to the text shader which handles
         transparency and alpha blending for clean font rendering.
         """
+
+        # Execute expression statement
         super().__init__()
+
+        # Process logic block
         self.app: Any = app
         self.ctx: Any = self.app.ctx
         self.program: Any = self.app.shader_program.ui_text
         self.vbo_format: str = '2f 2f'
         self.attrs: Tuple[str, ...] = ('in_position', 'in_tex_coord')
+
+        # Process logic block
         self.vao: Any = self.get_vao()
 
     @global_profiler.profile_func('UITextMesh_GetVertexData')
@@ -179,8 +185,10 @@ class UITextMesh(BaseMesh):
         Returns the standard set of vertices and UV coordinates mapping a full
         texture onto a simple 2D rectangular quad.
         """
-        vertices = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
 
+        # Initialize and update variables
+        vertices = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
         tex_coords = [(0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1)]
 
+        # Return computed result
         return np.hstack([vertices, tex_coords]).astype('float32')
