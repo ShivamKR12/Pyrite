@@ -49,3 +49,8 @@ No exceptions. Do not try to predict what a function signature is. Do not halluc
 
 1. **TEST EVERY CHANGE**: Whenever you write, modify, or refactor any code, you MUST immediately run the respective tests or scripts to verify if your change is correct. Do not assume your code works. This must be done EVERY SINGLE TIME a code change is made.
 2. **USE BACKGROUND TASKS**: Run tests using `run_command` in the background and verify the output. If a specific unit test file doesn't exist for the module you changed, you must run the engine or a relevant smoke-test script to ensure it runs without crashing before considering the task complete.
+
+## STRICT RULE: CONTINUOUS INTEGRATION & COMMITS
+
+1. **COMMIT FREQUENTLY**: Whenever a specific functional change is completed, you MUST immediately commit and push the code. Do not wait to bundle huge amounts of changes together. Commit small, atomic, and logical units of work as soon as they pass tests.
+2. **CLEAR MESSAGES**: Commit messages must be clear, concise, and written in plain text (no markdown formatting inside the commit message). They should clearly describe *what* was changed and *why*.
