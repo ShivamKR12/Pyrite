@@ -12,12 +12,12 @@ uniform vec4 u_clip; // (x_min, y_min, x_max, y_max)
 
 
 void main() {
-    
-    // Inside your void main() block:
+    // Discard fragments outside the clipping rectangle
     if (v_position.x < u_clip.x || v_position.y < u_clip.y || v_position.x > u_clip.z || v_position.y > u_clip.w) {
         discard;
     }
 
+    // Sample texture and apply color and alpha blending
     vec4 col = texture(u_texture_0, uv);
     fragColor = vec4(col.rgb * u_color.rgb, col.a * u_alpha * u_color.a);
 }

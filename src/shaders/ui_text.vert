@@ -11,8 +11,12 @@ uniform vec2 u_scale;
 
 
 void main() {
+    // Pass texture coordinates to fragment shader
     uv = in_tex_coord;
-    
+
+    // Calculate final vertex position using scale and offset
     gl_Position = vec4((in_position * u_scale) + u_offset, 0.0, 1.0);
+
+    // Pass transformed 2D position to fragment shader for clipping
     v_position = gl_Position.xy;
 }

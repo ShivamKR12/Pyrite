@@ -9,11 +9,11 @@ uniform vec4 u_clip; // (x_min, y_min, x_max, y_max)
 
 
 void main() {
-    
-    // Inside your void main() block:
+    // Discard fragments outside the clipping rectangle
     if (v_position.x < u_clip.x || v_position.y < u_clip.y || v_position.x > u_clip.z || v_position.y > u_clip.w) {
         discard;
     }
 
+    // Set final output color
     fragColor = u_color;
 }

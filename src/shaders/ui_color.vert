@@ -9,6 +9,9 @@ out vec2 v_position;
 
 
 void main() {
+    // Calculate final vertex position using scale and offset
     gl_Position = vec4((in_position * u_scale) + u_offset, 0.0, 1.0);
-    v_position = gl_Position.xy; 
+
+    // Pass transformed 2D position to fragment shader for clipping
+    v_position = gl_Position.xy;
 }
