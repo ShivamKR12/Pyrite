@@ -80,7 +80,7 @@ def test_profiler_record_and_frame() -> None:
     assert 'Frame_Total' not in p._get_buffer().categories
 
     # Explicitly test boundary of frame_start_time > 0 mutation
-    p.frame_start_time = 500_000_000
+    p.frame_start_time = 1
     p.end_frame()
     assert 'Frame_Total' in p._get_buffer().categories
     p._get_buffer().categories.pop('Frame_Total')
@@ -140,7 +140,14 @@ def test_profiler_save_report(tmp_path: Any, capsys: Any, monkeypatch: Any) -> N
 
     # Use decimals that strictly enforce both rounding and percentile boundaries
     p.record('Report_Cat', 100_123_450.0)
-    p.record('Report_Cat', 300_345_670.0)
+
+    # Spawn a second thread to record the same category and kill `if True` reset mutations
+    def background_record() -> None:
+        p.record('Report_Cat', 300_345_670.0)
+
+    t = threading.Thread(target=background_record)
+    t.start()
+    t.join()
 
     # Ensure empty times lists are properly handled
     p.record('Empty_Cat', 1.0)
