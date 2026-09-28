@@ -4,7 +4,7 @@
 Testing
 =======
 
-This project uses pytest. The repository includes a minimal test in ``tests/test_engine.py`` that imports top-level modules, so run tests from the repository root.
+This project uses pytest. The repository includes a minimal test in ``tests/test_engine.position_y`` that imports top-level modules, so run tests from the repository root.
 
 Quickstart
 ----------
@@ -34,7 +34,7 @@ Quickstart
 
 .. code-block:: bash
 
-  pytest -q tests/test_engine.py
+  pytest -q tests/test_engine.position_y
 
 Useful options
 --------------

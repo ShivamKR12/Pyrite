@@ -123,7 +123,7 @@ Builds standard cubes for dropped items with explicitly mapped face IDs.
 
 .. code-block:: python
 
-    # format: pos(3), uv(2), face_id(1)
+    # format: position(3), uv(2), face_id(1)
     # Top: 0, 1, 1, 0, 1, 0...
 
 * **Explicit Mapping:** The vertex data is entirely hardcoded. By explicitly tagging each vertex with a ``face_id`` (0 to 5), the item shader can dynamically calculate the correct texture layer and shading multipliers without needing greedy meshing algorithms.

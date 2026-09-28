@@ -20,24 +20,24 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 - `def move_back(self, velocity)`
 ## Class: Frustum
 - `def __init__(self, camera)`
-- `def update_factors(self, v_fov, h_fov)`
+- `def update_factors(self, vertical_fov, horizontal_fov)`
 - `def is_on_frustum(self, chunk)`
-### `def frustum_cull_fast(chunk_centers, out_mask, cam_pos, cam_forward, cam_right, cam_up, tan_y, tan_x, factor_y, factor_x)`
-### `def get_voxel_fast(wx, wy, wz, world_voxels, chunk_positions)`
-### `def get_light_fast(wx, wy, wz, world_lightmaps, chunk_positions)`
-### `def set_light_fast(wx, wy, wz, val, world_lightmaps, chunk_positions)`
+### `def frustum_cull_fast(chunk_centers, out_mask, camera_position, camera_forward, camera_right, camera_up, tangent_y, tangent_x, factor_y, factor_x)`
+### `def get_voxel_fast(world_x, world_y, world_z, world_voxels, chunk_positions)`
+### `def get_light_fast(world_x, world_y, world_z, world_lightmaps, chunk_positions)`
+### `def set_light_fast(world_x, world_y, world_z, val, world_lightmaps, chunk_positions)`
 ### `def propagate_light_queue(queue, tail, is_sun, world_voxels, world_lightmaps, chunk_positions)`
-### `def _init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block)`
-### `def init_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions)`
-### `def _stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block)`
-### `def stitch_chunk_lighting(cx, cy, cz, world_voxels, world_lightmaps, chunk_positions)`
-### `def remove_light_node(wx, wy, wz, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill, queue)`
-### `def _update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, refill_queue, removal_queue)`
-### `def update_light_place_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions)`
-### `def _update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block)`
-### `def update_light_remove_block(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions)`
-### `def _place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions, queue)`
-### `def place_torch(wx, wy, wz, world_voxels, world_lightmaps, chunk_positions)`
+### `def _init_chunk_lighting(chunk_x, chunk_y, chunk_z, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block)`
+### `def init_chunk_lighting(chunk_x, chunk_y, chunk_z, world_voxels, world_lightmaps, chunk_positions)`
+### `def _stitch_chunk_lighting(chunk_x, chunk_y, chunk_z, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block)`
+### `def stitch_chunk_lighting(chunk_x, chunk_y, chunk_z, world_voxels, world_lightmaps, chunk_positions)`
+### `def remove_light_node(world_x, world_y, world_z, light_level, is_sun, world_lightmaps, chunk_positions, refill_queue, tail_refill, queue)`
+### `def _update_light_place_block(world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions, refill_queue, removal_queue)`
+### `def update_light_place_block(world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions)`
+### `def _update_light_remove_block(world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions, queue_sun, queue_block)`
+### `def update_light_remove_block(world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions)`
+### `def _place_torch(world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions, queue)`
+### `def place_torch(world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions)`
 ## Class: Pyrite
 - `def __init__(self)`
 - `def load_config(self)`
@@ -104,9 +104,9 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 ### `def get_biome(x, z, perm_array)`
 ### `def get_height(x, z, perm_array)`
 ### `def get_index(x, y, z)`
-### `def set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)`
+### `def set_voxel_column(voxels, x, z, chunk_x, chunk_y, chunk_z, perm_array, perm_grad_array)`
 ### `def place_tree(voxels, x, y, z, voxel_id, tree_prob)`
-### `def fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)`
+### `def fill_initial_sunlight(voxels, lightmap, chunk_x, chunk_y, chunk_z, perm_array)`
 ## Class: Textures
 - `def __init__(self, app)`
 - `def load(self, file_name, is_tex_array, rotation, flip_x, flip_y)`
@@ -128,7 +128,7 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 - `def stream_chunks(self)`
 - `def load_chunk(self, x, y, z)`
 - `def save_chunk_to_db(self, x, y, z, voxels, lightmap)`
-- `def unload_chunk(self, pos)`
+- `def unload_chunk(self, position)`
 - `def render(self)`
 - `def render_water(self)`
 - `def save(self)`
@@ -166,11 +166,11 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 - `def __init__(self, app)`
 - `def get_vertex_data(self)`
 ## Class: ObjMesh
-- `def __init__(self, app, obj_path, tex_id)`
+- `def __init__(self, app, object_path, texture_id)`
 - `def render(self)`
-- `def parse_mtl(self, mtl_path)`
+- `def parse_mtl(self, material_path)`
 - `def get_vertex_data(self)`
-### `def get_shared_resource(app, res_type)`
+### `def get_shared_resource(app, resource_type)`
 ## Class: UINode
 - `def __init__(self, size)`
 - `def add_child(self, child)`
@@ -180,31 +180,31 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 - `def handle_event(self, event)`
 - `def render(self, offset, alpha)`
 ## Class: VBox
-- `def __init__(self, pos, spacing)`
+- `def __init__(self, position, spacing)`
 - `def update_layout(self)`
 ## Class: Button
-- `def __init__(self, app, text, pos, size, action, border_radius, elevation)`
+- `def __init__(self, app, text, position, size, action, border_radius, elevation)`
 - `def check_hover(self, mouse_pos)`
 - `def update(self, mouse_pos)`
 - `def handle_event(self, event)`
 - `def render(self, offset, alpha)`
 ## Class: WorldButton
-- `def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, pos, size, action, border_radius, elevation)`
+- `def __init__(self, app, save_name, display_name, seed, game_mode, creation_date, last_played, position, size, action, border_radius, elevation)`
 - `def check_hover(self, mouse_pos)`
 - `def update(self, mouse_pos)`
 - `def handle_event(self, event)`
 - `def render(self, offset, alpha)`
 ## Class: TextInput
-- `def __init__(self, app, pos, size, label)`
+- `def __init__(self, app, position, size, label)`
 - `def handle_event(self, event)`
 - `def render(self, offset, alpha)`
 ## Class: Slider
-- `def __init__(self, app, text, pos, size, min_val, max_val, config_key, action, is_int)`
+- `def __init__(self, app, text, position, size, min_val, max_val, config_key, action, is_int)`
 - `def update(self, mouse_pos)`
 - `def handle_event(self, event)`
 - `def render(self, offset, alpha)`
 ## Class: Toggle
-- `def __init__(self, app, text, pos, size, config_key, action)`
+- `def __init__(self, app, text, position, size, config_key, action)`
 - `def update(self, mouse_pos)`
 - `def handle_event(self, event)`
 - `def render(self, offset, alpha)`
@@ -231,7 +231,7 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 - `def render(self)`
 ## Class: MainMenu
 - `def __init__(self, app)`
-- `def trigger_action(self, action, anim_dir)`
+- `def trigger_action(self, action, animation_direction)`
 - `def open_options(self)`
 - `def toggle_game_mode(self)`
 - `def set_state(self, new_state)`
@@ -244,7 +244,7 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 - `def render(self)`
 ## Class: PauseMenu
 - `def __init__(self, app)`
-- `def trigger_action(self, action, anim_dir)`
+- `def trigger_action(self, action, animation_direction)`
 - `def open_options(self)`
 - `def resume_game(self)`
 - `def quit_to_menu(self)`
@@ -253,7 +253,7 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 - `def render(self)`
 ## Class: OptionsMenu
 - `def __init__(self, app)`
-- `def trigger_action(self, action, anim_dir)`
+- `def trigger_action(self, action, animation_direction)`
 - `def update_fov(self, val)`
 - `def update_music_volume(self, val)`
 - `def update_sfx_volume(self, val)`
@@ -285,8 +285,8 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 - `def render(self)`
 - `def render_water(self)`
 - `def build_voxels(self)`
-- `def generate_terrain(voxels, lightmap, cx, cy, cz, perm_array, perm_grad_array, seed)`
-- `def fill_initial_sunlight_only(voxels, lightmap, cx, cy, cz, perm_array)`
+- `def generate_terrain(voxels, lightmap, chunk_x, chunk_y, chunk_z, perm_array, perm_grad_array, seed)`
+- `def fill_initial_sunlight_only(voxels, lightmap, chunk_x, chunk_y, chunk_z, perm_array)`
 ## Class: Clouds
 - `def __init__(self, app)`
 - `def update(self)`
@@ -298,7 +298,7 @@ description: The exact, working code API reference for the Pyrite engine. Contai
 ## Class: ItemManager
 - `def __init__(self, app)`
 - `def add_item(self, position, voxel_id)`
-- `def load_item(self, voxel_id, px, py, pz, vx, vy, vz)`
+- `def load_item(self, voxel_id, position_x, position_y, position_z, velocity_x, velocity_y, velocity_z)`
 - `def update(self)`
 - `def render(self)`
 ## Class: SkyMesh

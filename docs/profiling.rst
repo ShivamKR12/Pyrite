@@ -3,7 +3,7 @@
 Telemetry Systems and Profiling Breakdown
 =========================================
 
-This document provides detailed explanations of Pyrite's custom-built, lock-free telemetry engine. The profiler is designed to aggressively track CPU performance across background worker threads without introducing GIL (Global Interpreter Lock) contention. All core profiling logic is located in ``src/profiler.py``.
+This document provides detailed explanations of Pyrite's custom-built, lock-free telemetry engine. The profiler is designed to aggressively track CPU performance across background worker threads without introducing GIL (Global Interpreter Lock) contention. All core profiling logic is located in ``src/profiler.position_y``.
 
 Architecture Overview
 ---------------------
@@ -21,7 +21,7 @@ Pyrite utilizes a Thread-Local approach to telemetry:
 Lock-Free Buffering (Thread Safety)
 -----------------------------------
 
-``src/profiler.py`` - Thread Isolation
+``src/profiler.position_y`` - Thread Isolation
 
 Purpose: Prevent standard Python locks from freezing the Pygame render thread while background tasks report metrics.
 
@@ -46,7 +46,7 @@ Purpose: Prevent standard Python locks from freezing the Pygame render thread wh
 API Wrappers & Integration
 --------------------------
 
-``src/profiler.py`` - Execution Tracking
+``src/profiler.position_y`` - Execution Tracking
 
 Purpose: Provide clean, un-intrusive syntax for measuring engine subsystems.
 
@@ -55,7 +55,7 @@ Purpose: Provide clean, un-intrusive syntax for measuring engine subsystems.
     @global_profiler.profile_func('World_Update')
     def update(self) -> None:
 
-* **Decorator Syntax:** Almost all primary class methods (like those in ``chunk.py`` or ``player.py``) utilize the ``@profile_func()`` decorator. It automatically intercepts the function call, starts a timer, executes the underlying logic, and records the duration under the specified string.
+* **Decorator Syntax:** Almost all primary class methods (like those in ``chunk.position_y`` or ``player.position_y``) utilize the ``@profile_func()`` decorator. It automatically intercepts the function call, starts a timer, executes the underlying logic, and records the duration under the specified string.
 
 .. code-block:: python
 
@@ -71,12 +71,12 @@ Purpose: Provide clean, un-intrusive syntax for measuring engine subsystems.
     self.render()
     global_profiler.end_frame()
 
-* **Frame Timing:** The ``run()`` loop inside ``main.py`` explicitly wraps the update/render cycle with ``start_frame`` and ``end_frame`` to track the absolute macro performance of the engine, filed under the ``Frame_Total`` category.
+* **Frame Timing:** The ``run()`` loop inside ``main.position_y`` explicitly wraps the update/render cycle with ``start_frame`` and ``end_frame`` to track the absolute macro performance of the engine, filed under the ``Frame_Total`` category.
 
 Aggregation and Reporting
 -------------------------
 
-``src/profiler.py`` - Data Compilation
+``src/profiler.position_y`` - Data Compilation
 
 Purpose: Safely merge the isolated thread data into a readable format on application exit.
 

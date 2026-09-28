@@ -4,7 +4,7 @@
 Core Engine Flow
 ================
 
-This document describes the runtime flow of the Pyrite engine, focusing on how the application initializes, updates, and renders each frame. It is intended as a system-level guide rather than a line-by-line walkthrough of ``main.py``.
+This document describes the runtime flow of the Pyrite engine, focusing on how the application initializes, updates, and renders each frame. It is intended as a system-level guide rather than a line-by-line walkthrough of ``main.position_y``.
 
 Engine Initialization
 ---------------------

@@ -4,7 +4,7 @@
 Terrain Systems and Procedural Generation Breakdown
 ===================================================
 
-This document provides detailed explanations of Pyrite's procedural terrain generation, including deterministic seeding, biome selection, height mapping (FBm), cave carving, and structural tree placement. All core terrain logic is located in ``src/terrain_gen.py`` and ``src/noise.py``.
+This document provides detailed explanations of Pyrite's procedural terrain generation, including deterministic seeding, biome selection, height mapping (FBm), cave carving, and structural tree placement. All core terrain logic is located in ``src/terrain_gen.position_y`` and ``src/noise.position_y``.
 
 Architecture Overview
 ---------------------
@@ -22,7 +22,7 @@ Pyrite utilizes a heavily parallelized, lock-free approach to generate infinite 
 Noise Foundation (Deterministic Generation)
 -------------------------------------------
 
-``src/noise.py`` - Noise & Seeding Engine
+``src/noise.position_y`` - Noise & Seeding Engine
 
 Purpose: Manage global permutation arrays, synchronize RNG, and ensure 100% deterministic world generation.
 
@@ -46,7 +46,7 @@ Purpose: Manage global permutation arrays, synchronize RNG, and ensure 100% dete
 
 * **RNG Synchronization:** Because performance-critical loops are compiled with Numba, we must explicitly seed Numba's internal RNG (``_seed_numba``) as well as standard Python random modules. This ensures functions like random chance for tree placement are identical on every launch.
 
-``src/terrain_gen.py`` - Numba JIT Compilation
+``src/terrain_gen.position_y`` - Numba JIT Compilation
 
 Purpose: Execute complex noise math at near-C++ speeds using LLVM.
 
@@ -59,7 +59,7 @@ Purpose: Execute complex noise math at near-C++ speeds using LLVM.
 Biome Selection Algorithm
 -------------------------
 
-``src/terrain_gen.py`` - Biome Evaluation
+``src/terrain_gen.position_y`` - Biome Evaluation
 
 Purpose: Determine temperature and moisture to map out expansive biomes like deserts, snow, and forests.
 
@@ -77,7 +77,7 @@ Purpose: Determine temperature and moisture to map out expansive biomes like des
 
 .. code-block:: python
 
-    dither = noise2(wx * 0.2, wz * 0.2, perm_array) * 0.05 + noise2(wx * 0.8, wz * 0.8, perm_array) * 0.03
+    dither = noise2(world_x * 0.2, world_z * 0.2, perm_array) * 0.05 + noise2(world_x * 0.8, world_z * 0.8, perm_array) * 0.03
     temp += dither
     moist += dither
 
@@ -93,7 +93,7 @@ Purpose: Determine temperature and moisture to map out expansive biomes like des
 Height Generation Algorithm
 ---------------------------
 
-``src/terrain_gen.py`` - Height Evaluation
+``src/terrain_gen.position_y`` - Height Evaluation
 
 Purpose: Utilize Fractional Brownian Motion (FBm) combined with continental modifiers to sculpt oceans, plains, and mountains.
 
@@ -130,19 +130,19 @@ Purpose: Utilize Fractional Brownian Motion (FBm) combined with continental modi
 Cave Carving Algorithm (3D)
 ---------------------------
 
-``src/terrain_gen.py`` - Volumetric Cave Carving
+``src/terrain_gen.position_y`` - Volumetric Cave Carving
 
 Purpose: Hollow out complex underground cave systems using 3D noise while preventing unnatural surface craters.
 
 .. code-block:: python
 
-    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09, perm_array, perm_grad_array)
+    cave_noise = noise3(world_x * 0.09, world_y * 0.09, world_z * 0.09, perm_array, perm_grad_array)
 
-* **Volumetric Carving:** For every solid block beneath the crust, we evaluate 3D Simplex noise using the exact ``wx, wy, wz`` world coordinates.
+* **Volumetric Carving:** For every solid block beneath the crust, we evaluate 3D Simplex noise using the exact ``world_x, world_y, world_z`` world coordinates.
 
 .. code-block:: python
 
-    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0, perm_array)
+    entrance_mask = noise2(world_x * 0.02 + 200.0, world_z * 0.02 + 200.0, perm_array)
 
 * **Entrance Mask:** Before looping through the Y-axis, we calculate a 2D map once per column to determine how "open" or "closed" the surface should be, preventing all caves from breaching the top.
 
@@ -165,13 +165,13 @@ Purpose: Hollow out complex underground cave systems using 3D noise while preven
 Tree Placement and Structure
 -----------------------------
 
-``src/terrain_gen.py`` - Flora Generation
+``src/terrain_gen.position_y`` - Flora Generation
 
 Purpose: Probabilistically spawn and construct multi-block tree structures within chunk memory bounds.
 
 .. code-block:: python
 
-    if wy == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and wy < STONE_LVL:
+    if world_y == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and world_y < STONE_LVL:
 
 * **Spawning Constraints:** Trees are strictly constrained. They can only spawn on the absolute top surface block, cannot spawn in water or on beaches, and cannot spawn high up in the mountains (above ``STONE_LVL``).
 

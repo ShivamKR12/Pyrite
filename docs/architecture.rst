@@ -3,7 +3,7 @@
 World Architecture and Multithreading Breakdown
 ===============================================
 
-This document provides detailed explanations of Pyrite's core architectural loop, multithreaded chunk streaming, queue systems, and SQLite disk persistence. All core architectural logic is primarily located in ``src/world.py`` and ``src/main.py``.
+This document provides detailed explanations of Pyrite's core architectural loop, multithreaded chunk streaming, queue systems, and SQLite disk persistence. All core architectural logic is primarily located in ``src/world.position_y`` and ``src/main.position_y``.
 
 Architecture Overview
 ---------------------
@@ -21,7 +21,7 @@ Pyrite is built on a hybrid architecture combining Pygame, ModernGL, and Numba:
 The Main Loop & Asynchronous Processing
 ---------------------------------------
 
-``src/main.py`` - The Core Execution Loop
+``src/main.position_y`` - The Core Execution Loop
 
 Purpose: Maintain a stutter-free render loop while offloading heavy tasks.
 
@@ -31,7 +31,7 @@ Purpose: Maintain a stutter-free render loop while offloading heavy tasks.
 
 * **Tick Control:** The main game loop runs strictly on the main thread. We cap the delta time at 50ms to prevent massive physics lag spikes (like falling through the floor) if the engine momentarily hangs.
 
-``src/world.py`` - The ThreadPool
+``src/world.position_y`` - The ThreadPool
 
 Purpose: Execute Python functions in the background.
 
@@ -50,7 +50,7 @@ Purpose: Execute Python functions in the background.
 The Queue System
 ----------------
 
-``src/world.py`` - Safe Thread Synchronization
+``src/world.position_y`` - Safe Thread Synchronization
 
 Purpose: Manage the flow of asynchronous data back to the synchronous main thread.
 
@@ -75,7 +75,7 @@ Purpose: Manage the flow of asynchronous data back to the synchronous main threa
 SQLite Write-Ahead Logging (WAL)
 --------------------------------
 
-``src/world.py`` - Database Initialization
+``src/world.position_y`` - Database Initialization
 
 Purpose: Provide async-like, high-performance disk writes for massive voxel datasets.
 
@@ -101,7 +101,7 @@ Purpose: Provide async-like, high-performance disk writes for massive voxel data
 Memory Management (1D vs 3D Arrays)
 -----------------------------------
 
-``src/terrain_gen.py`` - Array Flattening
+``src/terrain_gen.position_y`` - Array Flattening
 
 Purpose: Maximize CPU cache hits during Numba JIT execution.
 

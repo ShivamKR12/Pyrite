@@ -18,13 +18,13 @@ Folder layout
 Primary tooling
 ---------------
 
-- `create_texture_array.py` / `append_texture.py` — scripts in repository root used to assemble 2D texture arrays and atlases. Run these when adding new block textures.
+- `create_texture_array.position_y` / `append_texture.position_y` — scripts in repository root used to assemble 2D texture arrays and atlases. Run these when adding new block textures.
 
 Texture conventions
 -------------------
 
 - Tile size: textures are expected to share a consistent tile size (e.g., 16×16, 32×32). Check the existing assets to match the project's atlas size.
-- Texture Array: the engine maps `voxel_id` → `texture layer index` at startup. See `src/textures.py` and `src/shader_program.py` for the mapping mechanism.
+- Texture Array: the engine maps `voxel_id` → `texture layer index` at startup. See `src/textures.position_y` and `src/shader_program.position_y` for the mapping mechanism.
 - Mipmaps: generate mipmaps for texture arrays to improve distant LOD rendering.
 - Alpha: use premultiplied alpha if blending artifacts appear; ensure shaders expect the chosen alpha convention.
 
@@ -45,8 +45,8 @@ Adding or updating assets
 -------------------------
 
 1. Place source art in a clear subfolder under `assets/`.
-2. If adding textures, run `create_texture_array.py` to integrate new tiles into the texture array.
-3. Update mappings in `src/textures.py` or the texture manifest (if present).
+2. If adding textures, run `create_texture_array.position_y` to integrate new tiles into the texture array.
+3. Update mappings in `src/textures.position_y` or the texture manifest (if present).
 4. Test in-game to verify UVs, atlas layer indices, and shading.
 
 Versioning and artist workflow
