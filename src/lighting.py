@@ -16,10 +16,6 @@ from meshes.chunk_mesh_builder import get_chunk_index
 from profiler import global_profiler
 from settings import AIR, CHUNK_AREA, CHUNK_SIZE, GLASS, GLOWSTONE, LEAVES, LIGHTING_QUEUE_SIZE, WATER, WORLD_HEIGHT
 
-# Pre-allocated global memory queues to prevent massive GC churn per interaction
-GLOBAL_QUEUE_A: Any = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
-GLOBAL_QUEUE_B: Any = np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64)
-
 DIRS: Any = np.array([[0, 1, 0], [0, -1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, -1], [0, 0, 1]], dtype=np.int32)
 
 
@@ -340,7 +336,14 @@ def init_chunk_lighting(
     """
     # Trigger internal init
     _init_chunk_lighting(
-        chunk_x, chunk_y, chunk_z, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B
+        chunk_x,
+        chunk_y,
+        chunk_z,
+        world_voxels,
+        world_lightmaps,
+        chunk_positions,
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
     )
 
 
@@ -432,7 +435,14 @@ def stitch_chunk_lighting(
     """
     # Trigger internal stitch
     _stitch_chunk_lighting(
-        chunk_x, chunk_y, chunk_z, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B
+        chunk_x,
+        chunk_y,
+        chunk_z,
+        world_voxels,
+        world_lightmaps,
+        chunk_positions,
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
     )
 
 
@@ -540,7 +550,14 @@ def update_light_place_block(
     """
     # Trigger internal update
     _update_light_place_block(
-        world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B
+        world_x,
+        world_y,
+        world_z,
+        world_voxels,
+        world_lightmaps,
+        chunk_positions,
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
     )
 
 
@@ -609,7 +626,14 @@ def update_light_remove_block(
     """
     # Trigger internal update
     _update_light_remove_block(
-        world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A, GLOBAL_QUEUE_B
+        world_x,
+        world_y,
+        world_z,
+        world_voxels,
+        world_lightmaps,
+        chunk_positions,
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
     )
 
 
@@ -639,4 +663,12 @@ def place_torch(
     propogation. Used exclusively for placing items like Glowstone.
     """
     # Trigger internal placement
-    _place_torch(world_x, world_y, world_z, world_voxels, world_lightmaps, chunk_positions, GLOBAL_QUEUE_A)
+    _place_torch(
+        world_x,
+        world_y,
+        world_z,
+        world_voxels,
+        world_lightmaps,
+        chunk_positions,
+        np.empty(LIGHTING_QUEUE_SIZE, dtype=np.uint64),
+    )
