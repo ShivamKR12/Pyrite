@@ -6,11 +6,15 @@ Pygame surfaces with drop shadows, and then uploads them to the GPU as
 ModernGL textures. It supports both caching for static text and immediate
 generation for dynamic, single-frame text.
 """
+
 from typing import Any, Dict
+
 import moderngl as mgl
 import pygame as pg
+
 from profiler import global_profiler
 from settings import FONT_SIZE_STATS, UI_SHADOW_COLOR, UI_TEXT_COLOR
+
 
 class TextRenderer:
     """
@@ -53,17 +57,21 @@ class TextRenderer:
             return self.textures[text]
 
         # Process logic block
-        surf: pg.Surface = self.font.render(text, True, UI_TEXT_COLOR)
+        surface: pg.Surface = self.font.render(text, True, UI_TEXT_COLOR)
         shadow_offset: int = max(2, self.font.get_height() // 15)
-        bg_surf: pg.Surface = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
+        background_surface: pg.Surface = pg.Surface(
+            (surface.get_width() + shadow_offset, surface.get_height() + shadow_offset), pg.SRCALPHA
+        )
         shadow: pg.Surface = self.font.render(text, True, UI_SHADOW_COLOR)
 
         # Execute expression statement
-        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
-        bg_surf.blit(surf, (0, 0))
+        background_surface.blit(shadow, (shadow_offset, shadow_offset))
+        background_surface.blit(surface, (0, 0))
 
         # Process logic block
-        texture: Any = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tobytes(bg_surf, 'RGBA', True))
+        texture: Any = self.ctx.texture(
+            background_surface.get_size(), 4, pg.image.tobytes(background_surface, 'RGBA', True)
+        )
 
         # Execute expression statement
         texture.build_mipmaps()
@@ -84,17 +92,21 @@ class TextRenderer:
         """
 
         # Process logic block
-        surf: pg.Surface = self.font.render(text, True, UI_TEXT_COLOR)
+        surface: pg.Surface = self.font.render(text, True, UI_TEXT_COLOR)
         shadow_offset: int = max(2, self.font.get_height() // 15)
-        bg_surf: pg.Surface = pg.Surface((surf.get_width() + shadow_offset, surf.get_height() + shadow_offset), pg.SRCALPHA)
+        background_surface: pg.Surface = pg.Surface(
+            (surface.get_width() + shadow_offset, surface.get_height() + shadow_offset), pg.SRCALPHA
+        )
         shadow: pg.Surface = self.font.render(text, True, UI_SHADOW_COLOR)
 
         # Execute expression statement
-        bg_surf.blit(shadow, (shadow_offset, shadow_offset))
-        bg_surf.blit(surf, (0, 0))
+        background_surface.blit(shadow, (shadow_offset, shadow_offset))
+        background_surface.blit(surface, (0, 0))
 
         # Process logic block
-        texture: Any = self.ctx.texture(bg_surf.get_size(), 4, pg.image.tobytes(bg_surf, 'RGBA', True))
+        texture: Any = self.ctx.texture(
+            background_surface.get_size(), 4, pg.image.tobytes(background_surface, 'RGBA', True)
+        )
 
         # Initialize and update variables
         texture.filter = (mgl.LINEAR, mgl.LINEAR)

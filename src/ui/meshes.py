@@ -6,12 +6,16 @@ for generating screen-space flat meshes. It provides the geometry structures for
 the crosshair, the 2D scaled block inventory icons, text fonts, and solid-color backgrounds
 that compose the Pyrite game overlay.
 """
+
 from typing import Any, Tuple
+
 import numpy as np
 from numpy.typing import NDArray
+
 from meshes.base_mesh import BaseMesh
 from profiler import global_profiler
 from settings import ASPECT_RATIO
+
 
 class CrosshairMesh(BaseMesh):
     """
@@ -52,13 +56,27 @@ class CrosshairMesh(BaseMesh):
         """
 
         # Initialize and update variables
-        w = 0.015
-        h = w * ASPECT_RATIO
-        vertices = [(-w, -0.002 * ASPECT_RATIO, 0.0), (w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0), (-w, -0.002 * ASPECT_RATIO, 0.0), (w, 0.002 * ASPECT_RATIO, 0.0), (-w, 0.002 * ASPECT_RATIO, 0.0), (-0.002, -h, 0.0), (0.002, -h, 0.0), (0.002, h, 0.0), (-0.002, -h, 0.0), (0.002, h, 0.0), (-0.002, h, 0.0)]
+        width = 0.015
+        height = width * ASPECT_RATIO
+        vertices = [
+            (-width, -0.002 * ASPECT_RATIO, 0.0),
+            (width, -0.002 * ASPECT_RATIO, 0.0),
+            (width, 0.002 * ASPECT_RATIO, 0.0),
+            (-width, -0.002 * ASPECT_RATIO, 0.0),
+            (width, 0.002 * ASPECT_RATIO, 0.0),
+            (-width, 0.002 * ASPECT_RATIO, 0.0),
+            (-0.002, -height, 0.0),
+            (0.002, -height, 0.0),
+            (0.002, height, 0.0),
+            (-0.002, -height, 0.0),
+            (0.002, height, 0.0),
+            (-0.002, height, 0.0),
+        ]
         colors = [(0.9, 0.9, 0.9) for _ in vertices]
 
         # Return computed result
         return np.hstack([vertices, colors]).astype('float32')
+
 
 class BlockIconMesh(BaseMesh):
     """
@@ -104,6 +122,7 @@ class BlockIconMesh(BaseMesh):
         # Return computed result
         return np.hstack([vertices, tex_coords]).astype('float32')
 
+
 class UIColorMesh(BaseMesh):
     """
     Provides the geometry for rendering solid-color geometric elements in the UI.
@@ -147,6 +166,7 @@ class UIColorMesh(BaseMesh):
 
         # Return computed result
         return np.array(vertices, dtype='float32')
+
 
 class UITextMesh(BaseMesh):
     """

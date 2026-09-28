@@ -5,16 +5,66 @@ This module constructs the in-game overlay, rendering the crosshair, the
 interactive drag-and-drop inventory, the hotbar with survival statistics,
 the 3D view-bobbing held item, and the F3 debug screen.
 """
+
 from typing import Any, Dict, List, Tuple
+
 import moderngl as mgl
 import pygame as pg
 from pyglm import glm
+
 from meshes.item_mesh import ItemMesh
 from meshes.obj_mesh import ObjMesh
 from profiler import global_profiler
-from settings import ASPECT_RATIO, CHUNK_SIZE, FONT_SIZE_DEBUG, GLASS, GLOWSTONE, HELD_BLOCK_ROT_X, HELD_BLOCK_ROT_Y, HELD_BLOCK_SCALE, HELD_ITEM_BOB_OFFSET_X_MULT, HELD_ITEM_BOB_OFFSET_Y_MULT, HELD_ITEM_PLACE_SWING_OFFSET_Y, HELD_ITEM_PLACE_SWING_ROTATION_X, HELD_ITEM_POS, HELD_ITEM_SWING_OFFSET_Y, HELD_ITEM_SWING_OFFSET_Z, HELD_ITEM_SWING_ROT_X, HELD_PICKAXE_POS_OFFSET, HELD_PICKAXE_ROT_X, HELD_PICKAXE_ROT_Z, HELD_PICKAXE_SCALE, HELD_STICK_POS_OFFSET, HELD_STICK_ROT_X, HELD_STICK_ROT_Z, HELD_STICK_SCALE, HOTBAR_SCALE, HOTBAR_SIZE, HOTBAR_Y, INVENTORY_SIZE, SAND, SLOT_SCALE, STICK, STONE, STONE_BRICKS, SURVIVAL, UI_BG_COLOR, UI_SLOT_BG_COLOR, UI_SLOT_HOVER_COLOR, UI_SLOT_SELECTED_BG_COLOR, UI_SLOT_SELECTED_FRAME_COLOR, WINDOW_RESOLUTION, WOOD, WOOD_PLANKS, WOODEN_PICKAXE, get_path
+from settings import (
+    ASPECT_RATIO,
+    CHUNK_SIZE,
+    FONT_SIZE_DEBUG,
+    GLASS,
+    GLOWSTONE,
+    HELD_BLOCK_ROT_X,
+    HELD_BLOCK_ROT_Y,
+    HELD_BLOCK_SCALE,
+    HELD_ITEM_BOB_OFFSET_X_MULT,
+    HELD_ITEM_BOB_OFFSET_Y_MULT,
+    HELD_ITEM_PLACE_SWING_OFFSET_Y,
+    HELD_ITEM_PLACE_SWING_ROTATION_X,
+    HELD_ITEM_POS,
+    HELD_ITEM_SWING_OFFSET_Y,
+    HELD_ITEM_SWING_OFFSET_Z,
+    HELD_ITEM_SWING_ROT_X,
+    HELD_PICKAXE_POS_OFFSET,
+    HELD_PICKAXE_ROT_X,
+    HELD_PICKAXE_ROT_Z,
+    HELD_PICKAXE_SCALE,
+    HELD_STICK_POS_OFFSET,
+    HELD_STICK_ROT_X,
+    HELD_STICK_ROT_Z,
+    HELD_STICK_SCALE,
+    HOTBAR_SCALE,
+    HOTBAR_SIZE,
+    HOTBAR_Y,
+    INVENTORY_SIZE,
+    SAND,
+    SLOT_SCALE,
+    STICK,
+    STONE,
+    STONE_BRICKS,
+    SURVIVAL,
+    UI_BG_COLOR,
+    UI_SLOT_BG_COLOR,
+    UI_SLOT_HOVER_COLOR,
+    UI_SLOT_SELECTED_BG_COLOR,
+    UI_SLOT_SELECTED_FRAME_COLOR,
+    WINDOW_RESOLUTION,
+    WOOD,
+    WOOD_PLANKS,
+    WOODEN_PICKAXE,
+    get_path,
+)
+
 from .meshes import BlockIconMesh, CrosshairMesh, UIColorMesh, UITextMesh
 from .text import TextRenderer
+
 
 class Crosshair:
     """
@@ -42,6 +92,7 @@ class Crosshair:
 
         # Dispatch render call to GPU
         self.mesh.render()
+
 
 class Hotbar:
     """
@@ -144,7 +195,14 @@ class Hotbar:
         # Handle conditional branching
         if player.game_mode == SURVIVAL:
 
-            def draw_bar(ratio: float, offset_x: float, offset_y: float, bg_color: Tuple[float, float, float, float], fg_color: Tuple[float, float, float, float], tex: Any) -> None:
+            def draw_bar(
+                ratio: float,
+                offset_x: float,
+                offset_y: float,
+                bg_color: Tuple[float, float, float, float],
+                fg_color: Tuple[float, float, float, float],
+                tex: Any,
+            ) -> None:
 
                 # Initialize and update variables
                 self.color_mesh.program['u_scale'] = (0.2, 0.01)
@@ -174,6 +232,7 @@ class Hotbar:
 
                 # Dispatch render call to GPU
                 self.text_mesh.render()
+
             health_ratio: float = max(0.0, float(player.health) / player.max_health)
             health_str: str = f'HP: {int(player.health)}/{player.max_health}'
             if health_str != self.cached_health_str or self.health_tex is None:
@@ -200,6 +259,7 @@ class Hotbar:
                     self.cached_oxy_str = oxy_str
                 draw_bar(oxy_ratio, 0.22, y + 0.12, (0.1, 0.1, 0.1, 0.8), (0.1, 0.6, 0.9, 0.9), self.oxy_tex)
 
+
 class HeldBlock:
     """
     Renders the 3D model of the currently equipped item or block in the player's hand.
@@ -221,7 +281,9 @@ class HeldBlock:
         self.app: Any = app
         self.mesh: Any = ItemMesh(app)
         self.stick_mesh: Any = ObjMesh(app, get_path('assets/models/items/stick/stick.obj'), tex_id=5)
-        self.pickaxe_mesh: Any = ObjMesh(app, get_path('assets/models/items/wooden-pickaxe/wooden_pickaxe.obj'), tex_id=6)
+        self.pickaxe_mesh: Any = ObjMesh(
+            app, get_path('assets/models/items/wooden-pickaxe/wooden_pickaxe.obj'), tex_id=6
+        )
 
     @global_profiler.profile_func('HeldBlock_Render')
     def render(self) -> None:
@@ -258,34 +320,34 @@ class HeldBlock:
 
         # Process logic block
         pos: Any = HELD_ITEM_POS + glm.vec3(bob_offset_x, bob_offset_y - swing_offset_y, swing_offset_z)
-        m_model: Any = glm.inverse(player.m_view)
+        model_matrix: Any = glm.inverse(player.m_view)
 
         # Initialize and update variables
-        m_model = glm.translate(m_model, pos)
+        model_matrix = glm.translate(model_matrix, pos)
 
         # Handle conditional branching
         if voxel_id == STICK:
-            m_model = glm.translate(m_model, HELD_STICK_POS_OFFSET)
-            m_model = glm.rotate(m_model, HELD_STICK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, HELD_STICK_ROT_Z, glm.vec3(0, 0, 1))
-            m_model = glm.scale(m_model, HELD_STICK_SCALE)
+            model_matrix = glm.translate(model_matrix, HELD_STICK_POS_OFFSET)
+            model_matrix = glm.rotate(model_matrix, HELD_STICK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            model_matrix = glm.rotate(model_matrix, HELD_STICK_ROT_Z, glm.vec3(0, 0, 1))
+            model_matrix = glm.scale(model_matrix, HELD_STICK_SCALE)
             mesh = self.stick_mesh
         elif voxel_id == WOODEN_PICKAXE:
-            m_model = glm.translate(m_model, HELD_PICKAXE_POS_OFFSET)
-            m_model = glm.rotate(m_model, HELD_PICKAXE_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, HELD_PICKAXE_ROT_Z, glm.vec3(0, 0, 1))
-            m_model = glm.scale(m_model, HELD_PICKAXE_SCALE)
+            model_matrix = glm.translate(model_matrix, HELD_PICKAXE_POS_OFFSET)
+            model_matrix = glm.rotate(model_matrix, HELD_PICKAXE_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            model_matrix = glm.rotate(model_matrix, HELD_PICKAXE_ROT_Z, glm.vec3(0, 0, 1))
+            model_matrix = glm.scale(model_matrix, HELD_PICKAXE_SCALE)
             mesh = self.pickaxe_mesh
         else:
-            m_model = glm.rotate(m_model, HELD_BLOCK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
-            m_model = glm.rotate(m_model, HELD_BLOCK_ROT_Y, glm.vec3(0, 1, 0))
-            m_model = glm.scale(m_model, HELD_BLOCK_SCALE)
+            model_matrix = glm.rotate(model_matrix, HELD_BLOCK_ROT_X - swing_rotation_x, glm.vec3(1, 0, 0))
+            model_matrix = glm.rotate(model_matrix, HELD_BLOCK_ROT_Y, glm.vec3(0, 1, 0))
+            model_matrix = glm.scale(model_matrix, HELD_BLOCK_SCALE)
             mesh = self.mesh
 
         # Execute expression statement
         mesh.program['m_proj'].write(player.m_proj)
         mesh.program['m_view'].write(player.m_view)
-        mesh.program['m_model'].write(m_model)
+        mesh.program['m_model'].write(model_matrix)
 
         # Handle conditional branching
         if 'voxel_id' in mesh.program:
@@ -296,6 +358,7 @@ class HeldBlock:
         self.app.ctx.enable(mgl.CULL_FACE)
         mesh.render()
         self.app.ctx.enable(mgl.DEPTH_TEST)
+
 
 class InventoryUI:
     """
@@ -340,7 +403,21 @@ class InventoryUI:
         # Process logic block
         player: Any = self.app.player
         grid: Tuple[int, ...] = tuple(player.inventory[36:40])
-        recipes: Dict[Tuple[int, ...], Tuple[int, int]] = {(WOOD, 0, 0, 0): (WOOD_PLANKS, 4), (0, WOOD, 0, 0): (WOOD_PLANKS, 4), (0, 0, WOOD, 0): (WOOD_PLANKS, 4), (0, 0, 0, WOOD): (WOOD_PLANKS, 4), (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4), (0, WOOD_PLANKS, 0, WOOD_PLANKS): (STICK, 4), (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1), (SAND, SAND, SAND, SAND): (GLOWSTONE, 4), (SAND, 0, 0, 0): (GLASS, 1), (0, SAND, 0, 0): (GLASS, 1), (0, 0, SAND, 0): (GLASS, 1), (0, 0, 0, SAND): (GLASS, 1), (STONE, STONE, STONE, STONE): (STONE_BRICKS, 4)}
+        recipes: Dict[Tuple[int, ...], Tuple[int, int]] = {
+            (WOOD, 0, 0, 0): (WOOD_PLANKS, 4),
+            (0, WOOD, 0, 0): (WOOD_PLANKS, 4),
+            (0, 0, WOOD, 0): (WOOD_PLANKS, 4),
+            (0, 0, 0, WOOD): (WOOD_PLANKS, 4),
+            (WOOD_PLANKS, 0, WOOD_PLANKS, 0): (STICK, 4),
+            (0, WOOD_PLANKS, 0, WOOD_PLANKS): (STICK, 4),
+            (WOOD_PLANKS, WOOD_PLANKS, STICK, 0): (WOODEN_PICKAXE, 1),
+            (SAND, SAND, SAND, SAND): (GLOWSTONE, 4),
+            (SAND, 0, 0, 0): (GLASS, 1),
+            (0, SAND, 0, 0): (GLASS, 1),
+            (0, 0, SAND, 0): (GLASS, 1),
+            (0, 0, 0, SAND): (GLASS, 1),
+            (STONE, STONE, STONE, STONE): (STONE_BRICKS, 4),
+        }
 
         # Handle conditional branching
         if grid in recipes:
@@ -393,17 +470,17 @@ class InventoryUI:
         """Returns the ID of the inventory slot currently hovered by the mouse cursor."""
 
         # Process logic block
-        mx: float = mouse_pos[0] / WINDOW_RESOLUTION.x * 2.0 - 1.0
-        my: float = 1.0 - mouse_pos[1] / WINDOW_RESOLUTION.y * 2.0
+        mouse_x: float = mouse_pos[0] / WINDOW_RESOLUTION.x * 2.0 - 1.0
+        mouse_y: float = 1.0 - mouse_pos[1] / WINDOW_RESOLUTION.y * 2.0
         slot_w: float = SLOT_SCALE / ASPECT_RATIO
         slot_h: float = SLOT_SCALE
 
         # Execute loop iteration
         for i in range(INVENTORY_SIZE):
             slot_pos: Tuple[float, float] = self.get_slot_pos(i)
-            sx: float = slot_pos[0]
-            sy: float = slot_pos[1]
-            if sx - slot_w < mx < sx + slot_w and sy - slot_h < my < sy + slot_h:
+            slot_x: float = slot_pos[0]
+            slot_y: float = slot_pos[1]
+            if slot_x - slot_w < mouse_x < slot_x + slot_w and slot_y - slot_h < mouse_y < slot_y + slot_h:
                 return i
 
         # Return computed result
@@ -414,15 +491,15 @@ class InventoryUI:
         """Finds the closest valid drop target slot during a drag-and-drop operation."""
 
         # Process logic block
-        mx: float = mouse_pos[0] / WINDOW_RESOLUTION.x * 2.0 - 1.0
-        my: float = 1.0 - mouse_pos[1] / WINDOW_RESOLUTION.y * 2.0
-        best_i: int = -1
-        best_dist_sq: float = float('inf')
+        mouse_x: float = mouse_pos[0] / WINDOW_RESOLUTION.x * 2.0 - 1.0
+        mouse_y: float = 1.0 - mouse_pos[1] / WINDOW_RESOLUTION.y * 2.0
+        best_index: int = -1
+        best_distance_sq: float = float('inf')
         gap: float = 0.01
 
         # Process logic block
         y_spacing: float = SLOT_SCALE * 2 + gap
-        max_dist_sq: float = (y_spacing * 1.5) ** 2
+        max_distance_sq: float = (y_spacing * 1.5) ** 2
         player: Any = self.app.player
 
         # Execute loop iteration
@@ -430,19 +507,19 @@ class InventoryUI:
             if i == 40:
                 continue
             slot_pos: Tuple[float, float] = self.get_slot_pos(i)
-            sx: float = slot_pos[0]
-            sy: float = slot_pos[1]
-            dx: float = (mx - sx) * ASPECT_RATIO
-            dy: float = my - sy
-            dist_sq: float = dx * dx + dy * dy
-            if dist_sq < best_dist_sq and dist_sq < max_dist_sq:
+            slot_x: float = slot_pos[0]
+            slot_y: float = slot_pos[1]
+            delta_x: float = (mouse_x - slot_x) * ASPECT_RATIO
+            delta_y: float = mouse_y - slot_y
+            distance_sq: float = delta_x * delta_x + delta_y * delta_y
+            if distance_sq < best_distance_sq and distance_sq < max_distance_sq:
                 slot_id: int = player.inventory[i]
                 if slot_id == 0 or (slot_id == drag_id and player.inventory_counts[i] < 64):
-                    best_i = i
-                    best_dist_sq = dist_sq
+                    best_index = i
+                    best_distance_sq = distance_sq
 
         # Return computed result
-        return best_i
+        return best_index
 
     @global_profiler.profile_func('InventoryUI_HandleEvent')
     def handle_event(self, event: Any) -> None:
@@ -525,9 +602,9 @@ class InventoryUI:
         elif event.type == pg.MOUSEBUTTONUP:
             if event.button == 1 and self.drag_id != 0:
                 mouse_pos: Tuple[int, int] = pg.mouse.get_pos()
-                dx: int = mouse_pos[0] - self.drag_start_pos[0]
-                dy: int = mouse_pos[1] - self.drag_start_pos[1]
-                if dx * dx + dy * dy > 100:
+                delta_x: int = mouse_pos[0] - self.drag_start_pos[0]
+                delta_y: int = mouse_pos[1] - self.drag_start_pos[1]
+                if delta_x * delta_x + delta_y * delta_y > 100:
                     i = self.get_closest_valid_slot(mouse_pos, self.drag_id, self.drag_count)
                     if i != -1:
                         player = self.app.player
@@ -592,11 +669,11 @@ class InventoryUI:
         gap: float = 0.01
         x_spacing: float = (SLOT_SCALE * 2 + gap) / ASPECT_RATIO
         y_spacing: float = SLOT_SCALE * 2 + gap
-        bg_w: float = 4.5 * x_spacing + 0.02
-        bg_h: float = 3.0 * y_spacing + 0.02
+        background_width: float = 4.5 * x_spacing + 0.02
+        background_height: float = 3.0 * y_spacing + 0.02
 
         # Initialize and update variables
-        self.color_mesh.program['u_scale'] = (bg_w, bg_h)
+        self.color_mesh.program['u_scale'] = (background_width, background_height)
         self.color_mesh.program['u_offset'] = (0.0, HOTBAR_Y + 4.0 * y_spacing)
         self.color_mesh.program['u_color'] = UI_BG_COLOR
 
@@ -612,13 +689,13 @@ class InventoryUI:
             slot_pos: Tuple[float, float] = self.get_slot_pos(i)
             x: float = slot_pos[0]
             y: float = slot_pos[1]
-            s: float = SLOT_SCALE
+            scale: float = SLOT_SCALE
             if i == hover_idx:
-                self.color_mesh.program['u_scale'] = ((s + 0.005) / ASPECT_RATIO, s + 0.005)
+                self.color_mesh.program['u_scale'] = ((scale + 0.005) / ASPECT_RATIO, scale + 0.005)
                 self.color_mesh.program['u_offset'] = (x, y)
                 self.color_mesh.program['u_color'] = UI_SLOT_HOVER_COLOR
                 self.color_mesh.render()
-            self.color_mesh.program['u_scale'] = (s / ASPECT_RATIO, s)
+            self.color_mesh.program['u_scale'] = (scale / ASPECT_RATIO, scale)
             self.color_mesh.program['u_offset'] = (x, y)
             self.color_mesh.program['u_color'] = UI_SLOT_BG_COLOR
             self.color_mesh.render()
@@ -637,11 +714,11 @@ class InventoryUI:
                     self.block_mesh.render()
             count: int = player.inventory_counts[i]
             if count > 0:
-                tex: Any = self.count_textures.get(count)
-                if tex:
-                    tex.use(location=4)
+                texture: Any = self.count_textures.get(count)
+                if texture:
+                    texture.use(location=4)
                     scale_y: float = 0.025
-                    scale_x: float = scale_y * (tex.size[0] / tex.size[1]) / ASPECT_RATIO
+                    scale_x: float = scale_y * (texture.size[0] / texture.size[1]) / ASPECT_RATIO
                     self.text_mesh.program['u_scale'] = (scale_x, scale_y)
                     self.text_mesh.program['u_offset'] = (x + 0.015, y - 0.025)
                     self.text_mesh.render()
@@ -649,52 +726,73 @@ class InventoryUI:
         # Handle conditional branching
         if self.drag_id != 0:
             mouse_pos: Tuple[int, int] = pg.mouse.get_pos()
-            mx: float = mouse_pos[0] / WINDOW_RESOLUTION.x * 2.0 - 1.0
-            my: float = 1.0 - mouse_pos[1] / WINDOW_RESOLUTION.y * 2.0
+            mouse_x: float = mouse_pos[0] / WINDOW_RESOLUTION.x * 2.0 - 1.0
+            mouse_y: float = 1.0 - mouse_pos[1] / WINDOW_RESOLUTION.y * 2.0
             if self.drag_id in (STICK, WOODEN_PICKAXE):
                 self.text_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-                self.text_mesh.program['u_offset'] = (mx, my)
+                self.text_mesh.program['u_offset'] = (mouse_x, mouse_y)
                 self.text_mesh.program['u_texture_0'] = 5 if self.drag_id == STICK else 6
                 self.text_mesh.render()
                 self.text_mesh.program['u_texture_0'] = 4
             else:
                 self.block_mesh.program['u_scale'] = (HOTBAR_SCALE / ASPECT_RATIO, HOTBAR_SCALE)
-                self.block_mesh.program['u_offset'] = (mx, my)
+                self.block_mesh.program['u_offset'] = (mouse_x, mouse_y)
                 self.block_mesh.program['voxel_id'] = self.drag_id
                 self.block_mesh.render()
             if self.drag_count > 0:
-                drag_tex: Any = self.count_textures.get(self.drag_count)
-                if drag_tex:
-                    drag_tex.use(location=4)
+                drag_texture: Any = self.count_textures.get(self.drag_count)
+                if drag_texture:
+                    drag_texture.use(location=4)
                     drag_scale_y: float = 0.025
-                    drag_scale_x: float = drag_scale_y * (drag_tex.size[0] / drag_tex.size[1]) / ASPECT_RATIO
+                    drag_scale_x: float = drag_scale_y * (drag_texture.size[0] / drag_texture.size[1]) / ASPECT_RATIO
                     self.text_mesh.program['u_scale'] = (drag_scale_x, drag_scale_y)
-                    self.text_mesh.program['u_offset'] = (mx + 0.015, my - 0.025)
+                    self.text_mesh.program['u_offset'] = (mouse_x + 0.015, mouse_y - 0.025)
                     self.text_mesh.render()
         if hover_idx != -1 and self.drag_id == 0:
             hover_id: int = player.inventory[hover_idx]
             if hover_id != 0:
-                item_names: Dict[int, str] = {1: 'Sand', 2: 'Grass', 3: 'Dirt', 4: 'Stone', 5: 'Wood', 6: 'Leaves', 7: 'Wood Planks', 9: 'Glass', 10: 'Glowstone', 20: 'Stick', 21: 'Wooden Pickaxe'}
+                item_names: Dict[int, str] = {
+                    1: 'Sand',
+                    2: 'Grass',
+                    3: 'Dirt',
+                    4: 'Stone',
+                    5: 'Wood',
+                    6: 'Leaves',
+                    7: 'Wood Planks',
+                    9: 'Glass',
+                    10: 'Glowstone',
+                    20: 'Stick',
+                    21: 'Wooden Pickaxe',
+                }
                 name: str = item_names.get(hover_id, f'Item ID: {hover_id}')
-                tt_mouse_pos: Tuple[int, int] = pg.mouse.get_pos()
-                tt_mx: float = tt_mouse_pos[0] / WINDOW_RESOLUTION.x * 2.0 - 1.0
-                tt_my: float = 1.0 - tt_mouse_pos[1] / WINDOW_RESOLUTION.y * 2.0
+                tooltip_mouse_pos: Tuple[int, int] = pg.mouse.get_pos()
+                tooltip_mouse_x: float = tooltip_mouse_pos[0] / WINDOW_RESOLUTION.x * 2.0 - 1.0
+                tooltip_mouse_y: float = 1.0 - tooltip_mouse_pos[1] / WINDOW_RESOLUTION.y * 2.0
                 if name != self.last_hover_name:
                     if self.tooltip_texture:
                         self.tooltip_texture.release()
                     self.tooltip_texture = self.text_renderer.get_dynamic_texture(name)
                     self.last_hover_name = name
-                tt_tex: Any = self.tooltip_texture
-                tt_tex.use(location=4)
-                tt_scale_y: float = 0.025
-                tt_scale_x: float = tt_scale_y * (tt_tex.size[0] / tt_tex.size[1]) / ASPECT_RATIO
-                self.color_mesh.program['u_scale'] = (tt_scale_x + 0.01, tt_scale_y + 0.01)
-                self.color_mesh.program['u_offset'] = (tt_mx + tt_scale_x + 0.02, tt_my - tt_scale_y - 0.02)
+                tooltip_texture_current: Any = self.tooltip_texture
+                tooltip_texture_current.use(location=4)
+                tooltip_scale_y: float = 0.025
+                tooltip_scale_x: float = (
+                    tooltip_scale_y * (tooltip_texture_current.size[0] / tooltip_texture_current.size[1]) / ASPECT_RATIO
+                )
+                self.color_mesh.program['u_scale'] = (tooltip_scale_x + 0.01, tooltip_scale_y + 0.01)
+                self.color_mesh.program['u_offset'] = (
+                    tooltip_mouse_x + tooltip_scale_x + 0.02,
+                    tooltip_mouse_y - tooltip_scale_y - 0.02,
+                )
                 self.color_mesh.program['u_color'] = (0.05, 0.05, 0.05, 0.95)
                 self.color_mesh.render()
-                self.text_mesh.program['u_scale'] = (tt_scale_x, tt_scale_y)
-                self.text_mesh.program['u_offset'] = (tt_mx + tt_scale_x + 0.02, tt_my - tt_scale_y - 0.02)
+                self.text_mesh.program['u_scale'] = (tooltip_scale_x, tooltip_scale_y)
+                self.text_mesh.program['u_offset'] = (
+                    tooltip_mouse_x + tooltip_scale_x + 0.02,
+                    tooltip_mouse_y - tooltip_scale_y - 0.02,
+                )
                 self.text_mesh.render()
+
 
 class DebugOverlay:
     """
@@ -733,18 +831,26 @@ class DebugOverlay:
             player: Any = self.app.player
             handler: Any = self.app.scene.world.voxel_handler
             fps: float = self.app.clock.get_fps()
-            x: float = float(player.position.x)
-            y: float = float(player.position.y)
-            z: float = float(player.position.z)
-            cx: int = int(x // CHUNK_SIZE)
-            cy: int = int(y // CHUNK_SIZE)
-            cz: int = int(z // CHUNK_SIZE)
+            pos_x: float = float(player.position.x)
+            pos_y: float = float(player.position.y)
+            pos_z: float = float(player.position.z)
+            chunk_x: int = int(pos_x // CHUNK_SIZE)
+            chunk_y: int = int(pos_y // CHUNK_SIZE)
+            chunk_z: int = int(pos_z // CHUNK_SIZE)
             yaw: float = float(glm.degrees(player.yaw) % 360)
             pitch: float = float(glm.degrees(player.pitch))
             target: str = 'Air'
             if handler.voxel_id:
                 target = f'ID: {handler.voxel_id} at {int(handler.voxel_world_pos.x)} {int(handler.voxel_world_pos.y)} {int(handler.voxel_world_pos.z)}'
-            lines: List[str] = [f'Pyrite (FPS: {fps:.0f})', f'XYZ: {x:.3f} / {y:.5f} / {z:.3f}', f'Chunk: {cx} {cy} {cz}', f'Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}', f'Time: {self.app.world_session_time:.2f}', f'Target Block: {target}', f"Game Mode: {('Survival' if player.game_mode == SURVIVAL else 'Creative')}"]
+            lines: List[str] = [
+                f'Pyrite (FPS: {fps:.0f})',
+                f'XYZ: {pos_x:.3f} / {pos_y:.5f} / {pos_z:.3f}',
+                f'Chunk: {chunk_x} {chunk_y} {chunk_z}',
+                f'Facing: Yaw {yaw:.1f} Pitch {pitch:.1f}',
+                f'Time: {self.app.world_session_time:.2f}',
+                f'Target Block: {target}',
+                f'Game Mode: {("Survival" if player.game_mode == SURVIVAL else "Creative")}',
+            ]
             surfaces: List[pg.Surface] = []
             for line in lines:
                 shadow: pg.Surface = self.font.render(line, True, (60, 60, 60))
@@ -753,27 +859,29 @@ class DebugOverlay:
                 merged.blit(shadow, (2, 2))
                 merged.blit(text, (0, 0))
                 surfaces.append(merged)
-            max_w: int = max((s.get_width() for s in surfaces))
-            total_h: int = sum((s.get_height() for s in surfaces))
-            bg_surf: pg.Surface = pg.Surface((max_w + 10, total_h + 10), pg.SRCALPHA)
-            bg_surf.fill((0, 0, 0, 120))
-            curr_y: int = 5
+            max_width: int = max((s.get_width() for s in surfaces))
+            total_height: int = sum((s.get_height() for s in surfaces))
+            background_surface: pg.Surface = pg.Surface((max_width + 10, total_height + 10), pg.SRCALPHA)
+            background_surface.fill((0, 0, 0, 120))
+            current_y: int = 5
             for s in surfaces:
-                bg_surf.blit(s, (5, curr_y))
-                curr_y += s.get_height()
+                background_surface.blit(s, (5, current_y))
+                current_y += s.get_height()
             if self.dynamic_texture:
                 self.dynamic_texture.release()
-            self.dynamic_texture = self.app.ctx.texture(bg_surf.get_size(), 4, pg.image.tobytes(bg_surf, 'RGBA', True))
+            self.dynamic_texture = self.app.ctx.texture(
+                background_surface.get_size(), 4, pg.image.tobytes(background_surface, 'RGBA', True)
+            )
             self.dynamic_texture.filter = (mgl.NEAREST, mgl.NEAREST)
 
         # Execute expression statement
         self.dynamic_texture.use(location=4)
 
         # Process logic block
-        tex_w: int = self.dynamic_texture.size[0]
-        tex_h: int = self.dynamic_texture.size[1]
-        scale_y: float = tex_h / WINDOW_RESOLUTION.y
-        scale_x: float = tex_w / WINDOW_RESOLUTION.x
+        texture_width: int = self.dynamic_texture.size[0]
+        texture_height: int = self.dynamic_texture.size[1]
+        scale_y: float = texture_height / WINDOW_RESOLUTION.y
+        scale_x: float = texture_width / WINDOW_RESOLUTION.x
         x_offset: float = -1.0 + scale_x
 
         # Process logic block

@@ -5,19 +5,24 @@ This module manages the interactive overlays and state machines for the
 game's user interfaces. It handles dynamic world saving/loading screens,
 configuration binding for settings, and smooth animated transitions between states.
 """
+
 import hashlib
 import os
 import random
 import sqlite3
 from typing import Any, Callable, List, Optional, Tuple
+
 import moderngl as mgl
 import pygame as pg
 from pyglm import glm
+
 from profiler import global_profiler
 from settings import ASPECT_RATIO, FONT_SIZE_PAUSED, FONT_SIZE_TITLE, get_path
+
 from .components import Button, Slider, TextInput, Toggle, UINode, VBox, WorldButton
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
+
 
 class MainMenu:
     """
@@ -81,9 +86,21 @@ class MainMenu:
         self.layout_main: Any = VBox(pos=(0, 0.15), spacing=0.1)
 
         # Execute expression statement
-        self.layout_main.add_child(Button(app, 'Play', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), -1)))
-        self.layout_main.add_child(Button(app, 'Options', (0, 0), (0.2, 0.07), lambda: self.trigger_action(self.open_options, 1)))
-        self.layout_main.add_child(Button(app, 'Quit', (0, 0), (0.2, 0.07), lambda: self.trigger_action(self.app.quit_game, 1)))
+        self.layout_main.add_child(
+            Button(
+                app,
+                'Play',
+                (0, 0),
+                (0.2, 0.07),
+                lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), -1),
+            )
+        )
+        self.layout_main.add_child(
+            Button(app, 'Options', (0, 0), (0.2, 0.07), lambda: self.trigger_action(self.open_options, 1))
+        )
+        self.layout_main.add_child(
+            Button(app, 'Quit', (0, 0), (0.2, 0.07), lambda: self.trigger_action(self.app.quit_game, 1))
+        )
         self.layout_main.update_layout()
 
         # Process logic block
@@ -91,23 +108,41 @@ class MainMenu:
         self.layout_create: Any = VBox(pos=(0, 0.25), spacing=0.2)
         config_group: Any = self.layout_create.add_child(VBox(spacing=0.1))
         self.input_name: Any = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), 'World Name'))
-        self.input_seed: Any = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), 'Seed (Leave blank for random)'))
+        self.input_seed: Any = config_group.add_child(
+            TextInput(app, (0, 0), (0.3, 0.05), 'Seed (Leave blank for random)')
+        )
 
         # Process logic block
-        self.btn_game_mode: Any = config_group.add_child(Button(app, 'Game Mode: Survival', (0, 0), (0.3, 0.05), self.toggle_game_mode))
+        self.btn_game_mode: Any = config_group.add_child(
+            Button(app, 'Game Mode: Survival', (0, 0), (0.3, 0.05), self.toggle_game_mode)
+        )
         action_group: Any = self.layout_create.add_child(VBox(spacing=0.1))
-        self.btn_create: Any = action_group.add_child(Button(app, 'Create New World', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1)))
-        self.btn_back_create: Any = action_group.add_child(Button(app, 'Back', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1)))
+        self.btn_create: Any = action_group.add_child(
+            Button(app, 'Create New World', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.create_world, 1))
+        )
+        self.btn_back_create: Any = action_group.add_child(
+            Button(
+                app, 'Back', (0, 0), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('SELECT_WORLD'), 1)
+            )
+        )
 
         # Execute expression statement
         self.layout_create.update_layout()
 
         # Process logic block
-        self.btn_new_world: Any = Button(app, 'Create New World', (0, 0.22), (0.3, 0.07), lambda: self.trigger_action(lambda: self.set_state('CREATE_WORLD'), -1))
-        self.btn_back_select: Any = Button(app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('MAIN'), 1))
+        self.btn_new_world: Any = Button(
+            app,
+            'Create New World',
+            (0, 0.22),
+            (0.3, 0.07),
+            lambda: self.trigger_action(lambda: self.set_state('CREATE_WORLD'), -1),
+        )
+        self.btn_back_select: Any = Button(
+            app, 'Back', (0, -0.65), (0.2, 0.07), lambda: self.trigger_action(lambda: self.set_state('MAIN'), 1)
+        )
 
     @global_profiler.profile_func('MainMenu_TriggerAction')
-    def trigger_action(self, action: Callable[[], None], anim_dir: int=1) -> None:
+    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
         """
         Initiate an animated transition and schedule an action to run after it.
 
@@ -211,7 +246,11 @@ class MainMenu:
         os.makedirs('saves', exist_ok=True)
 
         # Process logic block
-        saves: List[str] = sorted([f for f in os.listdir('saves') if f.endswith('.db')], key=lambda x: os.path.getmtime(os.path.join('saves', x)), reverse=True)
+        saves: List[str] = sorted(
+            [f for f in os.listdir('saves') if f.endswith('.db')],
+            key=lambda x: os.path.getmtime(os.path.join('saves', x)),
+            reverse=True,
+        )
         y_offset: float = -0.05
 
         # Execute loop iteration
@@ -227,7 +266,9 @@ class MainMenu:
             try:
                 connection = sqlite3.connect(f'saves/{save_file}')
                 cursor = connection.cursor()
-                cursor.execute('SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1')
+                cursor.execute(
+                    'SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1'
+                )
                 row: Any = cursor.fetchone()
                 if row:
                     display_name = row[0]
@@ -249,17 +290,31 @@ class MainMenu:
                     except Exception as e:
                         print(f'[SYSTEM] Error closing connection: {e}')
 
-            def load_and_reset(sn: str=save_name) -> None:
+            def load_and_reset(sn: str = save_name) -> None:
 
                 # Execute expression statement
                 self.app.init_game_session(sn)
                 self.set_state('MAIN')
-            new_btn: Any = WorldButton(self.app, save_name, display_name, seed, game_mode, creation_date, last_played, (0, y_offset), (0.65, 0.12), lambda sn=save_name, lr=load_and_reset: self.trigger_action(lambda: lr(sn), -1))
-            self.world_buttons.append(new_btn)
-            del_btn: Any = Button(self.app, 'X', (0.55, y_offset), (0.05, 0.08), lambda sn=save_name: self.delete_world(sn))
-            del_btn.base_color = (0.4, 0.1, 0.1, 0.7)
-            del_btn.hover_color = (0.8, 0.1, 0.1, 0.9)
-            self.delete_buttons.append(del_btn)
+
+            new_button: Any = WorldButton(
+                self.app,
+                save_name,
+                display_name,
+                seed,
+                game_mode,
+                creation_date,
+                last_played,
+                (0, y_offset),
+                (0.65, 0.12),
+                lambda sn=save_name, lr=load_and_reset: self.trigger_action(lambda: lr(sn), -1),
+            )
+            self.world_buttons.append(new_button)
+            delete_button: Any = Button(
+                self.app, 'X', (0.55, y_offset), (0.05, 0.08), lambda sn=save_name: self.delete_world(sn)
+            )
+            delete_button.base_color = (0.4, 0.1, 0.1, 0.7)
+            delete_button.hover_color = (0.8, 0.1, 0.1, 0.9)
+            self.delete_buttons.append(delete_button)
             y_offset -= 0.26
 
     @global_profiler.profile_func('MainMenu_DeleteWorld')
@@ -320,7 +375,7 @@ class MainMenu:
             try:
                 seed = int(seed_str)
             except ValueError:
-                seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % 10 ** 9
+                seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % 10**9
 
         # Execute expression statement
         self.app.init_game_session(save_name, seed, self.create_game_mode)
@@ -355,25 +410,27 @@ class MainMenu:
             self.layout_main.update(mouse_pos)
         elif self.state == 'SELECT_WORLD':
             if abs(self.target_scroll_offset - self.scroll_offset) > 0.001:
-                self.scroll_offset += (self.target_scroll_offset - self.scroll_offset) * min(1.0, 15.0 * self.app.delta_time * 0.001)
+                self.scroll_offset += (self.target_scroll_offset - self.scroll_offset) * min(
+                    1.0, 15.0 * self.app.delta_time * 0.001
+                )
             else:
                 self.scroll_offset = self.target_scroll_offset
             self.btn_new_world.check_hover(mouse_pos)
             self.btn_back_select.check_hover(mouse_pos)
             base_y: float = -0.05
-            for i, (btn, del_btn) in enumerate(zip(self.world_buttons, self.delete_buttons, strict=False)):
+            for i, (button, delete_button) in enumerate(zip(self.world_buttons, self.delete_buttons, strict=False)):
                 new_y: float = base_y - i * 0.26 + self.scroll_offset
-                btn.local_pos = [0, new_y]
-                del_btn.local_pos = [0.55, new_y]
+                button.local_pos = [0, new_y]
+                delete_button.local_pos = [0.55, new_y]
                 if -0.45 < new_y < 0.02:
-                    btn.check_hover(mouse_pos)
-                    del_btn.check_hover(mouse_pos)
-                    if del_btn.is_hovered:
-                        btn.is_hovered = False
-                        btn.is_pressed = False
+                    button.check_hover(mouse_pos)
+                    delete_button.check_hover(mouse_pos)
+                    if delete_button.is_hovered:
+                        button.is_hovered = False
+                        button.is_pressed = False
                 else:
-                    btn.is_hovered = False
-                    del_btn.is_hovered = False
+                    button.is_hovered = False
+                    delete_button.is_hovered = False
         elif self.state == 'CREATE_WORLD':
             self.layout_create.update(mouse_pos)
 
@@ -396,10 +453,10 @@ class MainMenu:
         elif self.state == 'SELECT_WORLD':
             self.btn_new_world.handle_event(event)
             self.btn_back_select.handle_event(event)
-            for btn, del_btn in zip(self.world_buttons, self.delete_buttons, strict=False):
-                if -0.45 < btn.local_pos[1] < 0.02:
-                    btn.handle_event(event)
-                    del_btn.handle_event(event)
+            for button, delete_button in zip(self.world_buttons, self.delete_buttons, strict=False):
+                if -0.45 < button.local_pos[1] < 0.02:
+                    button.handle_event(event)
+                    delete_button.handle_event(event)
             if event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 4:
                     self.target_scroll_offset = max(0.0, self.target_scroll_offset - 0.26)
@@ -418,11 +475,11 @@ class MainMenu:
         # Handle conditional branching
         if hasattr(self, 'bg_tex') and self.bg_tex:
             self.bg_tex.use(location=4)
-            img_aspect: float = self.bg_tex.width / self.bg_tex.height
-            if img_aspect > ASPECT_RATIO:
-                scale_x, scale_y = (img_aspect / ASPECT_RATIO, 1.0)
+            image_aspect: float = self.bg_tex.width / self.bg_tex.height
+            if image_aspect > ASPECT_RATIO:
+                scale_x, scale_y = (image_aspect / ASPECT_RATIO, 1.0)
             else:
-                scale_x, scale_y = (1.0, ASPECT_RATIO / img_aspect)
+                scale_x, scale_y = (1.0, ASPECT_RATIO / image_aspect)
             self.bg_tex_mesh.program['u_scale'] = (scale_x, scale_y)
             self.bg_tex_mesh.program['u_offset'] = (0.0, 0.0)
             if 'u_alpha' in self.bg_tex_mesh.program:
@@ -496,6 +553,7 @@ class MainMenu:
         elif self.state == 'CREATE_WORLD':
             self.layout_create.render(offset, alpha)
 
+
 class PauseMenu:
     """
     Provides the in-game pause screen overlay.
@@ -534,13 +592,19 @@ class PauseMenu:
         self.layout: Any = VBox(pos=(0, 0.15), spacing=0.1)
 
         # Execute expression statement
-        self.layout.add_child(Button(app, 'Resume', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.resume_game, -1)))
-        self.layout.add_child(Button(app, 'Options', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.open_options, 1)))
-        self.layout.add_child(Button(app, 'Quit to Menu', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.quit_to_menu, 1)))
+        self.layout.add_child(
+            Button(app, 'Resume', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.resume_game, -1))
+        )
+        self.layout.add_child(
+            Button(app, 'Options', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.open_options, 1))
+        )
+        self.layout.add_child(
+            Button(app, 'Quit to Menu', (0, 0), (0.3, 0.07), lambda: self.trigger_action(self.quit_to_menu, 1))
+        )
         self.layout.update_layout()
 
     @global_profiler.profile_func('PauseMenu_TriggerAction')
-    def trigger_action(self, action: Callable[[], None], anim_dir: int=1) -> None:
+    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
         """Triggers an out-transition before calling the specified action."""
 
         # Handle conditional branching
@@ -646,27 +710,27 @@ class PauseMenu:
 
         # Process logic block
         offset: Tuple[float, float] = (0.0, offset_y)
-        bg_alpha: float = alpha if self.transition_state != 'IDLE' else 1.0
+        background_alpha: float = alpha if self.transition_state != 'IDLE' else 1.0
 
         # Initialize and update variables
         self.bg_mesh.program['u_scale'] = (1.0, 1.0)
         self.bg_mesh.program['u_offset'] = (0.0, 0.0)
-        self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6 * bg_alpha)
+        self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.6 * background_alpha)
 
         # Dispatch render call to GPU
         self.bg_mesh.render()
 
         # Process logic block
-        tex: Any = self.title_tex
+        texture: Any = self.title_tex
 
         # Execute expression statement
-        tex.use(location=4)
+        texture.use(location=4)
 
         # Process logic block
-        tex_w: int = tex.size[0]
-        tex_h: int = tex.size[1]
+        texture_width: int = texture.size[0]
+        texture_height: int = texture.size[1]
         scale_y: float = 0.08
-        scale_x: float = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        scale_x: float = scale_y * (texture_width / texture_height) / ASPECT_RATIO
 
         # Initialize and update variables
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
@@ -685,6 +749,7 @@ class PauseMenu:
 
         # Dispatch render call to GPU
         self.layout.render(offset, alpha)
+
 
 class OptionsMenu:
     """
@@ -735,9 +800,17 @@ class OptionsMenu:
         # Execute expression statement
         self.layout.add_child(Slider(app, 'FOV', (0, 0), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True))
         self.layout.add_child(Slider(app, 'Sensitivity', (0, 0), (0.3, 0.05), 0.0005, 0.005, 'sensitivity'))
-        self.layout.add_child(Slider(app, 'Music Volume', (0, 0), (0.3, 0.05), 0, 100, 'music_volume', self.update_music_volume, is_int=True))
-        self.layout.add_child(Slider(app, 'SFX Volume', (0, 0), (0.3, 0.05), 0, 100, 'sfx_volume', self.update_sfx_volume, is_int=True))
-        self.layout.add_child(Slider(app, 'Render Distance', (0, 0), (0.3, 0.05), 2, 14, 'render_distance', is_int=True))
+        self.layout.add_child(
+            Slider(
+                app, 'Music Volume', (0, 0), (0.3, 0.05), 0, 100, 'music_volume', self.update_music_volume, is_int=True
+            )
+        )
+        self.layout.add_child(
+            Slider(app, 'SFX Volume', (0, 0), (0.3, 0.05), 0, 100, 'sfx_volume', self.update_sfx_volume, is_int=True)
+        )
+        self.layout.add_child(
+            Slider(app, 'Render Distance', (0, 0), (0.3, 0.05), 2, 14, 'render_distance', is_int=True)
+        )
 
         # Execute expression statement
         self.layout.add_child(Toggle(app, 'Underwater Tint', (0.12, 0), (0.04, 0.035), 'underwater_tint'))
@@ -749,7 +822,7 @@ class OptionsMenu:
         self.previous_state: str = 'MAIN_MENU'
 
     @global_profiler.profile_func('OptionsMenu_TriggerAction')
-    def trigger_action(self, action: Callable[[], None], anim_dir: int=1) -> None:
+    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
         """Initiates an animated transition out before running the requested action."""
 
         # Handle conditional branching
@@ -867,26 +940,26 @@ class OptionsMenu:
 
         # Process logic block
         offset: Tuple[float, float] = (0.0, offset_y)
-        bg_alpha: float = alpha if self.transition_state != 'IDLE' else 1.0
+        background_alpha: float = alpha if self.transition_state != 'IDLE' else 1.0
 
         # Handle conditional branching
         if self.previous_state == 'PAUSED':
             self.bg_mesh.program['u_scale'] = (1.0, 1.0)
             self.bg_mesh.program['u_offset'] = (0.0, 0.0)
-            self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8 * bg_alpha)
+            self.bg_mesh.program['u_color'] = (0.0, 0.0, 0.0, 0.8 * background_alpha)
             self.bg_mesh.render()
 
         # Process logic block
-        tex: Any = self.title_tex
+        texture: Any = self.title_tex
 
         # Execute expression statement
-        tex.use(location=4)
+        texture.use(location=4)
 
         # Process logic block
-        tex_w: int = tex.size[0]
-        tex_h: int = tex.size[1]
+        texture_width: int = texture.size[0]
+        texture_height: int = texture.size[1]
         scale_y: float = 0.08
-        scale_x: float = scale_y * (tex_w / tex_h) / ASPECT_RATIO
+        scale_x: float = scale_y * (texture_width / texture_height) / ASPECT_RATIO
 
         # Initialize and update variables
         self.title_mesh.program['u_scale'] = (scale_x, scale_y)
