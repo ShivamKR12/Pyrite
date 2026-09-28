@@ -76,14 +76,14 @@ class MainMenu:
         self.transition_state: str = 'IN'
         self.transition_progress: float = 0.0
         self.pending_action: Optional[Callable[[], None]] = None
-        self.anim_dir: int = 1
+        self.animation_direction: int = 1
 
         # Process logic block
         self.world_buttons: List[Any] = []
         self.delete_buttons: List[Any] = []
         self.scroll_offset: float = 0.0
         self.target_scroll_offset: float = 0.0
-        self.layout_main: Any = VBox(pos=(0, 0.15), spacing=0.1)
+        self.layout_main: Any = VBox(position=(0, 0.15), spacing=0.1)
 
         # Execute expression statement
         self.layout_main.add_child(
@@ -105,7 +105,7 @@ class MainMenu:
 
         # Process logic block
         self.create_game_mode: int = 1
-        self.layout_create: Any = VBox(pos=(0, 0.25), spacing=0.2)
+        self.layout_create: Any = VBox(position=(0, 0.25), spacing=0.2)
         config_group: Any = self.layout_create.add_child(VBox(spacing=0.1))
         self.input_name: Any = config_group.add_child(TextInput(app, (0, 0), (0.3, 0.05), 'World Name'))
         self.input_seed: Any = config_group.add_child(
@@ -142,13 +142,13 @@ class MainMenu:
         )
 
     @global_profiler.profile_func('MainMenu_TriggerAction')
-    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
+    def trigger_action(self, action: Callable[[], None], animation_direction: int = 1) -> None:
         """
         Initiate an animated transition and schedule an action to run after it.
 
         Args:
             action: A callable to execute once the 'OUT' transition completes.
-            anim_dir: Animation direction multiplier; used for transition easing.
+            animation_direction: Animation direction multiplier; used for transition easing.
         """
 
         # Handle conditional branching
@@ -156,7 +156,7 @@ class MainMenu:
             self.pending_action = action
             self.transition_state = 'OUT'
             self.transition_progress = 0.0
-            self.anim_dir = anim_dir
+            self.animation_direction = animation_direction
 
     @global_profiler.profile_func('MainMenu_OpenOptions')
     def open_options(self) -> None:
@@ -501,10 +501,10 @@ class MainMenu:
 
         # Handle conditional branching
         if self.transition_state == 'IN':
-            offset_y = (1.0 - ease) * -0.5 * self.anim_dir
+            offset_y = (1.0 - ease) * -0.5 * self.animation_direction
             alpha = ease
         elif self.transition_state == 'OUT':
-            offset_y = ease * 0.5 * self.anim_dir
+            offset_y = ease * 0.5 * self.animation_direction
             alpha = 1.0 - ease
 
         # Process logic block
@@ -588,8 +588,8 @@ class PauseMenu:
 
         # Process logic block
         self.pending_action: Optional[Callable[[], None]] = None
-        self.anim_dir: int = 1
-        self.layout: Any = VBox(pos=(0, 0.15), spacing=0.1)
+        self.animation_direction: int = 1
+        self.layout: Any = VBox(position=(0, 0.15), spacing=0.1)
 
         # Execute expression statement
         self.layout.add_child(
@@ -604,7 +604,7 @@ class PauseMenu:
         self.layout.update_layout()
 
     @global_profiler.profile_func('PauseMenu_TriggerAction')
-    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
+    def trigger_action(self, action: Callable[[], None], animation_direction: int = 1) -> None:
         """Triggers an out-transition before calling the specified action."""
 
         # Handle conditional branching
@@ -612,7 +612,7 @@ class PauseMenu:
             self.pending_action = action
             self.transition_state = 'OUT'
             self.transition_progress = 0.0
-            self.anim_dir = anim_dir
+            self.animation_direction = animation_direction
 
     @global_profiler.profile_func('PauseMenu_OpenOptions')
     def open_options(self) -> None:
@@ -702,10 +702,10 @@ class PauseMenu:
 
         # Handle conditional branching
         if self.transition_state == 'IN':
-            offset_y = (1.0 - ease) * -0.5 * self.anim_dir
+            offset_y = (1.0 - ease) * -0.5 * self.animation_direction
             alpha = ease
         elif self.transition_state == 'OUT':
-            offset_y = ease * 0.5 * self.anim_dir
+            offset_y = ease * 0.5 * self.animation_direction
             alpha = 1.0 - ease
 
         # Process logic block
@@ -786,7 +786,7 @@ class OptionsMenu:
 
         # Process logic block
         self.pending_action: Optional[Callable[[], None]] = None
-        self.anim_dir: int = 1
+        self.animation_direction: int = 1
 
         # Handle conditional branching
         if 'music_volume' not in app.config:
@@ -795,7 +795,7 @@ class OptionsMenu:
             app.config['sfx_volume'] = 20
 
         # Process logic block
-        self.layout: Any = VBox(pos=(0, 0.3), spacing=0.09)
+        self.layout: Any = VBox(position=(0, 0.3), spacing=0.09)
 
         # Execute expression statement
         self.layout.add_child(Slider(app, 'FOV', (0, 0), (0.3, 0.05), 30, 110, 'fov', self.update_fov, is_int=True))
@@ -822,7 +822,7 @@ class OptionsMenu:
         self.previous_state: str = 'MAIN_MENU'
 
     @global_profiler.profile_func('OptionsMenu_TriggerAction')
-    def trigger_action(self, action: Callable[[], None], anim_dir: int = 1) -> None:
+    def trigger_action(self, action: Callable[[], None], animation_direction: int = 1) -> None:
         """Initiates an animated transition out before running the requested action."""
 
         # Handle conditional branching
@@ -830,7 +830,7 @@ class OptionsMenu:
             self.pending_action = action
             self.transition_state = 'OUT'
             self.transition_progress = 0.0
-            self.anim_dir = anim_dir
+            self.animation_direction = animation_direction
 
     @global_profiler.profile_func('OptionsMenu_UpdateFov')
     def update_fov(self, val: float) -> None:
@@ -932,10 +932,10 @@ class OptionsMenu:
 
         # Handle conditional branching
         if self.transition_state == 'IN':
-            offset_y = (1.0 - ease) * -0.5 * self.anim_dir
+            offset_y = (1.0 - ease) * -0.5 * self.animation_direction
             alpha = ease
         elif self.transition_state == 'OUT':
-            offset_y = ease * 0.5 * self.anim_dir
+            offset_y = ease * 0.5 * self.animation_direction
             alpha = 1.0 - ease
 
         # Process logic block

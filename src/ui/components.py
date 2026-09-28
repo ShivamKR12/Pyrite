@@ -6,18 +6,31 @@ suite of interactive widgets (`Button`, `Slider`, `TextInput`, `Toggle`). It als
 includes a lazy-loading resource manager (`get_shared_resource`) to efficiently
 share and reuse heavy objects like fonts and meshes, preventing VRAM bloat.
 """
+
 import os
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
 import moderngl as mgl
 import pygame as pg
+
 from profiler import global_profiler
-from settings import ASPECT_RATIO, FONT_SIZE_BUTTONS, FONT_SIZE_SLIDERS, UI_BUTTON_COLOR, UI_HOVER_COLOR, WINDOW_RESOLUTION
+from settings import (
+    ASPECT_RATIO,
+    FONT_SIZE_BUTTONS,
+    FONT_SIZE_SLIDERS,
+    UI_BUTTON_COLOR,
+    UI_HOVER_COLOR,
+    WINDOW_RESOLUTION,
+)
+
 from .meshes import UIColorMesh, UITextMesh
 from .text import TextRenderer
+
 _shared_ui_resources: Dict[str, Any] = {}
 
+
 @global_profiler.profile_func('GetSharedResource')
-def get_shared_resource(app: Any, res_type: str, **kwargs: Any) -> Any:
+def get_shared_resource(app: Any, resource_type: str, **kwargs: Any) -> Any:
     """
     Lazily loads and shares UI meshes, fonts, and textures to prevent VRAM and CPU bloat.
 
@@ -27,15 +40,15 @@ def get_shared_resource(app: Any, res_type: str, **kwargs: Any) -> Any:
     """
 
     # Handle conditional branching
-    if res_type == 'color_mesh':
+    if resource_type == 'color_mesh':
         if 'color_mesh' not in _shared_ui_resources:
             _shared_ui_resources['color_mesh'] = UIColorMesh(app)
         return _shared_ui_resources['color_mesh']
-    elif res_type == 'text_mesh':
+    elif resource_type == 'text_mesh':
         if 'text_mesh' not in _shared_ui_resources:
             _shared_ui_resources['text_mesh'] = UITextMesh(app)
         return _shared_ui_resources['text_mesh']
-    elif res_type == 'text_renderer':
+    elif resource_type == 'text_renderer':
         font_size: int = kwargs.get('size', 24)
         bold: bool = kwargs.get('bold', True)
         key: str = f'text_renderer_{font_size}_{bold}'
@@ -44,7 +57,7 @@ def get_shared_resource(app: Any, res_type: str, **kwargs: Any) -> Any:
             tr.font = pg.font.SysFont('arial', font_size, bold=bold)
             _shared_ui_resources[key] = tr
         return _shared_ui_resources[key]
-    elif res_type == 'button_mask':
+    elif resource_type == 'button_mask':
         radius: int = kwargs.get('radius', 12)
         size_tuple: Tuple[float, float] = kwargs.get('size', (0.2, 0.05))
         w: float = size_tuple[0]
@@ -60,6 +73,7 @@ def get_shared_resource(app: Any, res_type: str, **kwargs: Any) -> Any:
             _shared_ui_resources[key] = tex
         return _shared_ui_resources[key]
 
+
 class UINode:
     """
     Base class for all UI elements in the hierarchical layout system.
@@ -73,7 +87,7 @@ class UINode:
     """
 
     @global_profiler.profile_func('UINode_Init')
-    def __init__(self, size: Tuple[float, float]=(0, 0)) -> None:
+    def __init__(self, size: Tuple[float, float] = (0, 0)) -> None:
         """
         Initialize a `UINode` container.
 
@@ -126,7 +140,7 @@ class UINode:
             child.update_layout()
 
     @global_profiler.profile_func('UINode_Update')
-    def update(self, mouse_pos: Optional[Tuple[int, int]]=None) -> None:
+    def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
         """
         Recursively calls `update` on all children, passing down the mouse position.
         """
@@ -146,7 +160,7 @@ class UINode:
             child.handle_event(event)
 
     @global_profiler.profile_func('UINode_Render')
-    def render(self, offset: Tuple[float, float]=(0, 0), alpha: float=1.0) -> None:
+    def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
         """
         Recursively calls `render` on all children, passing down animation offsets and alpha.
         """
@@ -154,6 +168,7 @@ class UINode:
         # Execute loop iteration
         for child in self.children:
             child.render(offset, alpha)
+
 
 class VBox(UINode):
     """
@@ -163,23 +178,23 @@ class VBox(UINode):
     after another in a vertical column, with a configurable spacing between them.
 
     Args:
-        pos (Tuple[float, float]): The normalized screen position of the container's origin.
+        position (Tuple[float, float]): The normalized screen position of the container's origin.
         spacing (float): The normalized vertical gap to place between each child element.
     """
 
     @global_profiler.profile_func('VBox_Init')
-    def __init__(self, pos: Tuple[float, float]=(0, 0), spacing: float=0.05) -> None:
+    def __init__(self, position: Tuple[float, float] = (0, 0), spacing: float = 0.05) -> None:
         """
         Initialize a `VBox` layout container.
 
-        `pos` defines the local origin; `spacing` is the vertical gap between children.
+        `position` defines the local origin; `spacing` is the vertical gap between children.
         """
 
         # Execute expression statement
         super().__init__()
 
         # Process logic block
-        self.local_pos: List[float] = list(pos)
+        self.local_pos: List[float] = list(position)
         self.spacing: float = spacing
 
     @global_profiler.profile_func('VBox_UpdateLayout')
@@ -206,6 +221,7 @@ class VBox(UINode):
         # Initialize and update variables
         self.size = (self.size[0], max(0.0, total_height))
 
+
 class Button(UINode):
     """
     Represents a clickable UI button with text, hover effects, and an assigned action.
@@ -216,7 +232,7 @@ class Button(UINode):
     Args:
         app (Any): The main application instance.
         text (str): The text label to display on the button.
-        pos (Tuple[float, float]): The local normalized position.
+        position (Tuple[float, float]): The local normalized position.
         size (Tuple[float, float]): The normalized width and height.
         action (Callable[[], None]): The function to call when the button is clicked.
         border_radius (int): The pixel radius for the rounded corners.
@@ -224,7 +240,16 @@ class Button(UINode):
     """
 
     @global_profiler.profile_func('Button_Init')
-    def __init__(self, app: Any, text: str, pos: Tuple[float, float], size: Tuple[float, float], action: Optional[Callable[[], None]]=None, border_radius: int=12, elevation: int=5) -> None:
+    def __init__(
+        self,
+        app: Any,
+        text: str,
+        position: Tuple[float, float],
+        size: Tuple[float, float],
+        action: Optional[Callable[[], None]] = None,
+        border_radius: int = 12,
+        elevation: int = 5,
+    ) -> None:
         """
         Construct a clickable `Button` widget.
 
@@ -238,7 +263,7 @@ class Button(UINode):
         # Process logic block
         self.app: Any = app
         self.text: str = text
-        self.local_pos: List[float] = list(pos)
+        self.local_pos: List[float] = list(position)
         self.action: Optional[Callable[[], None]] = action
         self.border_radius: int = border_radius
 
@@ -300,7 +325,7 @@ class Button(UINode):
         return self.is_hovered
 
     @global_profiler.profile_func('Button_Update')
-    def update(self, mouse_pos: Optional[Tuple[int, int]]=None) -> None:
+    def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
         """
         Update visual/interaction state for this button.
 
@@ -338,7 +363,7 @@ class Button(UINode):
                     self.action()
 
     @global_profiler.profile_func('Button_Render')
-    def render(self, offset: Tuple[float, float]=(0, 0), alpha: float=1.0) -> None:
+    def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
         """
         Render the button visuals including elevation, mask, and text.
 
@@ -349,8 +374,8 @@ class Button(UINode):
 
         # Process logic block
         global_pos: Tuple[float, float] = self.get_global_pos()
-        px: float = global_pos[0]
-        py: float = global_pos[1]
+        position_x: float = global_pos[0]
+        position_y: float = global_pos[1]
         w: float = self.size[0]
         h: float = self.size[1]
 
@@ -365,7 +390,7 @@ class Button(UINode):
 
         # Initialize and update variables
         self.text_mesh.program['u_scale'] = (w, h)
-        self.text_mesh.program['u_offset'] = (px + offset[0], py + offset[1])
+        self.text_mesh.program['u_offset'] = (position_x + offset[0], position_y + offset[1])
 
         # Handle conditional branching
         if 'u_color' in self.text_mesh.program:
@@ -377,12 +402,12 @@ class Button(UINode):
         self.text_mesh.render()
 
         # Process logic block
-        py_dynamic: float = py + self.dynamic_elevation / WINDOW_RESOLUTION.y
+        py_dynamic: float = position_y + self.dynamic_elevation / WINDOW_RESOLUTION.y
         c: Tuple[float, float, float, float] = self.hover_color if self.is_hovered else self.base_color
 
         # Initialize and update variables
         self.text_mesh.program['u_scale'] = (w, h)
-        self.text_mesh.program['u_offset'] = (px + offset[0], py_dynamic + offset[1])
+        self.text_mesh.program['u_offset'] = (position_x + offset[0], py_dynamic + offset[1])
 
         # Handle conditional branching
         if 'u_color' in self.text_mesh.program:
@@ -405,7 +430,7 @@ class Button(UINode):
 
         # Initialize and update variables
         self.text_mesh.program['u_scale'] = (scale_x, scale_y)
-        self.text_mesh.program['u_offset'] = (px + offset[0], py_dynamic + offset[1])
+        self.text_mesh.program['u_offset'] = (position_x + offset[0], py_dynamic + offset[1])
 
         # Handle conditional branching
         if 'u_color' in self.text_mesh.program:
@@ -417,6 +442,7 @@ class Button(UINode):
         # Handle conditional branching
         if 'u_alpha' in self.text_mesh.program:
             self.text_mesh.program['u_alpha'] = 1.0
+
 
 class WorldButton(UINode):
     """
@@ -431,7 +457,7 @@ class WorldButton(UINode):
         game_mode (int): The game mode (Survival/Creative).
         creation_date (str): ISO format creation timestamp.
         last_played (str): ISO format last played timestamp.
-        pos (Tuple[float, float]): The local normalized position.
+        position (Tuple[float, float]): The local normalized position.
         size (Tuple[float, float]): The normalized width and height.
         action (Callable[[], None]): The function to call when clicked.
         border_radius (int): The pixel radius for the rounded corners.
@@ -439,7 +465,21 @@ class WorldButton(UINode):
     """
 
     @global_profiler.profile_func('WorldButton_Init')
-    def __init__(self, app: Any, save_name: str, display_name: str, seed: int, game_mode: int, creation_date: str, last_played: str, pos: Tuple[float, float], size: Tuple[float, float], action: Optional[Callable[[], None]]=None, border_radius: int=12, elevation: int=5) -> None:
+    def __init__(
+        self,
+        app: Any,
+        save_name: str,
+        display_name: str,
+        seed: int,
+        game_mode: int,
+        creation_date: str,
+        last_played: str,
+        position: Tuple[float, float],
+        size: Tuple[float, float],
+        action: Optional[Callable[[], None]] = None,
+        border_radius: int = 12,
+        elevation: int = 5,
+    ) -> None:
         """
         Construct a `WorldButton` showing a world thumbnail and metadata.
 
@@ -459,7 +499,7 @@ class WorldButton(UINode):
         # Process logic block
         self.creation_date: str = creation_date
         self.last_played: str = last_played
-        self.local_pos: List[float] = list(pos)
+        self.local_pos: List[float] = list(position)
         self.action: Optional[Callable[[], None]] = action
         self.border_radius: int = border_radius
 
@@ -496,7 +536,9 @@ class WorldButton(UINode):
         # Process logic block
         self.tex_title: Any = self.text_renderer.get_dynamic_texture(self.display_name)
         self.tex_details: Any = self.text_renderer.get_dynamic_texture(f'{self.game_mode} Mode  |  Seed: {self.seed}')
-        self.tex_dates: Any = self.text_renderer.get_dynamic_texture(f'Created: {self.creation_date}  |  Last Played: {self.last_played}')
+        self.tex_dates: Any = self.text_renderer.get_dynamic_texture(
+            f'Created: {self.creation_date}  |  Last Played: {self.last_played}'
+        )
 
     @global_profiler.profile_func('WorldButton_CheckHover')
     def check_hover(self, mouse_pos: Tuple[int, int]) -> bool:
@@ -540,7 +582,7 @@ class WorldButton(UINode):
         return self.is_hovered
 
     @global_profiler.profile_func('WorldButton_Update')
-    def update(self, mouse_pos: Optional[Tuple[int, int]]=None) -> None:
+    def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
         """
         Update hover state for the world button.
 
@@ -577,7 +619,7 @@ class WorldButton(UINode):
                     self.action()
 
     @global_profiler.profile_func('WorldButton_Render')
-    def render(self, offset: Tuple[float, float]=(0, 0), alpha: float=1.0) -> None:
+    def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
         """
         Render the world button including thumbnail, title and details.
 
@@ -588,8 +630,8 @@ class WorldButton(UINode):
 
         # Process logic block
         global_pos: Tuple[float, float] = self.get_global_pos()
-        px: float = global_pos[0]
-        py: float = global_pos[1]
+        position_x: float = global_pos[0]
+        position_y: float = global_pos[1]
         w: float = self.size[0]
         h: float = self.size[1]
 
@@ -601,7 +643,7 @@ class WorldButton(UINode):
 
         # Process logic block
         b_c: Tuple[float, float, float, float] = self.base_color
-        render_pos_bottom: Tuple[float, float] = (px + offset[0], py + offset[1])
+        render_pos_bottom: Tuple[float, float] = (position_x + offset[0], position_y + offset[1])
 
         # Initialize and update variables
         self.text_mesh.program['u_scale'] = (w, h)
@@ -617,8 +659,8 @@ class WorldButton(UINode):
         self.text_mesh.render()
 
         # Process logic block
-        py_dynamic: float = py + self.dynamic_elevation / WINDOW_RESOLUTION.y
-        render_pos_top: Tuple[float, float] = (px + offset[0], py_dynamic + offset[1])
+        py_dynamic: float = position_y + self.dynamic_elevation / WINDOW_RESOLUTION.y
+        render_pos_top: Tuple[float, float] = (position_x + offset[0], py_dynamic + offset[1])
         c: Tuple[float, float, float, float] = self.hover_color if self.is_hovered else self.base_color
 
         # Initialize and update variables
@@ -681,6 +723,7 @@ class WorldButton(UINode):
         if 'u_alpha' in self.text_mesh.program:
             self.text_mesh.program['u_alpha'] = 1.0
 
+
 class TextInput(UINode):
     """
     Provides a simple interactive text entry field for the UI.
@@ -690,13 +733,13 @@ class TextInput(UINode):
 
     Args:
         app (Any): The main application instance.
-        pos (Tuple[float, float]): The local normalized position.
+        position (Tuple[float, float]): The local normalized position.
         size (Tuple[float, float]): The normalized width and height.
         label (str): The placeholder text to show when the input is empty.
     """
 
     @global_profiler.profile_func('TextInput_Init')
-    def __init__(self, app: Any, pos: Tuple[float, float], size: Tuple[float, float], label: str='') -> None:
+    def __init__(self, app: Any, position: Tuple[float, float], size: Tuple[float, float], label: str = '') -> None:
         """
         Initialize a `TextInput` control for short text entry.
 
@@ -708,7 +751,7 @@ class TextInput(UINode):
 
         # Process logic block
         self.app: Any = app
-        self.local_pos: List[float] = list(pos)
+        self.local_pos: List[float] = list(position)
         self.label: str = label
         self.text: str = ''
         self.is_active: bool = False
@@ -743,7 +786,9 @@ class TextInput(UINode):
             btn_y: float = (-y + 1) * 0.5 * win_h
             btn_w: float = w * 0.5 * win_w
             btn_h: float = h * 0.5 * win_h
-            self.is_active = btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+            self.is_active = (
+                btn_x - btn_w < mouse_pos[0] < btn_x + btn_w and btn_y - btn_h < mouse_pos[1] < btn_y + btn_h
+            )
         if self.is_active and event.type == pg.KEYDOWN:
             if event.key == pg.K_BACKSPACE:
                 self.text = self.text[:-1]
@@ -753,7 +798,7 @@ class TextInput(UINode):
                 self.text += event.unicode
 
     @global_profiler.profile_func('TextInput_Render')
-    def render(self, offset: Tuple[float, float]=(0, 0), alpha: float=1.0) -> None:
+    def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
         """
         Render the input box, current text and blinking cursor.
 
@@ -826,6 +871,7 @@ class TextInput(UINode):
         # Dispatch render call to GPU
         self.text_mesh.render()
 
+
 class Slider(UINode):
     """
     An interactive UI slider component used to adjust numerical settings
@@ -834,7 +880,7 @@ class Slider(UINode):
     Args:
         app (Any): The main application instance.
         text (str): The text label to display next to the slider.
-        pos (Tuple[float, float]): The local normalized position.
+        position (Tuple[float, float]): The local normalized position.
         size (Tuple[float, float]): The normalized width and height.
         min_val (float): The minimum value of the slider.
         max_val (float): The maximum value of the slider.
@@ -844,7 +890,18 @@ class Slider(UINode):
     """
 
     @global_profiler.profile_func('Slider_Init')
-    def __init__(self, app: Any, text: str, pos: Tuple[float, float], size: Tuple[float, float], min_val: float, max_val: float, config_key: str, action: Optional[Callable[[Any], None]]=None, is_int: bool=False) -> None:
+    def __init__(
+        self,
+        app: Any,
+        text: str,
+        position: Tuple[float, float],
+        size: Tuple[float, float],
+        min_val: float,
+        max_val: float,
+        config_key: str,
+        action: Optional[Callable[[Any], None]] = None,
+        is_int: bool = False,
+    ) -> None:
         """
         Create a `Slider` used to adjust numerical settings.
 
@@ -857,7 +914,7 @@ class Slider(UINode):
         # Process logic block
         self.app: Any = app
         self.text: str = text
-        self.local_pos: List[float] = list(pos)
+        self.local_pos: List[float] = list(position)
         self.size: Tuple[float, float] = size
         self.min_val: float = min_val
 
@@ -879,7 +936,7 @@ class Slider(UINode):
         self.text_tex: Any = None
 
     @global_profiler.profile_func('Slider_Update')
-    def update(self, mouse_pos: Optional[Tuple[int, int]]=None) -> None:
+    def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
         """
         Update the slider's hover/drag state and apply value changes.
 
@@ -943,7 +1000,7 @@ class Slider(UINode):
                 self.is_dragging = True
 
     @global_profiler.profile_func('Slider_Render')
-    def render(self, offset: Tuple[float, float]=(0, 0), alpha: float=1.0) -> None:
+    def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
         """
         Render the slider track, fill and value text.
 
@@ -988,7 +1045,12 @@ class Slider(UINode):
             clip_x_max: float = render_pos[0] - w + w * 2 * progress
             if 'u_clip' in self.app.shader_program.ui_text:
                 self.app.shader_program.ui_text['u_clip'] = (-2.0, -2.0, clip_x_max, 2.0)
-            fill_color: Tuple[float, float, float, float] = (UI_HOVER_COLOR[0], UI_HOVER_COLOR[1], UI_HOVER_COLOR[2], UI_HOVER_COLOR[3] * alpha)
+            fill_color: Tuple[float, float, float, float] = (
+                UI_HOVER_COLOR[0],
+                UI_HOVER_COLOR[1],
+                UI_HOVER_COLOR[2],
+                UI_HOVER_COLOR[3] * alpha,
+            )
             if 'u_color' in self.text_mesh.program:
                 self.text_mesh.program['u_color'] = fill_color
             self.text_mesh.render()
@@ -1043,6 +1105,7 @@ class Slider(UINode):
         if 'u_alpha' in self.text_mesh.program:
             self.text_mesh.program['u_alpha'] = 1.0
 
+
 class Toggle(UINode):
     """
     A binary toggle switch component for the UI (e.g., for On/Off settings).
@@ -1050,14 +1113,22 @@ class Toggle(UINode):
     Args:
         app (Any): The main application instance.
         text (str): The text label to display next to the toggle.
-        pos (Tuple[float, float]): The local normalized position.
+        position (Tuple[float, float]): The local normalized position.
         size (Tuple[float, float]): The normalized width and height of the switch track.
         config_key (str): The key in `app.config` this toggle controls.
         action (Optional[Callable[[bool], None]]): An optional callback to run on value change.
     """
 
     @global_profiler.profile_func('Toggle_Init')
-    def __init__(self, app: Any, text: str, pos: Tuple[float, float], size: Tuple[float, float], config_key: str, action: Optional[Callable[[bool], None]]=None) -> None:
+    def __init__(
+        self,
+        app: Any,
+        text: str,
+        position: Tuple[float, float],
+        size: Tuple[float, float],
+        config_key: str,
+        action: Optional[Callable[[bool], None]] = None,
+    ) -> None:
         """
         Initialize a binary `Toggle` control bound to a config key.
 
@@ -1070,7 +1141,7 @@ class Toggle(UINode):
         # Process logic block
         self.app: Any = app
         self.text: str = text
-        self.local_pos: List[float] = list(pos)
+        self.local_pos: List[float] = list(position)
         self.config_key: str = config_key
         self.action: Optional[Callable[[bool], None]] = action
 
@@ -1085,7 +1156,7 @@ class Toggle(UINode):
         self.text_tex: Any = None
 
     @global_profiler.profile_func('Toggle_Update')
-    def update(self, mouse_pos: Optional[Tuple[int, int]]=None) -> None:
+    def update(self, mouse_pos: Optional[Tuple[int, int]] = None) -> None:
         """
         Update hover state for the toggle control.
 
@@ -1136,7 +1207,7 @@ class Toggle(UINode):
                     self.action(not val)
 
     @global_profiler.profile_func('Toggle_Render')
-    def render(self, offset: Tuple[float, float]=(0, 0), alpha: float=1.0) -> None:
+    def render(self, offset: Tuple[float, float] = (0, 0), alpha: float = 1.0) -> None:
         """
         Render the toggle control including track and thumb.
 
@@ -1214,7 +1285,9 @@ class Toggle(UINode):
         thumb_h: float = h
         travel_dist: float = w - thumb_w
         thumb_x: float = render_pos[0] + travel_dist if val else render_pos[0] - travel_dist
-        thumb_mask: Any = get_shared_resource(self.app, 'button_mask', radius=int(h * WINDOW_RESOLUTION.y), size=(thumb_w, thumb_h))
+        thumb_mask: Any = get_shared_resource(
+            self.app, 'button_mask', radius=int(h * WINDOW_RESOLUTION.y), size=(thumb_w, thumb_h)
+        )
 
         # Execute expression statement
         thumb_mask.use(location=4)

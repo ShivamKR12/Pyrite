@@ -280,9 +280,9 @@ class HeldBlock:
         # Process logic block
         self.app: Any = app
         self.mesh: Any = ItemMesh(app)
-        self.stick_mesh: Any = ObjMesh(app, get_path('assets/models/items/stick/stick.obj'), tex_id=5)
+        self.stick_mesh: Any = ObjMesh(app, get_path('assets/models/items/stick/stick.obj'), texture_id=5)
         self.pickaxe_mesh: Any = ObjMesh(
-            app, get_path('assets/models/items/wooden-pickaxe/wooden_pickaxe.obj'), tex_id=6
+            app, get_path('assets/models/items/wooden-pickaxe/wooden_pickaxe.obj'), texture_id=6
         )
 
     @global_profiler.profile_func('HeldBlock_Render')
@@ -319,11 +319,11 @@ class HeldBlock:
                 swing_rotation_x = swing_val * HELD_ITEM_PLACE_SWING_ROTATION_X
 
         # Process logic block
-        pos: Any = HELD_ITEM_POS + glm.vec3(bob_offset_x, bob_offset_y - swing_offset_y, swing_offset_z)
+        position: Any = HELD_ITEM_POS + glm.vec3(bob_offset_x, bob_offset_y - swing_offset_y, swing_offset_z)
         model_matrix: Any = glm.inverse(player.m_view)
 
         # Initialize and update variables
-        model_matrix = glm.translate(model_matrix, pos)
+        model_matrix = glm.translate(model_matrix, position)
 
         # Handle conditional branching
         if voxel_id == STICK:
