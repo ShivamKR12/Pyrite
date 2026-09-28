@@ -18,6 +18,6 @@ void main() {
     }
 
     // Sample texture and apply color and alpha blending
-    vec4 col = texture(u_texture_0, uv);
-    fragColor = vec4(col.rgb * u_color.rgb, col.a * u_alpha * u_color.a);
+    vec4 color = texture(u_texture_0, uv);
+    fragColor = vec4(color.rgb * u_color.rgb, color.a * u_alpha * u_color.a);
 }
