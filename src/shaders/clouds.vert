@@ -7,7 +7,7 @@ uniform mat4 m_view;
 uniform int center;
 uniform float u_time;
 uniform float cloud_scale;
-uniform vec3 player_pos;
+uniform vec3 player_position;
 
 
 void main() {
@@ -15,7 +15,7 @@ void main() {
     vec3 position = vec3(in_position);
     position.xz -= center;
     position.xz *= cloud_scale;
-    position.xz += player_pos.xz;
+    position.xz += player_position.xz;
 
     // Wind animation and final position
     float time = 300 * sin(0.01 * u_time);
