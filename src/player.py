@@ -316,9 +316,9 @@ class Player(Camera):
             self.fov += (target_fov - self.fov) * min(1.0, SPRINT_FOV_LERP_SPEED * self.app.delta_time)
             self.m_proj = glm.perspective(self.fov, ASPECT_RATIO, NEAR, FAR)
 
-            h_fov: float = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
+            horizontal_fov: float = 2 * math.atan(math.tan(self.fov * 0.5) * ASPECT_RATIO)
             # Execute expressions
-            self.frustum.update_factors(self.fov, h_fov)
+            self.frustum.update_factors(self.fov, horizontal_fov)
 
             # Variable assignments
             self.position = self.feet_pos + glm.vec3(0, PLAYER_EYE_HEIGHT + bob_offset, 0)

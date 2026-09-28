@@ -75,9 +75,9 @@ class ShaderProgram:
         tex_map: NDArray[np.int32] = np.zeros(256, dtype='int32')
 
         # Loop processing
-        for uid, tex_id in TEXTURE_MAP.items():
+        for uid, texture_id in TEXTURE_MAP.items():
             # Variable assignments
-            tex_map[uid] = tex_id
+            tex_map[uid] = texture_id
         # Variable assignments
         tex_map_bytes: bytes = tex_map.tobytes()
 
@@ -185,7 +185,7 @@ class ShaderProgram:
         # Execute expressions
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
-        self.clouds['player_pos'].write(self.player.position)
+        self.clouds['player_position'].write(self.player.position)
         self.item['m_view'].write(self.player.m_view)
         self.obj['m_view'].write(self.player.m_view)
 

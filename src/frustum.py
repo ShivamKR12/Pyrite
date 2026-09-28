@@ -36,27 +36,27 @@ class Frustum:
         # Variable assignments
         self.cam: Any = camera
         self.factor_y: float = 0.0
-        self.tan_y: float = 0.0
+        self.tangent_y: float = 0.0
         self.factor_x: float = 0.0
-        self.tan_x: float = 0.0
+        self.tangent_x: float = 0.0
         # Execute expressions
         self.update_factors(VERTICAL_FOV, HORIZONTAL_FOV)
 
     @global_profiler.profile_func('Frustum_UpdateFactors')
-    def update_factors(self, v_fov: float, h_fov: float) -> None:
+    def update_factors(self, vertical_fov: float, horizontal_fov: float) -> None:
         """
         Recalculate cached tangent/factor values from vertical and horizontal FOV.
 
         Args:
-            v_fov: Vertical field-of-view in radians.
-            h_fov: Horizontal field-of-view in radians.
+            vertical_fov: Vertical field-of-view in radians.
+            horizontal_fov: Horizontal field-of-view in radians.
         """
         # Variable assignments
-        self.factor_y = 1.0 / math.cos(half_y := v_fov * 0.5)
-        self.tan_y = math.tan(half_y)
+        self.factor_y = 1.0 / math.cos(half_y := vertical_fov * 0.5)
+        self.tangent_y = math.tan(half_y)
 
-        self.factor_x = 1.0 / math.cos(half_x := h_fov * 0.5)
-        self.tan_x = math.tan(half_x)
+        self.factor_x = 1.0 / math.cos(half_x := horizontal_fov * 0.5)
+        self.tangent_x = math.tan(half_x)
 
     @global_profiler.profile_func('Frustum_IsOnFrustum')
     def is_on_frustum(self, chunk: Any) -> bool:
@@ -80,7 +80,7 @@ class Frustum:
 
         # Variable assignments
         sy = glm.dot(sphere_vec, self.cam.up)
-        dist = self.factor_y * CHUNK_SPHERE_RADIUS + sz * self.tan_y
+        dist = self.factor_y * CHUNK_SPHERE_RADIUS + sz * self.tangent_y
         # Conditional logic
         if not (-dist <= sy <= dist):
             # Return result
@@ -88,7 +88,7 @@ class Frustum:
 
         # Variable assignments
         sx = glm.dot(sphere_vec, self.cam.right)
-        dist = self.factor_x * CHUNK_SPHERE_RADIUS + sz * self.tan_x
+        dist = self.factor_x * CHUNK_SPHERE_RADIUS + sz * self.tangent_x
         # Conditional logic
         if not (-dist <= sx <= dist):
             # Return result
@@ -125,12 +125,12 @@ class Frustum:
 def frustum_cull_fast(
     chunk_centers: Any,
     out_mask: Any,
-    cam_pos: Any,
-    cam_forward: Any,
-    cam_right: Any,
-    cam_up: Any,
-    tan_y: float,
-    tan_x: float,
+    camera_position: Any,
+    camera_forward: Any,
+    camera_right: Any,
+    camera_up: Any,
+    tangent_y: float,
+    tangent_x: float,
     factor_y: float,
     factor_x: float,
 ) -> Any:
@@ -140,12 +140,12 @@ def frustum_cull_fast(
     Args:
         chunk_centers: Nx3 array of chunk center coordinates.
         out_mask: Preallocated boolean array that will be written with visibility flags.
-        cam_pos: Camera position (3,) array.
-        cam_forward: Camera forward vector (3,) array.
-        cam_right: Camera right vector (3,) array.
-        cam_up: Camera up vector (3,) array.
-        tan_y: Tangent of half-vertical FOV.
-        tan_x: Tangent of half-horizontal FOV.
+        camera_position: Camera position (3,) array.
+        camera_forward: Camera forward vector (3,) array.
+        camera_right: Camera right vector (3,) array.
+        camera_up: Camera up vector (3,) array.
+        tangent_y: Tangent of half-vertical FOV.
+        tangent_x: Tangent of half-horizontal FOV.
         factor_y: Precomputed vertical factor used for bounds checks.
         factor_x: Precomputed horizontal factor used for bounds checks.
 
@@ -155,10 +155,10 @@ def frustum_cull_fast(
     # Variable assignments
     n = len(chunk_centers)
 
-    cpx, cpy, cpz = cam_pos[0], cam_pos[1], cam_pos[2]
-    cfx, cfy, cfz = cam_forward[0], cam_forward[1], cam_forward[2]
-    crx, cry, crz = cam_right[0], cam_right[1], cam_right[2]
-    cux, cuy, cuz = cam_up[0], cam_up[1], cam_up[2]
+    cpx, cpy, cpz = camera_position[0], camera_position[1], camera_position[2]
+    cfx, cfy, cfz = camera_forward[0], camera_forward[1], camera_forward[2]
+    crx, cry, crz = camera_right[0], camera_right[1], camera_right[2]
+    cux, cuy, cuz = camera_up[0], camera_up[1], camera_up[2]
 
     radius_sq = (CHUNK_SPHERE_RADIUS * 1.2) ** 2
 
@@ -190,7 +190,7 @@ def frustum_cull_fast(
         sz = max(0.0, sz)
 
         sy = svx * cux + svy * cuy + svz * cuz
-        dist_y = factor_y * CHUNK_SPHERE_RADIUS + sz * tan_y
+        dist_y = factor_y * CHUNK_SPHERE_RADIUS + sz * tangent_y
         # Conditional logic
         if not (-dist_y <= sy <= dist_y):
             # Variable assignments
@@ -200,7 +200,7 @@ def frustum_cull_fast(
 
         # Variable assignments
         sx = svx * crx + svy * cry + svz * crz
-        dist_x = factor_x * CHUNK_SPHERE_RADIUS + sz * tan_x
+        dist_x = factor_x * CHUNK_SPHERE_RADIUS + sz * tangent_x
         # Conditional logic
         if not (-dist_x <= sx <= dist_x):
             # Variable assignments
