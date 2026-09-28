@@ -313,11 +313,11 @@ Clouds Shader (Procedural)
 
 .. code-block:: glsl
 
-    world_pos += player_pos;
+    world_pos += player_position;
     world_pos *= cloud_scale;
     gl_Position = m_proj * m_view * vec4(world_pos, 1.0);
 
-* **Infinite Sky Illusion:** By adding the ``player_pos`` directly to the cloud quad, the clouds are perpetually centered above the player. They drift because of ``u_time``, but the player can never actually "reach" or outrun the cloud layer.
+* **Infinite Sky Illusion:** By adding the ``player_position`` directly to the cloud quad, the clouds are perpetually centered above the player. They drift because of ``u_time``, but the player can never actually "reach" or outrun the cloud layer.
 
 ``clouds.frag`` - Noise-based cloud appearance.
 

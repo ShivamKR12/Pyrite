@@ -1021,6 +1021,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Initializes the camera at a given position and orientation, and creates</span>
 <span class="sd">        the perspective projection matrix and viewing frustum.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">yaw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">yaw</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">pitch</span><span class="p">))</span>
@@ -1041,6 +1042,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Updates the camera's directional vectors and view matrix for the current frame.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_vectors</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_view_matrix</span><span class="p">()</span></div>
 
@@ -1052,6 +1054,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculates the OpenGL lookAt view matrix based on the camera's position and forward vector.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">m_view</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">lookAt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">up</span><span class="p">)</span></div>
 
 
@@ -1081,40 +1084,17 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Recalculates the forward, right, and up vectors using spherical coordinates</span>
 <span class="sd">        derived from the current yaw and pitch.</span>
 <span class="sd">        """</span>
-        <span class="c1"># SPHERICAL TO CARTESIAN CONVERSION (X-AXIS)</span>
-        <span class="c1"># To find how much we are looking left/right (X), we use `cos(yaw)`.</span>
-        <span class="c1"># But if we look straight up or down, the X length should shrink to 0.</span>
-        <span class="c1"># So we multiply it by `cos(pitch)`.</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yaw</span><span class="p">)</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">)</span>
 
-        <span class="c1"># SPHERICAL TO CARTESIAN CONVERSION (Y-AXIS)</span>
-        <span class="c1"># The vertical Y axis is purely controlled by the Pitch (looking up/down).</span>
-        <span class="c1"># `sin(pitch)` returns exactly 1.0 when looking straight up (90 degrees),</span>
-        <span class="c1"># 0.0 when looking flat (0 degrees), and -1.0 when looking down.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">)</span>
 
-        <span class="c1"># SPHERICAL TO CARTESIAN CONVERSION (Z-AXIS)</span>
-        <span class="c1"># Similar to X, the Z (depth) axis is controlled by `sin(yaw)`.</span>
-        <span class="c1"># It must also be scaled by `cos(pitch)` so that looking straight up/down</span>
-        <span class="c1"># completely nullifies depth movement.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yaw</span><span class="p">)</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">)</span>
 
-        <span class="c1"># VECTOR NORMALIZATION</span>
-        <span class="c1"># `glm.normalize` ensures the Forward vector's total length is exactly 1.0.</span>
-        <span class="c1"># If we didn't normalize, moving diagonally might be faster than moving straight!</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">)</span>
 
-        <span class="c1"># THE CROSS PRODUCT (CALCULATING 'RIGHT')</span>
-        <span class="c1"># We know which way we are looking (Forward), and we know which way is</span>
-        <span class="c1"># the sky (World Up: 0, 1, 0). The `cross` product of these two vectors</span>
-        <span class="c1"># generates a 3rd vector that is exactly perpendicular (90 degrees) to both.</span>
-        <span class="c1"># This gives us our exact 'Right' vector for strafing left/right!</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
 
-        <span class="c1"># THE CROSS PRODUCT (CALCULATING 'LOCAL UP')</span>
-        <span class="c1"># We cross 'Right' and 'Forward' to get our Local 'Up' vector.</span>
-        <span class="c1"># This is used so if we look down, 'Up' correctly points behind our head</span>
-        <span class="c1"># instead of straight into the sky. This is crucial for the OpenGL lookAt matrix.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">up</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">))</span></div>
 
 
@@ -1125,6 +1105,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Adjusts the camera's pitch (up/down rotation), clamping it to prevent flipping over.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">-=</span> <span class="n">delta_y</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitch</span><span class="p">,</span> <span class="o">-</span><span class="n">PITCH_MAX</span><span class="p">,</span> <span class="n">PITCH_MAX</span><span class="p">))</span></div>
 
@@ -1136,6 +1117,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Adjusts the camera's yaw (left/right rotation).</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">yaw</span> <span class="o">+=</span> <span class="n">delta_x</span></div>
 
 
@@ -1146,6 +1128,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera leftward along its right vector.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
@@ -1156,6 +1139,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera rightward along its right vector.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
@@ -1166,6 +1150,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera upward along its up vector.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">up</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
@@ -1176,6 +1161,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera downward along its up vector.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">up</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
@@ -1186,6 +1172,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera forward along its forward vector.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="n">velocity</span></div>
 
 
@@ -1196,6 +1183,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Translates the camera backward along its forward vector.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="n">velocity</span></div>
 </div>
 

@@ -1003,28 +1003,24 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">global_profiler</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">AIR</span><span class="p">,</span> <span class="n">CHUNK_AREA</span><span class="p">,</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">GLASS</span><span class="p">,</span> <span class="n">GLOWSTONE</span><span class="p">,</span> <span class="n">LEAVES</span><span class="p">,</span> <span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">WATER</span><span class="p">,</span> <span class="n">WORLD_HEIGHT</span>
 
-<span class="c1"># Pre-allocated global memory queues to prevent massive GC churn per interaction</span>
-<span class="n">GLOBAL_QUEUE_A</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-<span class="n">GLOBAL_QUEUE_B</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-
 <span class="n">DIRS</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="get_voxel_fast">
 <a class="viewcode-back" href="../api/lighting.html#lighting.get_voxel_fast">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_voxel_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_voxel_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-optimized helper to quickly retrieve a voxel ID from the global</span>
 <span class="sd">    world arrays using absolute world coordinates. Returns a solid block (1)</span>
 <span class="sd">    if the queried chunk is unloaded or out of bounds.</span>
 <span class="sd">    """</span>
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">1</span>
 
-    <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">wx</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">wy</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">wz</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
+    <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">world_x</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">world_y</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
 
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_voxels</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">lx</span> <span class="o">+</span> <span class="n">lz</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">ly</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">])</span></div>
 
@@ -1033,17 +1029,17 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="get_light_fast">
 <a class="viewcode-back" href="../api/lighting.html#lighting.get_light_fast">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-optimized helper to rapidly read the packed light level (Sunlight and Blocklight)</span>
 <span class="sd">    for a specific absolute world coordinate. Returns completely dark (0) if out of bounds.</span>
 <span class="sd">    """</span>
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
 
-    <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">wx</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">wy</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">wz</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
+    <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">world_x</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">world_y</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
 
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_lightmaps</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">lx</span> <span class="o">+</span> <span class="n">lz</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">ly</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">])</span></div>
 
@@ -1052,15 +1048,17 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="set_light_fast">
 <a class="viewcode-back" href="../api/lighting.html#lighting.set_light_fast">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">set_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_light_fast</span><span class="p">(</span>
+    <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-optimized helper to directly write a packed light value into the global</span>
 <span class="sd">    lightmap arrays at the specified absolute world coordinate.</span>
 <span class="sd">    """</span>
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">idx</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-        <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">wx</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">wy</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">wz</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">world_x</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">world_y</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">%</span> <span class="n">CHUNK_SIZE</span>
         <span class="n">world_lightmaps</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">lx</span> <span class="o">+</span> <span class="n">lz</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">ly</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span></div>
 
 
@@ -1222,9 +1220,9 @@ window.runMermaid = runMermaid;</script>
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_init_chunk_lighting</span><span class="p">(</span>
-    <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">chunk_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">chunk_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">chunk_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -1235,28 +1233,31 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Internal Numba implementation for queuing initial light sources within a chunk.</span>
 <span class="sd">    Populates separate BFS queues for sunlight and blocklight.</span>
 <span class="sd">    """</span>
+    <span class="c1"># Initialize queues</span>
     <span class="n">tail_sun</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">tail_block</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="n">chunk_idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
+    <span class="n">chunk_idx</span> <span class="o">=</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">chunk_idx</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># Load local maps</span>
         <span class="n">local_lightmap</span> <span class="o">=</span> <span class="n">world_lightmaps</span><span class="p">[</span><span class="n">chunk_idx</span><span class="p">]</span>
         <span class="n">local_voxels</span> <span class="o">=</span> <span class="n">world_voxels</span><span class="p">[</span><span class="n">chunk_idx</span><span class="p">]</span>
 
+        <span class="c1"># Scan chunk volume</span>
         <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
-                    <span class="c1"># Calculate the raw 1D array index instantly</span>
+                    <span class="c1"># Fetch block properties</span>
                     <span class="n">idx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span>
                     <span class="n">val</span> <span class="o">=</span> <span class="n">local_lightmap</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
                     <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">local_voxels</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
 
-                    <span class="c1"># Fallback for old save files: Ignite un-cached Glowstone blocks!</span>
+                    <span class="c1"># Ignite glowstone</span>
                     <span class="k">if</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">GLOWSTONE</span><span class="p">:</span>
-                        <span class="n">val</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">240</span><span class="p">)</span> <span class="o">|</span> <span class="mi">14</span>  <span class="c1"># Preserve sunlight (240), set block light to 14</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span> <span class="o">&amp;</span> <span class="mi">240</span><span class="p">)</span> <span class="o">|</span> <span class="mi">14</span>
                         <span class="n">local_lightmap</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
+                    <span class="c1"># Enqueue sunlight</span>
                     <span class="n">sun</span> <span class="o">=</span> <span class="n">val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span>
                     <span class="k">if</span> <span class="n">sun</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="k">if</span> <span class="p">(</span>
@@ -1268,10 +1269,9 @@ window.runMermaid = runMermaid;</script>
                             <span class="ow">or</span> <span class="n">z</span> <span class="o">==</span> <span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span>
                         <span class="p">):</span>
                             <span class="n">queue_sun</span><span class="p">[</span><span class="n">tail_sun</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">cx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">cy</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">cz</span><span class="p">)</span>
+                                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">chunk_x</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">chunk_y</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">chunk_z</span><span class="p">)</span>
                             <span class="p">)</span>
                             <span class="n">tail_sun</span> <span class="o">+=</span> <span class="mi">1</span>
-
                         <span class="k">else</span><span class="p">:</span>
                             <span class="k">if</span> <span class="p">(</span>
                                 <span class="p">(</span><span class="n">local_lightmap</span><span class="p">[(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">sun</span>
@@ -1282,10 +1282,13 @@ window.runMermaid = runMermaid;</script>
                                 <span class="ow">or</span> <span class="p">(</span><span class="n">local_lightmap</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">sun</span>
                             <span class="p">):</span>
                                 <span class="n">queue_sun</span><span class="p">[</span><span class="n">tail_sun</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">cx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">cy</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">cz</span><span class="p">)</span>
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">chunk_x</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span>
+                                    <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">chunk_y</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+                                    <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">chunk_z</span><span class="p">)</span>
                                 <span class="p">)</span>
                                 <span class="n">tail_sun</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                    <span class="c1"># Enqueue blocklight</span>
                     <span class="n">block</span> <span class="o">=</span> <span class="n">val</span> <span class="o">&amp;</span> <span class="mi">15</span>
                     <span class="k">if</span> <span class="n">block</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="k">if</span> <span class="p">(</span>
@@ -1297,10 +1300,9 @@ window.runMermaid = runMermaid;</script>
                             <span class="ow">or</span> <span class="n">z</span> <span class="o">==</span> <span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span>
                         <span class="p">):</span>
                             <span class="n">queue_block</span><span class="p">[</span><span class="n">tail_block</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">cx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">cy</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">cz</span><span class="p">)</span>
+                                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">chunk_x</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">chunk_y</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">chunk_z</span><span class="p">)</span>
                             <span class="p">)</span>
                             <span class="n">tail_block</span> <span class="o">+=</span> <span class="mi">1</span>
-
                         <span class="k">else</span><span class="p">:</span>
                             <span class="k">if</span> <span class="p">(</span>
                                 <span class="p">(</span><span class="n">local_lightmap</span><span class="p">[(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">block</span>
@@ -1311,10 +1313,13 @@ window.runMermaid = runMermaid;</script>
                                 <span class="ow">or</span> <span class="p">(</span><span class="n">local_lightmap</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span> <span class="o">+</span> <span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_AREA</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">block</span>
                             <span class="p">):</span>
                                 <span class="n">queue_block</span><span class="p">[</span><span class="n">tail_block</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">cx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">cy</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">cz</span><span class="p">)</span>
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">chunk_x</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span>
+                                    <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">chunk_y</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+                                    <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">chunk_z</span><span class="p">)</span>
                                 <span class="p">)</span>
                                 <span class="n">tail_block</span> <span class="o">+=</span> <span class="mi">1</span>
 
+    <span class="c1"># Propagate lighting</span>
     <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">queue_sun</span><span class="p">,</span> <span class="n">tail_sun</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
     <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">queue_block</span><span class="p">,</span> <span class="n">tail_block</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
@@ -1323,22 +1328,32 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/lighting.html#lighting.init_chunk_lighting">[docs]</a>
 <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_InitChunkLighting'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_chunk_lighting</span><span class="p">(</span>
-    <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">chunk_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Scans a newly loaded/generated chunk for sunlight blocks (level 15) and light-emitting</span>
 <span class="sd">    blocks (glowstone). Adds these blocks to a queue and triggers their initial internal</span>
 <span class="sd">    BFS propagation to light up the chunk.</span>
 <span class="sd">    """</span>
-    <span class="n">_init_chunk_lighting</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_B</span><span class="p">)</span></div>
+    <span class="c1"># Trigger internal init</span>
+    <span class="n">_init_chunk_lighting</span><span class="p">(</span>
+        <span class="n">chunk_x</span><span class="p">,</span>
+        <span class="n">chunk_y</span><span class="p">,</span>
+        <span class="n">chunk_z</span><span class="p">,</span>
+        <span class="n">world_voxels</span><span class="p">,</span>
+        <span class="n">world_lightmaps</span><span class="p">,</span>
+        <span class="n">chunk_positions</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+    <span class="p">)</span></div>
 
 
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_stitch_chunk_lighting</span><span class="p">(</span>
-    <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">chunk_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">chunk_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">chunk_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -1349,68 +1364,65 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Internal Numba implementation for sampling the borders of adjacent chunks</span>
 <span class="sd">    to determine if light should bleed across the boundaries.</span>
 <span class="sd">    """</span>
+    <span class="c1"># Initialize queues</span>
     <span class="n">tail_sun</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">tail_block</span> <span class="o">=</span> <span class="mi">0</span>
 
+    <span class="c1"># Scan adjacent chunks</span>
     <span class="k">for</span> <span class="n">dir_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
         <span class="n">dx</span> <span class="o">=</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">dir_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">dy</span> <span class="o">=</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">dir_idx</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">dz</span> <span class="o">=</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">dir_idx</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">nx_c</span> <span class="o">=</span> <span class="n">chunk_x</span> <span class="o">+</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">ny_c</span> <span class="o">=</span> <span class="n">chunk_y</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">nz_c</span> <span class="o">=</span> <span class="n">chunk_z</span> <span class="o">+</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
 
-        <span class="n">nx_c</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
-        <span class="n">ny_c</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
-        <span class="n">nz_c</span> <span class="o">=</span> <span class="n">cz</span> <span class="o">+</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
-
+        <span class="c1"># Stitch borders if neighbor exists</span>
         <span class="k">if</span> <span class="n">get_chunk_index</span><span class="p">((</span><span class="n">nx_c</span><span class="p">,</span> <span class="n">ny_c</span><span class="p">,</span> <span class="n">nz_c</span><span class="p">),</span> <span class="n">chunk_positions</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
+                    <span class="c1"># Calculate border coordinates</span>
                     <span class="k">if</span> <span class="n">dx</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">wx_n</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dx</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dx</span>
-                        <span class="n">wy_n</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">i</span>
-                        <span class="n">wz_n</span> <span class="o">=</span> <span class="n">cz</span> <span class="o">+</span> <span class="n">j</span>
-
-                        <span class="n">wx_c</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dx</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
-                        <span class="n">wy_c</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">i</span>
-                        <span class="n">wz_c</span> <span class="o">=</span> <span class="n">cz</span> <span class="o">+</span> <span class="n">j</span>
-
+                        <span class="n">wx_n</span> <span class="o">=</span> <span class="n">chunk_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dx</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dx</span>
+                        <span class="n">wy_n</span> <span class="o">=</span> <span class="n">chunk_y</span> <span class="o">+</span> <span class="n">i</span>
+                        <span class="n">wz_n</span> <span class="o">=</span> <span class="n">chunk_z</span> <span class="o">+</span> <span class="n">j</span>
+                        <span class="n">wx_c</span> <span class="o">=</span> <span class="n">chunk_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dx</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">wy_c</span> <span class="o">=</span> <span class="n">chunk_y</span> <span class="o">+</span> <span class="n">i</span>
+                        <span class="n">wz_c</span> <span class="o">=</span> <span class="n">chunk_z</span> <span class="o">+</span> <span class="n">j</span>
                     <span class="k">elif</span> <span class="n">dy</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">wx_n</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">i</span>
-                        <span class="n">wy_n</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dy</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dy</span>
-                        <span class="n">wz_n</span> <span class="o">=</span> <span class="n">cz</span> <span class="o">+</span> <span class="n">j</span>
-
-                        <span class="n">wx_c</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">i</span>
-                        <span class="n">wy_c</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dy</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
-                        <span class="n">wz_c</span> <span class="o">=</span> <span class="n">cz</span> <span class="o">+</span> <span class="n">j</span>
-
+                        <span class="n">wx_n</span> <span class="o">=</span> <span class="n">chunk_x</span> <span class="o">+</span> <span class="n">i</span>
+                        <span class="n">wy_n</span> <span class="o">=</span> <span class="n">chunk_y</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dy</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dy</span>
+                        <span class="n">wz_n</span> <span class="o">=</span> <span class="n">chunk_z</span> <span class="o">+</span> <span class="n">j</span>
+                        <span class="n">wx_c</span> <span class="o">=</span> <span class="n">chunk_x</span> <span class="o">+</span> <span class="n">i</span>
+                        <span class="n">wy_c</span> <span class="o">=</span> <span class="n">chunk_y</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dy</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">wz_c</span> <span class="o">=</span> <span class="n">chunk_z</span> <span class="o">+</span> <span class="n">j</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">wx_n</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">i</span>
-                        <span class="n">wy_n</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">j</span>
-                        <span class="n">wz_n</span> <span class="o">=</span> <span class="n">cz</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dz</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dz</span>
+                        <span class="n">wx_n</span> <span class="o">=</span> <span class="n">chunk_x</span> <span class="o">+</span> <span class="n">i</span>
+                        <span class="n">wy_n</span> <span class="o">=</span> <span class="n">chunk_y</span> <span class="o">+</span> <span class="n">j</span>
+                        <span class="n">wz_n</span> <span class="o">=</span> <span class="n">chunk_z</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dz</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dz</span>
+                        <span class="n">wx_c</span> <span class="o">=</span> <span class="n">chunk_x</span> <span class="o">+</span> <span class="n">i</span>
+                        <span class="n">wy_c</span> <span class="o">=</span> <span class="n">chunk_y</span> <span class="o">+</span> <span class="n">j</span>
+                        <span class="n">wz_c</span> <span class="o">=</span> <span class="n">chunk_z</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dz</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
 
-                        <span class="n">wx_c</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">i</span>
-                        <span class="n">wy_c</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">j</span>
-                        <span class="n">wz_c</span> <span class="o">=</span> <span class="n">cz</span> <span class="o">+</span> <span class="p">(</span><span class="n">CHUNK_SIZE</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dz</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
-
+                    <span class="c1"># Enqueue neighbor border light</span>
                     <span class="n">val_n</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">wx_n</span><span class="p">,</span> <span class="n">wy_n</span><span class="p">,</span> <span class="n">wz_n</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-
                     <span class="k">if</span> <span class="p">(</span><span class="n">val_n</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">queue_sun</span><span class="p">[</span><span class="n">tail_sun</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wx_n</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wy_n</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wz_n</span><span class="p">)</span>
                         <span class="n">tail_sun</span> <span class="o">+=</span> <span class="mi">1</span>
-
                     <span class="k">if</span> <span class="p">(</span><span class="n">val_n</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">queue_block</span><span class="p">[</span><span class="n">tail_block</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wx_n</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wy_n</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wz_n</span><span class="p">)</span>
                         <span class="n">tail_block</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                    <span class="c1"># Enqueue current chunk border light</span>
                     <span class="n">val_c</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">wx_c</span><span class="p">,</span> <span class="n">wy_c</span><span class="p">,</span> <span class="n">wz_c</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-
                     <span class="k">if</span> <span class="p">(</span><span class="n">val_c</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">queue_sun</span><span class="p">[</span><span class="n">tail_sun</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wx_c</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wy_c</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wz_c</span><span class="p">)</span>
                         <span class="n">tail_sun</span> <span class="o">+=</span> <span class="mi">1</span>
-
                     <span class="k">if</span> <span class="p">(</span><span class="n">val_c</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">queue_block</span><span class="p">[</span><span class="n">tail_block</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wx_c</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wy_c</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wz_c</span><span class="p">)</span>
                         <span class="n">tail_block</span> <span class="o">+=</span> <span class="mi">1</span>
 
+    <span class="c1"># Propagate stitched lighting</span>
     <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">queue_sun</span><span class="p">,</span> <span class="n">tail_sun</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
     <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">queue_block</span><span class="p">,</span> <span class="n">tail_block</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
@@ -1419,13 +1431,23 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/lighting.html#lighting.stitch_chunk_lighting">[docs]</a>
 <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_StitchChunkLighting'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">stitch_chunk_lighting</span><span class="p">(</span>
-    <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">chunk_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Cross-chunk boundary light bleeding. Evaluates the outer borders of a given chunk against</span>
 <span class="sd">    its neighboring chunks to allow light to properly spill in or out seamlessly.</span>
 <span class="sd">    """</span>
-    <span class="n">_stitch_chunk_lighting</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_B</span><span class="p">)</span></div>
+    <span class="c1"># Trigger internal stitch</span>
+    <span class="n">_stitch_chunk_lighting</span><span class="p">(</span>
+        <span class="n">chunk_x</span><span class="p">,</span>
+        <span class="n">chunk_y</span><span class="p">,</span>
+        <span class="n">chunk_z</span><span class="p">,</span>
+        <span class="n">world_voxels</span><span class="p">,</span>
+        <span class="n">world_lightmaps</span><span class="p">,</span>
+        <span class="n">chunk_positions</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+    <span class="p">)</span></div>
 
 
 
@@ -1433,9 +1455,9 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/lighting.html#lighting.remove_light_node">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">remove_light_node</span><span class="p">(</span>
-    <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">light_level</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">is_sun</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -1449,40 +1471,41 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Removes any light dependent on the broken node, but captures any overlapping brighter light</span>
 <span class="sd">    nodes into a `refill_queue` so the space can be re-illuminated by surviving light sources.</span>
 <span class="sd">    """</span>
+    <span class="c1"># Initialize queue with root node</span>
     <span class="n">head</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">tail</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="n">queue</span><span class="p">[</span><span class="n">tail</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">40</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wy</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wz</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">light_level</span><span class="p">)</span>
+    <span class="n">queue</span><span class="p">[</span><span class="n">tail</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">world_x</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">40</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">world_y</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">world_z</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">light_level</span><span class="p">)</span>
+    <span class="p">)</span>
     <span class="n">tail</span> <span class="o">+=</span> <span class="mi">1</span>
 
+    <span class="c1"># Process removal queue</span>
     <span class="k">while</span> <span class="n">head</span> <span class="o">&lt;</span> <span class="n">tail</span> <span class="ow">and</span> <span class="n">tail</span> <span class="o">&lt;</span> <span class="n">LIGHTING_QUEUE_SIZE</span> <span class="o">-</span> <span class="mi">10</span><span class="p">:</span>
         <span class="n">packed</span> <span class="o">=</span> <span class="n">queue</span><span class="p">[</span><span class="n">head</span><span class="p">]</span>
         <span class="n">head</span> <span class="o">+=</span> <span class="mi">1</span>
-
         <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">packed</span> <span class="o">&gt;&gt;</span> <span class="mi">40</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">packed</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">)</span>
         <span class="n">z</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">packed</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">)</span>
         <span class="n">L</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">packed</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
 
+        <span class="c1"># Check neighbors</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
             <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">z</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
-
             <span class="k">if</span> <span class="n">ny</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ny</span> <span class="o">&gt;=</span> <span class="n">WORLD_HEIGHT</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">:</span>
                 <span class="k">continue</span>
 
             <span class="n">n_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
             <span class="n">n_L</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_sun</span> <span class="k">else</span> <span class="p">(</span><span class="n">n_val</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span>
 
+            <span class="c1"># Strip darker dependent light</span>
             <span class="k">if</span> <span class="n">n_L</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">n_L</span> <span class="o">&lt;</span> <span class="n">L</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">is_sun</span><span class="p">:</span>
                     <span class="n">set_light_fast</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">n_val</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">),</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">set_light_fast</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="p">((</span><span class="n">n_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="mi">0</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-
                 <span class="n">queue</span><span class="p">[</span><span class="n">tail</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">40</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">n_L</span><span class="p">)</span>
                 <span class="n">tail</span> <span class="o">+=</span> <span class="mi">1</span>
-
+            <span class="c1"># Save brighter overlapping light for refill</span>
             <span class="k">elif</span> <span class="n">n_L</span> <span class="o">&gt;=</span> <span class="n">L</span><span class="p">:</span>
                 <span class="n">refill_queue</span><span class="p">[</span><span class="n">tail_refill</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
                 <span class="n">tail_refill</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -1493,9 +1516,9 @@ window.runMermaid = runMermaid;</script>
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_update_light_place_block</span><span class="p">(</span>
-    <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -1505,19 +1528,22 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Internal Numba implementation for removing light when an opaque block is placed.</span>
 <span class="sd">    """</span>
-    <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
+    <span class="c1"># Fetch current light and reset</span>
+    <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
     <span class="n">sun</span><span class="p">,</span> <span class="n">block</span> <span class="o">=</span> <span class="n">curr_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">,</span> <span class="n">curr_val</span> <span class="o">&amp;</span> <span class="mi">15</span>
-    <span class="n">set_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
+    <span class="n">set_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
+    <span class="c1"># Process sunlight removal</span>
     <span class="k">if</span> <span class="n">sun</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">tail_refill</span> <span class="o">=</span> <span class="n">remove_light_node</span><span class="p">(</span>
-            <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">sun</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">refill_queue</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">removal_queue</span>
+            <span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">sun</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">refill_queue</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">removal_queue</span>
         <span class="p">)</span>
         <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">refill_queue</span><span class="p">,</span> <span class="n">tail_refill</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
+    <span class="c1"># Process blocklight removal</span>
     <span class="k">if</span> <span class="n">block</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">tail_refill</span> <span class="o">=</span> <span class="n">remove_light_node</span><span class="p">(</span>
-            <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">refill_queue</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">removal_queue</span>
+            <span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">refill_queue</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">removal_queue</span>
         <span class="p">)</span>
         <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">refill_queue</span><span class="p">,</span> <span class="n">tail_refill</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
@@ -1526,23 +1552,31 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/lighting.html#lighting.update_light_place_block">[docs]</a>
 <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_PlaceLightBlock'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_light_place_block</span><span class="p">(</span>
-    <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Executed when a player places a solid block. Strips existing light from the space</span>
 <span class="sd">    and propogates a refill sequence for neighbouring light source to compensate.</span>
 <span class="sd">    """</span>
+    <span class="c1"># Trigger internal update</span>
     <span class="n">_update_light_place_block</span><span class="p">(</span>
-        <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_B</span>
+        <span class="n">world_x</span><span class="p">,</span>
+        <span class="n">world_y</span><span class="p">,</span>
+        <span class="n">world_z</span><span class="p">,</span>
+        <span class="n">world_voxels</span><span class="p">,</span>
+        <span class="n">world_lightmaps</span><span class="p">,</span>
+        <span class="n">chunk_positions</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_update_light_remove_block</span><span class="p">(</span>
-    <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -1553,47 +1587,41 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Internal Numba implementation for propagating light when a block is removed.</span>
 <span class="sd">    Includes O(1) vertical raycast optimizations for direct sunlight exposure.</span>
 <span class="sd">    """</span>
+    <span class="c1"># Initialize queues</span>
     <span class="n">tail_sun</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">tail_block</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="n">up_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-
+    <span class="c1"># Process vertical sunlight raycast</span>
+    <span class="n">up_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">up_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="mi">15</span><span class="p">:</span>
-        <span class="c1"># Optimization: Vertical Raycast! (Turns O(N^3) expansion into O(1) linear line!)</span>
-        <span class="n">curr_y</span> <span class="o">=</span> <span class="n">wy</span>
-
+        <span class="n">curr_y</span> <span class="o">=</span> <span class="n">world_y</span>
         <span class="k">while</span> <span class="n">curr_y</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">get_voxel_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">curr_y</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-
+            <span class="n">voxel_id</span> <span class="o">=</span> <span class="n">get_voxel_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">curr_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">AIR</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">WATER</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">GLASS</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">!=</span> <span class="n">LEAVES</span><span class="p">:</span>
                 <span class="k">break</span>
-
-            <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">curr_y</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-            <span class="n">set_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">curr_y</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="p">(</span><span class="mi">15</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">curr_val</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">),</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-            <span class="n">queue_sun</span><span class="p">[</span><span class="n">tail_sun</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">curr_y</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wz</span><span class="p">)</span>
+            <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">curr_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
+            <span class="n">set_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">curr_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="p">(</span><span class="mi">15</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">curr_val</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">),</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
+            <span class="n">queue_sun</span><span class="p">[</span><span class="n">tail_sun</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">world_x</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">curr_y</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">world_z</span><span class="p">)</span>
             <span class="n">tail_sun</span> <span class="o">+=</span> <span class="mi">1</span>
-
             <span class="k">if</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">WATER</span> <span class="ow">or</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">LEAVES</span><span class="p">:</span>
                 <span class="k">break</span>
-
             <span class="n">curr_y</span> <span class="o">-=</span> <span class="mi">1</span>
 
+    <span class="c1"># Check neighbors for light sources</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
-        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="n">wx</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wy</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">wz</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
-
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="n">world_x</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">world_y</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">world_z</span> <span class="o">+</span> <span class="n">DIRS</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">ny</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ny</span> <span class="o">&gt;=</span> <span class="n">WORLD_HEIGHT</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">:</span>
             <span class="k">continue</span>
 
         <span class="n">n_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="p">(</span><span class="n">n_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">queue_sun</span><span class="p">[</span><span class="n">tail_sun</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
             <span class="n">tail_sun</span> <span class="o">+=</span> <span class="mi">1</span>
-
         <span class="k">if</span> <span class="p">(</span><span class="n">n_val</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">queue_block</span><span class="p">[</span><span class="n">tail_block</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
             <span class="n">tail_block</span> <span class="o">+=</span> <span class="mi">1</span>
 
+    <span class="c1"># Propagate new lighting</span>
     <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">queue_sun</span><span class="p">,</span> <span class="n">tail_sun</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
     <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">queue_block</span><span class="p">,</span> <span class="n">tail_block</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
@@ -1602,43 +1630,64 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/lighting.html#lighting.update_light_remove_block">[docs]</a>
 <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_RemoveLightBlock'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_light_remove_block</span><span class="p">(</span>
-    <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Executed when a player destroys a block. Allows surrounding light to flood into the</span>
 <span class="sd">    newly opened space. Implements an O(1) verticle linear raycast optimization if the</span>
 <span class="sd">    block broken was covering directly top-down sunlight.</span>
 <span class="sd">    """</span>
+    <span class="c1"># Trigger internal update</span>
     <span class="n">_update_light_remove_block</span><span class="p">(</span>
-        <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_B</span>
+        <span class="n">world_x</span><span class="p">,</span>
+        <span class="n">world_y</span><span class="p">,</span>
+        <span class="n">world_z</span><span class="p">,</span>
+        <span class="n">world_voxels</span><span class="p">,</span>
+        <span class="n">world_lightmaps</span><span class="p">,</span>
+        <span class="n">chunk_positions</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_place_torch</span><span class="p">(</span>
-    <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">queue</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">queue</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Internal Numba implementation for artificially injecting blocklight (level 14)</span>
 <span class="sd">    into the lightmap grid.</span>
 <span class="sd">    """</span>
-    <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
-    <span class="n">set_light_fast</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="p">((</span><span class="n">curr_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="mi">14</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
+    <span class="c1"># Set torch blocklight</span>
+    <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
+    <span class="n">set_light_fast</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">,</span> <span class="p">((</span><span class="n">curr_val</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="mi">14</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
-    <span class="n">queue</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wx</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wy</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">wz</span><span class="p">)</span>
+    <span class="c1"># Propagate new light</span>
+    <span class="n">queue</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">world_x</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">world_y</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">world_z</span><span class="p">)</span>
     <span class="n">propagate_light_queue</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="place_torch">
 <a class="viewcode-back" href="../api/lighting.html#lighting.place_torch">[docs]</a>
 <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Lighting_PlaceLightBlock'</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">place_torch</span><span class="p">(</span><span class="n">wx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">place_torch</span><span class="p">(</span>
+    <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Hardcodes a block light value of 14 into the grid and triggers a blocklight BFS</span>
 <span class="sd">    propogation. Used exclusively for placing items like Glowstone.</span>
 <span class="sd">    """</span>
-    <span class="n">_place_torch</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">,</span> <span class="n">world_voxels</span><span class="p">,</span> <span class="n">world_lightmaps</span><span class="p">,</span> <span class="n">chunk_positions</span><span class="p">,</span> <span class="n">GLOBAL_QUEUE_A</span><span class="p">)</span></div>
+    <span class="c1"># Trigger internal placement</span>
+    <span class="n">_place_torch</span><span class="p">(</span>
+        <span class="n">world_x</span><span class="p">,</span>
+        <span class="n">world_y</span><span class="p">,</span>
+        <span class="n">world_z</span><span class="p">,</span>
+        <span class="n">world_voxels</span><span class="p">,</span>
+        <span class="n">world_lightmaps</span><span class="p">,</span>
+        <span class="n">chunk_positions</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

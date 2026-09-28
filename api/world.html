@@ -670,12 +670,12 @@ and executes a thread-safe write to the SQLite database.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="world.World.unload_chunk">
-<span class="sig-name descname"><span class="pre">unload_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/world.html#World.unload_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#world.World.unload_chunk" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">unload_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/world.html#World.unload_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#world.World.unload_chunk" title="Link to this definition"></a></dt>
 <dd><p>Removes a chunk from the active world space, triggers an asynchronous
 disk save, purges it from any pending queues, and recycles its VRAM.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p>
+<dd class="field-odd"><p><strong>position</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><em>Tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>

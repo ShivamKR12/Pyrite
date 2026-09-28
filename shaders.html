@@ -832,13 +832,13 @@ bg_color:               Background color (sky blue, RGB)
 <ul class="simple">
 <li><p><strong>Cloud Drifting:</strong> We continuously shift the X and Z coordinates of the cloud quad over time to simulate wind blowing them across the sky.</p></li>
 </ul>
-<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="n">world_pos</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">player_pos</span><span class="p">;</span>
+<div class="highlight-glsl notranslate"><div class="highlight"><pre><span></span><span class="n">world_pos</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">player_position</span><span class="p">;</span>
 <span class="n">world_pos</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">cloud_scale</span><span class="p">;</span>
 <span class="nb">gl_Position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_proj</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">m_view</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">world_pos</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong>Infinite Sky Illusion:</strong> By adding the <code class="docutils literal notranslate"><span class="pre">player_pos</span></code> directly to the cloud quad, the clouds are perpetually centered above the player. They drift because of <code class="docutils literal notranslate"><span class="pre">u_time</span></code>, but the player can never actually “reach” or outrun the cloud layer.</p></li>
+<li><p><strong>Infinite Sky Illusion:</strong> By adding the <code class="docutils literal notranslate"><span class="pre">player_position</span></code> directly to the cloud quad, the clouds are perpetually centered above the player. They drift because of <code class="docutils literal notranslate"><span class="pre">u_time</span></code>, but the player can never actually “reach” or outrun the cloud layer.</p></li>
 </ul>
 <p><code class="docutils literal notranslate"><span class="pre">clouds.frag</span></code> - Noise-based cloud appearance.</p>
 <p><strong>Fragment Processing:</strong></p>

@@ -1007,10 +1007,14 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/settings.html#settings.get_path">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_path</span><span class="p">(</span><span class="n">relative_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Get absolute path to resource"""</span>
+    <span class="c1"># Error handling</span>
     <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">base_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_MEIPASS</span>  <span class="c1"># type: ignore[attr-defined]</span>
     <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">base_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">'..'</span><span class="p">))</span>
+    <span class="c1"># Return result</span>
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="n">relative_path</span><span class="p">)</span></div>
 
 
@@ -1114,7 +1118,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="c1"># Memory Caps</span>
 <span class="n">VBO_POOL_CAP</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">150</span>
-<span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200000</span>
+<span class="n">LIGHTING_QUEUE_SIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5_000_000</span>
 <span class="n">ITEM_ENTITY_CAP</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span>
 
 <span class="c1"># RENDERING &amp; ENVIRONMENT</span>

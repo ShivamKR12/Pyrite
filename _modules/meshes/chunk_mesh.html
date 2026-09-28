@@ -1084,16 +1084,16 @@ window.runMermaid = runMermaid;</script>
         <span class="n">pool</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">vbo_pool</span>
 
         <span class="c1"># Find the smallest VBO in the pool that can safely fit our new mesh data</span>
-        <span class="n">best_i</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">best_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">best_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'inf'</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">p_vbo</span><span class="p">,</span> <span class="n">p_vao</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pool</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">p_vbo</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">byte_size</span> <span class="ow">and</span> <span class="n">p_vbo</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">best_size</span><span class="p">:</span>
-                <span class="n">best_i</span> <span class="o">=</span> <span class="n">i</span>
-                <span class="n">best_size</span> <span class="o">=</span> <span class="n">p_vbo</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">pool_vbo</span><span class="p">,</span> <span class="n">pool_vao</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pool</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">pool_vbo</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">byte_size</span> <span class="ow">and</span> <span class="n">pool_vbo</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">best_size</span><span class="p">:</span>
+                <span class="n">best_index</span> <span class="o">=</span> <span class="n">index</span>
+                <span class="n">best_size</span> <span class="o">=</span> <span class="n">pool_vbo</span><span class="o">.</span><span class="n">size</span>
 
-        <span class="k">if</span> <span class="n">best_i</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="n">pool</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="n">best_i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">best_index</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="n">best_index</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vbo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vao</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vbo</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vertex_data</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vertex_data</span> <span class="o">=</span> <span class="kc">None</span>

@@ -561,7 +561,7 @@
 <section id="primary-implementation">
 <h2>Primary implementation<a class="headerlink" href="#primary-implementation" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><cite>src/sounds.py</cite> — main audio engine and sound mappings.</p></li>
+<li><p><cite>src/sounds.position_y</cite> — main audio engine and sound mappings.</p></li>
 <li><p><cite>assets/audio/blocks/</cite>, <cite>assets/audio/music/</cite>, <cite>assets/audio/sfx/</cite> — audio assets.</p></li>
 </ul>
 </section>
@@ -569,7 +569,7 @@
 <h2>Key concepts<a class="headerlink" href="#key-concepts" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Channels: the engine initializes a pool of mixer channels (multiple concurrent SFX). Music uses a dedicated channel or the high-level mixer music API.</p></li>
-<li><p>Mapping: block voxel IDs are mapped to specific SFX sets (break, place, walk). See <cite>src/sounds.py</cite> for the mapping table.</p></li>
+<li><p>Mapping: block voxel IDs are mapped to specific SFX sets (break, place, walk). See <cite>src/sounds.position_y</cite> for the mapping table.</p></li>
 <li><p>Randomization: footstep and break sounds are randomized from a small set to avoid repetition.</p></li>
 </ul>
 </section>
@@ -585,8 +585,8 @@
 <h2>How to add new sounds<a class="headerlink" href="#how-to-add-new-sounds" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Add sound files into logical subfolder under <cite>assets/audio/</cite> (e.g., <cite>assets/audio/blocks/dirt/</cite>).</p></li>
-<li><p>Update the mapping in <cite>src/sounds.py</cite> to reference the new file names or directory.</p></li>
-<li><p>If adding a new block type, add its ID and mapping in the constants (see <cite>src/settings.py</cite> / API docs).</p></li>
+<li><p>Update the mapping in <cite>src/sounds.position_y</cite> to reference the new file names or directory.</p></li>
+<li><p>If adding a new block type, add its ID and mapping in the constants (see <cite>src/settings.position_y</cite> / API docs).</p></li>
 <li><p>Restart the game (assets are loaded on startup) or call the loader functions from a running session.</p></li>
 </ol>
 </section>
@@ -595,7 +595,7 @@
 <p>Pyrite currently uses a <strong>simple spatialization model</strong> on top of Pygame’s mixer.</p>
 <p>The audio subsystem uses:</p>
 <ul class="simple">
-<li><p><strong>Mixer channel pool:</strong> a pool of <strong>32 mixer channels</strong> (see <code class="docutils literal notranslate"><span class="pre">pg.mixer.set_num_channels(32)</span></code> in <code class="docutils literal notranslate"><span class="pre">src/sounds.py</span></code>). If too many SFX play at once, additional sounds may be dropped by the mixer.</p></li>
+<li><p><strong>Mixer channel pool:</strong> a pool of <strong>32 mixer channels</strong> (see <code class="docutils literal notranslate"><span class="pre">pg.mixer.set_num_channels(32)</span></code> in <code class="docutils literal notranslate"><span class="pre">src/sounds.position_y</span></code>). If too many SFX play at once, additional sounds may be dropped by the mixer.</p></li>
 <li><p><strong>Volume scaling:</strong> an exposed <code class="docutils literal notranslate"><span class="pre">sfx_volume</span></code> value (0-100), mapped internally to a per-sample volume multiplier (see <code class="docutils literal notranslate"><span class="pre">Sounds.set_sfx_volume()</span></code>).</p></li>
 </ul>
 <p>In-game spatialization (distance/left-right) is supported at the engine level via the positional API. If you need the exact attenuation/panning math, treat the doc as a high-level overview unless the formulas are explicitly documented in this page.</p>

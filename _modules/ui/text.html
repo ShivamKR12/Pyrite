@@ -1021,9 +1021,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Initializes the text renderer, setting up the default font and preparing</span>
 <span class="sd">        the texture cache.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">SysFont</span><span class="p">(</span><span class="s1">'arial'</span><span class="p">,</span> <span class="n">FONT_SIZE_STATS</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -1036,26 +1042,36 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Caches the generated texture so subsequent requests for the same text</span>
 <span class="sd">        are returned instantly without re-rendering.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="p">[</span><span class="n">text</span><span class="p">]</span>
 
-        <span class="n">surf</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">UI_TEXT_COLOR</span><span class="p">)</span>
+        <span class="c1"># Process logic block</span>
+        <span class="n">surface</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">UI_TEXT_COLOR</span><span class="p">)</span>
         <span class="n">shadow_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">//</span> <span class="mi">15</span><span class="p">)</span>
-
-        <span class="n">bg_surf</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">+</span> <span class="n">shadow_offset</span><span class="p">,</span> <span class="n">surf</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">+</span> <span class="n">shadow_offset</span><span class="p">),</span> <span class="n">pg</span><span class="o">.</span><span class="n">SRCALPHA</span>
+        <span class="n">background_surface</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">surface</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">+</span> <span class="n">shadow_offset</span><span class="p">,</span> <span class="n">surface</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">+</span> <span class="n">shadow_offset</span><span class="p">),</span> <span class="n">pg</span><span class="o">.</span><span class="n">SRCALPHA</span>
         <span class="p">)</span>
-
         <span class="n">shadow</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">UI_SHADOW_COLOR</span><span class="p">)</span>
 
-        <span class="n">bg_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shadow</span><span class="p">,</span> <span class="p">(</span><span class="n">shadow_offset</span><span class="p">,</span> <span class="n">shadow_offset</span><span class="p">))</span>
-        <span class="n">bg_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># Execute expression statement</span>
+        <span class="n">background_surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shadow</span><span class="p">,</span> <span class="p">(</span><span class="n">shadow_offset</span><span class="p">,</span> <span class="n">shadow_offset</span><span class="p">))</span>
+        <span class="n">background_surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">bg_surf</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">bg_surf</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        <span class="c1"># Process logic block</span>
+        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span>
+            <span class="n">background_surface</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">background_surface</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="n">texture</span><span class="o">.</span><span class="n">build_mipmaps</span><span class="p">()</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="n">texture</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR_MIPMAP_LINEAR</span><span class="p">,</span> <span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">textures</span><span class="p">[</span><span class="n">text</span><span class="p">]</span> <span class="o">=</span> <span class="n">texture</span>
 
+        <span class="c1"># Return computed result</span>
         <span class="k">return</span> <span class="n">texture</span></div>
 
 
@@ -1068,23 +1084,28 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Does not cache the texture or build mipmaps, saving memory and processing</span>
 <span class="sd">        time for single-frame usage.</span>
 <span class="sd">        """</span>
-        <span class="n">surf</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">UI_TEXT_COLOR</span><span class="p">)</span>
 
+        <span class="c1"># Process logic block</span>
+        <span class="n">surface</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">UI_TEXT_COLOR</span><span class="p">)</span>
         <span class="n">shadow_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">//</span> <span class="mi">15</span><span class="p">)</span>
-
-        <span class="n">bg_surf</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">+</span> <span class="n">shadow_offset</span><span class="p">,</span> <span class="n">surf</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">+</span> <span class="n">shadow_offset</span><span class="p">),</span> <span class="n">pg</span><span class="o">.</span><span class="n">SRCALPHA</span>
+        <span class="n">background_surface</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">surface</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">+</span> <span class="n">shadow_offset</span><span class="p">,</span> <span class="n">surface</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">+</span> <span class="n">shadow_offset</span><span class="p">),</span> <span class="n">pg</span><span class="o">.</span><span class="n">SRCALPHA</span>
         <span class="p">)</span>
-
         <span class="n">shadow</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">UI_SHADOW_COLOR</span><span class="p">)</span>
 
-        <span class="n">bg_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shadow</span><span class="p">,</span> <span class="p">(</span><span class="n">shadow_offset</span><span class="p">,</span> <span class="n">shadow_offset</span><span class="p">))</span>
-        <span class="n">bg_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># Execute expression statement</span>
+        <span class="n">background_surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shadow</span><span class="p">,</span> <span class="p">(</span><span class="n">shadow_offset</span><span class="p">,</span> <span class="n">shadow_offset</span><span class="p">))</span>
+        <span class="n">background_surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">bg_surf</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">bg_surf</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
-        <span class="c1"># Dynamic textures don't need mipmaps since they are only used for one frame</span>
+        <span class="c1"># Process logic block</span>
+        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span>
+            <span class="n">background_surface</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">background_surface</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="n">texture</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">,</span> <span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">)</span>
 
+        <span class="c1"># Return computed result</span>
         <span class="k">return</span> <span class="n">texture</span></div>
 </div>
 

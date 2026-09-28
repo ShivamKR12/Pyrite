@@ -683,18 +683,18 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
 <h2>Running the Engine<a class="headerlink" href="#running-the-engine" title="Link to this heading"></a></h2>
 <p><strong>Standard Run (Main Game)</strong></p>
 <p><strong>Windows:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>run.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>run.position_y
 </pre></div>
 </div>
 <p><strong>macOS/Linux:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.position_y
 </pre></div>
 </div>
-<p>Starts the Pyrite application and opens the main menu. World selection and world creation are handled from the in-game menu; <code class="docutils literal notranslate"><span class="pre">run.py</span></code> does not automatically create a default world on first launch.</p>
+<p>Starts the Pyrite application and opens the main menu. World selection and world creation are handled from the in-game menu; <code class="docutils literal notranslate"><span class="pre">run.position_y</span></code> does not automatically create a default world on first launch.</p>
 <p><strong>Run Options</strong></p>
-<p><code class="docutils literal notranslate"><span class="pre">run.py</span></code> currently has no command-line arguments. The launcher is intended to start the engine normally rather than act as a direct subsystem test harness.</p>
+<p><code class="docutils literal notranslate"><span class="pre">run.position_y</span></code> currently has no command-line arguments. The launcher is intended to start the engine normally rather than act as a direct subsystem test harness.</p>
 <p><strong>Testing Notes</strong></p>
-<p>The engine does not expose a documented public <code class="docutils literal notranslate"><span class="pre">World(48,</span> <span class="pre">5,</span> <span class="pre">48)</span></code> / <code class="docutils literal notranslate"><span class="pre">init_chunks_at()</span></code> sequence through <code class="docutils literal notranslate"><span class="pre">run.py</span></code>. World loading is managed internally by <code class="docutils literal notranslate"><span class="pre">Pyrite.init_game_session()</span></code> and the <code class="docutils literal notranslate"><span class="pre">Scene</span></code>/<code class="docutils literal notranslate"><span class="pre">World</span></code> startup flow.</p>
+<p>The engine does not expose a documented public <code class="docutils literal notranslate"><span class="pre">World(48,</span> <span class="pre">5,</span> <span class="pre">48)</span></code> / <code class="docutils literal notranslate"><span class="pre">init_chunks_at()</span></code> sequence through <code class="docutils literal notranslate"><span class="pre">run.position_y</span></code>. World loading is managed internally by <code class="docutils literal notranslate"><span class="pre">Pyrite.init_game_session()</span></code> and the <code class="docutils literal notranslate"><span class="pre">Scene</span></code>/<code class="docutils literal notranslate"><span class="pre">World</span></code> startup flow.</p>
 </section>
 <section id="building-the-engine">
 <h2>Building the Engine<a class="headerlink" href="#building-the-engine" title="Link to this heading"></a></h2>
@@ -709,7 +709,7 @@ sphinx-rtd-theme==1.0.0    # Read the Docs theme
 <li><p><strong>Build Configuration</strong></p>
 <p>Edit <code class="docutils literal notranslate"><span class="pre">build.spec</span></code> (auto-generated, or use existing):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">Analysis</span><span class="p">(</span>
-    <span class="p">[</span><span class="s1">'run.py'</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">'run.position_y'</span><span class="p">],</span>
     <span class="n">pathex</span><span class="o">=</span><span class="p">[</span><span class="s1">'D:</span><span class="se">\\</span><span class="s1">Pyrite'</span><span class="p">],</span>
     <span class="n">binaries</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">datas</span><span class="o">=</span><span class="p">[(</span><span class="s1">'src'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span> <span class="p">(</span><span class="s1">'assets'</span><span class="p">,</span> <span class="s1">'assets'</span><span class="p">)],</span>
@@ -783,7 +783,7 @@ sphinx-build<span class="w"> </span>.<span class="w"> </span>_build/html
 <blockquote>
 <div><ul class="simple">
 <li><p>Reduce <code class="docutils literal notranslate"><span class="pre">render_distance</span></code> in <code class="docutils literal notranslate"><span class="pre">config.json</span></code></p></li>
-<li><p>Lower <code class="docutils literal notranslate"><span class="pre">MESH_BUILD_LIMIT_INGAME</span></code> in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code> (slower chunk loading)</p></li>
+<li><p>Lower <code class="docutils literal notranslate"><span class="pre">MESH_BUILD_LIMIT_INGAME</span></code> in <code class="docutils literal notranslate"><span class="pre">settings.position_y</span></code> (slower chunk loading)</p></li>
 <li><p>Disable <code class="docutils literal notranslate"><span class="pre">underwater_tint</span></code> and other effects</p></li>
 </ul>
 </div></blockquote>
@@ -808,7 +808,7 @@ sphinx-build<span class="w"> </span>.<span class="w"> </span>_build/html
 <h2>Performance Tuning<a class="headerlink" href="#performance-tuning" title="Link to this heading"></a></h2>
 <p><strong>Memory Optimization:</strong></p>
 <ul class="simple">
-<li><p>Reduce <code class="docutils literal notranslate"><span class="pre">WORLD_WIDTH</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_HEIGHT</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_DEPTH</span></code> in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code> to limit chunk count</p></li>
+<li><p>Reduce <code class="docutils literal notranslate"><span class="pre">WORLD_WIDTH</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_HEIGHT</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_DEPTH</span></code> in <code class="docutils literal notranslate"><span class="pre">settings.position_y</span></code> to limit chunk count</p></li>
 <li><p>Reduce <code class="docutils literal notranslate"><span class="pre">VBO_POOL_CAP</span></code> to recycle GPU buffers faster</p></li>
 </ul>
 <p><strong>CPU Optimization:</strong></p>
@@ -820,7 +820,7 @@ sphinx-build<span class="w"> </span>.<span class="w"> </span>_build/html
 <ul class="simple">
 <li><p>Use lower resolution (e.g., 1280x720 instead of 1920x1080)</p></li>
 <li><p>Reduce texture resolution by editing asset pipeline</p></li>
-<li><p>Disable occlusion queries in <code class="docutils literal notranslate"><span class="pre">shader_program.py</span></code> if ineffective</p></li>
+<li><p>Disable occlusion queries in <code class="docutils literal notranslate"><span class="pre">shader_program.position_y</span></code> if ineffective</p></li>
 </ul>
 </section>
 <section id="next-steps">

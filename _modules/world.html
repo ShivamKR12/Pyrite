@@ -1122,8 +1122,8 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"""CREATE TABLE IF NOT EXISTS dropped_items (</span>
 <span class="s2">                                id INTEGER PRIMARY KEY AUTOINCREMENT,</span>
 <span class="s2">                                voxel_id INTEGER,</span>
-<span class="s2">                                px REAL, py REAL, pz REAL,</span>
-<span class="s2">                                vx REAL, vy REAL, vz REAL)"""</span><span class="p">)</span>
+<span class="s2">                                position_x REAL, position_y REAL, position_z REAL,</span>
+<span class="s2">                                velocity_x REAL, velocity_y REAL, velocity_z REAL)"""</span><span class="p">)</span>
 
         <span class="c1"># Safely upgrade existing databases to support lightmap caching!</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1144,7 +1144,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">meta_row</span><span class="p">:</span>
             <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
-            <span class="c1"># Use the seed passed from main.py</span>
+            <span class="c1"># Use the seed passed from main.position_y</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
 <span class="w">                </span><span class="sd">"""INSERT INTO world_meta (id, world_name, seed, game_mode, creation_date, last_played)</span>
 <span class="sd">                                   VALUES (?, ?, ?, ?, ?, ?)"""</span><span class="p">,</span>
@@ -1177,12 +1177,12 @@ window.runMermaid = runMermaid;</script>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">oxygen</span> <span class="o">=</span> <span class="n">p_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'oxygen'</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">max_oxygen</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">world_session_time</span> <span class="o">=</span> <span class="n">p_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'time_played'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
-                <span class="n">pos</span> <span class="o">=</span> <span class="n">p_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'position'</span><span class="p">)</span>
+                <span class="n">position</span> <span class="o">=</span> <span class="n">p_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'position'</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">pos</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">PLAYER_EYE_HEIGHT</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">highest_y</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">position</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">feet_pos</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">PLAYER_EYE_HEIGHT</span><span class="p">,</span> <span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">highest_y</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">respawn</span><span class="p">()</span>
@@ -1208,7 +1208,9 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">saved_dropped_items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'SELECT voxel_id, px, py, pz, vx, vy, vz FROM dropped_items'</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="s1">'SELECT voxel_id, position_x, position_y, position_z, velocity_x, velocity_y, velocity_z FROM dropped_items'</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">saved_dropped_items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
 
         <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">OperationalError</span><span class="p">:</span>
@@ -1295,19 +1297,24 @@ window.runMermaid = runMermaid;</script>
             <span class="n">chunk</span><span class="o">.</span><span class="n">pending_lighting</span> <span class="o">=</span> <span class="kc">False</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">build_task</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">needs_light</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">nl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-                <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">position</span>
+                <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">position</span>
                 <span class="k">if</span> <span class="n">needs_light</span><span class="p">:</span>
                     <span class="n">init_chunk_lighting</span><span class="p">(</span>
-                        <span class="n">cx</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
-                        <span class="n">cy</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
-                        <span class="n">cz</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
+                        <span class="n">chunk_x</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
+                        <span class="n">chunk_y</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
+                        <span class="n">chunk_z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">lightmaps</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
 
                 <span class="n">stitch_chunk_lighting</span><span class="p">(</span>
-                    <span class="n">cx</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">cz</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lightmaps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_positions</span>
+                    <span class="n">chunk_x</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
+                    <span class="n">chunk_y</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
+                    <span class="n">chunk_z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">lightmaps</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">chunk_positions</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="n">c</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">get_vertex_data</span><span class="p">()</span>
 
@@ -1468,7 +1475,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        brand new procedural terrain using Numba logic instead.</span>
 <span class="sd">        """</span>
         <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
-        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">y</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">y</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread_local</span><span class="p">,</span> <span class="s1">'cursor'</span><span class="p">):</span>
             <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">check_same_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -1491,14 +1498,14 @@ window.runMermaid = runMermaid;</script>
 
             <span class="c1"># Old save file format, fallback to generating sunlight</span>
             <span class="n">lightmap_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint8'</span><span class="p">)</span>
-            <span class="n">Chunk</span><span class="o">.</span><span class="n">fill_initial_sunlight_only</span><span class="p">(</span><span class="n">voxel_data</span><span class="p">,</span> <span class="n">lightmap_data</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">perm</span><span class="p">)</span>
+            <span class="n">Chunk</span><span class="o">.</span><span class="n">fill_initial_sunlight_only</span><span class="p">(</span><span class="n">voxel_data</span><span class="p">,</span> <span class="n">lightmap_data</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">perm</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="p">(</span><span class="s1">'db'</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">,</span> <span class="n">voxel_data</span><span class="p">,</span> <span class="n">lightmap_data</span><span class="p">,</span> <span class="n">is_empty</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
         <span class="n">voxel_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint8'</span><span class="p">)</span>
         <span class="n">lightmap_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint8'</span><span class="p">)</span>
         <span class="n">Chunk</span><span class="o">.</span><span class="n">generate_terrain</span><span class="p">(</span>
-            <span class="n">voxel_data</span><span class="p">,</span> <span class="n">lightmap_data</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">perm</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">perm_grad_index3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_seed</span>
+            <span class="n">voxel_data</span><span class="p">,</span> <span class="n">lightmap_data</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">perm</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">perm_grad_index3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_seed</span>
         <span class="p">)</span>
         <span class="n">is_empty</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">voxel_data</span><span class="p">)</span>
 
@@ -1526,11 +1533,11 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_stream_state</span> <span class="o">=</span> <span class="n">stream_state</span>
 
         <span class="c1"># 1. Unload chunks out of range</span>
-        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">position</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">player_cx</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">z</span> <span class="o">-</span> <span class="n">player_cz</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">render_dist</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">unload_chunk</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unload_chunk</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
 
         <span class="c1"># 2. Load chunks in range</span>
         <span class="n">chunks_to_load</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1545,10 +1552,10 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">chunks_to_load</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
 
         <span class="c1"># Sort chunks by distance (closest first) so the ThreadPool executes them first</span>
-        <span class="n">chunks_to_load</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pos</span><span class="p">:</span> <span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">player_cx</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">player_cz</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">chunks_to_load</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">position</span><span class="p">:</span> <span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">player_cx</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">player_cz</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">chunks_to_load</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">load_chunk</span><span class="p">(</span><span class="o">*</span><span class="n">pos</span><span class="p">)</span></div>
+        <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="n">chunks_to_load</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_chunk</span><span class="p">(</span><span class="o">*</span><span class="n">position</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="World.load_chunk">
@@ -1559,17 +1566,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Initializes a Chunk instance at the given coordinates and dispatches</span>
 <span class="sd">        an asynchronous task to fetch or generate its actual voxel data.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Register chunk</span>
         <span class="n">chunk_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">%</span> <span class="n">WORLD_WIDTH</span><span class="p">)</span> <span class="o">+</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="p">(</span><span class="n">z</span> <span class="o">%</span> <span class="n">WORLD_DEPTH</span><span class="p">)</span> <span class="o">+</span> <span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">%</span> <span class="n">WORLD_HEIGHT</span><span class="p">)</span>
-
         <span class="n">old_chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">[</span><span class="n">chunk_index</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">old_chunk</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unload_chunk</span><span class="p">(</span><span class="n">old_chunk</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
 
+        <span class="c1"># Create chunk</span>
         <span class="n">chunk</span> <span class="o">=</span> <span class="n">Chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">[</span><span class="n">chunk_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)]</span> <span class="o">=</span> <span class="n">chunk</span>
 
-        <span class="c1"># Send the heavy load task to the background thread pool</span>
+        <span class="c1"># Dispatch load task</span>
         <span class="n">future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fetch_or_generate_voxels</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_queue</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk</span><span class="p">,</span> <span class="n">future</span><span class="p">))</span></div>
 
@@ -1598,20 +1606,24 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="World.unload_chunk">
 <a class="viewcode-back" href="../api/world.html#world.World.unload_chunk">[docs]</a>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Unload_Chunk'</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">unload_chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unload_chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Removes a chunk from the active world space, triggers an asynchronous</span>
 <span class="sd">        disk save, purges it from any pending queues, and recycles its VRAM.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">pos</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">:</span>
-            <span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">position</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">:</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="o">.</span><span class="n">is_empty</span> <span class="ow">and</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">lightmap_copy</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">lightmap</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">lightmap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_chunk_to_db</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">lightmap_copy</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">save_chunk_to_db</span><span class="p">,</span> <span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">lightmap_copy</span>
+                <span class="p">)</span>
 
             <span class="n">chunk_index</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">%</span> <span class="n">WORLD_WIDTH</span><span class="p">)</span> <span class="o">+</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">%</span> <span class="n">WORLD_DEPTH</span><span class="p">)</span> <span class="o">+</span> <span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">%</span> <span class="n">WORLD_HEIGHT</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">%</span> <span class="n">WORLD_WIDTH</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">WORLD_WIDTH</span> <span class="o">*</span> <span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">%</span> <span class="n">WORLD_DEPTH</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">WORLD_AREA</span> <span class="o">*</span> <span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">%</span> <span class="n">WORLD_HEIGHT</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">[</span><span class="n">chunk_index</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chunk_positions</span><span class="p">[</span><span class="n">chunk_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="o">-</span><span class="mi">999</span><span class="p">)</span>
@@ -1651,13 +1663,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        calls to the GPU.</span>
 <span class="sd">        """</span>
         <span class="n">player</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span>
-        <span class="n">player_pos</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">position</span>
-        <span class="n">player_chunk_pos</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">player_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">player_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
+        <span class="n">player_position</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">position</span>
+        <span class="n">player_chunk_pos</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">player_position</span><span class="o">.</span><span class="n">x</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">player_position</span><span class="o">.</span><span class="n">z</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
         <span class="n">active_chunk_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">)</span>
 
         <span class="c1"># Re-sort chunks only when player moves to a new chunk or when chunks are loaded/unloaded</span>
         <span class="k">if</span> <span class="n">player_chunk_pos</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_player_chunk_pos</span> <span class="ow">or</span> <span class="n">active_chunk_count</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_active_chunk_count</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sorted_chunks</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">glm</span><span class="o">.</span><span class="n">distance2</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="n">player_pos</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sorted_chunks</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">glm</span><span class="o">.</span><span class="n">distance2</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="n">player_position</span><span class="p">)</span>
+            <span class="p">)</span>
 
             <span class="c1"># Update the chunk centers array for vectorized culling</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorted_chunks</span><span class="p">:</span>
@@ -1680,12 +1694,12 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">frustum_cull_fast</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">chunk_centers</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">frustum_mask</span><span class="p">,</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">player_pos</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'float32'</span><span class="p">),</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">player_position</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'float32'</span><span class="p">),</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'float32'</span><span class="p">),</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'float32'</span><span class="p">),</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">up</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'float32'</span><span class="p">),</span>
-                    <span class="n">frustum</span><span class="o">.</span><span class="n">tan_y</span><span class="p">,</span>
-                    <span class="n">frustum</span><span class="o">.</span><span class="n">tan_x</span><span class="p">,</span>
+                    <span class="n">frustum</span><span class="o">.</span><span class="n">tangent_y</span><span class="p">,</span>
+                    <span class="n">frustum</span><span class="o">.</span><span class="n">tangent_x</span><span class="p">,</span>
                     <span class="n">frustum</span><span class="o">.</span><span class="n">factor_y</span><span class="p">,</span>
                     <span class="n">frustum</span><span class="o">.</span><span class="n">factor_x</span><span class="p">,</span>
                 <span class="p">)</span>
@@ -1778,14 +1792,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        player coordinates, and world metadata safely to the SQLite disk on exit.</span>
 <span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Save all currently active chunks synchronously</span>
+            <span class="c1"># Save active chunks synchronously</span>
             <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_chunks</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="o">.</span><span class="n">is_empty</span> <span class="ow">and</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">save_chunk_to_db</span><span class="p">(</span>
                         <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span> <span class="n">chunk</span><span class="o">.</span><span class="n">lightmap</span>
                     <span class="p">)</span>
 
-            <span class="c1"># Save player inventory, hotbar state &amp; position</span>
+            <span class="c1"># Save player state and inventory</span>
             <span class="n">p_data</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">'inventory'</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">],</span>
                 <span class="s1">'counts'</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">],</span>
@@ -1802,9 +1816,10 @@ window.runMermaid = runMermaid;</script>
                 <span class="s1">'oxygen'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">oxygen</span><span class="p">),</span>
                 <span class="s1">'time_played'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">world_session_time</span><span class="p">),</span>
             <span class="p">}</span>
-
             <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
             <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span><span class="p">:</span>
+                <span class="c1"># Update database records</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
                     <span class="s1">'UPDATE world_meta SET last_played = ?, game_mode = ? WHERE id=1'</span><span class="p">,</span> <span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">game_mode</span><span class="p">)</span>
                 <span class="p">)</span>
@@ -1816,7 +1831,6 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="p">,</span> <span class="s1">'item_manager'</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'DELETE FROM dropped_items'</span><span class="p">)</span>
                     <span class="n">item_data</span> <span class="o">=</span> <span class="p">[]</span>
-
                     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">item_manager</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
                         <span class="n">item_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                             <span class="p">(</span>
@@ -1829,37 +1843,30 @@ window.runMermaid = runMermaid;</script>
                                 <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
                             <span class="p">)</span>
                         <span class="p">)</span>
-
                     <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span>
-                        <span class="s1">'INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)'</span><span class="p">,</span>
+                        <span class="s1">'INSERT INTO dropped_items (voxel_id, position_x, position_y, position_z, velocity_x, velocity_y, velocity_z) VALUES (?, ?, ?, ?, ?, ?, ?)'</span><span class="p">,</span>
                         <span class="n">item_data</span><span class="p">,</span>
                     <span class="p">)</span>
-
                 <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error during World.save(): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
         <span class="k">finally</span><span class="p">:</span>
-            <span class="c1"># Wait for any pending asynchronous saves from unload_chunk to complete</span>
+            <span class="c1"># Shutdown executor and threads</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-            <span class="c1"># Close all background thread cursors</span>
             <span class="k">for</span> <span class="n">cur</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_cursors</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">cur</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error closing background cursor: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">thread_cursors</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-
-            <span class="c1"># Close all background thread connections</span>
             <span class="k">for</span> <span class="n">conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_connections</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error closing background connection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">thread_connections</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -1869,16 +1876,14 @@ window.runMermaid = runMermaid;</script>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error closing connection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
-            <span class="c1"># Safely release heavy OpenGL objects to prevent VRAM leaking when returning to the Main Menu</span>
+            <span class="c1"># Release OpenGL resources</span>
             <span class="k">for</span> <span class="n">vbo</span><span class="p">,</span> <span class="n">vao</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
                     <span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error releasing VBO/VAO from pool: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">vbo_pool</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-
             <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">ch</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="p">:</span>
@@ -1887,13 +1892,11 @@ window.runMermaid = runMermaid;</script>
                                 <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
                             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error releasing chunk VAO: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-
                         <span class="k">if</span> <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vbo</span><span class="p">:</span>
                             <span class="k">try</span><span class="p">:</span>
                                 <span class="n">ch</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">vbo</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
                             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error releasing chunk VBO: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bbox_mesh</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">bbox_mesh</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">bbox_mesh</span><span class="o">.</span><span class="n">vao</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>

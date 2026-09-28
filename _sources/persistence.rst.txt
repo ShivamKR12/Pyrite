@@ -97,7 +97,7 @@ Stores data for items dropped in the world.
 
 .. code-block:: sql
 
-    CREATE TABLE dropped_items (id INTEGER PRIMARY KEY AUTOINCREMENT, voxel_id INTEGER, px REAL, py REAL, pz REAL, vx REAL, vy REAL, vz REAL)
+    CREATE TABLE dropped_items (id INTEGER PRIMARY KEY AUTOINCREMENT, voxel_id INTEGER, position_x REAL, position_y REAL, position_z REAL, velocity_x REAL, velocity_y REAL, velocity_z REAL)
 
 * **Entities Record:** Caches unbound ground collision vectors mapped exclusively per-game instance.
 

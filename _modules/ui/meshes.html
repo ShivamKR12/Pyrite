@@ -1022,12 +1022,18 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the crosshair mesh, binding it to the solid-color quad shader.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">quad</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'3f 3f'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'in_position'</span><span class="p">,</span> <span class="s1">'in_color'</span><span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vao</span><span class="p">()</span>
 
 <div class="viewcode-block" id="CrosshairMesh.get_vertex_data">
@@ -1039,29 +1045,27 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        horizontal and vertical lines of the crosshair, scaling it properly</span>
 <span class="sd">        to match the window's aspect ratio.</span>
 <span class="sd">        """</span>
-        <span class="n">w</span> <span class="o">=</span> <span class="mf">0.015</span>
-        <span class="n">h</span> <span class="o">=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span>
 
-        <span class="c1"># Creates a perfect '+' sign in the center of the screen</span>
+        <span class="c1"># Initialize and update variables</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="mf">0.015</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">width</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span>
         <span class="n">vertices</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="c1"># Horizontal line</span>
-            <span class="p">(</span><span class="o">-</span><span class="n">w</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="o">-</span><span class="n">w</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="o">-</span><span class="n">w</span><span class="p">,</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="c1"># Vertical line</span>
-            <span class="p">(</span><span class="o">-</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="mf">0.002</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="o">-</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="mf">0.002</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="p">(</span><span class="o">-</span><span class="mf">0.002</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="n">width</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="n">width</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="n">width</span><span class="p">,</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="n">height</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="n">height</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.002</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="n">height</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.002</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="mf">0.002</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
         <span class="p">]</span>
-
         <span class="n">colors</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">vertices</span><span class="p">]</span>
 
+        <span class="c1"># Return computed result</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">vertices</span><span class="p">,</span> <span class="n">colors</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">'float32'</span><span class="p">)</span></div>
 </div>
 
@@ -1085,12 +1089,18 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the block icon mesh and connects it to the block UI shader.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2f 2f'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'in_position'</span><span class="p">,</span> <span class="s1">'in_tex_coord'</span><span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vao</span><span class="p">()</span>
 
 <div class="viewcode-block" id="BlockIconMesh.get_vertex_data">
@@ -1101,11 +1111,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Returns the vertices and texture coordinates for a standard full-screen quad,</span>
 <span class="sd">        which is later scaled and positioned by the shader based on uniform offsets.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Standard normalized quad [-1, 1]</span>
-        <span class="n">vertices</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)]</span>
 
+        <span class="c1"># Initialize and update variables</span>
+        <span class="n">vertices</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)]</span>
         <span class="n">tex_coords</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
 
+        <span class="c1"># Return computed result</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">vertices</span><span class="p">,</span> <span class="n">tex_coords</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">'float32'</span><span class="p">)</span></div>
 </div>
 
@@ -1130,12 +1141,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Initializes the UI color mesh, attaching it to a simple shader that applies</span>
 <span class="sd">        flat color uniforms instead of textures.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_color</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2f'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'in_position'</span><span class="p">,)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vao</span><span class="p">()</span>
 
 <div class="viewcode-block" id="UIColorMesh.get_vertex_data">
@@ -1146,8 +1163,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Returns the raw vertex positions for a 2D quad without texture coordinates,</span>
 <span class="sd">        as the shape relies solely on color uniforms.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="n">vertices</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)]</span>
 
+        <span class="c1"># Return computed result</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vertices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'float32'</span><span class="p">)</span></div>
 </div>
 
@@ -1172,12 +1192,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Initializes the UI text mesh, binding it to the text shader which handles</span>
 <span class="sd">        transparency and alpha blending for clean font rendering.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_text</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vbo_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2f 2f'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'in_position'</span><span class="p">,</span> <span class="s1">'in_tex_coord'</span><span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vao</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vao</span><span class="p">()</span>
 
 <div class="viewcode-block" id="UITextMesh.get_vertex_data">
@@ -1188,10 +1214,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Returns the standard set of vertices and UV coordinates mapping a full</span>
 <span class="sd">        texture onto a simple 2D rectangular quad.</span>
 <span class="sd">        """</span>
-        <span class="n">vertices</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)]</span>
 
+        <span class="c1"># Initialize and update variables</span>
+        <span class="n">vertices</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)]</span>
         <span class="n">tex_coords</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
 
+        <span class="c1"># Return computed result</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">vertices</span><span class="p">,</span> <span class="n">tex_coords</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">'float32'</span><span class="p">)</span></div>
 </div>
 

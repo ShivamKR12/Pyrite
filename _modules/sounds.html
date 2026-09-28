@@ -1036,206 +1036,133 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the Pygame mixer, loads all block sounds, and starts the background music loop.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Store a reference to the main application context so we can access config and global state</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
 
-        <span class="c1"># Initialize the pygame mixer module which handles all audio hardware interfacing</span>
+        <span class="c1"># Execute expressions</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
-        <span class="c1"># Allocate 32 distinct audio channels so we don't drop sounds when many blocks break at once</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">set_num_channels</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
 
-        <span class="c1"># Helper function to load a sound file from disk, convert it to a pygame Sound object</span>
+        <span class="c1"># Define function</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">:</span>
-            <span class="c1"># Resolve the absolute path to the asset using our path utility, then load the .ogg file</span>
+            <span class="c1"># Variable assignments</span>
+            <span class="c1"># Variable assignments</span>
             <span class="n">s</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">(</span><span class="n">get_path</span><span class="p">(</span><span class="sa">f</span><span class="s1">'assets/audio/blocks/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">'</span><span class="p">))</span>
-            <span class="c1"># Return the loaded sound object back to the caller</span>
+            <span class="c1"># Return result</span>
+            <span class="c1"># Return result</span>
             <span class="k">return</span> <span class="n">s</span>
 
-        <span class="c1"># Dictionary to store all our sound categories mapped to voxel block IDs</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c1"># Load sound assets for SAND blocks</span>
-        <span class="c1"># We store lists of sounds for different actions to provide variation and reduce audio fatigue</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">SAND</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># Load 4 different digging sounds (when the block is fully broken)</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'sand/Sand_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Load 4 different placement sounds (which reuse the dig sounds for sand)</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'sand/Sand_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Load 5 different continuous mining sounds (played progressively while holding click)</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'sand/Sand_mining</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">)],</span>
-            <span class="c1"># Load 4 different jump/landing sounds</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'sand/Sand_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Load 5 different footstep sounds for walking on this material</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'sand/Sand_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Load sound assets for GRASS blocks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRASS</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># Load 4 digging sound variations</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'grass/Grass_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Reusing digging sounds for grass placement</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'grass/Grass_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Grass has 6 distinct mining progress sounds</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'grass/Grass_mining</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># Load 4 landing thud sounds for grass</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'grass/Grass_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Grass walking has 6 step variations for highly varied footstep pacing</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'grass/Grass_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Load sound assets for GRAVEL blocks</span>
-        <span class="c1"># As noted in the original code, gravel and dirt share the same sound pool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRAVEL</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># 4 distinct gravel crunching sounds for breaks</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'gravel/Gravel_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># 4 gravel crunches for placements</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'gravel/Gravel_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># 4 continuous gravel mining scraping sounds</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'gravel/Gravel_mining</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># 4 gravel impacts when the player lands a jump</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'gravel/Gravel_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># 4 sequential crunching steps for walking</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'gravel/Gravel_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Load sound assets for STONE blocks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">STONE</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># Stone breaking has 4 distinct cracking noises</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Placement reuses the cracking noises</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Stone mining takes longer so it uses 6 progressing pickaxe strike sounds</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_mining</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># 6 heavy landing variations on solid rock</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># 6 heavy footstep variations on stone surfaces</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Load sound assets for SNOW blocks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">SNOW</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># Snow breaking has a soft 4-variation crunch</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'snow/Snow_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Snow placement uses the soft crunch</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'snow/Snow_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Mining snow is quick so it reuses the 4 dig sounds rather than special long strikes</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'snow/Snow_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Snow landings use the soft dig sound pool as a fallback impact</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'snow/Snow_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Snow walking reuses the 4 dig crunches</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'snow/Snow_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Leaves map directly to the GRASS sound profile for organic rustling and breaking</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">LEAVES</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRASS</span><span class="p">]</span>
 
-        <span class="c1"># Load sound assets for WOOD blocks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">WOOD</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># 4 splintering wood sounds for destruction</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'wood/Wood_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># 4 wood thuds for placing blocks</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'wood/Wood_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># 6 rhythmic chopping sounds for axe mining progression</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'wood/Wood_mining</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># 6 hollow landing impacts on wood</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'wood/Wood_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># 6 wooden creaking footsteps</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'wood/Wood_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Dirt uses the gravel sound configuration for gritty earth noises</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">DIRT</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRAVEL</span><span class="p">]</span>
 
-        <span class="c1"># Load sound assets for GLASS blocks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GLASS</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># Glass has 3 unique shattering sounds when broken</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'glass/Glass_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)],</span>
-            <span class="c1"># Placing glass actually sounds like placing light stone (4 variations)</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Mining glass uses the high pitched ice mining sounds (6 variations)</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'ice/Ice_mining</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># Jumping onto glass sounds like jumping on stone</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># Walking on glass sounds like walking on stone</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Wood Planks map exactly to the unrefined WOOD sound properties</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">WOOD_PLANKS</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">WOOD</span><span class="p">]</span>
 
-        <span class="c1"># Cobblestone behaves identically to smooth STONE audibly</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">COBBELSTONE</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">STONE</span><span class="p">]</span>
 
-        <span class="c1"># Glowstone mimics the brittle acoustic properties of GLASS</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GLOWSTONE</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># 3 glass shatters for glowstone destruction</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'glass/Glass_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)],</span>
-            <span class="c1"># Placing glowstone sounds like placing stone</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Mining glowstone uses the ice cracking sounds</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'ice/Ice_mining</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># Jumping on glowstone sounds like jumping on stone</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># Walking on glowstone sounds like walking on stone</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># (Redundant entry for GLASS kept for exact parity with the original codebase structure)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GLASS</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># 3 glass shatters</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'glass/Glass_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)],</span>
-            <span class="c1"># 4 stone placement sounds</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># 6 ice mining sounds</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'ice/Ice_mining</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># 6 stone landing sounds</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
-            <span class="c1"># 6 stone step sounds</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'stone/Stone_hit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Load sound assets for CACTUS blocks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">CACTUS</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># Cactus destruction sounds like tearing cloth (4 variations)</span>
             <span class="s1">'break'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'cloth/Cloth_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Placing cactus also sounds like soft cloth</span>
             <span class="s1">'place'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'cloth/Cloth_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Mining cactus reuses the soft cloth tearing sounds</span>
             <span class="s1">'breaking'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'cloth/Cloth_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Landing on cactus makes a soft thud</span>
             <span class="s1">'jump'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'cloth/Cloth_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
-            <span class="c1"># Walking on cactus makes soft thuds</span>
             <span class="s1">'walk'</span><span class="p">:</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">'cloth/Cloth_dig</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.ogg'</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
         <span class="p">}</span>
 
-        <span class="c1"># Stone bricks use standard stone sounds</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">STONE_BRICKS</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">STONE</span><span class="p">]</span>
 
-        <span class="c1"># Initialize the cyclic counter to track which step variation to play next</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hit_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="c1"># Timestamp (in milliseconds) of the last footstep to determine if we should reset the sequence</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_hit_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="c1"># Keeps track of the current stage of mining (from 0 to N-1) to avoid re-triggering the same audio tick</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mining_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="c1"># Load the distinctive item collection pop sound effect</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pop_sound</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">(</span><span class="n">get_path</span><span class="p">(</span><span class="s1">'assets/audio/sfx/pickup-sound.ogg'</span><span class="p">))</span>
 
-        <span class="c1"># Retrieve the user's SFX volume preference from the config, defaulting to 20 if unset</span>
-        <span class="c1"># and immediately apply this volume to all loaded sound buffers in memory</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_sfx_volume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'sfx_volume'</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
 
-        <span class="c1"># Define the absolute file paths for our background music tracks</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">music_tracks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">get_path</span><span class="p">(</span><span class="s1">'assets/audio/music/c418-aria-math-(minecraft-volume-beta).ogg'</span><span class="p">),</span>
             <span class="n">get_path</span><span class="p">(</span><span class="s1">'assets/audio/music/c418-minecraft.ogg'</span><span class="p">),</span>
         <span class="p">]</span>
 
-        <span class="c1"># Load a randomly selected music track from our track list into the pygame music streaming buffer</span>
+        <span class="c1"># Execute expressions</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">music_tracks</span><span class="p">))</span>
-        <span class="c1"># Fetch user music volume preference (0-100), scale it down to (0.0-1.0) and apply to the music mixer</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'music_volume'</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">)</span>
-        <span class="c1"># Start streaming the background music and loop infinitely (indicated by -1)</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Sounds.set_sfx_volume">
@@ -1243,21 +1170,21 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Sounds_SetSFXVolume'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_sfx_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Updates the volume for all loaded sound effects."""</span>
-        <span class="c1"># Convert the integer percentage (0-100) into a normalized float (0.0-1.0) for the pygame API</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">vol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">value</span> <span class="o">/</span> <span class="mf">100.0</span>
 
-        <span class="c1"># Check if the pop sound has been initialized before applying volume</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'pop_sound'</span><span class="p">):</span>
-            <span class="c1"># The pop sound is boosted by a factor of 5 but clamped to a maximum of 1.0 to stay audible</span>
+            <span class="c1"># Execute expressions</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pop_sound</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">vol</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">))</span>
 
-        <span class="c1"># Iterate over all block types in the sounds dictionary</span>
+        <span class="c1"># Loop processing</span>
         <span class="k">for</span> <span class="n">category_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="c1"># Iterate over each action type (break, place, walk, etc.) for this block</span>
+            <span class="c1"># Loop processing</span>
             <span class="k">for</span> <span class="n">sound_list</span> <span class="ow">in</span> <span class="n">category_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                <span class="c1"># Iterate over all individual pygame.Sound objects within this action category</span>
+                <span class="c1"># Loop processing</span>
                 <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sound_list</span><span class="p">:</span>
-                    <span class="c1"># Apply the normalized volume to this specific sound buffer</span>
+                    <span class="c1"># Execute expressions</span>
                     <span class="n">s</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">vol</span><span class="p">)</span></div>
 
 
@@ -1269,28 +1196,27 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Plays a walking footstep sound based on the material of the block the player is standing on.</span>
 <span class="sd">        Automatically cycles through the available footstep variations.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Fetch the current game time in milliseconds from pygame's internal clock</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">current_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
 
-        <span class="c1"># If more than half a second has passed since the last step, we assume the player paused</span>
-        <span class="c1"># and reset the footstep sequence back to the first variation</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_hit_time</span> <span class="o">&gt;</span> <span class="mi">500</span><span class="p">:</span>
+            <span class="c1"># Variable assignments</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hit_index</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="c1"># Retrieve the dictionary of sounds for this specific block material, defaulting to GRASS if unknown</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">s_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRASS</span><span class="p">])</span>
-        <span class="c1"># Get the list of footstep sounds specific to walking on this block</span>
         <span class="n">hits</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_dict</span><span class="p">[</span><span class="s1">'walk'</span><span class="p">]</span>
 
-        <span class="c1"># Ensure our sequence index does not exceed the available sound variations; loop back if it does</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hit_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">):</span>
+            <span class="c1"># Variable assignments</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hit_index</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="c1"># Dispatch the sound for playback on an available mixer channel automatically</span>
+        <span class="c1"># Execute expressions</span>
         <span class="n">hits</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">hit_index</span><span class="p">]</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
-        <span class="c1"># Increment the index so the next step uses the next sound in the sequence</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hit_index</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="c1"># Update our last step timestamp to the current time for gap tracking</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_hit_time</span> <span class="o">=</span> <span class="n">current_time</span></div>
 
 
@@ -1301,9 +1227,9 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Plays a hard breaking sound when a block is fully destroyed.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Retrieve the specific sound set for the broken voxel, defaulting to GRASS</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">s_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRASS</span><span class="p">])</span>
-        <span class="c1"># Randomly select one variation from the block's break sounds and play it instantly</span>
+        <span class="c1"># Execute expressions</span>
         <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">s_dict</span><span class="p">[</span><span class="s1">'break'</span><span class="p">])</span><span class="o">.</span><span class="n">play</span><span class="p">()</span></div>
 
 
@@ -1314,9 +1240,9 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Plays a block placement sound when adding a new block to the world.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Fetch the sound configurations for the placed voxel type, falling back to GRASS</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">s_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRASS</span><span class="p">])</span>
-        <span class="c1"># Pick a random sound from the placement pool to break monotony and play it</span>
+        <span class="c1"># Execute expressions</span>
         <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">s_dict</span><span class="p">[</span><span class="s1">'place'</span><span class="p">])</span><span class="o">.</span><span class="n">play</span><span class="p">()</span></div>
 
 
@@ -1327,9 +1253,9 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Plays a jump sound when the player jumps.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Retrieve the block-specific sound pool for the voxel jumped from (or landed on), default to GRASS</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">s_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRASS</span><span class="p">])</span>
-        <span class="c1"># Randomly choose one of the jump/landing thuds and fire it off</span>
+        <span class="c1"># Execute expressions</span>
         <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">s_dict</span><span class="p">[</span><span class="s1">'jump'</span><span class="p">])</span><span class="o">.</span><span class="n">play</span><span class="p">()</span></div>
 
 
@@ -1340,29 +1266,25 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Plays a continuous sequence of hitting sounds mapped to the progress of mining a block.</span>
 <span class="sd">        """</span>
-        <span class="c1"># If the block has just started being mined, reset our sequence index state machine</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="n">mining_time</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="c1"># Variable assignments</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mining_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="c1"># Look up the sound array for this block, defaulting to GRASS if missing</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">s_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">voxel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sounds</span><span class="p">[</span><span class="n">GRASS</span><span class="p">])</span>
-        <span class="c1"># Extract the sequence list specifically mapped to the continuous 'breaking' action</span>
         <span class="n">mining_sounds</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_dict</span><span class="p">[</span><span class="s1">'breaking'</span><span class="p">]</span>
-        <span class="c1"># Cache the length of this sound list to properly map mining progress across it</span>
         <span class="n">num_sounds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mining_sounds</span><span class="p">)</span>
 
-        <span class="c1"># Calculate a normalized float (0.0 to 1.0) representing how close we are to breaking the block</span>
         <span class="n">progress</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">mining_time</span> <span class="o">/</span> <span class="n">mining_duration</span>
-        <span class="c1"># Multiply progress by the number of sounds to figure out which discrete segment we are currently in</span>
         <span class="n">target_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">progress</span> <span class="o">*</span> <span class="n">num_sounds</span><span class="p">)</span>
-        <span class="c1"># Clamp the target index to prevent array out-of-bounds access in case progress exceeds 1.0</span>
         <span class="n">target_index</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">target_index</span><span class="p">,</span> <span class="n">num_sounds</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="c1"># Only play a sound if we have transitioned to a new chunk of mining progress</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="n">target_index</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">mining_index</span><span class="p">:</span>
-            <span class="c1"># Dispatch the progressive strike sound</span>
+            <span class="c1"># Execute expressions</span>
             <span class="n">mining_sounds</span><span class="p">[</span><span class="n">target_index</span><span class="p">]</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
-            <span class="c1"># Update our state machine tracker to avoid playing this same segment again</span>
+            <span class="c1"># Variable assignments</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mining_index</span> <span class="o">=</span> <span class="n">target_index</span></div>
 
 
@@ -1374,7 +1296,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Plays a pop sound effect when a dropped item entity is collected and added</span>
 <span class="sd">        to the player's inventory.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Directly play the single preloaded pop sound object</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pop_sound</span><span class="o">.</span><span class="n">play</span><span class="p">()</span></div>
 </div>
 

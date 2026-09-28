@@ -1069,7 +1069,7 @@ It automatically triangulates polygons and centers the resulting geometry
 for rendering custom 3D tools and entities in the world.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="meshes.obj_mesh.ObjMesh">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">meshes.obj_mesh.</span></span><span class="sig-name descname"><span class="pre">ObjMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tex_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/meshes/obj_mesh.html#ObjMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#meshes.obj_mesh.ObjMesh" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">meshes.obj_mesh.</span></span><span class="sig-name descname"><span class="pre">ObjMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">texture_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/meshes/obj_mesh.html#ObjMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#meshes.obj_mesh.ObjMesh" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#meshes.base_mesh.BaseMesh" title="meshes.base_mesh.BaseMesh"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMesh</span></code></a></p>
 <p>Generates rendering geometry by parsing and loading standard 3D Wavefront (.obj) files.</p>
 <p>Supports parsing material files (.mtl) for vertex colors and automatically centers
@@ -1078,8 +1078,8 @@ the imported geometry around the origin.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>app</strong> (<em>Any</em>) – The main application instance providing the ModernGL context.</p></li>
-<li><p><strong>obj_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The absolute or relative file path to the <cite>.obj</cite> file.</p></li>
-<li><p><strong>tex_id</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – The OpenGL texture ID to bind during rendering, if applicable.</p></li>
+<li><p><strong>object_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The absolute or relative file path to the <cite>.obj</cite> file.</p></li>
+<li><p><strong>texture_id</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – The OpenGL texture ID to bind during rendering, if applicable.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1097,12 +1097,12 @@ an associated OpenGL texture if a texture ID was provided during initialization.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="meshes.obj_mesh.ObjMesh.parse_mtl">
-<span class="sig-name descname"><span class="pre">parse_mtl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mtl_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/meshes/obj_mesh.html#ObjMesh.parse_mtl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#meshes.obj_mesh.ObjMesh.parse_mtl" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">parse_mtl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">material_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/meshes/obj_mesh.html#ObjMesh.parse_mtl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#meshes.obj_mesh.ObjMesh.parse_mtl" title="Link to this definition"></a></dt>
 <dd><p>Reads a Wavefront material (.mtl) file and extracts the diffuse color (Kd)
 values for each material, allowing the OBJ to render with its assigned base colors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>mtl_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>material_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)">float</a>]]]</p>

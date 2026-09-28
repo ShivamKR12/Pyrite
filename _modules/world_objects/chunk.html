@@ -1060,8 +1060,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Calculates the transformation matrix required to position this chunk</span>
 <span class="sd">        correctly within the global 3D world space.</span>
 <span class="sd">        """</span>
-        <span class="n">m_model</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">(),</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">m_model</span></div>
+        <span class="n">model_matrix</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">(),</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">model_matrix</span></div>
 
 
 <div class="viewcode-block" id="Chunk.set_uniform">
@@ -1121,10 +1121,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">voxels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">CHUNK_VOLUME</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'uint8'</span><span class="p">)</span>
 
         <span class="c1"># Convert the chunk's grid position into absolute world block coordinates.</span>
-        <span class="c1"># cx, cy, cz represent the exact minimum bounds (bottom-left-back corner) of the chunk.</span>
-        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">)</span>
+        <span class="c1"># chunk_x, chunk_y, chunk_z represent the exact minimum bounds (bottom-left-back corner) of the chunk.</span>
+        <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">generate_terrain</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_terrain</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">voxels</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1137,43 +1137,52 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@staticmethod</span>
     <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_terrain</span><span class="p">(</span>
-        <span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span>
+        <span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">lightmap</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">chunk_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">chunk_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">chunk_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">perm_grad_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        A highly parallelized Numba wrapper that populates a chunk's voxel and lighting arrays</span>
 <span class="sd">        deterministically based on the world seed.</span>
 <span class="sd">        """</span>
         <span class="c1"># We compute a unique hash for this specific chunk by bitwise XORing the world seed</span>
-        <span class="c1"># with the chunk's absolute spatial coordinates (cx, cy, cz).</span>
+        <span class="c1"># with the chunk's absolute spatial coordinates (chunk_x, chunk_y, chunk_z).</span>
         <span class="c1"># This guarantees that the local RNG state is identically initialized every time this</span>
         <span class="c1"># exact chunk is generated, preventing structural seams between adjacent chunks.</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span> <span class="o">^</span> <span class="n">cx</span> <span class="o">^</span> <span class="n">cy</span> <span class="o">^</span> <span class="n">cz</span><span class="p">)</span>
-        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span> <span class="o">^</span> <span class="n">cx</span> <span class="o">^</span> <span class="n">cy</span> <span class="o">^</span> <span class="n">cz</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span> <span class="o">^</span> <span class="n">chunk_x</span> <span class="o">^</span> <span class="n">chunk_y</span> <span class="o">^</span> <span class="n">chunk_z</span><span class="p">)</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span> <span class="o">^</span> <span class="n">chunk_x</span> <span class="o">^</span> <span class="n">chunk_y</span> <span class="o">^</span> <span class="n">chunk_z</span><span class="p">)</span>
 
         <span class="c1"># We iterate over the 2D local plane (x, z) of the chunk.</span>
         <span class="c1"># For each vertical column, we evaluate the 2D and 3D noise functions.</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">):</span>
                 <span class="c1"># set_voxel_column computes the heightmap, applies biome rules, and fills</span>
-                <span class="c1"># the 1D voxels array from the bottom (cy) to the computed surface height.</span>
-                <span class="n">set_voxel_column</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">)</span>
+                <span class="c1"># the 1D voxels array from the bottom (chunk_y) to the computed surface height.</span>
+                <span class="n">set_voxel_column</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">)</span>
 
         <span class="c1"># After the physical blocks are placed, we run a top-down raycasting pass.</span>
         <span class="c1"># This traces from the sky downwards, marking blocks with sunlight (level 15)</span>
         <span class="c1"># until an opaque block is hit, populating the parallel lightmap array.</span>
-        <span class="n">fill_initial_sunlight</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span></div>
+        <span class="n">fill_initial_sunlight</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Chunk.fill_initial_sunlight_only">
 <a class="viewcode-back" href="../../api/world_objects.html#world_objects.chunk.Chunk.fill_initial_sunlight_only">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fill_initial_sunlight_only</span><span class="p">(</span><span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fill_initial_sunlight_only</span><span class="p">(</span>
+        <span class="n">voxels</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        A Numba-optimized function to fill sunlight in a chunk's lightmap without modifying the voxel data.</span>
 <span class="sd">        Used during world loading to quickly restore lighting without regenerating terrain.</span>
 <span class="sd">        """</span>
-        <span class="n">fill_initial_sunlight</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span></div>
+        <span class="n">fill_initial_sunlight</span><span class="p">(</span><span class="n">voxels</span><span class="p">,</span> <span class="n">lightmap</span><span class="p">,</span> <span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

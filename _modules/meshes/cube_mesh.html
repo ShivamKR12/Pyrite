@@ -1040,7 +1040,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Flattens the structured lists of vertices and indices into a contiguous</span>
 <span class="sd">        1D Numpy array required by OpenGL.</span>
 <span class="sd">        """</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">vertices</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">triangle</span> <span class="ow">in</span> <span class="n">indices</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">triangle</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">vertices</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">triangle</span> <span class="ow">in</span> <span class="n">indices</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">triangle</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'float16'</span><span class="p">)</span></div>
 

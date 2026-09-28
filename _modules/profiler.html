@@ -1026,13 +1026,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Args:</span>
 <span class="sd">            max_samples: Maximum retained samples per profiling category.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Store the strict numerical cap for how many samples this buffer will retain per category</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">max_samples</span>
 
-        <span class="c1"># A dictionary mapping string category names to fixed-length double-ended queues (deques)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">deque</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c1"># A lightweight mutex lock utilized exclusively during the initialization of a new category key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
 
 <div class="viewcode-block" id="ThreadSampleBuffer.record">
@@ -1045,17 +1043,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            category: Logical category name for the timing sample.</span>
 <span class="sd">            elapsed_time: Elapsed time in nanoseconds to record.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Fast-path check: if the category is not yet tracked, we must safely initialize it</span>
-        <span class="k">if</span> <span class="n">category</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">:</span>
-            <span class="c1"># Acquire the thread lock to prevent a race condition where two threads might initialize the same key</span>
+        <span class="c1"># Conditional logic</span>
+        <span class="k">if</span> <span class="n">category</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">:</span>  <span class="c1"># pragma: no mutate</span>
+            <span class="c1"># Context management</span>
             <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
-                <span class="c1"># Double-checked locking pattern: verify the category is still absent after acquiring the lock</span>
-                <span class="k">if</span> <span class="n">category</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">:</span>
-                    <span class="c1"># Allocate a new deque with a strict memory bound (maxlen) to automatically eject old samples</span>
+                <span class="c1"># Conditional logic</span>
+                <span class="k">if</span> <span class="n">category</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">:</span>  <span class="c1"># pragma: no mutate</span>
+                    <span class="c1"># Variable assignments</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">[</span><span class="n">category</span><span class="p">]</span> <span class="o">=</span> <span class="n">deque</span><span class="p">(</span><span class="n">maxlen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_samples</span><span class="p">)</span>
 
-        <span class="c1"># In CPython, appending to a deque is an atomic operation, meaning it is inherently thread-safe</span>
-        <span class="c1"># We push the new nanosecond timing sample onto the end of the queue without needing a lock</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">[</span><span class="n">category</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">)</span></div>
 </div>
 
@@ -1084,42 +1081,40 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Args:</span>
 <span class="sd">            max_samples_per_category: Limit on retained samples to bound memory usage.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Define the global threshold for how many samples each thread buffer is permitted to hold</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">max_samples_per_category</span>
 
-        <span class="c1"># A global mutex lock utilized when a brand new thread needs to register itself with the profiler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">registry_lock</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
 
-        <span class="c1"># A mapping of OS-level Thread IDs (integers) to their respective isolated ThreadSampleBuffers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ThreadSampleBuffer</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c1"># Main-thread specific tracking variable used to measure the absolute duration of an entire game loop frame</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">frame_start_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ThreadSampleBuffer</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Retrieves or registers a dedicated data buffer for the calling thread."""</span>
-        <span class="c1"># Query the operating system for the current executing thread's unique integer ID</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">thread_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">get_ident</span><span class="p">()</span>
 
-        <span class="c1"># Fast-path check: If this thread has already been registered, return its buffer immediately (no lock needed)</span>
-        <span class="k">if</span> <span class="n">thread_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">:</span>
+        <span class="c1"># Conditional logic</span>
+        <span class="k">if</span> <span class="n">thread_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">:</span>  <span class="c1"># pragma: no mutate</span>
+            <span class="c1"># Return result</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">[</span><span class="n">thread_id</span><span class="p">]</span>
 
-        <span class="c1"># If this is the thread's first time profiling, acquire the global registry lock to safely mutate the dictionary</span>
+        <span class="c1"># Context management</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">registry_lock</span><span class="p">:</span>
-            <span class="c1"># Double-checked locking pattern: ensure another thread didn't register this ID while we were waiting</span>
-            <span class="k">if</span> <span class="n">thread_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">:</span>
-                <span class="c1"># Instantiate a fresh, memory-bounded ThreadSampleBuffer specifically for this Thread ID</span>
+            <span class="c1"># Conditional logic</span>
+            <span class="k">if</span> <span class="n">thread_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">:</span>  <span class="c1"># pragma: no mutate</span>
+                <span class="c1"># Variable assignments</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">[</span><span class="n">thread_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">ThreadSampleBuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_samples</span><span class="p">)</span>
 
-            <span class="c1"># Return the newly allocated or verified thread buffer</span>
+            <span class="c1"># Return result</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">[</span><span class="n">thread_id</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Profiler.start_frame">
 <a class="viewcode-back" href="../api/profiler.html#profiler.Profiler.start_frame">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Called exclusively on the main game loop thread."""</span>
-        <span class="c1"># Capture the absolute, high-resolution hardware nanosecond timestamp for the start of the frame</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">frame_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter_ns</span><span class="p">()</span></div>
 
 
@@ -1127,9 +1122,9 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/profiler.html#profiler.Profiler.end_frame">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">end_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Called exclusively on the main game loop thread."""</span>
-        <span class="c1"># Ensure that start_frame was actually called and we have a valid baseline timestamp</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">frame_start_time</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># Calculate the total elapsed nanoseconds and submit it to the 'Frame_Total' category</span>
+            <span class="c1"># Execute expressions</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s1">'Frame_Total'</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter_ns</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">frame_start_time</span><span class="p">)</span></div>
 
 
@@ -1137,10 +1132,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../api/profiler.html#profiler.Profiler.record">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">elapsed_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Records metrics completely lock-free relative to other concurrent threads."""</span>
-        <span class="c1"># Dynamically fetch the isolated data buffer belonging to the current executing thread</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">buf</span><span class="p">:</span> <span class="n">ThreadSampleBuffer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_buffer</span><span class="p">()</span>
 
-        <span class="c1"># Delegate the actual storage of the timing sample to the thread-local buffer</span>
+        <span class="c1"># Execute expressions</span>
         <span class="n">buf</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">elapsed_time</span><span class="p">)</span></div>
 
 
@@ -1149,14 +1144,14 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@contextmanager</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">measure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Context manager for clean block profiling."""</span>
-        <span class="c1"># Capture the initial high-resolution hardware clock timestamp in nanoseconds</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">start_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter_ns</span><span class="p">()</span>
+        <span class="c1"># Error handling</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Yield execution control back to the inner block of code encapsulated by the `with` statement</span>
+            <span class="c1"># Execute expressions</span>
             <span class="k">yield</span>
         <span class="k">finally</span><span class="p">:</span>
-            <span class="c1"># Once the inner block terminates (even if it throws an exception), capture the new timestamp</span>
-            <span class="c1"># Calculate the delta (elapsed time in nanoseconds) and dispatch it to the profiler registry</span>
+            <span class="c1"># Execute expressions</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter_ns</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span></div>
 
 
@@ -1174,24 +1169,30 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            A decorator that wraps callables and records timing samples.</span>
 <span class="sd">        """</span>
 
-        <span class="c1"># This outer function takes the optional category argument and returns the actual decorator mechanism</span>
+        <span class="c1"># Define function</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-            <span class="c1"># Determine the categorization string: use the explicit argument if provided, otherwise default to the function's internal name</span>
+            <span class="c1"># Variable assignments</span>
+            <span class="c1"># Variable assignments</span>
             <span class="n">cat</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">category</span> <span class="ow">or</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
 
-            <span class="c1"># The @wraps decorator preserves the original function's metadata (docstrings, name) through the wrapping process</span>
             <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+            <span class="c1"># Define function</span>
+            <span class="c1"># Define function</span>
             <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-                <span class="c1"># Intercept the function invocation and wrap it within our custom `measure` context manager</span>
-                <span class="c1"># This ensures the call stack is tracked and the execution time is automatically logged under the calculated category</span>
+                <span class="c1"># Context management</span>
+                <span class="c1"># Context management</span>
+                <span class="c1"># Context management</span>
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">(</span><span class="n">cat</span><span class="p">):</span>
-                    <span class="c1"># Forward all positional and keyword arguments to the original function and return its result</span>
+                    <span class="c1"># Return result</span>
+                    <span class="c1"># Return result</span>
+                    <span class="c1"># Return result</span>
                     <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-            <span class="c1"># Return the newly wrapped, telemetry-enabled function</span>
+            <span class="c1"># Return result</span>
+            <span class="c1"># Return result</span>
             <span class="k">return</span> <span class="n">wrapper</span>
 
-        <span class="c1"># Return the decorator generator</span>
+        <span class="c1"># Return result</span>
         <span class="k">return</span> <span class="n">decorator</span></div>
 
 
@@ -1202,64 +1203,59 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Consolidates metrics across ALL active and dead background worker loops,</span>
 <span class="sd">        and saves synchronously to prevent file corruption on application exit.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Execute expressions</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">'</span><span class="se">\n</span><span class="s1">[TELEMETRY] Compiling engine metrics from all threads...'</span><span class="p">)</span>
 
-        <span class="c1"># Initialize a master dictionary to aggregate samples across all distinct ThreadSampleBuffers</span>
-        <span class="c1"># Structure: Category Name -&gt; Flat List of all recorded nanosecond timings</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">master_records</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c1"># Acquire the global registry lock to freeze thread registration while we harvest data</span>
+        <span class="c1"># Context management</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">registry_lock</span><span class="p">:</span>
-            <span class="c1"># Iterate over every registered thread ID and its corresponding data buffer</span>
+            <span class="c1"># Loop processing</span>
             <span class="k">for</span> <span class="n">thread_id</span><span class="p">,</span> <span class="n">buf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="c1"># Acquire the specific thread buffer's lock to prevent category mutation during iteration</span>
+                <span class="c1"># Context management</span>
                 <span class="k">with</span> <span class="n">buf</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
-                    <span class="c1"># Iterate over all categories and their respective deques of timing samples</span>
+                    <span class="c1"># Loop processing</span>
                     <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">samples</span> <span class="ow">in</span> <span class="n">buf</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                        <span class="c1"># If the master record doesn't have this category yet, initialize an empty list</span>
+                        <span class="c1"># Conditional logic</span>
                         <span class="k">if</span> <span class="n">category</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">master_records</span><span class="p">:</span>
+                            <span class="c1"># Variable assignments</span>
                             <span class="n">master_records</span><span class="p">[</span><span class="n">category</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                        <span class="c1"># Safely cast the deque to a list and extend the master record with these thread-specific samples</span>
+                        <span class="c1"># Execute expressions</span>
                         <span class="n">master_records</span><span class="p">[</span><span class="n">category</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">samples</span><span class="p">))</span>
 
-        <span class="c1"># Initialize the final dictionary that will be serialized into the JSON report</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">report</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c1"># Iterate over the fully aggregated master records</span>
+        <span class="c1"># Loop processing</span>
         <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">times</span> <span class="ow">in</span> <span class="n">master_records</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># If a category was registered but received zero timing samples, skip it to keep the report clean</span>
+            <span class="c1"># Conditional logic</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">times</span><span class="p">:</span>
+                <span class="c1"># Loop control</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># Convert the raw Python list into a high-performance NumPy array for vectorized mathematics</span>
-            <span class="c1"># We divide by 1,000,000.0 to convert the raw nanosecond inputs into human-readable milliseconds</span>
+            <span class="c1"># Variable assignments</span>
             <span class="n">arr</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1_000_000.0</span>
 
-            <span class="c1"># Calculate comprehensive statistical metrics for this category using NumPy's built-in C-optimized functions</span>
             <span class="n">report</span><span class="p">[</span><span class="n">category</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="c1"># The absolute number of times this category was executed and measured</span>
                 <span class="s1">'Calls'</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">),</span>
-                <span class="c1"># The arithmetic mean (average) execution time in milliseconds, rounded to 3 decimal places</span>
                 <span class="s1">'Avg_ms'</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="mi">3</span><span class="p">),</span>
-                <span class="c1"># The fastest single execution time recorded in milliseconds</span>
                 <span class="s1">'Min_ms'</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="mi">3</span><span class="p">),</span>
-                <span class="c1"># The slowest single execution time recorded in milliseconds</span>
                 <span class="s1">'Max_ms'</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="mi">3</span><span class="p">),</span>
-                <span class="c1"># The 99th percentile execution time (removes the top 1% of outliers/spikes)</span>
                 <span class="s1">'P99_ms'</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="mi">99</span><span class="p">)),</span> <span class="mi">3</span><span class="p">),</span>
-                <span class="c1"># The cumulative time spent inside this category across all threads</span>
                 <span class="s1">'Total_Time_ms'</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="mi">3</span><span class="p">),</span>
             <span class="p">}</span>
 
-        <span class="c1"># Attempt to synchronously write the aggregated dictionary out to a file</span>
-        <span class="c1"># Synchronous blocking here is acceptable because this function is only invoked during engine teardown</span>
+        <span class="c1"># Error handling</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Context management</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">'utf-8'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="c1"># Serialize the dictionary to a nicely formatted JSON string and write it to disk</span>
+                <span class="c1"># Execute expressions</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="c1"># Execute expressions</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[TELEMETRY] Report successfully saved to </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="c1"># Catch any filesystem permissions or IO errors and log them to the console to avoid a silent crash</span>
+            <span class="c1"># Execute expressions</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[TELEMETRY] ERROR: Failed to write report file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span></div>
 </div>
 

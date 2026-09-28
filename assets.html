@@ -567,14 +567,14 @@
 <section id="primary-tooling">
 <h2>Primary tooling<a class="headerlink" href="#primary-tooling" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><cite>create_texture_array.py</cite> / <cite>append_texture.py</cite> — scripts in repository root used to assemble 2D texture arrays and atlases. Run these when adding new block textures.</p></li>
+<li><p><cite>create_texture_array.position_y</cite> / <cite>append_texture.position_y</cite> — scripts in repository root used to assemble 2D texture arrays and atlases. Run these when adding new block textures.</p></li>
 </ul>
 </section>
 <section id="texture-conventions">
 <h2>Texture conventions<a class="headerlink" href="#texture-conventions" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Tile size: textures are expected to share a consistent tile size (e.g., 16×16, 32×32). Check the existing assets to match the project’s atlas size.</p></li>
-<li><p>Texture Array: the engine maps <cite>voxel_id</cite> → <cite>texture layer index</cite> at startup. See <cite>src/textures.py</cite> and <cite>src/shader_program.py</cite> for the mapping mechanism.</p></li>
+<li><p>Texture Array: the engine maps <cite>voxel_id</cite> → <cite>texture layer index</cite> at startup. See <cite>src/textures.position_y</cite> and <cite>src/shader_program.position_y</cite> for the mapping mechanism.</p></li>
 <li><p>Mipmaps: generate mipmaps for texture arrays to improve distant LOD rendering.</p></li>
 <li><p>Alpha: use premultiplied alpha if blending artifacts appear; ensure shaders expect the chosen alpha convention.</p></li>
 </ul>
@@ -598,8 +598,8 @@
 <h2>Adding or updating assets<a class="headerlink" href="#adding-or-updating-assets" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Place source art in a clear subfolder under <cite>assets/</cite>.</p></li>
-<li><p>If adding textures, run <cite>create_texture_array.py</cite> to integrate new tiles into the texture array.</p></li>
-<li><p>Update mappings in <cite>src/textures.py</cite> or the texture manifest (if present).</p></li>
+<li><p>If adding textures, run <cite>create_texture_array.position_y</cite> to integrate new tiles into the texture array.</p></li>
+<li><p>Update mappings in <cite>src/textures.position_y</cite> or the texture manifest (if present).</p></li>
 <li><p>Test in-game to verify UVs, atlas layer indices, and shading.</p></li>
 </ol>
 </section>

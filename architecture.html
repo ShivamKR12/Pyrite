@@ -553,7 +553,7 @@
              
   <section id="world-architecture-and-multithreading-breakdown">
 <span id="architecture"></span><h1>World Architecture and Multithreading Breakdown<a class="headerlink" href="#world-architecture-and-multithreading-breakdown" title="Link to this heading"></a></h1>
-<p>This document provides detailed explanations of Pyrite’s core architectural loop, multithreaded chunk streaming, queue systems, and SQLite disk persistence. All core architectural logic is primarily located in <code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> and <code class="docutils literal notranslate"><span class="pre">src/main.py</span></code>.</p>
+<p>This document provides detailed explanations of Pyrite’s core architectural loop, multithreaded chunk streaming, queue systems, and SQLite disk persistence. All core architectural logic is primarily located in <code class="docutils literal notranslate"><span class="pre">src/world.position_y</span></code> and <code class="docutils literal notranslate"><span class="pre">src/main.position_y</span></code>.</p>
 <section id="architecture-overview">
 <h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading"></a></h2>
 <p>Pyrite is built on a hybrid architecture combining Pygame, ModernGL, and Numba:</p>
@@ -567,7 +567,7 @@
 </section>
 <section id="the-main-loop-asynchronous-processing">
 <h2>The Main Loop &amp; Asynchronous Processing<a class="headerlink" href="#the-main-loop-asynchronous-processing" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/main.py</span></code> - The Core Execution Loop</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/main.position_y</span></code> - The Core Execution Loop</p>
 <p>Purpose: Maintain a stutter-free render loop while offloading heavy tasks.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">delta_time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">(),</span> <span class="mi">50</span><span class="p">)</span>
 </pre></div>
@@ -575,7 +575,7 @@
 <ul class="simple">
 <li><p><strong>Tick Control:</strong> The main game loop runs strictly on the main thread. We cap the delta time at 50ms to prevent massive physics lag spikes (like falling through the floor) if the engine momentarily hangs.</p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> - The ThreadPool</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/world.position_y</span></code> - The ThreadPool</p>
 <p>Purpose: Execute Python functions in the background.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">executor</span> <span class="o">=</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="ow">or</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
 </pre></div>
@@ -592,7 +592,7 @@
 </section>
 <section id="the-queue-system">
 <h2>The Queue System<a class="headerlink" href="#the-queue-system" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> - Safe Thread Synchronization</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/world.position_y</span></code> - Safe Thread Synchronization</p>
 <p>Purpose: Manage the flow of asynchronous data back to the synchronous main thread.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">load_queue</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Chunk</span><span class="p">],</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">Future</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">[]</span>
 </pre></div>
@@ -615,7 +615,7 @@
 </section>
 <section id="sqlite-write-ahead-logging-wal">
 <h2>SQLite Write-Ahead Logging (WAL)<a class="headerlink" href="#sqlite-write-ahead-logging-wal" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/world.py</span></code> - Database Initialization</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/world.position_y</span></code> - Database Initialization</p>
 <p>Purpose: Provide async-like, high-performance disk writes for massive voxel datasets.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'PRAGMA journal_mode = WAL'</span><span class="p">)</span>
 <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'PRAGMA synchronous = NORMAL'</span><span class="p">)</span>
@@ -639,7 +639,7 @@
 </section>
 <section id="memory-management-1d-vs-3d-arrays">
 <h2>Memory Management (1D vs 3D Arrays)<a class="headerlink" href="#memory-management-1d-vs-3d-arrays" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Array Flattening</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.position_y</span></code> - Array Flattening</p>
 <p>Purpose: Maximize CPU cache hits during Numba JIT execution.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_index</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">CHUNK_SIZE</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="n">y</span>

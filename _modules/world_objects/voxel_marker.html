@@ -1062,8 +1062,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Calculates the transformation matrix required to position the wireframe</span>
 <span class="sd">        marker correctly at the targeted voxel's world space coordinates.</span>
 <span class="sd">        """</span>
-        <span class="n">m_model</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">(),</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">m_model</span></div>
+        <span class="n">model_matrix</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">mat4</span><span class="p">(),</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">model_matrix</span></div>
 
 
 <div class="viewcode-block" id="VoxelMarker.render">

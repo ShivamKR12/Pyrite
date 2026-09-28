@@ -1022,29 +1022,32 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Computes and stores precomputed tangent/factor values used for</span>
 <span class="sd">        frustum checks and keeps a reference to the camera object.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cam</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">camera</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">factor_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tan_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tangent_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">factor_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tan_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tangent_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_factors</span><span class="p">(</span><span class="n">VERTICAL_FOV</span><span class="p">,</span> <span class="n">HORIZONTAL_FOV</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Frustum.update_factors">
 <a class="viewcode-back" href="../api/frustum.html#frustum.Frustum.update_factors">[docs]</a>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'Frustum_UpdateFactors'</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v_fov</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">h_fov</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vertical_fov</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">horizontal_fov</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Recalculate cached tangent/factor values from vertical and horizontal FOV.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            v_fov: Vertical field-of-view in radians.</span>
-<span class="sd">            h_fov: Horizontal field-of-view in radians.</span>
+<span class="sd">            vertical_fov: Vertical field-of-view in radians.</span>
+<span class="sd">            horizontal_fov: Horizontal field-of-view in radians.</span>
 <span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">factor_y</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">half_y</span> <span class="o">:=</span> <span class="n">v_fov</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tan_y</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">half_y</span><span class="p">)</span>
+        <span class="c1"># Variable assignments</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">factor_y</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">half_y</span> <span class="o">:=</span> <span class="n">vertical_fov</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tangent_y</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">half_y</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">factor_x</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">half_x</span> <span class="o">:=</span> <span class="n">h_fov</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tan_x</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">half_x</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">factor_x</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">half_x</span> <span class="o">:=</span> <span class="n">horizontal_fov</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tangent_x</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">half_x</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Frustum.is_on_frustum">
@@ -1060,29 +1063,32 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Returns:</span>
 <span class="sd">            True if the chunk is (partially) inside the camera frustum, False otherwise.</span>
 <span class="sd">        """</span>
-        <span class="c1"># vector to sphere center</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">sphere_vec</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">center</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">cam</span><span class="o">.</span><span class="n">position</span>
 
-        <span class="c1"># outside the NEAR and FAR planes?</span>
         <span class="n">sz</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sphere_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cam</span><span class="o">.</span><span class="n">forward</span><span class="p">)</span>
-        <span class="c1"># Check against the near and far planes of the frustum.</span>
-        <span class="c1"># If the chunk's depth minus its radius is farther than the FAR plane,</span>
-        <span class="c1"># or its depth plus its radius is closer than the NEAR plane, it's outside.</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">NEAR</span> <span class="o">-</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">&lt;=</span> <span class="n">sz</span> <span class="o">&lt;=</span> <span class="n">FAR</span> <span class="o">+</span> <span class="n">CHUNK_SPHERE_RADIUS</span><span class="p">):</span>
+            <span class="c1"># Return result</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="c1"># outside the TOP and BOTTOM planes?</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">sy</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sphere_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cam</span><span class="o">.</span><span class="n">up</span><span class="p">)</span>
-        <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor_y</span> <span class="o">*</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">tan_y</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor_y</span> <span class="o">*</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_y</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="n">dist</span> <span class="o">&lt;=</span> <span class="n">sy</span> <span class="o">&lt;=</span> <span class="n">dist</span><span class="p">):</span>
+            <span class="c1"># Return result</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="c1"># outside the LEFT and RIGHT planes?</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">sx</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sphere_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cam</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
-        <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor_x</span> <span class="o">*</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">tan_x</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor_x</span> <span class="o">*</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_x</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="n">dist</span> <span class="o">&lt;=</span> <span class="n">sx</span> <span class="o">&lt;=</span> <span class="n">dist</span><span class="p">):</span>
+            <span class="c1"># Return result</span>
             <span class="k">return</span> <span class="kc">False</span>
 
+        <span class="c1"># Return result</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 </div>
 
@@ -1092,17 +1098,17 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># REAL-WORLD CONTEXT: Camera Frustum Culling (3D Math)</span>
 <span class="c1"># ============================================================================</span>
 <span class="c1"># This function determines which chunks the player can actually see so we don't</span>
-<span class="c1"># waste time rendering chunks behind their head. </span>
+<span class="c1"># waste time rendering chunks behind their head.</span>
 <span class="c1">#</span>
 <span class="c1"># How it works:</span>
 <span class="c1"># The "Frustum" is a 3D pyramid shape representing the camera's field of view.</span>
-<span class="c1"># To check if a chunk is inside this pyramid, we calculate the dot product of </span>
-<span class="c1"># the vector pointing from the camera to the chunk against the camera's Up, </span>
+<span class="c1"># To check if a chunk is inside this pyramid, we calculate the dot product of</span>
+<span class="c1"># the vector pointing from the camera to the chunk against the camera's Up,</span>
 <span class="c1"># Right, and Forward vectors.</span>
-<span class="c1"># </span>
-<span class="c1"># Using basic trigonometry (tangent of the Field of View), we define planes </span>
-<span class="c1"># for the Left, Right, Top, Bottom, Near, and Far boundaries. If the chunk's </span>
-<span class="c1"># bounding sphere is completely outside any of these planes, it gets "culled" </span>
+<span class="c1">#</span>
+<span class="c1"># Using basic trigonometry (tangent of the Field of View), we define planes</span>
+<span class="c1"># for the Left, Right, Top, Bottom, Near, and Far boundaries. If the chunk's</span>
+<span class="c1"># bounding sphere is completely outside any of these planes, it gets "culled"</span>
 <span class="c1"># (removed from the render queue).</span>
 <span class="c1">#</span>
 <span class="c1"># References:</span>
@@ -1110,18 +1116,19 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># - Frustum Culling Math: https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling</span>
 <span class="c1"># ============================================================================</span>
 
+
 <div class="viewcode-block" id="frustum_cull_fast">
 <a class="viewcode-back" href="../api/frustum.html#frustum.frustum_cull_fast">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">frustum_cull_fast</span><span class="p">(</span>
     <span class="n">chunk_centers</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">out_mask</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">cam_pos</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">cam_forward</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">cam_right</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">cam_up</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">tan_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">tan_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">camera_position</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">camera_forward</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">camera_right</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">camera_up</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">tangent_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">tangent_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">factor_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">factor_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -1131,84 +1138,78 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Args:</span>
 <span class="sd">        chunk_centers: Nx3 array of chunk center coordinates.</span>
 <span class="sd">        out_mask: Preallocated boolean array that will be written with visibility flags.</span>
-<span class="sd">        cam_pos: Camera position (3,) array.</span>
-<span class="sd">        cam_forward: Camera forward vector (3,) array.</span>
-<span class="sd">        cam_right: Camera right vector (3,) array.</span>
-<span class="sd">        cam_up: Camera up vector (3,) array.</span>
-<span class="sd">        tan_y: Tangent of half-vertical FOV.</span>
-<span class="sd">        tan_x: Tangent of half-horizontal FOV.</span>
+<span class="sd">        camera_position: Camera position (3,) array.</span>
+<span class="sd">        camera_forward: Camera forward vector (3,) array.</span>
+<span class="sd">        camera_right: Camera right vector (3,) array.</span>
+<span class="sd">        camera_up: Camera up vector (3,) array.</span>
+<span class="sd">        tangent_y: Tangent of half-vertical FOV.</span>
+<span class="sd">        tangent_x: Tangent of half-horizontal FOV.</span>
 <span class="sd">        factor_y: Precomputed vertical factor used for bounds checks.</span>
 <span class="sd">        factor_x: Precomputed horizontal factor used for bounds checks.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The `out_mask` array with booleans indicating visibility for each center.</span>
 <span class="sd">    """</span>
-    <span class="c1"># Total number of chunks we need to evaluate in parallel</span>
+    <span class="c1"># Variable assignments</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk_centers</span><span class="p">)</span>
 
-    <span class="c1"># Extract the camera's world-space position into scalar variables for fast parallel access</span>
-    <span class="n">cpx</span><span class="p">,</span> <span class="n">cpy</span><span class="p">,</span> <span class="n">cpz</span> <span class="o">=</span> <span class="n">cam_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cam_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cam_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-    <span class="c1"># Extract the camera's forward-pointing normal vector</span>
-    <span class="n">cfx</span><span class="p">,</span> <span class="n">cfy</span><span class="p">,</span> <span class="n">cfz</span> <span class="o">=</span> <span class="n">cam_forward</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cam_forward</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cam_forward</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-    <span class="c1"># Extract the camera's right-pointing normal vector</span>
-    <span class="n">crx</span><span class="p">,</span> <span class="n">cry</span><span class="p">,</span> <span class="n">crz</span> <span class="o">=</span> <span class="n">cam_right</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cam_right</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cam_right</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-    <span class="c1"># Extract the camera's up-pointing normal vector</span>
-    <span class="n">cux</span><span class="p">,</span> <span class="n">cuy</span><span class="p">,</span> <span class="n">cuz</span> <span class="o">=</span> <span class="n">cam_up</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cam_up</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cam_up</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">cpx</span><span class="p">,</span> <span class="n">cpy</span><span class="p">,</span> <span class="n">cpz</span> <span class="o">=</span> <span class="n">camera_position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">camera_position</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">camera_position</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">cfx</span><span class="p">,</span> <span class="n">cfy</span><span class="p">,</span> <span class="n">cfz</span> <span class="o">=</span> <span class="n">camera_forward</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">camera_forward</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">camera_forward</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">crx</span><span class="p">,</span> <span class="n">cry</span><span class="p">,</span> <span class="n">crz</span> <span class="o">=</span> <span class="n">camera_right</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">camera_right</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">camera_right</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">cux</span><span class="p">,</span> <span class="n">cuy</span><span class="p">,</span> <span class="n">cuz</span> <span class="o">=</span> <span class="n">camera_up</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">camera_up</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">camera_up</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 
-    <span class="c1"># Precalculate the squared radius of the chunk bounding sphere.</span>
-    <span class="c1"># Multiplying by 1.2 adds a 20% margin of error to prevent popping artifacts at the edge of the screen.</span>
     <span class="n">radius_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
-    <span class="c1"># Loop over all chunk centers using Numba's prange for multithreading</span>
+    <span class="c1"># Loop processing</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-        <span class="c1"># Calculate the direction vector from the camera to the chunk center (sphere center)</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">svx</span> <span class="o">=</span> <span class="n">chunk_centers</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">cpx</span>
         <span class="n">svy</span> <span class="o">=</span> <span class="n">chunk_centers</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">cpy</span>
         <span class="n">svz</span> <span class="o">=</span> <span class="n">chunk_centers</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">cpz</span>
 
-        <span class="c1"># Calculate the squared distance (magnitude squared) from the camera to the chunk</span>
         <span class="n">dist_sq</span> <span class="o">=</span> <span class="n">svx</span> <span class="o">*</span> <span class="n">svx</span> <span class="o">+</span> <span class="n">svy</span> <span class="o">*</span> <span class="n">svy</span> <span class="o">+</span> <span class="n">svz</span> <span class="o">*</span> <span class="n">svz</span>
-        <span class="c1"># If the chunk is so close to the camera that it lies within its bounding sphere radius,</span>
-        <span class="c1"># it is trivially visible and we can skip the plane checks entirely</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="n">dist_sq</span> <span class="o">&lt;</span> <span class="n">radius_sq</span><span class="p">:</span>
+            <span class="c1"># Variable assignments</span>
             <span class="n">out_mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Loop control</span>
             <span class="k">continue</span>
 
-        <span class="c1"># Project the sphere vector onto the camera's forward vector using the dot product.</span>
-        <span class="c1"># This gives us the scalar depth of the chunk relative to the camera's facing direction.</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">sz</span> <span class="o">=</span> <span class="n">svx</span> <span class="o">*</span> <span class="n">cfx</span> <span class="o">+</span> <span class="n">svy</span> <span class="o">*</span> <span class="n">cfy</span> <span class="o">+</span> <span class="n">svz</span> <span class="o">*</span> <span class="n">cfz</span>
-        <span class="c1"># Check against the near and far planes of the frustum.</span>
-        <span class="c1"># If the chunk's depth minus its radius is farther than the FAR plane,</span>
-        <span class="c1"># or its depth plus its radius is closer than the NEAR plane, it's outside.</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">NEAR</span> <span class="o">-</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">&lt;=</span> <span class="n">sz</span> <span class="o">&lt;=</span> <span class="n">FAR</span> <span class="o">+</span> <span class="n">CHUNK_SPHERE_RADIUS</span><span class="p">):</span>
+            <span class="c1"># Variable assignments</span>
             <span class="n">out_mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># Loop control</span>
             <span class="k">continue</span>
 
-        <span class="c1"># Clamp the depth to 0.0 to prevent inverted frustum culling when chunks are behind the camera</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">sz</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">sz</span><span class="p">)</span>
 
-        <span class="c1"># Project the sphere vector onto the camera's up vector (dot product) to get its local Y position</span>
         <span class="n">sy</span> <span class="o">=</span> <span class="n">svx</span> <span class="o">*</span> <span class="n">cux</span> <span class="o">+</span> <span class="n">svy</span> <span class="o">*</span> <span class="n">cuy</span> <span class="o">+</span> <span class="n">svz</span> <span class="o">*</span> <span class="n">cuz</span>
-        <span class="c1"># Calculate the half-height of the frustum at the chunk's depth (sz * tan_y).</span>
-        <span class="c1"># We add the bounding sphere radius (scaled by factor_y) to expand the top/bottom planes.</span>
-        <span class="n">dist_y</span> <span class="o">=</span> <span class="n">factor_y</span> <span class="o">*</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="n">tan_y</span>
-        <span class="c1"># Check if the chunk's local Y position falls outside the expanded top or bottom planes</span>
+        <span class="n">dist_y</span> <span class="o">=</span> <span class="n">factor_y</span> <span class="o">*</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="n">tangent_y</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="n">dist_y</span> <span class="o">&lt;=</span> <span class="n">sy</span> <span class="o">&lt;=</span> <span class="n">dist_y</span><span class="p">):</span>
+            <span class="c1"># Variable assignments</span>
             <span class="n">out_mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># Loop control</span>
             <span class="k">continue</span>
 
-        <span class="c1"># Project the sphere vector onto the camera's right vector (dot product) to get its local X position</span>
+        <span class="c1"># Variable assignments</span>
         <span class="n">sx</span> <span class="o">=</span> <span class="n">svx</span> <span class="o">*</span> <span class="n">crx</span> <span class="o">+</span> <span class="n">svy</span> <span class="o">*</span> <span class="n">cry</span> <span class="o">+</span> <span class="n">svz</span> <span class="o">*</span> <span class="n">crz</span>
-        <span class="c1"># Calculate the half-width of the frustum at the chunk's depth (sz * tan_x).</span>
-        <span class="c1"># We add the bounding sphere radius (scaled by factor_x) to expand the left/right planes.</span>
-        <span class="n">dist_x</span> <span class="o">=</span> <span class="n">factor_x</span> <span class="o">*</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="n">tan_x</span>
-        <span class="c1"># Check if the chunk's local X position falls outside the expanded left or right planes</span>
+        <span class="n">dist_x</span> <span class="o">=</span> <span class="n">factor_x</span> <span class="o">*</span> <span class="n">CHUNK_SPHERE_RADIUS</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="n">tangent_x</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="n">dist_x</span> <span class="o">&lt;=</span> <span class="n">sx</span> <span class="o">&lt;=</span> <span class="n">dist_x</span><span class="p">):</span>
+            <span class="c1"># Variable assignments</span>
             <span class="n">out_mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># Loop control</span>
             <span class="k">continue</span>
 
+        <span class="c1"># Variable assignments</span>
         <span class="n">out_mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
+    <span class="c1"># Return result</span>
     <span class="k">return</span> <span class="n">out_mask</span></div>
 
 </pre></div>

@@ -1027,14 +1027,21 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Initializes the scene components, including the terrain world,</span>
 <span class="sd">        environment decorations (clouds/sky), 3D item entities, and HUD interfaces.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">World</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">save_name</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">render_loading_screen</span><span class="p">(</span><span class="s1">'INITIALIZING MARKERS...'</span><span class="p">)</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_marker</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VoxelMarker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">voxel_handler</span><span class="p">)</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">render_loading_screen</span><span class="p">(</span><span class="s1">'INITIALIZING ENVIRONMENT...'</span><span class="p">)</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clouds</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Clouds</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sky</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Sky</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">render_loading_screen</span><span class="p">(</span><span class="s1">'INITIALIZING UI...'</span><span class="p">)</span>
+        <span class="c1"># Variable assignments</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">crosshair</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Crosshair</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Hotbar</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inventory_ui</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">InventoryUI</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
@@ -1042,8 +1049,9 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_manager</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">ItemManager</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">debug_overlay</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">DebugOverlay</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
 
-        <span class="c1"># Restore saved dropped items from the database</span>
+        <span class="c1"># Loop processing</span>
         <span class="k">for</span> <span class="n">item_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">saved_dropped_items</span><span class="p">:</span>
+            <span class="c1"># Execute expressions</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">item_manager</span><span class="o">.</span><span class="n">load_item</span><span class="p">(</span><span class="o">*</span><span class="n">item_data</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Scene.update">
@@ -1054,6 +1062,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Ticks the overarching logic of the scene, progressing the world state,</span>
 <span class="sd">        updating environmental visuals, and tracking physics for active items.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_marker</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clouds</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
@@ -1068,62 +1077,53 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Executes the multi-pass rendering pipeline.</span>
 <span class="sd">        Draws the skybox, opaque chunks, entities, transparent layers (water/clouds), and UI.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">wireframe</span><span class="p">:</span>
+            <span class="c1"># Variable assignments</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">wireframe</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="c1"># Skybox pass</span>
-        <span class="c1"># The skybox is drawn first without any depth testing constraints.</span>
-        <span class="c1"># It sits firmly in the background at the maximum depth of 1.0.</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sky</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
-        <span class="c1"># Opaque Solid Pass</span>
-        <span class="c1"># We explicitly ENABLE face culling (CULL_FACE).</span>
-        <span class="c1"># This tells OpenGL to throw away any triangles facing away from the camera.</span>
-        <span class="c1"># If we are looking at the outside of a cube, the 3 back faces are instantly culled</span>
-        <span class="c1"># mathematically before rasterization, saving 50% of our fragment shader cost!</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">CULL_FACE</span><span class="p">)</span>
 
-        <span class="c1"># Draw all opaque chunks and entities. These will write to the depth buffer.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_manager</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
-        <span class="c1"># Transparent Cloud Pass</span>
-        <span class="c1"># We explicitly DISABLE face culling here.</span>
-        <span class="c1"># Clouds are mathematically 2D planes hovering in the sky. If we culled back-faces, </span>
-        <span class="c1"># the clouds would suddenly turn completely invisible if we flew above them and looked down!</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">CULL_FACE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clouds</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
-        <span class="c1"># Transparent Water Pass</span>
-        <span class="c1"># We RE-ENABLE face culling for water. </span>
-        <span class="c1"># Water blocks are full 3D cubes. If we didn't cull back-faces, the semi-transparent </span>
-        <span class="c1"># blending equation would draw the bottom of the water block *through* the top surface, </span>
-        <span class="c1"># making it look like a weird double-layered box instead of a solid volume of liquid.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">CULL_FACE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">render_water</span><span class="p">()</span>
 
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">wireframe</span><span class="p">:</span>
+            <span class="c1"># Variable assignments</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">wireframe</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="c1"># Voxel Selection Marker (Draws over everything else)</span>
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_marker</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
-        <span class="c1"># View Model (Held Block)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">held_block</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
-        <span class="c1"># UI rendering (disable depth testing so it draws over everything)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span>
 
+        <span class="c1"># Conditional logic</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">'IN_GAME'</span><span class="p">:</span>
+            <span class="c1"># Execute expressions</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">crosshair</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
+        <span class="c1"># Conditional logic</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">==</span> <span class="s1">'INVENTORY'</span><span class="p">:</span>
+            <span class="c1"># Execute expressions</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">inventory_ui</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s1">'show_debug'</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="c1"># Execute expressions</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">debug_overlay</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
+        <span class="c1"># Execute expressions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">DEPTH_TEST</span><span class="p">)</span></div>
 </div>
 

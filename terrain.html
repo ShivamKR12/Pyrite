@@ -553,7 +553,7 @@
              
   <section id="terrain-systems-and-procedural-generation-breakdown">
 <span id="terrain"></span><h1>Terrain Systems and Procedural Generation Breakdown<a class="headerlink" href="#terrain-systems-and-procedural-generation-breakdown" title="Link to this heading"></a></h1>
-<p>This document provides detailed explanations of Pyrite’s procedural terrain generation, including deterministic seeding, biome selection, height mapping (FBm), cave carving, and structural tree placement. All core terrain logic is located in <code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> and <code class="docutils literal notranslate"><span class="pre">src/noise.py</span></code>.</p>
+<p>This document provides detailed explanations of Pyrite’s procedural terrain generation, including deterministic seeding, biome selection, height mapping (FBm), cave carving, and structural tree placement. All core terrain logic is located in <code class="docutils literal notranslate"><span class="pre">src/terrain_gen.position_y</span></code> and <code class="docutils literal notranslate"><span class="pre">src/noise.position_y</span></code>.</p>
 <section id="architecture-overview">
 <h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading"></a></h2>
 <p>Pyrite utilizes a heavily parallelized, lock-free approach to generate infinite terrain:</p>
@@ -567,7 +567,7 @@
 </section>
 <section id="noise-foundation-deterministic-generation">
 <h2>Noise Foundation (Deterministic Generation)<a class="headerlink" href="#noise-foundation-deterministic-generation" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/noise.py</span></code> - Noise &amp; Seeding Engine</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/noise.position_y</span></code> - Noise &amp; Seeding Engine</p>
 <p>Purpose: Manage global permutation arrays, synchronize RNG, and ensure 100% deterministic world generation.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">set_seed</span><span class="p">(</span><span class="n">new_seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </pre></div>
@@ -589,7 +589,7 @@
 <ul class="simple">
 <li><p><strong>RNG Synchronization:</strong> Because performance-critical loops are compiled with Numba, we must explicitly seed Numba’s internal RNG (<code class="docutils literal notranslate"><span class="pre">_seed_numba</span></code>) as well as standard Python random modules. This ensures functions like random chance for tree placement are identical on every launch.</p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Numba JIT Compilation</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.position_y</span></code> - Numba JIT Compilation</p>
 <p>Purpose: Execute complex noise math at near-C++ speeds using LLVM.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
@@ -600,7 +600,7 @@
 </section>
 <section id="biome-selection-algorithm">
 <h2>Biome Selection Algorithm<a class="headerlink" href="#biome-selection-algorithm" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Biome Evaluation</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.position_y</span></code> - Biome Evaluation</p>
 <p>Purpose: Determine temperature and moisture to map out expansive biomes like deserts, snow, and forests.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">temp</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.002</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.002</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
 </pre></div>
@@ -614,7 +614,7 @@
 <ul class="simple">
 <li><p><strong>Moisture Calculation:</strong> Moisture is evaluated using the exact same massive scale but is offset by <code class="docutils literal notranslate"><span class="pre">100.0</span></code>. This ensures its noise map doesn’t identically overlap with the temperature map, creating diverse intersections (hot/dry, hot/wet, cold/dry, etc.).</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dither</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">wx</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">wz</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.05</span> <span class="o">+</span> <span class="n">noise2</span><span class="p">(</span><span class="n">wx</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">wz</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.03</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dither</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">world_x</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.05</span> <span class="o">+</span> <span class="n">noise2</span><span class="p">(</span><span class="n">world_x</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.03</span>
 <span class="n">temp</span> <span class="o">+=</span> <span class="n">dither</span>
 <span class="n">moist</span> <span class="o">+=</span> <span class="n">dither</span>
 </pre></div>
@@ -632,7 +632,7 @@
 </section>
 <section id="height-generation-algorithm">
 <h2>Height Generation Algorithm<a class="headerlink" href="#height-generation-algorithm" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Height Evaluation</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.position_y</span></code> - Height Evaluation</p>
 <p>Purpose: Utilize Fractional Brownian Motion (FBm) combined with continental modifiers to sculpt oceans, plains, and mountains.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cont</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mf">0.003</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">z</span> <span class="o">*</span> <span class="mf">0.003</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
 </pre></div>
@@ -667,15 +667,15 @@
 </section>
 <section id="cave-carving-algorithm-3d">
 <h2>Cave Carving Algorithm (3D)<a class="headerlink" href="#cave-carving-algorithm-3d" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Volumetric Cave Carving</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.position_y</span></code> - Volumetric Cave Carving</p>
 <p>Purpose: Hollow out complex underground cave systems using 3D noise while preventing unnatural surface craters.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cave_noise</span> <span class="o">=</span> <span class="n">noise3</span><span class="p">(</span><span class="n">wx</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">wy</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">wz</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cave_noise</span> <span class="o">=</span> <span class="n">noise3</span><span class="p">(</span><span class="n">world_x</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">world_y</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">*</span> <span class="mf">0.09</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">,</span> <span class="n">perm_grad_array</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong>Volumetric Carving:</strong> For every solid block beneath the crust, we evaluate 3D Simplex noise using the exact <code class="docutils literal notranslate"><span class="pre">wx,</span> <span class="pre">wy,</span> <span class="pre">wz</span></code> world coordinates.</p></li>
+<li><p><strong>Volumetric Carving:</strong> For every solid block beneath the crust, we evaluate 3D Simplex noise using the exact <code class="docutils literal notranslate"><span class="pre">world_x,</span> <span class="pre">world_y,</span> <span class="pre">world_z</span></code> world coordinates.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">entrance_mask</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">wx</span> <span class="o">*</span> <span class="mf">0.02</span> <span class="o">+</span> <span class="mf">200.0</span><span class="p">,</span> <span class="n">wz</span> <span class="o">*</span> <span class="mf">0.02</span> <span class="o">+</span> <span class="mf">200.0</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">entrance_mask</span> <span class="o">=</span> <span class="n">noise2</span><span class="p">(</span><span class="n">world_x</span> <span class="o">*</span> <span class="mf">0.02</span> <span class="o">+</span> <span class="mf">200.0</span><span class="p">,</span> <span class="n">world_z</span> <span class="o">*</span> <span class="mf">0.02</span> <span class="o">+</span> <span class="mf">200.0</span><span class="p">,</span> <span class="n">perm_array</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -700,9 +700,9 @@
 </section>
 <section id="tree-placement-and-structure">
 <h2>Tree Placement and Structure<a class="headerlink" href="#tree-placement-and-structure" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.py</span></code> - Flora Generation</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/terrain_gen.position_y</span></code> - Flora Generation</p>
 <p>Purpose: Probabilistically spawn and construct multi-block tree structures within chunk memory bounds.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">wy</span> <span class="o">==</span> <span class="n">world_height</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">surface_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_underwater</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_beach</span> <span class="ow">and</span> <span class="n">wy</span> <span class="o">&lt;</span> <span class="n">STONE_LVL</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">world_y</span> <span class="o">==</span> <span class="n">world_height</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">voxel_id</span> <span class="o">==</span> <span class="n">surface_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_underwater</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_beach</span> <span class="ow">and</span> <span class="n">world_y</span> <span class="o">&lt;</span> <span class="n">STONE_LVL</span><span class="p">:</span>
 </pre></div>
 </div>
 <ul class="simple">

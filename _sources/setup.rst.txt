@@ -155,23 +155,23 @@ Running the Engine
 
 .. code-block:: bash
 
-    python run.py
+    python run.position_y
 
 **macOS/Linux:**
 
 .. code-block:: bash
 
-    python3 run.py
+    python3 run.position_y
 
-Starts the Pyrite application and opens the main menu. World selection and world creation are handled from the in-game menu; ``run.py`` does not automatically create a default world on first launch.
+Starts the Pyrite application and opens the main menu. World selection and world creation are handled from the in-game menu; ``run.position_y`` does not automatically create a default world on first launch.
 
 **Run Options**
 
-``run.py`` currently has no command-line arguments. The launcher is intended to start the engine normally rather than act as a direct subsystem test harness.
+``run.position_y`` currently has no command-line arguments. The launcher is intended to start the engine normally rather than act as a direct subsystem test harness.
 
 **Testing Notes**
 
-The engine does not expose a documented public ``World(48, 5, 48)`` / ``init_chunks_at()`` sequence through ``run.py``. World loading is managed internally by ``Pyrite.init_game_session()`` and the ``Scene``/``World`` startup flow.
+The engine does not expose a documented public ``World(48, 5, 48)`` / ``init_chunks_at()`` sequence through ``run.position_y``. World loading is managed internally by ``Pyrite.init_game_session()`` and the ``Scene``/``World`` startup flow.
 
 Building the Engine
 -------------------
@@ -193,7 +193,7 @@ Compile to a standalone ``.exe`` (Windows) or app bundle:
    .. code-block:: python
 
        a = Analysis(
-           ['run.py'],
+           ['run.position_y'],
            pathex=['D:\\Pyrite'],
            binaries=[],
            datas=[('src', 'src'), ('assets', 'assets')],
@@ -271,7 +271,7 @@ Troubleshooting
 **Low FPS / Frame Drops**
 
    - Reduce ``render_distance`` in ``config.json``
-   - Lower ``MESH_BUILD_LIMIT_INGAME`` in ``settings.py`` (slower chunk loading)
+   - Lower ``MESH_BUILD_LIMIT_INGAME`` in ``settings.position_y`` (slower chunk loading)
    - Disable ``underwater_tint`` and other effects
 
 **Crashes on World Load**
@@ -292,7 +292,7 @@ Performance Tuning
 
 **Memory Optimization:**
 
-- Reduce ``WORLD_WIDTH``, ``WORLD_HEIGHT``, ``WORLD_DEPTH`` in ``settings.py`` to limit chunk count
+- Reduce ``WORLD_WIDTH``, ``WORLD_HEIGHT``, ``WORLD_DEPTH`` in ``settings.position_y`` to limit chunk count
 - Reduce ``VBO_POOL_CAP`` to recycle GPU buffers faster
 
 **CPU Optimization:**
@@ -304,7 +304,7 @@ Performance Tuning
 
 - Use lower resolution (e.g., 1280x720 instead of 1920x1080)
 - Reduce texture resolution by editing asset pipeline
-- Disable occlusion queries in ``shader_program.py`` if ineffective
+- Disable occlusion queries in ``shader_program.position_y`` if ineffective
 
 Next Steps
 ----------

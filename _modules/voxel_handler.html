@@ -1033,10 +1033,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Args:</span>
 <span class="sd">            world: The world object that owns this handler (provides app, chunks, etc.).</span>
 <span class="sd">        """</span>
+        <span class="c1"># World references</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">chunks</span>
 
-        <span class="c1"># ray casting result</span>
+        <span class="c1"># Ray casting result state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chunk</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1044,7 +1045,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_normal</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Keep for voxel_marker compatibility, permanently set to 0 for standard Minecraft highlighting</span>
+        <span class="c1"># Interaction settings</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interaction_mode</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="VoxelHandler.add_voxel">
@@ -1057,72 +1058,68 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        and queues adjacent chunks for remeshing.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span>
+            <span class="c1"># Check selected item</span>
             <span class="n">current_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">]</span>
-
             <span class="k">if</span> <span class="n">current_id</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">current_id</span> <span class="ow">in</span> <span class="n">NON_PLACEABLE</span><span class="p">:</span>
-                <span class="k">return</span>  <span class="c1"># Can't place empty air</span>
+                <span class="k">return</span>
 
-            <span class="c1"># check voxel id along normal</span>
+            <span class="c1"># Check placement target validity</span>
             <span class="n">new_voxel_pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_normal</span>
             <span class="n">result</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_voxel_id</span><span class="p">(</span><span class="n">new_voxel_pos</span><span class="p">)</span>
 
-            <span class="c1"># is the new place empty?</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-                <span class="c1"># prevent placing blocks inside the player</span>
-                <span class="n">player_min</span><span class="p">:</span> <span class="n">Any</span>
-                <span class="n">player_max</span><span class="p">:</span> <span class="n">Any</span>
+                <span class="c1"># Verify player intersection bounds</span>
                 <span class="n">player_min</span><span class="p">,</span> <span class="n">player_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">get_aabb</span><span class="p">()</span>
                 <span class="n">voxel_min</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">new_voxel_pos</span><span class="p">)</span>
                 <span class="n">voxel_max</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">voxel_min</span> <span class="o">+</span> <span class="mf">1.0</span>
-
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">aabb_intersect</span><span class="p">(</span><span class="n">player_min</span><span class="p">,</span> <span class="n">player_max</span><span class="p">,</span> <span class="n">voxel_min</span><span class="p">,</span> <span class="n">voxel_max</span><span class="p">):</span>
                     <span class="k">return</span>
 
+                <span class="c1"># Apply block to chunk</span>
                 <span class="n">voxel_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                 <span class="n">chunk</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
                 <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="p">[</span><span class="n">voxel_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_id</span>
+                <span class="n">world_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">new_voxel_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">world_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">new_voxel_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">world_z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">new_voxel_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
 
-                <span class="n">wx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">new_voxel_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
-                <span class="n">wy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">new_voxel_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-                <span class="n">wz</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">new_voxel_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
-
+                <span class="c1"># Dispatch async lighting and mesh updates</span>
                 <span class="k">def</span><span class="w"> </span><span class="nf">async_add_voxel</span><span class="p">(</span>
-                    <span class="n">wx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">wz</span><span class="p">,</span> <span class="n">cid</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">current_id</span><span class="p">,</span> <span class="n">ch</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">chunk</span>
+                    <span class="n">world_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">world_x</span><span class="p">,</span>
+                    <span class="n">world_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">world_y</span><span class="p">,</span>
+                    <span class="n">world_z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">world_z</span><span class="p">,</span>
+                    <span class="n">cid</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">current_id</span><span class="p">,</span>
+                    <span class="n">ch</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">chunk</span><span class="p">,</span>
                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">update_light_place_block</span><span class="p">(</span>
-                        <span class="nb">int</span><span class="p">(</span><span class="n">wx</span><span class="p">),</span>
-                        <span class="nb">int</span><span class="p">(</span><span class="n">wy</span><span class="p">),</span>
-                        <span class="nb">int</span><span class="p">(</span><span class="n">wz</span><span class="p">),</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">world_x</span><span class="p">),</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">world_y</span><span class="p">),</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">world_z</span><span class="p">),</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">lightmaps</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="k">if</span> <span class="n">cid</span> <span class="o">==</span> <span class="n">GLOWSTONE</span><span class="p">:</span>
                         <span class="n">place_torch</span><span class="p">(</span>
-                            <span class="nb">int</span><span class="p">(</span><span class="n">wx</span><span class="p">),</span>
-                            <span class="nb">int</span><span class="p">(</span><span class="n">wy</span><span class="p">),</span>
-                            <span class="nb">int</span><span class="p">(</span><span class="n">wz</span><span class="p">),</span>
+                            <span class="nb">int</span><span class="p">(</span><span class="n">world_x</span><span class="p">),</span>
+                            <span class="nb">int</span><span class="p">(</span><span class="n">world_y</span><span class="p">),</span>
+                            <span class="nb">int</span><span class="p">(</span><span class="n">world_z</span><span class="p">),</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">lightmaps</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">chunk_positions</span><span class="p">,</span>
                         <span class="p">)</span>
-
                     <span class="k">if</span> <span class="n">ch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">build_queue</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">build_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">rebuild_adjacent_chunks</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">is_light_update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rebuild_adjacent_chunks</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">),</span> <span class="n">is_light_update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">async_add_voxel</span><span class="p">)</span>
 
+                <span class="c1"># Process interaction effects</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">play_place</span><span class="p">(</span><span class="n">current_id</span><span class="p">)</span>
-
-                <span class="c1"># Consume item from hotbar if in Survival mode</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">game_mode</span> <span class="o">==</span> <span class="n">SURVIVAL</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
-
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory_counts</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-
-                <span class="c1"># was it an empty chunk</span>
                 <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">is_empty</span><span class="p">:</span>
                     <span class="n">chunk</span><span class="o">.</span><span class="n">is_empty</span> <span class="o">=</span> <span class="kc">False</span></div>
 
@@ -1136,35 +1133,30 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        modification occurs near a chunk border, or if it creates a large lighting</span>
 <span class="sd">        update requiring neighbors to recalculate their block/sunlight visuals.</span>
 <span class="sd">        """</span>
-        <span class="n">wx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">wy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-        <span class="n">wz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
-        <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">wx</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-        <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">wy</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-        <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">wz</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-
-        <span class="c1"># Light updates (breaking a block, placing a light source) can travel up to 15 blocks</span>
+        <span class="c1"># Calculate update radii and bounds</span>
+        <span class="n">world_x</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">world_y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">world_z</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">chunk_x</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">world_x</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">chunk_y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">world_y</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">chunk_z</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">world_z</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
         <span class="n">radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span> <span class="k">if</span> <span class="n">is_light_update</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="n">min_cx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">world_x</span> <span class="o">-</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">max_cx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">world_x</span> <span class="o">+</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">min_cz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">world_z</span> <span class="o">-</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">max_cz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">world_z</span> <span class="o">+</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">min_cy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">is_light_update</span> <span class="k">else</span> <span class="p">(</span><span class="n">world_y</span> <span class="o">-</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
+        <span class="n">max_cy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">world_y</span> <span class="o">+</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
 
-        <span class="n">min_cx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">wx</span> <span class="o">-</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-        <span class="n">max_cx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">wx</span> <span class="o">+</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-        <span class="n">min_cz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">wz</span> <span class="o">-</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-        <span class="n">max_cz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">wz</span> <span class="o">+</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-
-        <span class="c1"># Sunlight casts shadows all the way down, so update everything below!</span>
-        <span class="n">min_cy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">is_light_update</span> <span class="k">else</span> <span class="p">(</span><span class="n">wy</span> <span class="o">-</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-        <span class="n">max_cy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="n">wy</span> <span class="o">+</span> <span class="n">radius</span><span class="p">)</span> <span class="o">//</span> <span class="n">CHUNK_SIZE</span>
-
+        <span class="c1"># Queue chunks in range</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_cx</span><span class="p">,</span> <span class="n">max_cx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_cy</span><span class="p">,</span> <span class="n">max_cy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_cz</span><span class="p">,</span> <span class="n">max_cz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">cx</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">==</span> <span class="n">cy</span> <span class="ow">and</span> <span class="n">z</span> <span class="o">==</span> <span class="n">cz</span><span class="p">:</span>
-                        <span class="k">continue</span>  <span class="c1"># Main chunk is already in the build queue</span>
-
+                    <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">chunk_x</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">==</span> <span class="n">chunk_y</span> <span class="ow">and</span> <span class="n">z</span> <span class="o">==</span> <span class="n">chunk_z</span><span class="p">:</span>
+                        <span class="k">continue</span>
                     <span class="n">chunk_pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">chunk_pos</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">:</span>
                         <span class="n">chunk</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">[</span><span class="n">chunk_pos</span><span class="p">]</span>
-
                         <span class="k">if</span> <span class="n">chunk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">build_queue</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">build_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span></div>
 
@@ -1179,48 +1171,49 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        and queues chunks for remeshing.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">:</span>
-            <span class="n">wx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
-            <span class="n">wy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-            <span class="n">wz</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
-
+            <span class="c1"># Clear targeted block</span>
+            <span class="n">world_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">world_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">world_z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_index</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
+            <span class="c1"># Dispatch async lighting and mesh updates</span>
             <span class="k">def</span><span class="w"> </span><span class="nf">async_remove_voxel</span><span class="p">(</span>
-                <span class="n">wx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">wz</span><span class="p">,</span> <span class="n">vid</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">,</span> <span class="n">ch</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk</span>
+                <span class="n">world_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">world_x</span><span class="p">,</span>
+                <span class="n">world_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">world_y</span><span class="p">,</span>
+                <span class="n">world_z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">world_z</span><span class="p">,</span>
+                <span class="n">vid</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">,</span>
+                <span class="n">ch</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk</span><span class="p">,</span>
             <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">vid</span> <span class="o">==</span> <span class="n">GLOWSTONE</span><span class="p">:</span>
                     <span class="n">update_light_place_block</span><span class="p">(</span>
-                        <span class="nb">int</span><span class="p">(</span><span class="n">wx</span><span class="p">),</span>
-                        <span class="nb">int</span><span class="p">(</span><span class="n">wy</span><span class="p">),</span>
-                        <span class="nb">int</span><span class="p">(</span><span class="n">wz</span><span class="p">),</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">world_x</span><span class="p">),</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">world_y</span><span class="p">),</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">world_z</span><span class="p">),</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">lightmaps</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">chunk_positions</span><span class="p">,</span>
                     <span class="p">)</span>
-
                 <span class="n">update_light_remove_block</span><span class="p">(</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="n">wx</span><span class="p">),</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="n">wy</span><span class="p">),</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="n">wz</span><span class="p">),</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">world_x</span><span class="p">),</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">world_y</span><span class="p">),</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">world_z</span><span class="p">),</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">lightmaps</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">chunk_positions</span><span class="p">,</span>
                 <span class="p">)</span>
-
                 <span class="k">if</span> <span class="n">ch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">build_queue</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">build_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">rebuild_adjacent_chunks</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span><span class="p">),</span> <span class="n">is_light_update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rebuild_adjacent_chunks</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">vec3</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">,</span> <span class="n">world_z</span><span class="p">),</span> <span class="n">is_light_update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">async_remove_voxel</span><span class="p">)</span>
 
+            <span class="c1"># Process interaction effects</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">play_break</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">)</span>
-
-            <span class="c1"># Spawn dropped item only in Survival mode</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">game_mode</span> <span class="o">==</span> <span class="n">SURVIVAL</span><span class="p">:</span>
                 <span class="n">held_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">inventory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">hotbar_index</span><span class="p">]</span>
-
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span> <span class="o">==</span> <span class="n">STONE</span> <span class="ow">and</span> <span class="n">held_id</span> <span class="o">!=</span> <span class="n">WOODEN_PICKAXE</span><span class="p">:</span>
-                    <span class="k">pass</span>  <span class="c1"># Break but drop nothing!</span>
+                    <span class="k">pass</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">item_manager</span><span class="o">.</span><span class="n">add_item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span><span class="p">)</span></div>
 
@@ -1232,9 +1225,9 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Wrapper to call either add_voxel or remove_voxel based on the mode.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Execute voxel action</span>
         <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">'add'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_voxel</span><span class="p">()</span>
-
         <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">'remove'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remove_voxel</span><span class="p">()</span></div>
 
@@ -1249,6 +1242,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        This should be called from the main update loop to refresh the</span>
 <span class="sd">        targeted voxel based on the player's view.</span>
 <span class="sd">        """</span>
+        <span class="c1"># Execute frame interaction</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ray_cast</span><span class="p">()</span></div>
 
 
@@ -1281,92 +1275,59 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        a fast voxel traversal algorithm. Determines the exact targeted voxel and</span>
 <span class="sd">        its normal face.</span>
 <span class="sd">        """</span>
-        <span class="c1"># start point</span>
-        <span class="n">x1</span><span class="p">:</span> <span class="nb">float</span>
-        <span class="n">y1</span><span class="p">:</span> <span class="nb">float</span>
-        <span class="n">z1</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="c1"># Define ray boundaries</span>
         <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span>
-        <span class="c1"># end point</span>
-        <span class="n">x2</span><span class="p">:</span> <span class="nb">float</span>
-        <span class="n">y2</span><span class="p">:</span> <span class="nb">float</span>
-        <span class="n">z2</span><span class="p">:</span> <span class="nb">float</span>
         <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">position</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="n">MAX_RAY_DISTANCE</span>
-
         <span class="n">current_voxel_pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">voxel_normal</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">step_dir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="c1"># DDA INITIALIZATION (X-AXIS)</span>
-        <span class="c1"># 1. `dx`: Direction of the ray on the X axis. `glm.sign(x2 - x1)`</span>
-        <span class="c1">#    returns exactly 1.0 if the ray is pointing positive (Right), or -1.0</span>
-        <span class="c1">#    if pointing negative (Left). If the ray is perfectly straight, it returns 0.</span>
+        <span class="c1"># Initialize DDA variables</span>
         <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">))</span>
-
-        <span class="c1"># 2. `delta_x`: The total distance the ray must travel along its path to</span>
-        <span class="c1">#    move exactly 1.0 unit on the X grid.</span>
-        <span class="c1">#    We calculate this by dividing the sign (dx) by the absolute delta (x2 - x1).</span>
-        <span class="c1">#    If dx is 0, we cap it at 10,000,000 to prevent a Divide-By-Zero crash (infinity).</span>
         <span class="n">delta_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">),</span> <span class="mf">10000000.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">dx</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">10000000.0</span>
-
-        <span class="c1"># 3. `max_x`: The total distance the ray must travel from its CURRENT starting</span>
-        <span class="c1">#    position to hit the VERY FIRST vertical grid line on the X axis.</span>
-        <span class="c1">#    - `glm.fract(x1)` gives the decimal part of the player's position inside the block.</span>
-        <span class="c1">#    - If moving positive (dx &gt; 0), we need the distance to the RIGHT edge `(1.0 - fract)`.</span>
-        <span class="c1">#    - If moving negative (dx &lt; 0), we need the distance to the LEFT edge `(fract)`.</span>
         <span class="n">max_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">delta_x</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">x1</span><span class="p">))</span> <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">delta_x</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
-
-        <span class="c1"># DDA INITIALIZATION (Y-AXIS)</span>
-        <span class="c1"># We repeat the exact same trigonometric step-distance math for the Y-axis.</span>
         <span class="n">dy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">))</span>
         <span class="n">delta_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dy</span> <span class="o">/</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">),</span> <span class="mf">10000000.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">dy</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">10000000.0</span>
         <span class="n">max_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">delta_y</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">y1</span><span class="p">))</span> <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">delta_y</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">y1</span><span class="p">)</span>
-
-        <span class="c1"># DDA INITIALIZATION (Z-AXIS)</span>
-        <span class="c1"># We repeat the exact same trigonometric step-distance math for the Z-axis.</span>
         <span class="n">dz</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">z2</span> <span class="o">-</span> <span class="n">z1</span><span class="p">))</span>
         <span class="n">delta_z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dz</span> <span class="o">/</span> <span class="p">(</span><span class="n">z2</span> <span class="o">-</span> <span class="n">z1</span><span class="p">),</span> <span class="mf">10000000.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">dz</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">10000000.0</span>
         <span class="n">max_z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">delta_z</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">z1</span><span class="p">))</span> <span class="k">if</span> <span class="n">dz</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">delta_z</span> <span class="o">*</span> <span class="n">glm</span><span class="o">.</span><span class="n">fract</span><span class="p">(</span><span class="n">z1</span><span class="p">)</span>
 
+        <span class="c1"># Traverse grid</span>
         <span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">max_x</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="ow">and</span> <span class="n">max_y</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="ow">and</span> <span class="n">max_z</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">):</span>
             <span class="n">result</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_voxel_id</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">=</span><span class="n">current_voxel_pos</span><span class="p">)</span>
 
-            <span class="c1"># Ignore water blocks for raycasting so the player can break blocks underwater!</span>
+            <span class="c1"># Check for solid block intersection</span>
             <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">WATER</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">voxel_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">voxel_index</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">voxel_local_pos</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">chunk</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">voxel_world_pos</span> <span class="o">=</span> <span class="n">current_voxel_pos</span>
-
                 <span class="k">if</span> <span class="n">step_dir</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">voxel_normal</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="n">dx</span>
-
                 <span class="k">elif</span> <span class="n">step_dir</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">voxel_normal</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="n">dy</span>
-
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">voxel_normal</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="o">-</span><span class="n">dz</span>
-
                 <span class="k">return</span> <span class="kc">True</span>
 
+            <span class="c1"># Step along shortest distance</span>
             <span class="k">if</span> <span class="n">max_x</span> <span class="o">&lt;</span> <span class="n">max_y</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">max_x</span> <span class="o">&lt;</span> <span class="n">max_z</span><span class="p">:</span>
                     <span class="n">current_voxel_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dx</span><span class="p">)</span>
                     <span class="n">max_x</span> <span class="o">+=</span> <span class="n">delta_x</span>
                     <span class="n">step_dir</span> <span class="o">=</span> <span class="mi">0</span>
-
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">current_voxel_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dz</span><span class="p">)</span>
                     <span class="n">max_z</span> <span class="o">+=</span> <span class="n">delta_z</span>
                     <span class="n">step_dir</span> <span class="o">=</span> <span class="mi">2</span>
-
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">max_y</span> <span class="o">&lt;</span> <span class="n">max_z</span><span class="p">:</span>
                     <span class="n">current_voxel_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dy</span><span class="p">)</span>
                     <span class="n">max_y</span> <span class="o">+=</span> <span class="n">delta_y</span>
                     <span class="n">step_dir</span> <span class="o">=</span> <span class="mi">1</span>
-
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">current_voxel_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dz</span><span class="p">)</span>
                     <span class="n">max_z</span> <span class="o">+=</span> <span class="n">delta_z</span>
@@ -1392,27 +1353,22 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            integer coordinate within the chunk, and `chunk` is the chunk object</span>
 <span class="sd">            containing the voxel (or None if out of loaded range).</span>
 <span class="sd">        """</span>
-        <span class="n">cx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
-        <span class="n">cy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
-        <span class="n">cz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
-        <span class="n">chunk_pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">)</span>
+        <span class="c1"># Determine target chunk</span>
+        <span class="n">chunk_x</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
+        <span class="n">chunk_y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
+        <span class="n">chunk_z</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">glm</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="o">.</span><span class="n">z</span> <span class="o">/</span> <span class="n">CHUNK_SIZE</span><span class="p">))</span>
+        <span class="n">chunk_pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">)</span>
 
+        <span class="c1"># Fetch local voxel data</span>
         <span class="k">if</span> <span class="n">chunk_pos</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">:</span>
             <span class="n">chunk</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">active_chunks</span><span class="p">[</span><span class="n">chunk_pos</span><span class="p">]</span>
-
-            <span class="c1"># Prevent errors if interacting with a chunk that is still loading asynchronously</span>
             <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
-
-            <span class="n">lx</span><span class="p">:</span> <span class="nb">int</span>
-            <span class="n">ly</span><span class="p">:</span> <span class="nb">int</span>
-            <span class="n">lz</span><span class="p">:</span> <span class="nb">int</span>
-            <span class="n">voxel_local_pos</span><span class="p">:</span> <span class="n">Any</span>
-            <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">voxel_local_pos</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="p">)</span> <span class="o">-</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cz</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
-
+            <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">lz</span> <span class="o">=</span> <span class="n">voxel_local_pos</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="n">voxel_world_pos</span><span class="p">)</span> <span class="o">-</span> <span class="n">glm</span><span class="o">.</span><span class="n">ivec3</span><span class="p">(</span><span class="n">chunk_x</span><span class="p">,</span> <span class="n">chunk_y</span><span class="p">,</span> <span class="n">chunk_z</span><span class="p">)</span> <span class="o">*</span> <span class="n">CHUNK_SIZE</span>
+            <span class="p">)</span>
             <span class="n">voxel_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">lx</span> <span class="o">+</span> <span class="n">CHUNK_SIZE</span> <span class="o">*</span> <span class="n">lz</span> <span class="o">+</span> <span class="n">CHUNK_AREA</span> <span class="o">*</span> <span class="n">ly</span>
             <span class="n">voxel_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">voxels</span><span class="p">[</span><span class="n">voxel_index</span><span class="p">]</span>
-
             <span class="k">return</span> <span class="n">voxel_id</span><span class="p">,</span> <span class="n">voxel_index</span><span class="p">,</span> <span class="n">voxel_local_pos</span><span class="p">,</span> <span class="n">chunk</span>
 
         <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>

@@ -30,7 +30,7 @@ UI Architecture Overview
 **Screen Coordinate System:**
 
 - **Normalized Device Coordinates (NDC):** -1 to 1 in both X and Y axes
-- **Calculate screen pos:** `screen_x = (pixel_x / WIN_WIDTH) * 2 - 1`
+- **Calculate screen position:** `screen_x = (pixel_x / WIN_WIDTH) * 2 - 1`
 - **UI shaders use:** `gl_Position = vec4(screen_x, screen_y, 0, 1)` (orthographic projection)
 
 Core UI Component Base Class
@@ -40,7 +40,7 @@ Core UI Component Base Class
 
 .. code-block:: text
 
-    self.position: (float, float) = pos
+    self.position: (float, float) = position
     self.size: (float, float) = size
 
 * **Base Structure:** Every standard sub-component maps basic bounds tracking logically across generalized generic initialization phases.
@@ -101,7 +101,7 @@ Shows FPS, coords, chunk, facing direction, time, target block.
 .. code-block:: python
 
     fps = self.app.clock.get_fps()
-    chunk = (int(pos.x // 48), int(pos.z // 48))
+    chunk = (int(position.x // 48), int(position.z // 48))
 
 * **Data Strings:** Text strings constantly poll dynamic internal matrix queries strictly efficiently formatting debug tracking perfectly visually reliably.
 

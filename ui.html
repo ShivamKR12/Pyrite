@@ -575,14 +575,14 @@
 <p><strong>Screen Coordinate System:</strong></p>
 <ul class="simple">
 <li><p><strong>Normalized Device Coordinates (NDC):</strong> -1 to 1 in both X and Y axes</p></li>
-<li><p><strong>Calculate screen pos:</strong> <cite>screen_x = (pixel_x / WIN_WIDTH) * 2 - 1</cite></p></li>
+<li><p><strong>Calculate screen position:</strong> <cite>screen_x = (pixel_x / WIN_WIDTH) * 2 - 1</cite></p></li>
 <li><p><strong>UI shaders use:</strong> <cite>gl_Position = vec4(screen_x, screen_y, 0, 1)</cite> (orthographic projection)</p></li>
 </ul>
 </section>
 <section id="core-ui-component-base-class">
 <h2>Core UI Component Base Class<a class="headerlink" href="#core-ui-component-base-class" title="Link to this heading"></a></h2>
 <p><strong>UIComponent (Abstract Base)</strong></p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>self.position: (float, float) = pos
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>self.position: (float, float) = position
 self.size: (float, float) = size
 </pre></div>
 </div>
@@ -635,7 +635,7 @@ self.size: (float, float) = size
 <p><strong>4. Debug Overlay (F3)</strong></p>
 <p>Shows FPS, coords, chunk, facing direction, time, target block.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">get_fps</span><span class="p">()</span>
-<span class="n">chunk</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">//</span> <span class="mi">48</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">z</span> <span class="o">//</span> <span class="mi">48</span><span class="p">))</span>
+<span class="n">chunk</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">x</span> <span class="o">//</span> <span class="mi">48</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">z</span> <span class="o">//</span> <span class="mi">48</span><span class="p">))</span>
 </pre></div>
 </div>
 <ul class="simple">

@@ -553,7 +553,7 @@
              
   <section id="telemetry-systems-and-profiling-breakdown">
 <span id="profiling"></span><h1>Telemetry Systems and Profiling Breakdown<a class="headerlink" href="#telemetry-systems-and-profiling-breakdown" title="Link to this heading"></a></h1>
-<p>This document provides detailed explanations of Pyrite’s custom-built, lock-free telemetry engine. The profiler is designed to aggressively track CPU performance across background worker threads without introducing GIL (Global Interpreter Lock) contention. All core profiling logic is located in <code class="docutils literal notranslate"><span class="pre">src/profiler.py</span></code>.</p>
+<p>This document provides detailed explanations of Pyrite’s custom-built, lock-free telemetry engine. The profiler is designed to aggressively track CPU performance across background worker threads without introducing GIL (Global Interpreter Lock) contention. All core profiling logic is located in <code class="docutils literal notranslate"><span class="pre">src/profiler.position_y</span></code>.</p>
 <section id="architecture-overview">
 <h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading"></a></h2>
 <p>Pyrite utilizes a Thread-Local approach to telemetry:</p>
@@ -567,7 +567,7 @@
 </section>
 <section id="lock-free-buffering-thread-safety">
 <h2>Lock-Free Buffering (Thread Safety)<a class="headerlink" href="#lock-free-buffering-thread-safety" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/profiler.py</span></code> - Thread Isolation</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/profiler.position_y</span></code> - Thread Isolation</p>
 <p>Purpose: Prevent standard Python locks from freezing the Pygame render thread while background tasks report metrics.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">thread_buffers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ThreadSampleBuffer</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 </pre></div>
@@ -590,14 +590,14 @@
 </section>
 <section id="api-wrappers-integration">
 <h2>API Wrappers &amp; Integration<a class="headerlink" href="#api-wrappers-integration" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/profiler.py</span></code> - Execution Tracking</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/profiler.position_y</span></code> - Execution Tracking</p>
 <p>Purpose: Provide clean, un-intrusive syntax for measuring engine subsystems.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'World_Update'</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong>Decorator Syntax:</strong> Almost all primary class methods (like those in <code class="docutils literal notranslate"><span class="pre">chunk.py</span></code> or <code class="docutils literal notranslate"><span class="pre">player.py</span></code>) utilize the <code class="docutils literal notranslate"><span class="pre">&#64;profile_func()</span></code> decorator. It automatically intercepts the function call, starts a timer, executes the underlying logic, and records the duration under the specified string.</p></li>
+<li><p><strong>Decorator Syntax:</strong> Almost all primary class methods (like those in <code class="docutils literal notranslate"><span class="pre">chunk.position_y</span></code> or <code class="docutils literal notranslate"><span class="pre">player.position_y</span></code>) utilize the <code class="docutils literal notranslate"><span class="pre">&#64;profile_func()</span></code> decorator. It automatically intercepts the function call, starts a timer, executes the underlying logic, and records the duration under the specified string.</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">global_profiler</span><span class="o">.</span><span class="n">measure</span><span class="p">(</span><span class="s1">'Frustum_Culling'</span><span class="p">):</span>
     <span class="n">frustum_cull_fast</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
@@ -613,12 +613,12 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong>Frame Timing:</strong> The <code class="docutils literal notranslate"><span class="pre">run()</span></code> loop inside <code class="docutils literal notranslate"><span class="pre">main.py</span></code> explicitly wraps the update/render cycle with <code class="docutils literal notranslate"><span class="pre">start_frame</span></code> and <code class="docutils literal notranslate"><span class="pre">end_frame</span></code> to track the absolute macro performance of the engine, filed under the <code class="docutils literal notranslate"><span class="pre">Frame_Total</span></code> category.</p></li>
+<li><p><strong>Frame Timing:</strong> The <code class="docutils literal notranslate"><span class="pre">run()</span></code> loop inside <code class="docutils literal notranslate"><span class="pre">main.position_y</span></code> explicitly wraps the update/render cycle with <code class="docutils literal notranslate"><span class="pre">start_frame</span></code> and <code class="docutils literal notranslate"><span class="pre">end_frame</span></code> to track the absolute macro performance of the engine, filed under the <code class="docutils literal notranslate"><span class="pre">Frame_Total</span></code> category.</p></li>
 </ul>
 </section>
 <section id="aggregation-and-reporting">
 <h2>Aggregation and Reporting<a class="headerlink" href="#aggregation-and-reporting" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">src/profiler.py</span></code> - Data Compilation</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/profiler.position_y</span></code> - Data Compilation</p>
 <p>Purpose: Safely merge the isolated thread data into a readable format on application exit.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">global_profiler</span><span class="o">.</span><span class="n">save_report</span><span class="p">(</span><span class="s1">'profiling_results.json'</span><span class="p">)</span>
 </pre></div>

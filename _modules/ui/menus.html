@@ -1031,20 +1031,26 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Prepares the main menu, create-world and select-world layouts and resources.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">TextRenderer</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">SysFont</span><span class="p">(</span><span class="s1">'arial'</span><span class="p">,</span> <span class="n">FONT_SIZE_TITLE</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">UITextMesh</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">img</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">get_path</span><span class="p">(</span><span class="s1">'assets/textures/uis/pyrite-logo.png'</span><span class="p">))</span><span class="o">.</span><span class="n">convert_alpha</span><span class="p">()</span>
+            <span class="n">img</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">get_path</span><span class="p">(</span><span class="s1">'assets/pyrite-logo-upscaled.png'</span><span class="p">))</span><span class="o">.</span><span class="n">convert_alpha</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="o">.</span><span class="n">build_mipmaps</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="p">(</span><span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR_MIPMAP_LINEAR</span><span class="p">,</span> <span class="n">mgl</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Failed to load logo texture: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="o">.</span><span class="n">get_texture</span><span class="p">(</span><span class="s1">'Pyrite'</span><span class="p">)</span>
-
         <span class="k">try</span><span class="p">:</span>
             <span class="n">bg_img</span><span class="p">:</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">get_path</span><span class="p">(</span><span class="s1">'assets/textures/uis/background.jpg'</span><span class="p">))</span><span class="o">.</span><span class="n">convert_alpha</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">texture</span><span class="p">(</span><span class="n">bg_img</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">bg_img</span><span class="p">,</span> <span class="s1">'RGBA'</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
@@ -1054,18 +1060,21 @@ window.runMermaid = runMermaid;</script>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Failed to load background: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'MAIN'</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'IN'</span>  <span class="c1"># 'IN', 'OUT', 'IDLE'</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'IN'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scroll_offset</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout_main</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">),</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 
-        <span class="c1"># Main Menu</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layout_main</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">),</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout_main</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span>
             <span class="n">Button</span><span class="p">(</span>
                 <span class="n">app</span><span class="p">,</span>
@@ -1083,20 +1092,20 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout_main</span><span class="o">.</span><span class="n">update_layout</span><span class="p">()</span>
 
-        <span class="c1"># Create World</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">create_game_mode</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># 1 is SURVIVAL</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">),</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>  <span class="c1"># Master container gap</span>
-
-        <span class="n">config_group</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">VBox</span><span class="p">(</span><span class="n">spacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>  <span class="c1"># Tight grouping for inputs!</span>
+        <span class="c1"># Process logic block</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_game_mode</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">),</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="n">config_group</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">VBox</span><span class="p">(</span><span class="n">spacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">config_group</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">TextInput</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="s1">'World Name'</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_seed</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">config_group</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span>
             <span class="n">TextInput</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="s1">'Seed (Leave blank for random)'</span><span class="p">)</span>
         <span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">config_group</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span>
             <span class="n">Button</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Game Mode: Survival'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_game_mode</span><span class="p">)</span>
         <span class="p">)</span>
-
-        <span class="n">action_group</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">VBox</span><span class="p">(</span><span class="n">spacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>  <span class="c1"># Normal spacing for buttons</span>
+        <span class="n">action_group</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">VBox</span><span class="p">(</span><span class="n">spacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">btn_create</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">action_group</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span>
             <span class="n">Button</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Create New World'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">),</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_world</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
         <span class="p">)</span>
@@ -1105,9 +1114,11 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">app</span><span class="p">,</span> <span class="s1">'Back'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">),</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_action</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s1">'SELECT_WORLD'</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
             <span class="p">)</span>
         <span class="p">)</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="o">.</span><span class="n">update_layout</span><span class="p">()</span>
 
-        <span class="c1"># Select World (will be populated dynamically)</span>
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">btn_new_world</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
             <span class="n">app</span><span class="p">,</span>
             <span class="s1">'Create New World'</span><span class="p">,</span>
@@ -1122,19 +1133,21 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="MainMenu.trigger_action">
 <a class="viewcode-back" href="../../api/ui.html#ui.menus.MainMenu.trigger_action">[docs]</a>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'MainMenu_TriggerAction'</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">anim_dir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">animation_direction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initiate an animated transition and schedule an action to run after it.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            action: A callable to execute once the 'OUT' transition completes.</span>
-<span class="sd">            anim_dir: Animation direction multiplier; used for transition easing.</span>
+<span class="sd">            animation_direction: Animation direction multiplier; used for transition easing.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'IDLE'</span><span class="p">,</span> <span class="s1">'IN'</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span> <span class="o">=</span> <span class="n">action</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'OUT'</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span> <span class="o">=</span> <span class="n">anim_dir</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span> <span class="o">=</span> <span class="n">animation_direction</span></div>
 
 
 <div class="viewcode-block" id="MainMenu.open_options">
@@ -1147,6 +1160,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        This sets the application's menu state and initializes the options menu</span>
 <span class="sd">        transition parameters.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">options_menu</span><span class="o">.</span><span class="n">previous_state</span> <span class="o">=</span> <span class="s1">'MAIN_MENU'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="s1">'OPTIONS'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">options_menu</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IN'</span>
@@ -1162,8 +1177,14 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Updates the visible button text to reflect the current selection.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_game_mode</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_game_mode</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="n">mode_text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'Survival'</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_game_mode</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">'Creative'</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'Game Mode: </span><span class="si">{</span><span class="n">mode_text</span><span class="si">}</span><span class="s1">'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="o">.</span><span class="n">text_tex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="o">.</span><span class="n">text_renderer</span><span class="o">.</span><span class="n">get_texture</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
 
@@ -1179,11 +1200,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            new_state: One of 'MAIN', 'SELECT_WORLD', 'CREATE_WORLD' representing</span>
 <span class="sd">                which menu view should be active.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">new_state</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="n">new_state</span> <span class="o">==</span> <span class="s1">'SELECT_WORLD'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">load_world_list</span><span class="p">()</span>
-
         <span class="k">elif</span> <span class="n">new_state</span> <span class="o">==</span> <span class="s1">'CREATE_WORLD'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s1">''</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">input_seed</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s1">''</span>
@@ -1192,6 +1215,7 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s1">'Game Mode: Survival'</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="o">.</span><span class="n">text_tex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="o">.</span><span class="n">text_renderer</span><span class="o">.</span><span class="n">get_texture</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">btn_game_mode</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
 
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IN'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span></div>
 
@@ -1206,6 +1230,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        This creates `WorldButton` instances for each found save database and</span>
 <span class="sd">        corresponding delete buttons.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Execute loop iteration</span>
         <span class="k">for</span> <span class="n">btn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="s1">'thumb_tex'</span><span class="p">):</span>
                 <span class="n">btn</span><span class="o">.</span><span class="n">thumb_tex</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
@@ -1213,28 +1239,31 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">btn</span><span class="o">.</span><span class="n">tex_details</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
                 <span class="n">btn</span><span class="o">.</span><span class="n">tex_dates</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
 
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scroll_offset</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span> <span class="o">=</span> <span class="mf">0.0</span>
 
+        <span class="c1"># Execute expression statement</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">'saves'</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="c1"># Sort by modification time (most recent first)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="n">saves</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">'saves'</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.db'</span><span class="p">)],</span>
             <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">'saves'</span><span class="p">,</span> <span class="n">x</span><span class="p">)),</span>
             <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
-
         <span class="n">y_offset</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.05</span>
-        <span class="k">for</span> <span class="n">save_file</span> <span class="ow">in</span> <span class="n">saves</span><span class="p">:</span>  <span class="c1"># Load all worlds dynamically</span>
+
+        <span class="c1"># Execute loop iteration</span>
+        <span class="k">for</span> <span class="n">save_file</span> <span class="ow">in</span> <span class="n">saves</span><span class="p">:</span>
             <span class="n">save_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">save_file</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
             <span class="n">display_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">save_name</span>
             <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">game_mode</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="n">creation_date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'Unknown'</span>
             <span class="n">last_played</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'Unknown'</span>
-
             <span class="n">connection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">cursor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Cursor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1244,14 +1273,12 @@ window.runMermaid = runMermaid;</script>
                     <span class="s1">'SELECT world_name, seed, game_mode, creation_date, last_played FROM world_meta WHERE id=1'</span>
                 <span class="p">)</span>
                 <span class="n">row</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
                 <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
                     <span class="n">display_name</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">seed</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                     <span class="n">game_mode</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
                     <span class="n">creation_date</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">][:</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'T'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">)</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">else</span> <span class="s1">'Unknown'</span>
                     <span class="n">last_played</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">4</span><span class="p">][:</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'T'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">)</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="k">else</span> <span class="s1">'Unknown'</span>
-
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error reading world meta: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
             <span class="k">finally</span><span class="p">:</span>
@@ -1267,10 +1294,12 @@ window.runMermaid = runMermaid;</script>
                         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Error closing connection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">load_and_reset</span><span class="p">(</span><span class="n">sn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">save_name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+                <span class="c1"># Execute expression statement</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">init_game_session</span><span class="p">(</span><span class="n">sn</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s1">'MAIN'</span><span class="p">)</span>
 
-            <span class="n">new_btn</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">WorldButton</span><span class="p">(</span>
+            <span class="n">new_button</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">WorldButton</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
                 <span class="n">save_name</span><span class="p">,</span>
                 <span class="n">display_name</span><span class="p">,</span>
@@ -1282,16 +1311,13 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">(</span><span class="mf">0.65</span><span class="p">,</span> <span class="mf">0.12</span><span class="p">),</span>
                 <span class="k">lambda</span> <span class="n">sn</span><span class="o">=</span><span class="n">save_name</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">load_and_reset</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_action</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">lr</span><span class="p">(</span><span class="n">sn</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_btn</span><span class="p">)</span>
-
-            <span class="c1"># Create a small red 'X' button positioned right next to the WorldButton</span>
-            <span class="n">del_btn</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_button</span><span class="p">)</span>
+            <span class="n">delete_button</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s1">'X'</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.55</span><span class="p">,</span> <span class="n">y_offset</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">sn</span><span class="o">=</span><span class="n">save_name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_world</span><span class="p">(</span><span class="n">sn</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">del_btn</span><span class="o">.</span><span class="n">base_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">)</span>
-            <span class="n">del_btn</span><span class="o">.</span><span class="n">hover_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">del_btn</span><span class="p">)</span>
-
+            <span class="n">delete_button</span><span class="o">.</span><span class="n">base_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">)</span>
+            <span class="n">delete_button</span><span class="o">.</span><span class="n">hover_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delete_button</span><span class="p">)</span>
             <span class="n">y_offset</span> <span class="o">-=</span> <span class="mf">0.26</span></div>
 
 
@@ -1305,16 +1331,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Args:</span>
 <span class="sd">            save_name: Base filename of the save (without extension).</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'.db'</span><span class="p">,</span> <span class="s1">'.db-shm'</span><span class="p">,</span> <span class="s1">'.db-wal'</span><span class="p">,</span> <span class="s1">'_thumb.png'</span><span class="p">):</span>
                 <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'saves/</span><span class="si">{</span><span class="n">save_name</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s1">'</span>
                 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
                     <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'[SYSTEM] Failed to delete world: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">load_world_list</span><span class="p">()</span>  <span class="c1"># Refresh the UI list instantly!</span></div>
+        <span class="c1"># Execute expression statement</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_world_list</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="MainMenu.create_world">
@@ -1327,32 +1355,38 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Reads name and seed fields, sanitizes the name, and ensures the save</span>
 <span class="sd">        filename is unique before initializing the game session.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">name</span> <span class="o">=</span> <span class="s1">'New_World'</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="n">base_save_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">' '</span><span class="p">,</span> <span class="s1">'_'</span><span class="p">)</span>
         <span class="n">save_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">base_save_name</span>
-
         <span class="n">counter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Execute loop iteration</span>
         <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s1">'saves/</span><span class="si">{</span><span class="n">save_name</span><span class="si">}</span><span class="s1">.db'</span><span class="p">):</span>
             <span class="n">save_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">base_save_name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s1">'</span>
             <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="n">seed_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_seed</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">seed_str</span><span class="p">:</span>
             <span class="n">seed</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">100000</span><span class="p">,</span> <span class="mi">999999999</span><span class="p">)</span>
-
         <span class="k">else</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seed_str</span><span class="p">)</span>
-
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="c1"># Convert letters into an exact numerical seed!</span>
-                <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">seed_str</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="mi">9</span><span class="p">)</span>
+                <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">seed_str</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">%</span> <span class="mi">10</span><span class="o">**</span><span class="mi">9</span>
 
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">init_game_session</span><span class="p">(</span><span class="n">save_name</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_game_mode</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s1">'MAIN'</span><span class="p">)</span></div>
 
@@ -1365,66 +1399,50 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Advance menu animations, update scrolling state and dispatch updates</span>
 <span class="sd">        to active UI components depending on the current menu state.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span> <span class="o">*</span> <span class="mf">0.005</span>  <span class="c1"># ~200ms transitions</span>
 
+        <span class="c1"># Handle conditional branching</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span> <span class="o">*</span> <span class="mf">0.005</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">1.0</span>
-
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'OUT'</span><span class="p">:</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span><span class="p">:</span>
                         <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span> <span class="o">=</span> <span class="kc">None</span>
                         <span class="n">action</span><span class="p">()</span>
-
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IDLE'</span>
-
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'IN'</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IDLE'</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
-            <span class="n">mouse_pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="o">-</span><span class="mi">999</span><span class="p">)</span>  <span class="c1"># Lock interactions during animations</span>
-
+            <span class="n">mouse_pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="o">-</span><span class="mi">999</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'MAIN'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layout_main</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'SELECT_WORLD'</span><span class="p">:</span>
-            <span class="c1"># Smooth scroll interpolation</span>
             <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">scroll_offset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.001</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">scroll_offset</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">scroll_offset</span><span class="p">)</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span>
                     <span class="mf">1.0</span><span class="p">,</span> <span class="mf">15.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span> <span class="o">*</span> <span class="mf">0.001</span>
                 <span class="p">)</span>
-
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">scroll_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">btn_new_world</span><span class="o">.</span><span class="n">check_hover</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">btn_back_select</span><span class="o">.</span><span class="n">check_hover</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
-
-            <span class="c1"># Apply the scroll offset and disable hover interactions if the button goes out of bounds</span>
             <span class="n">base_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.05</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">del_btn</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">button</span><span class="p">,</span> <span class="n">delete_button</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)):</span>
                 <span class="n">new_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">base_y</span> <span class="o">-</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">0.26</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">scroll_offset</span>
-                <span class="n">btn</span><span class="o">.</span><span class="n">local_pos</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">new_y</span><span class="p">]</span>
-                <span class="n">del_btn</span><span class="o">.</span><span class="n">local_pos</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.55</span><span class="p">,</span> <span class="n">new_y</span><span class="p">]</span>
-
+                <span class="n">button</span><span class="o">.</span><span class="n">local_pos</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">new_y</span><span class="p">]</span>
+                <span class="n">delete_button</span><span class="o">.</span><span class="n">local_pos</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.55</span><span class="p">,</span> <span class="n">new_y</span><span class="p">]</span>
                 <span class="k">if</span> <span class="o">-</span><span class="mf">0.45</span> <span class="o">&lt;</span> <span class="n">new_y</span> <span class="o">&lt;</span> <span class="mf">0.02</span><span class="p">:</span>
-                    <span class="n">btn</span><span class="o">.</span><span class="n">check_hover</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
-                    <span class="n">del_btn</span><span class="o">.</span><span class="n">check_hover</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
-
-                    <span class="c1"># Prevent hitbox overlap: If hovering the delete button, ignore the world button underneath!</span>
-                    <span class="k">if</span> <span class="n">del_btn</span><span class="o">.</span><span class="n">is_hovered</span><span class="p">:</span>
-                        <span class="n">btn</span><span class="o">.</span><span class="n">is_hovered</span> <span class="o">=</span> <span class="kc">False</span>
-                        <span class="n">btn</span><span class="o">.</span><span class="n">is_pressed</span> <span class="o">=</span> <span class="kc">False</span>
-
+                    <span class="n">button</span><span class="o">.</span><span class="n">check_hover</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
+                    <span class="n">delete_button</span><span class="o">.</span><span class="n">check_hover</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">delete_button</span><span class="o">.</span><span class="n">is_hovered</span><span class="p">:</span>
+                        <span class="n">button</span><span class="o">.</span><span class="n">is_hovered</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="n">button</span><span class="o">.</span><span class="n">is_pressed</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">btn</span><span class="o">.</span><span class="n">is_hovered</span> <span class="o">=</span> <span class="kc">False</span>
-                    <span class="n">del_btn</span><span class="o">.</span><span class="n">is_hovered</span> <span class="o">=</span> <span class="kc">False</span>
-
+                    <span class="n">button</span><span class="o">.</span><span class="n">is_hovered</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">delete_button</span><span class="o">.</span><span class="n">is_hovered</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'CREATE_WORLD'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span></div>
 
@@ -1439,29 +1457,25 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Args:</span>
 <span class="sd">            event: Pygame event to process.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
-            <span class="k">return</span>  <span class="c1"># Ignore inputs during transitions</span>
 
+        <span class="c1"># Handle conditional branching</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
+            <span class="k">return</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'CREATE_WORLD'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'MAIN'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layout_main</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'SELECT_WORLD'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">btn_new_world</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">btn_back_select</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">btn</span><span class="p">,</span> <span class="n">del_btn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-                <span class="k">if</span> <span class="o">-</span><span class="mf">0.45</span> <span class="o">&lt;</span> <span class="n">btn</span><span class="o">.</span><span class="n">local_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.02</span><span class="p">:</span>
-                    <span class="n">btn</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-                    <span class="n">del_btn</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
+            <span class="k">for</span> <span class="n">button</span><span class="p">,</span> <span class="n">delete_button</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                <span class="k">if</span> <span class="o">-</span><span class="mf">0.45</span> <span class="o">&lt;</span> <span class="n">button</span><span class="o">.</span><span class="n">local_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.02</span><span class="p">:</span>
+                    <span class="n">button</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                    <span class="n">delete_button</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pg</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>  <span class="c1"># Mouse Wheel Scroll Up</span>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span> <span class="o">-</span> <span class="mf">0.26</span><span class="p">)</span>
-
-                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>  <span class="c1"># Mouse Wheel Scroll Down</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
                     <span class="n">max_scroll</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.26</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_scroll</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_scroll_offset</span> <span class="o">+</span> <span class="mf">0.26</span><span class="p">)</span></div>
 
@@ -1475,21 +1489,19 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        This will skip rendering if no background texture is available.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'bg_tex'</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-            <span class="n">img_aspect</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex</span><span class="o">.</span><span class="n">height</span>
-
-            <span class="k">if</span> <span class="n">img_aspect</span> <span class="o">&gt;</span> <span class="n">ASPECT_RATIO</span><span class="p">:</span>
-                <span class="n">scale_x</span><span class="p">,</span> <span class="n">scale_y</span> <span class="o">=</span> <span class="n">img_aspect</span> <span class="o">/</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">1.0</span>
+            <span class="n">image_aspect</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex</span><span class="o">.</span><span class="n">height</span>
+            <span class="k">if</span> <span class="n">image_aspect</span> <span class="o">&gt;</span> <span class="n">ASPECT_RATIO</span><span class="p">:</span>
+                <span class="n">scale_x</span><span class="p">,</span> <span class="n">scale_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">image_aspect</span> <span class="o">/</span> <span class="n">ASPECT_RATIO</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">scale_x</span><span class="p">,</span> <span class="n">scale_y</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">ASPECT_RATIO</span> <span class="o">/</span> <span class="n">img_aspect</span>
-
+                <span class="n">scale_x</span><span class="p">,</span> <span class="n">scale_y</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ASPECT_RATIO</span> <span class="o">/</span> <span class="n">image_aspect</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_scale'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">scale_x</span><span class="p">,</span> <span class="n">scale_y</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_offset'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-
             <span class="k">if</span> <span class="s1">'u_alpha'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_alpha'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_tex_mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span></div>
 
 
@@ -1501,67 +1513,64 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Render the active menu layout including title, background, and child</span>
 <span class="sd">        UI nodes, applying transition offsets and alpha blending.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="n">t</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span>
         <span class="n">ease</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
         <span class="n">offset_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'IN'</span><span class="p">:</span>
-            <span class="n">offset_y</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span>
+            <span class="n">offset_y</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="n">ease</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'OUT'</span><span class="p">:</span>
-            <span class="n">offset_y</span> <span class="o">=</span> <span class="n">ease</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span>
+            <span class="n">offset_y</span> <span class="o">=</span> <span class="n">ease</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="n">offset</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">offset_y</span><span class="p">)</span>
 
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">render_bg</span><span class="p">()</span>
-
-        <span class="c1"># Render title</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="n">tex_w</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">tex_h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">scale_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.15</span>
         <span class="n">scale_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">scale_y</span> <span class="o">*</span> <span class="p">(</span><span class="n">tex_w</span> <span class="o">/</span> <span class="n">tex_h</span><span class="p">)</span> <span class="o">/</span> <span class="n">ASPECT_RATIO</span>
 
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_scale'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">scale_x</span><span class="p">,</span> <span class="n">scale_y</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_offset'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="n">offset_y</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>  <span class="c1"># Parallax!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_offset'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="n">offset_y</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="s1">'u_alpha'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_alpha'</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+
+        <span class="c1"># Dispatch render call to GPU</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="s1">'u_alpha'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_alpha'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'MAIN'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layout_main</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'SELECT_WORLD'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">btn_new_world</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
-
-            <span class="c1"># Enable shader clipping area (x_min, y_min, x_max, y_max)</span>
             <span class="k">if</span> <span class="s1">'u_clip'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_color</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_color</span><span class="p">[</span><span class="s1">'u_clip'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.55</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
-
             <span class="k">if</span> <span class="s1">'u_clip'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_text</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_text</span><span class="p">[</span><span class="s1">'u_clip'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.55</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
-
             <span class="k">for</span> <span class="n">btn</span><span class="p">,</span> <span class="n">del_btn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_buttons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_buttons</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
                 <span class="n">btn</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
                 <span class="n">del_btn</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
-
-            <span class="c1"># Reset clipping area</span>
             <span class="k">if</span> <span class="s1">'u_clip'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_color</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_color</span><span class="p">[</span><span class="s1">'u_clip'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
-
             <span class="k">if</span> <span class="s1">'u_clip'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_text</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">shader_program</span><span class="o">.</span><span class="n">ui_text</span><span class="p">[</span><span class="s1">'u_clip'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">btn_back_select</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s1">'CREATE_WORLD'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layout_create</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
 </div>
@@ -1587,19 +1596,27 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Sets up resume/options/quit buttons and default transition state.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">TextRenderer</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">SysFont</span><span class="p">(</span><span class="s1">'arial'</span><span class="p">,</span> <span class="n">FONT_SIZE_PAUSED</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">UITextMesh</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="o">.</span><span class="n">get_texture</span><span class="p">(</span><span class="s1">'Game Paused'</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">UIColorMesh</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'IN'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">),</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="c1"># Process logic block</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">),</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span>
             <span class="n">Button</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Resume'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">),</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resume_game</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
         <span class="p">)</span>
@@ -1609,19 +1626,20 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span>
             <span class="n">Button</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Quit to Menu'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">),</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quit_to_menu</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
         <span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">update_layout</span><span class="p">()</span>
 
 <div class="viewcode-block" id="PauseMenu.trigger_action">
 <a class="viewcode-back" href="../../api/ui.html#ui.menus.PauseMenu.trigger_action">[docs]</a>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'PauseMenu_TriggerAction'</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">anim_dir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">animation_direction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Triggers an out-transition before calling the specified action."""</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'IDLE'</span><span class="p">,</span> <span class="s1">'IN'</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span> <span class="o">=</span> <span class="n">action</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'OUT'</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span> <span class="o">=</span> <span class="n">anim_dir</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span> <span class="o">=</span> <span class="n">animation_direction</span></div>
 
 
 <div class="viewcode-block" id="PauseMenu.open_options">
@@ -1629,6 +1647,8 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'PauseMenu_OpenOptions'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">open_options</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Transitions to the Options Menu."""</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">options_menu</span><span class="o">.</span><span class="n">previous_state</span> <span class="o">=</span> <span class="s1">'PAUSED'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="s1">'OPTIONS'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">options_menu</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IN'</span>
@@ -1640,7 +1660,11 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'PauseMenu_ResumeGame'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">resume_game</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Hides the pause menu and re-captures the mouse for gameplay."""</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="s1">'IN_GAME'</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">set_grab</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
 
@@ -1650,12 +1674,15 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'PauseMenu_QuitToMenu'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">quit_to_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Unloads the game world and returns to the Main Menu."""</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="s1">'MAIN_MENU'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">menu</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s1">'MAIN'</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Unload the world to free memory</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="PauseMenu.update">
@@ -1663,30 +1690,27 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'PauseMenu_Update'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Processes animations and propagates update events to children."""</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span> <span class="o">*</span> <span class="mf">0.005</span>
-
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">1.0</span>
-
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'OUT'</span><span class="p">:</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span><span class="p">:</span>
                         <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span> <span class="o">=</span> <span class="kc">None</span>
                         <span class="n">action</span><span class="p">()</span>
-
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IDLE'</span>
-
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'IN'</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IDLE'</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
             <span class="n">mouse_pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="o">-</span><span class="mi">999</span><span class="p">)</span>
-
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
 
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span></div>
 
 
@@ -1700,9 +1724,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Args:</span>
 <span class="sd">            event: Pygame event to process.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
             <span class="k">return</span>
 
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
 
 
@@ -1711,44 +1738,61 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'PauseMenu_Render'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Renders the dimming background and the menu elements with animation easing."""</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="n">t</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span>
         <span class="n">ease</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
         <span class="n">offset_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'IN'</span><span class="p">:</span>
-            <span class="n">offset_y</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span>
+            <span class="n">offset_y</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="n">ease</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'OUT'</span><span class="p">:</span>
-            <span class="n">offset_y</span> <span class="o">=</span> <span class="n">ease</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span>
+            <span class="n">offset_y</span> <span class="o">=</span> <span class="n">ease</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="n">offset</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">offset_y</span><span class="p">)</span>
-        <span class="n">bg_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">alpha</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="n">background_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">alpha</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span> <span class="k">else</span> <span class="mf">1.0</span>
 
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_scale'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_offset'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_color'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span> <span class="o">*</span> <span class="n">bg_alpha</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_color'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span> <span class="o">*</span> <span class="n">background_alpha</span><span class="p">)</span>
+
+        <span class="c1"># Dispatch render call to GPU</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
-        <span class="n">tex</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span>
-        <span class="n">tex</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-        <span class="n">tex_w</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">tex</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">tex_h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">tex</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Process logic block</span>
+        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span>
+
+        <span class="c1"># Execute expression statement</span>
+        <span class="n">texture</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
+        <span class="n">texture_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">texture</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">texture_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">texture</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">scale_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.08</span>
-        <span class="n">scale_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">scale_y</span> <span class="o">*</span> <span class="p">(</span><span class="n">tex_w</span> <span class="o">/</span> <span class="n">tex_h</span><span class="p">)</span> <span class="o">/</span> <span class="n">ASPECT_RATIO</span>
+        <span class="n">scale_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">scale_y</span> <span class="o">*</span> <span class="p">(</span><span class="n">texture_width</span> <span class="o">/</span> <span class="n">texture_height</span><span class="p">)</span> <span class="o">/</span> <span class="n">ASPECT_RATIO</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_scale'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">scale_x</span><span class="p">,</span> <span class="n">scale_y</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_offset'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.4</span> <span class="o">+</span> <span class="n">offset_y</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="s1">'u_alpha'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_alpha'</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
 
+        <span class="c1"># Dispatch render call to GPU</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="s1">'u_alpha'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_alpha'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
 
+        <span class="c1"># Dispatch render call to GPU</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
 </div>
 
@@ -1774,26 +1818,35 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Ensures backward-compatible config keys and prepares layout nodes.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">TextRenderer</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">SysFont</span><span class="p">(</span><span class="s1">'arial'</span><span class="p">,</span> <span class="n">FONT_SIZE_PAUSED</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">UITextMesh</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_renderer</span><span class="o">.</span><span class="n">get_texture</span><span class="p">(</span><span class="s1">'Options'</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">UIColorMesh</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'IN'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="c1"># Ensure config keys exist to prevent KeyError on old config.json files</span>
+        <span class="c1"># Process logic block</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="s1">'music_volume'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
             <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'music_volume'</span><span class="p">]</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'volume'</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="s1">'sfx_volume'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
             <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'sfx_volume'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.09</span><span class="p">)</span>
+        <span class="c1"># Process logic block</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.09</span><span class="p">)</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">Slider</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'FOV'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">110</span><span class="p">,</span> <span class="s1">'fov'</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_fov</span><span class="p">,</span> <span class="n">is_int</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">Slider</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Sensitivity'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="mf">0.0005</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">,</span> <span class="s1">'sensitivity'</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span>
@@ -1807,24 +1860,28 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span>
             <span class="n">Slider</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Render Distance'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="s1">'render_distance'</span><span class="p">,</span> <span class="n">is_int</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">Toggle</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Underwater Tint'</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.12</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.035</span><span class="p">),</span> <span class="s1">'underwater_tint'</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">UINode</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)))</span>  <span class="c1"># Positive Spacer to add space</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">Button</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Back'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.06</span><span class="p">),</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">go_back</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
 
+        <span class="c1"># Execute expression statement</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">Toggle</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Underwater Tint'</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.12</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.035</span><span class="p">),</span> <span class="s1">'underwater_tint'</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">UINode</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">Button</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">'Back'</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.06</span><span class="p">),</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">go_back</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">update_layout</span><span class="p">()</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">previous_state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'MAIN_MENU'</span>
 
 <div class="viewcode-block" id="OptionsMenu.trigger_action">
 <a class="viewcode-back" href="../../api/ui.html#ui.menus.OptionsMenu.trigger_action">[docs]</a>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'OptionsMenu_TriggerAction'</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">anim_dir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">animation_direction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Initiates an animated transition out before running the requested action."""</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'IDLE'</span><span class="p">,</span> <span class="s1">'IN'</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span> <span class="o">=</span> <span class="n">action</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'OUT'</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span> <span class="o">=</span> <span class="n">anim_dir</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span> <span class="o">=</span> <span class="n">animation_direction</span></div>
 
 
 <div class="viewcode-block" id="OptionsMenu.update_fov">
@@ -1834,6 +1891,8 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Applies the field-of-view setting instantly to the active player.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">scene</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="n">fov</span> <span class="o">=</span> <span class="n">glm</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">val</span><span class="p">)</span></div>
 
@@ -1845,6 +1904,8 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Adjusts the global Pygame mixer music volume.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">val</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">)</span></div>
 
 
@@ -1855,6 +1916,8 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delegates sound effect volume changes to the central Sounds manager.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">sounds</span><span class="o">.</span><span class="n">set_sfx_volume</span><span class="p">(</span><span class="n">val</span><span class="p">)</span></div>
 
 
@@ -1863,13 +1926,17 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'OptionsMenu_GoBack'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">go_back</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Returns to the menu that originally opened this options screen."""</span>
+
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">save_config</span><span class="p">()</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">previous_state</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">previous_state</span> <span class="o">==</span> <span class="s1">'MAIN_MENU'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">menu</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IN'</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">menu</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">previous_state</span> <span class="o">==</span> <span class="s1">'PAUSED'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pause_menu</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IN'</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pause_menu</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span></div>
@@ -1880,30 +1947,27 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'OptionsMenu_Update'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Updates animations and cascades logic down to layout components."""</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">delta_time</span> <span class="o">*</span> <span class="mf">0.005</span>
-
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span> <span class="o">=</span> <span class="mf">1.0</span>
-
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'OUT'</span><span class="p">:</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span><span class="p">:</span>
                         <span class="n">action</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">pending_action</span> <span class="o">=</span> <span class="kc">None</span>
                         <span class="n">action</span><span class="p">()</span>
-
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IDLE'</span>
-
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'IN'</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">=</span> <span class="s1">'IDLE'</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
             <span class="n">mouse_pos</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="o">-</span><span class="mi">999</span><span class="p">)</span>
-
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
 
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span></div>
 
 
@@ -1917,9 +1981,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Args:</span>
 <span class="sd">            event: Pygame event to process.</span>
 <span class="sd">        """</span>
+
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span><span class="p">:</span>
             <span class="k">return</span>
 
+        <span class="c1"># Execute expression statement</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
 
 
@@ -1928,44 +1995,60 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@global_profiler</span><span class="o">.</span><span class="n">profile_func</span><span class="p">(</span><span class="s1">'OptionsMenu_Render'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Draws the options layout UI nodes alongside their animated transitions."""</span>
+
+        <span class="c1"># Process logic block</span>
         <span class="n">t</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_progress</span>
         <span class="n">ease</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
         <span class="n">offset_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'IN'</span><span class="p">:</span>
-            <span class="n">offset_y</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span>
+            <span class="n">offset_y</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="n">ease</span>
-
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">==</span> <span class="s1">'OUT'</span><span class="p">:</span>
-            <span class="n">offset_y</span> <span class="o">=</span> <span class="n">ease</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">anim_dir</span>
+            <span class="n">offset_y</span> <span class="o">=</span> <span class="n">ease</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">animation_direction</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease</span>
 
+        <span class="c1"># Process logic block</span>
         <span class="n">offset</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">offset_y</span><span class="p">)</span>
-        <span class="n">bg_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">alpha</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="n">background_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">alpha</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state</span> <span class="o">!=</span> <span class="s1">'IDLE'</span> <span class="k">else</span> <span class="mf">1.0</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">previous_state</span> <span class="o">==</span> <span class="s1">'PAUSED'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_scale'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_offset'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_color'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">bg_alpha</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_color'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">background_alpha</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
-        <span class="n">tex</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span>
-        <span class="n">tex</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-        <span class="n">tex_w</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">tex</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">tex_h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">tex</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Process logic block</span>
+        <span class="n">texture</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_tex</span>
+
+        <span class="c1"># Execute expression statement</span>
+        <span class="n">texture</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="c1"># Process logic block</span>
+        <span class="n">texture_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">texture</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">texture_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">texture</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">scale_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.08</span>
-        <span class="n">scale_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">scale_y</span> <span class="o">*</span> <span class="p">(</span><span class="n">tex_w</span> <span class="o">/</span> <span class="n">tex_h</span><span class="p">)</span> <span class="o">/</span> <span class="n">ASPECT_RATIO</span>
+        <span class="n">scale_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">scale_y</span> <span class="o">*</span> <span class="p">(</span><span class="n">texture_width</span> <span class="o">/</span> <span class="n">texture_height</span><span class="p">)</span> <span class="o">/</span> <span class="n">ASPECT_RATIO</span>
+
+        <span class="c1"># Initialize and update variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_scale'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">scale_x</span><span class="p">,</span> <span class="n">scale_y</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_offset'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.55</span> <span class="o">+</span> <span class="n">offset_y</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="s1">'u_alpha'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_alpha'</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+
+        <span class="c1"># Dispatch render call to GPU</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 
+        <span class="c1"># Handle conditional branching</span>
         <span class="k">if</span> <span class="s1">'u_alpha'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">title_mesh</span><span class="o">.</span><span class="n">program</span><span class="p">[</span><span class="s1">'u_alpha'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
 
+        <span class="c1"># Dispatch render call to GPU</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
 </div>
 

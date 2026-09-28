@@ -648,7 +648,7 @@ correctly within the global 3D world space.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="world_objects.chunk.Chunk.generate_terrain">
-<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">generate_terrain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voxels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lightmap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm_grad_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/world_objects/chunk.html#Chunk.generate_terrain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#world_objects.chunk.Chunk.generate_terrain" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">generate_terrain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voxels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lightmap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm_grad_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/world_objects/chunk.html#Chunk.generate_terrain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#world_objects.chunk.Chunk.generate_terrain" title="Link to this definition"></a></dt>
 <dd><p>A highly parallelized Numba wrapper that populates a chunk’s voxel and lighting arrays
 deterministically based on the world seed.</p>
 <dl class="field-list simple">
@@ -656,9 +656,9 @@ deterministically based on the world seed.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>voxels</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
 <li><p><strong>lightmap</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
-<li><p><strong>cx</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>cy</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>cz</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>chunk_x</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>chunk_y</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>chunk_z</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
 <li><p><strong>perm_array</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
 <li><p><strong>perm_grad_array</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
 <li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
@@ -672,7 +672,7 @@ deterministically based on the world seed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="world_objects.chunk.Chunk.fill_initial_sunlight_only">
-<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fill_initial_sunlight_only</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voxels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lightmap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/world_objects/chunk.html#Chunk.fill_initial_sunlight_only"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#world_objects.chunk.Chunk.fill_initial_sunlight_only" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fill_initial_sunlight_only</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voxels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lightmap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/world_objects/chunk.html#Chunk.fill_initial_sunlight_only"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#world_objects.chunk.Chunk.fill_initial_sunlight_only" title="Link to this definition"></a></dt>
 <dd><p>A Numba-optimized function to fill sunlight in a chunk’s lightmap without modifying the voxel data.
 Used during world loading to quickly restore lighting without regenerating terrain.</p>
 <dl class="field-list simple">
@@ -680,9 +680,9 @@ Used during world loading to quickly restore lighting without regenerating terra
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>voxels</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
 <li><p><strong>lightmap</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
-<li><p><strong>cx</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>cy</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>cz</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>chunk_x</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>chunk_y</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>chunk_z</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
 <li><p><strong>perm_array</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
 </ul>
 </dd>
@@ -819,19 +819,19 @@ limit to automatically despawn old items if too many are active at once.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="world_objects.item.ItemManager.load_item">
-<span class="sig-name descname"><span class="pre">load_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voxel_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">px</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">py</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vz</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/world_objects/item.html#ItemManager.load_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#world_objects.item.ItemManager.load_item" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">load_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voxel_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/world_objects/item.html#ItemManager.load_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#world_objects.item.ItemManager.load_item" title="Link to this definition"></a></dt>
 <dd><p>Restores a previously saved item entity into the world with its exact
 former position and velocity to bypass the random spawn burst.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>voxel_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>px</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
-<li><p><strong>py</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
-<li><p><strong>pz</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
-<li><p><strong>vx</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
-<li><p><strong>vy</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
-<li><p><strong>vz</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>position_x</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>position_y</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>position_z</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>velocity_x</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>velocity_y</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>velocity_z</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
