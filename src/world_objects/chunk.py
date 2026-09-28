@@ -115,10 +115,10 @@ class Chunk:
         voxels: NDArray[np.uint8] = np.zeros(CHUNK_VOLUME, dtype='uint8')
 
         # Convert the chunk's grid position into absolute world block coordinates.
-        # cx, cy, cz represent the exact minimum bounds (bottom-left-back corner) of the chunk.
-        cx, cy, cz = map(int, glm.ivec3(self.position) * CHUNK_SIZE)
+        # chunk_x, chunk_y, chunk_z represent the exact minimum bounds (bottom-left-back corner) of the chunk.
+        chunk_x, chunk_y, chunk_z = map(int, glm.ivec3(self.position) * CHUNK_SIZE)
 
-        self.generate_terrain(voxels, cx, cy, cz)
+        self.generate_terrain(voxels, chunk_x, chunk_y, chunk_z)
 
         if np.any(voxels):
             self.is_empty = False
@@ -128,37 +128,46 @@ class Chunk:
     @staticmethod
     @njit(cache=True, fastmath=True, nogil=True)
     def generate_terrain(
-        voxels: Any, lightmap: Any, cx: int, cy: int, cz: int, perm_array: Any, perm_grad_array: Any, seed: int
+        voxels: Any,
+        lightmap: Any,
+        chunk_x: int,
+        chunk_y: int,
+        chunk_z: int,
+        perm_array: Any,
+        perm_grad_array: Any,
+        seed: int,
     ) -> None:
         """
         A highly parallelized Numba wrapper that populates a chunk's voxel and lighting arrays
         deterministically based on the world seed.
         """
         # We compute a unique hash for this specific chunk by bitwise XORing the world seed
-        # with the chunk's absolute spatial coordinates (cx, cy, cz).
+        # with the chunk's absolute spatial coordinates (chunk_x, chunk_y, chunk_z).
         # This guarantees that the local RNG state is identically initialized every time this
         # exact chunk is generated, preventing structural seams between adjacent chunks.
-        np.random.seed(seed ^ cx ^ cy ^ cz)
-        random.seed(seed ^ cx ^ cy ^ cz)
+        np.random.seed(seed ^ chunk_x ^ chunk_y ^ chunk_z)
+        random.seed(seed ^ chunk_x ^ chunk_y ^ chunk_z)
 
         # We iterate over the 2D local plane (x, z) of the chunk.
         # For each vertical column, we evaluate the 2D and 3D noise functions.
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
                 # set_voxel_column computes the heightmap, applies biome rules, and fills
-                # the 1D voxels array from the bottom (cy) to the computed surface height.
-                set_voxel_column(voxels, x, z, cx, cy, cz, perm_array, perm_grad_array)
+                # the 1D voxels array from the bottom (chunk_y) to the computed surface height.
+                set_voxel_column(voxels, x, z, chunk_x, chunk_y, chunk_z, perm_array, perm_grad_array)
 
         # After the physical blocks are placed, we run a top-down raycasting pass.
         # This traces from the sky downwards, marking blocks with sunlight (level 15)
         # until an opaque block is hit, populating the parallel lightmap array.
-        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
+        fill_initial_sunlight(voxels, lightmap, chunk_x, chunk_y, chunk_z, perm_array)
 
     @staticmethod
     @njit(cache=True, fastmath=True, nogil=True)
-    def fill_initial_sunlight_only(voxels: Any, lightmap: Any, cx: int, cy: int, cz: int, perm_array: Any) -> None:
+    def fill_initial_sunlight_only(
+        voxels: Any, lightmap: Any, chunk_x: int, chunk_y: int, chunk_z: int, perm_array: Any
+    ) -> None:
         """
         A Numba-optimized function to fill sunlight in a chunk's lightmap without modifying the voxel data.
         Used during world loading to quickly restore lighting without regenerating terrain.
         """
-        fill_initial_sunlight(voxels, lightmap, cx, cy, cz, perm_array)
+        fill_initial_sunlight(voxels, lightmap, chunk_x, chunk_y, chunk_z, perm_array)

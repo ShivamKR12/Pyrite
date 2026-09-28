@@ -197,7 +197,16 @@ class ItemManager:
         self.items.append(Item(self.app, position, voxel_id))
 
     @global_profiler.profile_func('ItemManager_LoadItem')
-    def load_item(self, voxel_id: int, px: float, py: float, pz: float, vx: float, vy: float, vz: float) -> None:
+    def load_item(
+        self,
+        voxel_id: int,
+        position_x: float,
+        position_y: float,
+        position_z: float,
+        velocity_x: float,
+        velocity_y: float,
+        velocity_z: float,
+    ) -> None:
         """
         Restores a previously saved item entity into the world with its exact
         former position and velocity to bypass the random spawn burst.
@@ -210,10 +219,10 @@ class ItemManager:
         item: Item = Item(self.app, (0, 0, 0), voxel_id)
 
         # Overwrite the random initial position with the exact coordinates loaded from the database
-        item.position = glm.vec3(px, py, pz)
+        item.position = glm.vec3(position_x, position_y, position_z)
 
         # Overwrite the random burst velocity with the preserved momentum vector
-        item.velocity = glm.vec3(vx, vy, vz)
+        item.velocity = glm.vec3(velocity_x, velocity_y, velocity_z)
 
         # Append the restored item to the active pool
         self.items.append(item)
