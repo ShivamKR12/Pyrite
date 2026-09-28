@@ -26,12 +26,12 @@ class ObjMesh(BaseMesh):
 
     Args:
         app (Any): The main application instance providing the ModernGL context.
-        obj_path (str): The absolute or relative file path to the `.obj` file.
-        tex_id (Optional[int]): The OpenGL texture ID to bind during rendering, if applicable.
+        object_path (str): The absolute or relative file path to the `.obj` file.
+        texture_id (Optional[int]): The OpenGL texture ID to bind during rendering, if applicable.
     """
 
     @global_profiler.profile_func('ObjMesh_Init')
-    def __init__(self, app: Any, obj_path: str, tex_id: Optional[int] = None) -> None:
+    def __init__(self, app: Any, object_path: str, texture_id: Optional[int] = None) -> None:
         """
         Initializes the OBJ mesh, preparing its shader program, vertex attributes,
         and loading the requested object file from the disk.
@@ -42,8 +42,8 @@ class ObjMesh(BaseMesh):
         self.program: Any = self.app.shader_program.obj
         self.vbo_format: str = '3f 2f 3f 3f'
         self.attrs: Tuple[str, ...] = ('in_position', 'in_tex_coord', 'in_normal', 'in_color')
-        self.obj_path: str = obj_path
-        self.tex_id: Optional[int] = tex_id
+        self.object_path: str = object_path
+        self.texture_id: Optional[int] = texture_id
         self.vao: Any = self.get_vao()
 
     @global_profiler.profile_func('ObjMesh_Render')
@@ -52,15 +52,15 @@ class ObjMesh(BaseMesh):
         Issues the draw call to the GPU for this model. Optionally enables and binds
         an associated OpenGL texture if a texture ID was provided during initialization.
         """
-        self.program['u_use_texture'] = self.tex_id is not None
+        self.program['u_use_texture'] = self.texture_id is not None
 
-        if self.tex_id is not None:
-            self.program['u_texture_0'] = self.tex_id
+        if self.texture_id is not None:
+            self.program['u_texture_0'] = self.texture_id
 
         self.vao.render()
 
     @global_profiler.profile_func('ObjMesh_ParseMTL')
-    def parse_mtl(self, mtl_path: str) -> Dict[str, Dict[str, List[float]]]:
+    def parse_mtl(self, material_path: str) -> Dict[str, Dict[str, List[float]]]:
         """
         Reads a Wavefront material (.mtl) file and extracts the diffuse color (Kd)
         values for each material, allowing the OBJ to render with its assigned base colors.
@@ -69,7 +69,7 @@ class ObjMesh(BaseMesh):
         current_material: Optional[str] = None
 
         try:
-            with open(mtl_path, 'r', encoding='utf-8') as f:
+            with open(material_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     if line.startswith('newmtl'):
                         current_material = line.split()[1]
@@ -79,7 +79,7 @@ class ObjMesh(BaseMesh):
                         materials[current_material]['Kd'] = [float(x) for x in line.split()[1:]]
 
         except FileNotFoundError:
-            print(f'MTL file not found: {mtl_path}')
+            print(f'MTL file not found: {material_path}')
 
         return materials
 
@@ -98,13 +98,13 @@ class ObjMesh(BaseMesh):
         current_material_color: List[float] = [1.0, 1.0, 1.0]
 
         try:
-            obj_dir: str = os.path.dirname(self.obj_path)
-            with open(self.obj_path, 'r', encoding='utf-8') as f:
+            obj_dir: str = os.path.dirname(self.object_path)
+            with open(self.object_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     if line.startswith('mtllib'):
                         mtl_filename: str = line.split()[1]
-                        mtl_path: str = os.path.join(obj_dir, mtl_filename)
-                        materials = self.parse_mtl(mtl_path)
+                        material_path: str = os.path.join(obj_dir, mtl_filename)
+                        materials = self.parse_mtl(material_path)
 
                     elif line.startswith('usemtl'):
                         material_name: str = line.split()[1]
@@ -143,7 +143,7 @@ class ObjMesh(BaseMesh):
                                 vertex_data.extend(current_material_color)
 
         except FileNotFoundError:
-            print(f"ObjMesh warning: '{self.obj_path}' not found. Rendering fallback triangle.")
+            print(f"ObjMesh warning: '{self.object_path}' not found. Rendering fallback triangle.")
 
             return np.array(
                 [0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1],

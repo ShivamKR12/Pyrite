@@ -131,24 +131,27 @@ def get_index(x: int, y: int, z: int) -> int:
 
 @njit(cache=True, fastmath=True, nogil=True)
 def set_voxel_column(
-    voxels: Any, x: int, z: int, cx: int, cy: int, cz: int, perm_array: Any, perm_grad_array: Any
+    voxels: Any, x: int, z: int, chunk_x: int, chunk_y: int, chunk_z: int, perm_array: Any, perm_grad_array: Any
 ) -> None:
     """
     Procedurally generates a single vertical column of blocks within a chunk.
     Applies complex biome mapping, depth stratification, and 3D cave carving logic.
     """
     # Calculate global coordinates and height
-    wx = x + cx
-    wz = z + cz
-    world_height = get_height(wx, wz, perm_array)
+    world_x = x + chunk_x
+    world_z = z + chunk_z
+    world_height = get_height(world_x, world_z, perm_array)
     max_h = max(world_height, int(WATER_LINE) + 1)
-    local_height = min(max_h - cy, CHUNK_SIZE)
+    local_height = min(max_h - chunk_y, CHUNK_SIZE)
     if local_height <= 0:
         return
 
     # Determine biome properties
-    temp, moist = get_biome(wx, wz, perm_array)
-    dither = noise2(wx * 0.2, wz * 0.2, perm_array) * 0.05 + noise2(wx * 0.8, wz * 0.8, perm_array) * 0.03
+    temp, moist = get_biome(world_x, world_z, perm_array)
+    dither = (
+        noise2(world_x * 0.2, world_z * 0.2, perm_array) * 0.05
+        + noise2(world_x * 0.8, world_z * 0.8, perm_array) * 0.03
+    )
     temp += dither
     moist += dither
     is_desert = temp > 0.3 and moist < -0.2
@@ -170,30 +173,30 @@ def set_voxel_column(
         subsurface_id = DIRT
 
     # Evaluate depth and noise masks
-    dirt_depth = int((noise2(wx * 0.1, wz * 0.1, perm_array) * 0.5 + 0.5) * 5) + 3
-    entrance_mask = noise2(wx * 0.02 + 200.0, wz * 0.02 + 200.0, perm_array)
-    crust = noise2(wx * 0.1, wz * 0.1, perm_array) * 3 + 3
+    dirt_depth = int((noise2(world_x * 0.1, world_z * 0.1, perm_array) * 0.5 + 0.5) * 5) + 3
+    entrance_mask = noise2(world_x * 0.02 + 200.0, world_z * 0.02 + 200.0, perm_array)
+    crust = noise2(world_x * 0.1, world_z * 0.1, perm_array) * 3 + 3
 
     # Generate vertical column blocks
     for y in range(local_height):
-        wy = y + cy
+        world_y = y + chunk_y
         voxel_id = 0
 
-        if wy > world_height - 1:
-            if wy <= WATER_LINE:
+        if world_y > world_height - 1:
+            if world_y <= WATER_LINE:
                 voxel_id = WATER
         else:
-            if wy == world_height - 1:
+            if world_y == world_height - 1:
                 voxel_id = surface_id
-            elif wy >= world_height - dirt_depth:
+            elif world_y >= world_height - dirt_depth:
                 voxel_id = subsurface_id
             else:
                 voxel_id = STONE
 
-            if wy > crust:
-                surface_dist = world_height - wy
+            if world_y > crust:
+                surface_dist = world_height - world_y
                 if not ((is_underwater or is_beach) and surface_dist <= dirt_depth):
-                    cave_noise = noise3(wx * 0.09, wy * 0.09, wz * 0.09, perm_array, perm_grad_array)
+                    cave_noise = noise3(world_x * 0.09, world_y * 0.09, world_z * 0.09, perm_array, perm_grad_array)
                     cave_threshold = 0.0
                     if surface_dist < 14:
                         taper_factor = (14 - surface_dist) / 14.0
@@ -208,7 +211,13 @@ def set_voxel_column(
             voxels[get_index(x, y, z)] = voxel_id
 
         # Place vegetation
-        if wy == world_height - 1 and voxel_id == surface_id and not is_underwater and not is_beach and wy < STONE_LVL:
+        if (
+            world_y == world_height - 1
+            and voxel_id == surface_id
+            and not is_underwater
+            and not is_beach
+            and world_y < STONE_LVL
+        ):
             tree_prob = 0.0
             if surface_id == GRASS:
                 if moist > 0.4:
@@ -261,7 +270,9 @@ def place_tree(voxels: Any, x: int, y: int, z: int, voxel_id: int, tree_prob: fl
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def fill_initial_sunlight(voxels: Any, lightmap: Any, cx: int, cy: int, cz: int, perm_array: Any) -> None:
+def fill_initial_sunlight(
+    voxels: Any, lightmap: Any, chunk_x: int, chunk_y: int, chunk_z: int, perm_array: Any
+) -> None:
     """
     Initializes a newly generated chunk's lightmap by simulating direct,
     overhead sunlight falling vertically onto the procedural terrain layout.
@@ -269,21 +280,21 @@ def fill_initial_sunlight(voxels: Any, lightmap: Any, cx: int, cy: int, cz: int,
     # Evaluate sunlight per column
     for x in range(CHUNK_SIZE):
         for z in range(CHUNK_SIZE):
-            wx = x + cx
-            wz = z + cz
-            world_height = get_height(wx, wz, perm_array)
+            world_x = x + chunk_x
+            world_z = z + chunk_z
+            world_height = get_height(world_x, world_z, perm_array)
 
             # Assign sunlight based on block depth
             for y in range(CHUNK_SIZE):
-                wy = y + cy
+                world_y = y + chunk_y
                 index = get_index(x, y, z)
 
-                if wy >= world_height:
+                if world_y >= world_height:
                     voxel_id = voxels[index]
                     if voxel_id == AIR or voxel_id == GLASS:
                         lightmap[index] = (15 << 4) | 0
                     elif voxel_id == WATER:
-                        depth = world_height - wy
+                        depth = world_height - world_y
                         sun = max(0, 15 + depth * 2)
                         lightmap[index] = (sun << 4) | 0
                     elif voxel_id == LEAVES:

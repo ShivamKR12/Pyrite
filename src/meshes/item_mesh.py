@@ -48,7 +48,7 @@ class ItemMesh(BaseMesh):
         Calculates and returns the complete set of vertices, texture coordinates,
         and face IDs required to construct a 3D block representation.
         """
-        # format: pos(3), uv(2), face_id(1)
+        # format: position(3), uv(2), face_id(1)
         # face_ids: 0: top, 1: bottom, 2: right, 3: left, 4: back, 5: front
         vertices = [
             # Top

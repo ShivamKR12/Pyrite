@@ -88,34 +88,38 @@ class VoxelHandler:
                 voxel_index: int = result[1]
                 chunk: Any = result[3]
                 chunk.voxels[voxel_index] = current_id
-                wx: float = float(new_voxel_pos.x)
-                wy: float = float(new_voxel_pos.y)
-                wz: float = float(new_voxel_pos.z)
+                world_x: float = float(new_voxel_pos.x)
+                world_y: float = float(new_voxel_pos.y)
+                world_z: float = float(new_voxel_pos.z)
 
                 # Dispatch async lighting and mesh updates
                 def async_add_voxel(
-                    wx: float = wx, wy: float = wy, wz: float = wz, cid: int = current_id, ch: Any = chunk
+                    world_x: float = world_x,
+                    world_y: float = world_y,
+                    world_z: float = world_z,
+                    cid: int = current_id,
+                    ch: Any = chunk,
                 ) -> None:
                     update_light_place_block(
-                        int(wx),
-                        int(wy),
-                        int(wz),
+                        int(world_x),
+                        int(world_y),
+                        int(world_z),
                         self.app.scene.world.voxels,
                         self.app.scene.world.lightmaps,
                         self.app.scene.world.chunk_positions,
                     )
                     if cid == GLOWSTONE:
                         place_torch(
-                            int(wx),
-                            int(wy),
-                            int(wz),
+                            int(world_x),
+                            int(world_y),
+                            int(world_z),
                             self.app.scene.world.voxels,
                             self.app.scene.world.lightmaps,
                             self.app.scene.world.chunk_positions,
                         )
                     if ch not in self.app.scene.world.build_queue:
                         self.app.scene.world.build_queue.append(ch)
-                    self.rebuild_adjacent_chunks(glm.vec3(wx, wy, wz), is_light_update=True)
+                    self.rebuild_adjacent_chunks(glm.vec3(world_x, world_y, world_z), is_light_update=True)
 
                 self.app.scene.world.executor.submit(async_add_voxel)
 
@@ -136,25 +140,25 @@ class VoxelHandler:
         update requiring neighbors to recalculate their block/sunlight visuals.
         """
         # Calculate update radii and bounds
-        wx: int = int(world_pos.x)
-        wy: int = int(world_pos.y)
-        wz: int = int(world_pos.z)
-        cx: int = wx // CHUNK_SIZE
-        cy: int = wy // CHUNK_SIZE
-        cz: int = wz // CHUNK_SIZE
+        world_x: int = int(world_pos.x)
+        world_y: int = int(world_pos.y)
+        world_z: int = int(world_pos.z)
+        chunk_x: int = world_x // CHUNK_SIZE
+        chunk_y: int = world_y // CHUNK_SIZE
+        chunk_z: int = world_z // CHUNK_SIZE
         radius: int = 15 if is_light_update else 1
-        min_cx: int = (wx - radius) // CHUNK_SIZE
-        max_cx: int = (wx + radius) // CHUNK_SIZE
-        min_cz: int = (wz - radius) // CHUNK_SIZE
-        max_cz: int = (wz + radius) // CHUNK_SIZE
-        min_cy: int = 0 if is_light_update else (wy - radius) // CHUNK_SIZE
-        max_cy: int = (wy + radius) // CHUNK_SIZE
+        min_cx: int = (world_x - radius) // CHUNK_SIZE
+        max_cx: int = (world_x + radius) // CHUNK_SIZE
+        min_cz: int = (world_z - radius) // CHUNK_SIZE
+        max_cz: int = (world_z + radius) // CHUNK_SIZE
+        min_cy: int = 0 if is_light_update else (world_y - radius) // CHUNK_SIZE
+        max_cy: int = (world_y + radius) // CHUNK_SIZE
 
         # Queue chunks in range
         for x in range(min_cx, max_cx + 1):
             for y in range(min_cy, max_cy + 1):
                 for z in range(min_cz, max_cz + 1):
-                    if x == cx and y == cy and z == cz:
+                    if x == chunk_x and y == chunk_y and z == chunk_z:
                         continue
                     chunk_pos: Tuple[int, int, int] = (x, y, z)
                     if chunk_pos in self.app.scene.world.active_chunks:
@@ -171,35 +175,39 @@ class VoxelHandler:
         """
         if self.voxel_id:
             # Clear targeted block
-            wx: float = float(self.voxel_world_pos.x)
-            wy: float = float(self.voxel_world_pos.y)
-            wz: float = float(self.voxel_world_pos.z)
+            world_x: float = float(self.voxel_world_pos.x)
+            world_y: float = float(self.voxel_world_pos.y)
+            world_z: float = float(self.voxel_world_pos.z)
             self.chunk.voxels[self.voxel_index] = 0
 
             # Dispatch async lighting and mesh updates
             def async_remove_voxel(
-                wx: float = wx, wy: float = wy, wz: float = wz, vid: int = self.voxel_id, ch: Any = self.chunk
+                world_x: float = world_x,
+                world_y: float = world_y,
+                world_z: float = world_z,
+                vid: int = self.voxel_id,
+                ch: Any = self.chunk,
             ) -> None:
                 if vid == GLOWSTONE:
                     update_light_place_block(
-                        int(wx),
-                        int(wy),
-                        int(wz),
+                        int(world_x),
+                        int(world_y),
+                        int(world_z),
                         self.app.scene.world.voxels,
                         self.app.scene.world.lightmaps,
                         self.app.scene.world.chunk_positions,
                     )
                 update_light_remove_block(
-                    int(wx),
-                    int(wy),
-                    int(wz),
+                    int(world_x),
+                    int(world_y),
+                    int(world_z),
                     self.app.scene.world.voxels,
                     self.app.scene.world.lightmaps,
                     self.app.scene.world.chunk_positions,
                 )
                 if ch not in self.app.scene.world.build_queue:
                     self.app.scene.world.build_queue.append(ch)
-                self.rebuild_adjacent_chunks(glm.vec3(wx, wy, wz), is_light_update=True)
+                self.rebuild_adjacent_chunks(glm.vec3(world_x, world_y, world_z), is_light_update=True)
 
             self.app.scene.world.executor.submit(async_remove_voxel)
 
@@ -337,17 +345,19 @@ class VoxelHandler:
             containing the voxel (or None if out of loaded range).
         """
         # Determine target chunk
-        cx: int = int(glm.floor(voxel_world_pos.x / CHUNK_SIZE))
-        cy: int = int(glm.floor(voxel_world_pos.y / CHUNK_SIZE))
-        cz: int = int(glm.floor(voxel_world_pos.z / CHUNK_SIZE))
-        chunk_pos: Tuple[int, int, int] = (cx, cy, cz)
+        chunk_x: int = int(glm.floor(voxel_world_pos.x / CHUNK_SIZE))
+        chunk_y: int = int(glm.floor(voxel_world_pos.y / CHUNK_SIZE))
+        chunk_z: int = int(glm.floor(voxel_world_pos.z / CHUNK_SIZE))
+        chunk_pos: Tuple[int, int, int] = (chunk_x, chunk_y, chunk_z)
 
         # Fetch local voxel data
         if chunk_pos in self.app.scene.world.active_chunks:
             chunk: Any = self.app.scene.world.active_chunks[chunk_pos]
             if chunk.voxels is None:
                 return 0, 0, None, None
-            lx, ly, lz = voxel_local_pos = glm.ivec3(voxel_world_pos) - glm.ivec3(cx, cy, cz) * CHUNK_SIZE
+            lx, ly, lz = voxel_local_pos = (
+                glm.ivec3(voxel_world_pos) - glm.ivec3(chunk_x, chunk_y, chunk_z) * CHUNK_SIZE
+            )
             voxel_index: int = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
             voxel_id: int = chunk.voxels[voxel_index]
             return voxel_id, voxel_index, voxel_local_pos, chunk

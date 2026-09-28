@@ -118,42 +118,70 @@ def get_vertex_light(
     in the given plane.
     """
     local_x, local_y, local_z = local_vertex_pos
-    vx, vy, vz = world_vertex_pos
+    velocity_x, velocity_y, velocity_z = world_vertex_pos
 
     if plane == 'Y':
         # Vertex is on an XZ plane, so we sample the 4 adjacent blocks in that plane.
         block_0 = get_neighbor_voxel_id(
-            (local_x, local_y, local_z), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions
+            (local_x, local_y, local_z),
+            (velocity_x, velocity_y, velocity_z),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_1 = get_neighbor_voxel_id(
-            (local_x - 1, local_y, local_z), (vx - 1, vy, vz), chunk_voxels, world_voxels, chunk_positions
+            (local_x - 1, local_y, local_z),
+            (velocity_x - 1, velocity_y, velocity_z),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_2 = get_neighbor_voxel_id(
-            (local_x, local_y, local_z - 1), (vx, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions
+            (local_x, local_y, local_z - 1),
+            (velocity_x, velocity_y, velocity_z - 1),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_3 = get_neighbor_voxel_id(
-            (local_x - 1, local_y, local_z - 1), (vx - 1, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions
+            (local_x - 1, local_y, local_z - 1),
+            (velocity_x - 1, velocity_y, velocity_z - 1),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
 
         light_0 = (
             face_light
             if not is_transparent(block_0)
             else get_neighbor_light(
-                (local_x, local_y, local_z), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z),
+                (velocity_x, velocity_y, velocity_z),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_1 = (
             face_light
             if not is_transparent(block_1)
             else get_neighbor_light(
-                (local_x - 1, local_y, local_z), (vx - 1, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x - 1, local_y, local_z),
+                (velocity_x - 1, velocity_y, velocity_z),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_2 = (
             face_light
             if not is_transparent(block_2)
             else get_neighbor_light(
-                (local_x, local_y, local_z - 1), (vx, vy, vz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z - 1),
+                (velocity_x, velocity_y, velocity_z - 1),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_3 = (
@@ -161,7 +189,7 @@ def get_vertex_light(
             if not is_transparent(block_3)
             else get_neighbor_light(
                 (local_x - 1, local_y, local_z - 1),
-                (vx - 1, vy, vz - 1),
+                (velocity_x - 1, velocity_y, velocity_z - 1),
                 chunk_lightmap,
                 world_lightmaps,
                 chunk_positions,
@@ -171,37 +199,65 @@ def get_vertex_light(
     elif plane == 'X':
         # Vertex is on a YZ plane
         block_0 = get_neighbor_voxel_id(
-            (local_x, local_y, local_z), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions
+            (local_x, local_y, local_z),
+            (velocity_x, velocity_y, velocity_z),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_1 = get_neighbor_voxel_id(
-            (local_x, local_y - 1, local_z), (vx, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions
+            (local_x, local_y - 1, local_z),
+            (velocity_x, velocity_y - 1, velocity_z),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_2 = get_neighbor_voxel_id(
-            (local_x, local_y, local_z - 1), (vx, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions
+            (local_x, local_y, local_z - 1),
+            (velocity_x, velocity_y, velocity_z - 1),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_3 = get_neighbor_voxel_id(
-            (local_x, local_y - 1, local_z - 1), (vx, vy - 1, vz - 1), chunk_voxels, world_voxels, chunk_positions
+            (local_x, local_y - 1, local_z - 1),
+            (velocity_x, velocity_y - 1, velocity_z - 1),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
 
         light_0 = (
             face_light
             if not is_transparent(block_0)
             else get_neighbor_light(
-                (local_x, local_y, local_z), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z),
+                (velocity_x, velocity_y, velocity_z),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_1 = (
             face_light
             if not is_transparent(block_1)
             else get_neighbor_light(
-                (local_x, local_y - 1, local_z), (vx, vy - 1, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y - 1, local_z),
+                (velocity_x, velocity_y - 1, velocity_z),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_2 = (
             face_light
             if not is_transparent(block_2)
             else get_neighbor_light(
-                (local_x, local_y, local_z - 1), (vx, vy, vz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z - 1),
+                (velocity_x, velocity_y, velocity_z - 1),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_3 = (
@@ -209,7 +265,7 @@ def get_vertex_light(
             if not is_transparent(block_3)
             else get_neighbor_light(
                 (local_x, local_y - 1, local_z - 1),
-                (vx, vy - 1, vz - 1),
+                (velocity_x, velocity_y - 1, velocity_z - 1),
                 chunk_lightmap,
                 world_lightmaps,
                 chunk_positions,
@@ -219,37 +275,65 @@ def get_vertex_light(
     else:  # Z plane
         # Vertex is on an XY plane
         block_0 = get_neighbor_voxel_id(
-            (local_x, local_y, local_z), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions
+            (local_x, local_y, local_z),
+            (velocity_x, velocity_y, velocity_z),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_1 = get_neighbor_voxel_id(
-            (local_x - 1, local_y, local_z), (vx - 1, vy, vz), chunk_voxels, world_voxels, chunk_positions
+            (local_x - 1, local_y, local_z),
+            (velocity_x - 1, velocity_y, velocity_z),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_2 = get_neighbor_voxel_id(
-            (local_x, local_y - 1, local_z), (vx, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions
+            (local_x, local_y - 1, local_z),
+            (velocity_x, velocity_y - 1, velocity_z),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
         block_3 = get_neighbor_voxel_id(
-            (local_x - 1, local_y - 1, local_z), (vx - 1, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions
+            (local_x - 1, local_y - 1, local_z),
+            (velocity_x - 1, velocity_y - 1, velocity_z),
+            chunk_voxels,
+            world_voxels,
+            chunk_positions,
         )
 
         light_0 = (
             face_light
             if not is_transparent(block_0)
             else get_neighbor_light(
-                (local_x, local_y, local_z), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z),
+                (velocity_x, velocity_y, velocity_z),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_1 = (
             face_light
             if not is_transparent(block_1)
             else get_neighbor_light(
-                (local_x - 1, local_y, local_z), (vx - 1, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x - 1, local_y, local_z),
+                (velocity_x - 1, velocity_y, velocity_z),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_2 = (
             face_light
             if not is_transparent(block_2)
             else get_neighbor_light(
-                (local_x, local_y - 1, local_z), (vx, vy - 1, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y - 1, local_z),
+                (velocity_x, velocity_y - 1, velocity_z),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
         light_3 = (
@@ -257,7 +341,7 @@ def get_vertex_light(
             if not is_transparent(block_3)
             else get_neighbor_light(
                 (local_x - 1, local_y - 1, local_z),
-                (vx - 1, vy - 1, vz),
+                (velocity_x - 1, velocity_y - 1, velocity_z),
                 chunk_lightmap,
                 world_lightmaps,
                 chunk_positions,

@@ -133,8 +133,8 @@ class World:
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS dropped_items (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 voxel_id INTEGER,
-                                px REAL, py REAL, pz REAL,
-                                vx REAL, vy REAL, vz REAL)""")
+                                position_x REAL, position_y REAL, position_z REAL,
+                                velocity_x REAL, velocity_y REAL, velocity_z REAL)""")
 
         # Safely upgrade existing databases to support lightmap caching!
         try:
@@ -155,7 +155,7 @@ class World:
         if not meta_row:
             now = datetime.datetime.now().isoformat()
 
-            # Use the seed passed from main.py
+            # Use the seed passed from main.position_y
             self.cursor.execute(
                 """INSERT INTO world_meta (id, world_name, seed, game_mode, creation_date, last_played)
                                    VALUES (?, ?, ?, ?, ?, ?)""",
@@ -188,12 +188,12 @@ class World:
                 self.app.player.oxygen = p_data.get('oxygen', self.app.player.max_oxygen)
                 self.app.world_session_time = p_data.get('time_played', 0.0)
 
-                pos = p_data.get('position')
+                position = p_data.get('position')
 
-                if pos:
-                    self.app.player.position = glm.vec3(pos[0], pos[1], pos[2])
-                    self.app.player.feet_pos = glm.vec3(pos[0], pos[1] - PLAYER_EYE_HEIGHT, pos[2])
-                    self.app.player.highest_y = pos[1]
+                if position:
+                    self.app.player.position = glm.vec3(position[0], position[1], position[2])
+                    self.app.player.feet_pos = glm.vec3(position[0], position[1] - PLAYER_EYE_HEIGHT, position[2])
+                    self.app.player.highest_y = position[1]
 
                 else:
                     self.app.player.respawn()
@@ -219,7 +219,9 @@ class World:
         self.saved_dropped_items: List[Any] = []
 
         try:
-            self.cursor.execute('SELECT voxel_id, px, py, pz, vx, vy, vz FROM dropped_items')
+            self.cursor.execute(
+                'SELECT voxel_id, position_x, position_y, position_z, velocity_x, velocity_y, velocity_z FROM dropped_items'
+            )
             self.saved_dropped_items = self.cursor.fetchall()
 
         except sqlite3.OperationalError:
@@ -304,19 +306,24 @@ class World:
             chunk.pending_lighting = False
 
             def build_task(c: Any = chunk, needs_light: bool = nl) -> Any:
-                cx, cy, cz = c.position
+                chunk_x, chunk_y, chunk_z = c.position
                 if needs_light:
                     init_chunk_lighting(
-                        cx * CHUNK_SIZE,
-                        cy * CHUNK_SIZE,
-                        cz * CHUNK_SIZE,
+                        chunk_x * CHUNK_SIZE,
+                        chunk_y * CHUNK_SIZE,
+                        chunk_z * CHUNK_SIZE,
                         self.voxels,
                         self.lightmaps,
                         self.chunk_positions,
                     )
 
                 stitch_chunk_lighting(
-                    cx * CHUNK_SIZE, cy * CHUNK_SIZE, cz * CHUNK_SIZE, self.voxels, self.lightmaps, self.chunk_positions
+                    chunk_x * CHUNK_SIZE,
+                    chunk_y * CHUNK_SIZE,
+                    chunk_z * CHUNK_SIZE,
+                    self.voxels,
+                    self.lightmaps,
+                    self.chunk_positions,
                 )
                 return c.mesh.get_vertex_data()
 
@@ -470,7 +477,7 @@ class World:
         brand new procedural terrain using Numba logic instead.
         """
         t0 = time.perf_counter()
-        cx, cy, cz = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
+        chunk_x, chunk_y, chunk_z = x * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE
 
         if not hasattr(self.thread_local, 'cursor'):
             conn = sqlite3.connect(self.save_path, timeout=10, check_same_thread=False)
@@ -493,14 +500,14 @@ class World:
 
             # Old save file format, fallback to generating sunlight
             lightmap_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
-            Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, cx, cy, cz, noise.perm)
+            Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, chunk_x, chunk_y, chunk_z, noise.perm)
 
             return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
         voxel_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
         lightmap_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
         Chunk.generate_terrain(
-            voxel_data, lightmap_data, cx, cy, cz, noise.perm, noise.perm_grad_index3, self.world_seed
+            voxel_data, lightmap_data, chunk_x, chunk_y, chunk_z, noise.perm, noise.perm_grad_index3, self.world_seed
         )
         is_empty = not np.any(voxel_data)
 
@@ -526,11 +533,11 @@ class World:
         self.last_stream_state = stream_state
 
         # 1. Unload chunks out of range
-        for pos in list(self.active_chunks.keys()):
-            x, y, z = pos
+        for position in list(self.active_chunks.keys()):
+            x, y, z = position
 
             if (x - player_cx) ** 2 + (z - player_cz) ** 2 > (render_dist + 1) ** 2:
-                self.unload_chunk(pos)
+                self.unload_chunk(position)
 
         # 2. Load chunks in range
         chunks_to_load = []
@@ -545,10 +552,10 @@ class World:
                         chunks_to_load.append((x, y, z))
 
         # Sort chunks by distance (closest first) so the ThreadPool executes them first
-        chunks_to_load.sort(key=lambda pos: (pos[0] - player_cx) ** 2 + (pos[2] - player_cz) ** 2)
+        chunks_to_load.sort(key=lambda position: (position[0] - player_cx) ** 2 + (position[2] - player_cz) ** 2)
 
-        for pos in chunks_to_load:
-            self.load_chunk(*pos)
+        for position in chunks_to_load:
+            self.load_chunk(*position)
 
     @global_profiler.profile_func('Load_Chunk')
     def load_chunk(self, x: int, y: int, z: int) -> None:
@@ -590,20 +597,24 @@ class World:
             self.connection.commit()
 
     @global_profiler.profile_func('Unload_Chunk')
-    def unload_chunk(self, pos: Tuple[int, int, int]) -> None:
+    def unload_chunk(self, position: Tuple[int, int, int]) -> None:
         """
         Removes a chunk from the active world space, triggers an asynchronous
         disk save, purges it from any pending queues, and recycles its VRAM.
         """
-        if pos in self.active_chunks:
-            chunk = self.active_chunks.pop(pos)
+        if position in self.active_chunks:
+            chunk = self.active_chunks.pop(position)
 
             if not chunk.is_empty and chunk.voxels is not None:
                 lightmap_copy = chunk.lightmap.copy() if chunk.lightmap is not None else None
-                self.executor.submit(self.save_chunk_to_db, pos[0], pos[1], pos[2], chunk.voxels.copy(), lightmap_copy)
+                self.executor.submit(
+                    self.save_chunk_to_db, position[0], position[1], position[2], chunk.voxels.copy(), lightmap_copy
+                )
 
             chunk_index = (
-                (pos[0] % WORLD_WIDTH) + WORLD_WIDTH * (pos[2] % WORLD_DEPTH) + WORLD_AREA * (pos[1] % WORLD_HEIGHT)
+                (position[0] % WORLD_WIDTH)
+                + WORLD_WIDTH * (position[2] % WORLD_DEPTH)
+                + WORLD_AREA * (position[1] % WORLD_HEIGHT)
             )
             self.chunks[chunk_index] = None
             self.chunk_positions[chunk_index] = (-999, -999, -999)
@@ -640,13 +651,15 @@ class World:
         calls to the GPU.
         """
         player = self.app.player
-        player_pos = player.position
-        player_chunk_pos = (int(player_pos.x // CHUNK_SIZE), int(player_pos.z // CHUNK_SIZE))
+        player_position = player.position
+        player_chunk_pos = (int(player_position.x // CHUNK_SIZE), int(player_position.z // CHUNK_SIZE))
         active_chunk_count = len(self.active_chunks)
 
         # Re-sort chunks only when player moves to a new chunk or when chunks are loaded/unloaded
         if player_chunk_pos != self.last_player_chunk_pos or active_chunk_count != self.last_active_chunk_count:
-            self.sorted_chunks = sorted(self.active_chunks.values(), key=lambda c: glm.distance2(c.center, player_pos))
+            self.sorted_chunks = sorted(
+                self.active_chunks.values(), key=lambda c: glm.distance2(c.center, player_position)
+            )
 
             # Update the chunk centers array for vectorized culling
             if self.sorted_chunks:
@@ -669,12 +682,12 @@ class World:
                 frustum_cull_fast(
                     self.chunk_centers,
                     self.frustum_mask,
-                    np.array(player_pos, dtype='float32'),
+                    np.array(player_position, dtype='float32'),
                     np.array(player.forward, dtype='float32'),
                     np.array(player.right, dtype='float32'),
                     np.array(player.up, dtype='float32'),
-                    frustum.tan_y,
-                    frustum.tan_x,
+                    frustum.tangent_y,
+                    frustum.tangent_x,
                     frustum.factor_y,
                     frustum.factor_x,
                 )
@@ -813,7 +826,7 @@ class World:
                             )
                         )
                     self.cursor.executemany(
-                        'INSERT INTO dropped_items (voxel_id, px, py, pz, vx, vy, vz) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                        'INSERT INTO dropped_items (voxel_id, position_x, position_y, position_z, velocity_x, velocity_y, velocity_z) VALUES (?, ?, ?, ?, ?, ?, ?)',
                         item_data,
                     )
                 self.connection.commit()
