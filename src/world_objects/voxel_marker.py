@@ -65,8 +65,8 @@ class VoxelMarker:
         Calculates the transformation matrix required to position the wireframe
         marker correctly at the targeted voxel's world space coordinates.
         """
-        m_model: Any = glm.translate(glm.mat4(), glm.vec3(self.position))
-        return m_model
+        model_matrix: Any = glm.translate(glm.mat4(), glm.vec3(self.position))
+        return model_matrix
 
     @global_profiler.profile_func('VoxelMarker_Render')
     def render(self) -> None:

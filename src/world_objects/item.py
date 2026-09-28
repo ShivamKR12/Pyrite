@@ -95,12 +95,12 @@ class Item:
         world: Any = self.app.scene.world
 
         # Calculate the integer coordinate directly below the item to check if it has hit the floor
-        check_pos: Any = glm.ivec3(self.position.x, self.position.y - self.scale / 2, self.position.z)
+        check_position: Any = glm.ivec3(self.position.x, self.position.y - self.scale / 2, self.position.z)
 
-        # Query the voxel handler to see if the block at check_pos is solid (non-zero ID)
-        if world.voxel_handler.get_voxel_id(check_pos)[0]:
+        # Query the voxel handler to see if the block at check_position is solid (non-zero ID)
+        if world.voxel_handler.get_voxel_id(check_position)[0]:
             # If a collision is detected, snap the item's Y position to rest precisely on top of the block surface
-            self.position.y = check_pos.y + 1.0 + self.scale / 2
+            self.position.y = check_position.y + 1.0 + self.scale / 2
 
             # Apply a harsh dampening factor (friction) to the X and Z velocities so the item stops sliding
             self.velocity.x *= 0.8
@@ -138,16 +138,16 @@ class Item:
         bobbing_offset = math.sin(pg.time.get_ticks() * 0.003) * 0.1
 
         # Apply the computed bobbing offset to the item's absolute Y position
-        bob_pos = glm.vec3(self.position.x, self.position.y + bobbing_offset, self.position.z)
+        bob_position = glm.vec3(self.position.x, self.position.y + bobbing_offset, self.position.z)
 
         # Initialize a 4x4 identity matrix and apply a translation transformation to move the model to its world coordinates
-        m_model: Any = glm.translate(glm.mat4(), bob_pos)
+        model_matrix: Any = glm.translate(glm.mat4(), bob_position)
 
         # Apply a rotational transformation around the global Y-axis (up vector) using the accumulated rotation angle
-        m_model = glm.rotate(m_model, self.rotation, glm.vec3(0, 1, 0))
+        model_matrix = glm.rotate(model_matrix, self.rotation, glm.vec3(0, 1, 0))
 
         # Finally, apply a uniform scaling transformation to shrink the model to the defined ITEM_SCALE size
-        return glm.scale(m_model, glm.vec3(self.scale))
+        return glm.scale(model_matrix, glm.vec3(self.scale))
 
 
 class ItemManager:
@@ -239,12 +239,12 @@ class ItemManager:
         self.app.ctx.disable(self.app.ctx.CULL_FACE)
 
         # Cache the player's current world position to calculate render distances efficiently
-        player_pos: Any = self.app.player.position
+        player_position: Any = self.app.player.position
 
         # Iterate through the entire active item pool for the render pass
         for item in self.items:
             # Perform a fast squared-distance check to cull items that are too far away to be visible
-            if glm.distance2(item.position, player_pos) > ITEM_RENDER_DISTANCE_SQUARED:
+            if glm.distance2(item.position, player_position) > ITEM_RENDER_DISTANCE_SQUARED:
                 continue
 
             # Route the item to its appropriate 3D mesh based on its unique voxel ID

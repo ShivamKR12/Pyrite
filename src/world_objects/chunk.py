@@ -69,8 +69,8 @@ class Chunk:
         Calculates the transformation matrix required to position this chunk
         correctly within the global 3D world space.
         """
-        m_model: Any = glm.translate(glm.mat4(), glm.vec3(self.position) * CHUNK_SIZE)
-        return m_model
+        model_matrix: Any = glm.translate(glm.mat4(), glm.vec3(self.position) * CHUNK_SIZE)
+        return model_matrix
 
     @global_profiler.profile_func('Chunk_SetUniform')
     def set_uniform(self) -> None:
