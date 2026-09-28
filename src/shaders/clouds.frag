@@ -19,10 +19,10 @@ void main() {
     }
 
     // Fog calculation
-    float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
-    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_dist * fog_dist), u_fog_max_opacity);
-    vec3 col = mix(cloud_color, bg_color, fog_factor);
+    float fog_distance = gl_FragCoord.z / gl_FragCoord.w;
+    float fog_factor = min(1.0 - exp2(-u_fog_density * fog_distance * fog_distance), u_fog_max_opacity);
+    vec3 color = mix(cloud_color, bg_color, fog_factor);
 
     // Final output
-    fragColor = vec4(col, 0.8);
+    fragColor = vec4(color, 0.8);
 }
