@@ -13,6 +13,6 @@ void main() {
     gl_Position = vec4(in_position, 1.0, 1.0);
 
     // Compute view direction for fragment interpolation
-    vec4 t = m_inv_proj * vec4(in_position, 1.0, 1.0);
-    view_dir = (m_inv_view * vec4(t.xyz, 0.0)).xyz;
+    vec4 view_position = m_inv_proj * vec4(in_position, 1.0, 1.0);
+    view_dir = (m_inv_view * vec4(view_position.xyz, 0.0)).xyz;
 }

@@ -19,21 +19,21 @@ void main() {
     }
 
     // Calculate base frame color and marker overlay
-    vec4 frame_col = texture(u_texture_0, uv);
-    frame_col.rgb += marker_color;
+    vec4 frame_color = texture(u_texture_0, uv);
+    frame_color.rgb += marker_color;
 
     // Apply mining progress breaking animation if applicable
-    vec4 break_col = vec4(0.0);
+    vec4 break_color = vec4(0.0);
     if (mining_progress > 0.0) {
         int frame = clamp(int(mining_progress * 8.0), 0, 7);
         vec2 break_uv = vec2(uv.x, (uv.y + float(frame)) / 8.0);
-        break_col = texture(u_texture_breaking, break_uv);
+        break_color = texture(u_texture_breaking, break_uv);
     }
 
     // Combine colors and set final fragment output
-    fragColor = frame_col;
-    if (break_col.a > 0.1) {
-        fragColor = vec4(mix(fragColor.rgb, break_col.rgb, break_col.a), 1.0);
+    fragColor = frame_color;
+    if (break_color.a > 0.1) {
+        fragColor = vec4(mix(fragColor.rgb, break_color.rgb, break_color.a), 1.0);
     }
-    fragColor.a = max(frame_col.a, break_col.a);
+    fragColor.a = max(frame_color.a, break_color.a);
 }
