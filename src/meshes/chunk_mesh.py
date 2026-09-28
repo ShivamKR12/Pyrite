@@ -87,16 +87,16 @@ class ChunkMesh(BaseMesh):
         pool: Any = self.chunk.world.vbo_pool
 
         # Find the smallest VBO in the pool that can safely fit our new mesh data
-        best_i: int = -1
+        best_index: int = -1
         best_size: float = float('inf')
 
-        for i, (p_vbo, p_vao) in enumerate(pool):
-            if p_vbo.size >= byte_size and p_vbo.size < best_size:
-                best_i = i
-                best_size = p_vbo.size
+        for index, (pool_vbo, pool_vao) in enumerate(pool):
+            if pool_vbo.size >= byte_size and pool_vbo.size < best_size:
+                best_index = index
+                best_size = pool_vbo.size
 
-        if best_i != -1:
-            pool.rotate(-best_i)
+        if best_index != -1:
+            pool.rotate(-best_index)
             self.vbo, self.vao = pool.popleft()
             self.vbo.write(self.vertex_data)
             self.vertex_data = None

@@ -49,7 +49,7 @@ class CubeMesh(BaseMesh):
         Flattens the structured lists of vertices and indices into a contiguous
         1D Numpy array required by OpenGL.
         """
-        data: List[float] = [vertices[ind] for triangle in indices for ind in triangle]
+        data: List[float] = [vertices[index] for triangle in indices for index in triangle]
 
         return np.array(data, dtype='float16')
 

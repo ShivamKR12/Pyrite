@@ -129,13 +129,17 @@ class ObjMesh(BaseMesh):
                             for face in (face_vertices[0], face_vertices[i], face_vertices[i + 1]):
                                 parts: List[str] = face.split('/')
 
-                                v_idx: int = int(parts[0]) - 1
-                                vt_idx: int = int(parts[1]) - 1 if len(parts) > 1 and parts[1] else -1
-                                vn_idx: int = int(parts[2]) - 1 if len(parts) > 2 and parts[2] else -1
+                                vertex_index: int = int(parts[0]) - 1
+                                texture_index: int = int(parts[1]) - 1 if len(parts) > 1 and parts[1] else -1
+                                normal_index: int = int(parts[2]) - 1 if len(parts) > 2 and parts[2] else -1
 
-                                vertex_data.extend(vertices[v_idx])
-                                vertex_data.extend(tex_coords[vt_idx] if vt_idx != -1 and tex_coords else [0.0, 0.0])
-                                vertex_data.extend(normals[vn_idx] if vn_idx != -1 and normals else [0.0, 1.0, 0.0])
+                                vertex_data.extend(vertices[vertex_index])
+                                vertex_data.extend(
+                                    tex_coords[texture_index] if texture_index != -1 and tex_coords else [0.0, 0.0]
+                                )
+                                vertex_data.extend(
+                                    normals[normal_index] if normal_index != -1 and normals else [0.0, 1.0, 0.0]
+                                )
                                 vertex_data.extend(current_material_color)
 
         except FileNotFoundError:
@@ -146,21 +150,21 @@ class ObjMesh(BaseMesh):
                 dtype='float32',
             )
 
-        vd_array: NDArray[np.float32] = np.array(vertex_data, dtype='float32')
+        vertex_data_array: NDArray[np.float32] = np.array(vertex_data, dtype='float32')
 
         # Automatically center the geometry around the origin (0, 0, 0)
         # This prevents models from orbiting wildly when rotated if their Blender origin was off-center!
-        if len(vd_array) > 0:
-            x_coords = vd_array[0::11]  # Grab every 11th float starting at index 0 (X)
-            y_coords = vd_array[1::11]  # Grab every 11th float starting at index 1 (Y)
-            z_coords = vd_array[2::11]  # Grab every 11th float starting at index 2 (Z)
+        if len(vertex_data_array) > 0:
+            x_coords = vertex_data_array[0::11]  # Grab every 11th float starting at index 0 (X)
+            y_coords = vertex_data_array[1::11]  # Grab every 11th float starting at index 1 (Y)
+            z_coords = vertex_data_array[2::11]  # Grab every 11th float starting at index 2 (Z)
 
             center_x: float = float((np.max(x_coords) + np.min(x_coords)) / 2.0)
             center_y: float = float((np.max(y_coords) + np.min(y_coords)) / 2.0)
             center_z: float = float((np.max(z_coords) + np.min(z_coords)) / 2.0)
 
-            vd_array[0::11] -= center_x
-            vd_array[1::11] -= center_y
-            vd_array[2::11] -= center_z
+            vertex_data_array[0::11] -= center_x
+            vertex_data_array[1::11] -= center_y
+            vertex_data_array[2::11] -= center_z
 
-        return vd_array
+        return vertex_data_array

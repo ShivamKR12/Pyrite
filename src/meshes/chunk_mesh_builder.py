@@ -64,37 +64,37 @@ def get_ao(
     the corner is, returning a tuple of AO values for the four vertices of the face.
     """
     x, y, z = local_pos
-    wx, wy, wz = world_pos
+    world_x, world_y, world_z = world_pos
 
     if plane == 'Y':
-        a = is_void((x, y, z - 1), (wx, wy, wz - 1), chunk_voxels, world_voxels, chunk_positions)
-        b = is_void((x - 1, y, z - 1), (wx - 1, wy, wz - 1), chunk_voxels, world_voxels, chunk_positions)
-        c = is_void((x - 1, y, z), (wx - 1, wy, wz), chunk_voxels, world_voxels, chunk_positions)
-        d = is_void((x - 1, y, z + 1), (wx - 1, wy, wz + 1), chunk_voxels, world_voxels, chunk_positions)
-        e = is_void((x, y, z + 1), (wx, wy, wz + 1), chunk_voxels, world_voxels, chunk_positions)
-        f = is_void((x + 1, y, z + 1), (wx + 1, wy, wz + 1), chunk_voxels, world_voxels, chunk_positions)
-        g = is_void((x + 1, y, z), (wx + 1, wy, wz), chunk_voxels, world_voxels, chunk_positions)
-        h = is_void((x + 1, y, z - 1), (wx + 1, wy, wz - 1), chunk_voxels, world_voxels, chunk_positions)
+        a = is_void((x, y, z - 1), (world_x, world_y, world_z - 1), chunk_voxels, world_voxels, chunk_positions)
+        b = is_void((x - 1, y, z - 1), (world_x - 1, world_y, world_z - 1), chunk_voxels, world_voxels, chunk_positions)
+        c = is_void((x - 1, y, z), (world_x - 1, world_y, world_z), chunk_voxels, world_voxels, chunk_positions)
+        d = is_void((x - 1, y, z + 1), (world_x - 1, world_y, world_z + 1), chunk_voxels, world_voxels, chunk_positions)
+        e = is_void((x, y, z + 1), (world_x, world_y, world_z + 1), chunk_voxels, world_voxels, chunk_positions)
+        f = is_void((x + 1, y, z + 1), (world_x + 1, world_y, world_z + 1), chunk_voxels, world_voxels, chunk_positions)
+        g = is_void((x + 1, y, z), (world_x + 1, world_y, world_z), chunk_voxels, world_voxels, chunk_positions)
+        h = is_void((x + 1, y, z - 1), (world_x + 1, world_y, world_z - 1), chunk_voxels, world_voxels, chunk_positions)
 
     elif plane == 'X':
-        a = is_void((x, y, z - 1), (wx, wy, wz - 1), chunk_voxels, world_voxels, chunk_positions)
-        b = is_void((x, y - 1, z - 1), (wx, wy - 1, wz - 1), chunk_voxels, world_voxels, chunk_positions)
-        c = is_void((x, y - 1, z), (wx, wy - 1, wz), chunk_voxels, world_voxels, chunk_positions)
-        d = is_void((x, y - 1, z + 1), (wx, wy - 1, wz + 1), chunk_voxels, world_voxels, chunk_positions)
-        e = is_void((x, y, z + 1), (wx, wy, wz + 1), chunk_voxels, world_voxels, chunk_positions)
-        f = is_void((x, y + 1, z + 1), (wx, wy + 1, wz + 1), chunk_voxels, world_voxels, chunk_positions)
-        g = is_void((x, y + 1, z), (wx, wy + 1, wz), chunk_voxels, world_voxels, chunk_positions)
-        h = is_void((x, y + 1, z - 1), (wx, wy + 1, wz - 1), chunk_voxels, world_voxels, chunk_positions)
+        a = is_void((x, y, z - 1), (world_x, world_y, world_z - 1), chunk_voxels, world_voxels, chunk_positions)
+        b = is_void((x, y - 1, z - 1), (world_x, world_y - 1, world_z - 1), chunk_voxels, world_voxels, chunk_positions)
+        c = is_void((x, y - 1, z), (world_x, world_y - 1, world_z), chunk_voxels, world_voxels, chunk_positions)
+        d = is_void((x, y - 1, z + 1), (world_x, world_y - 1, world_z + 1), chunk_voxels, world_voxels, chunk_positions)
+        e = is_void((x, y, z + 1), (world_x, world_y, world_z + 1), chunk_voxels, world_voxels, chunk_positions)
+        f = is_void((x, y + 1, z + 1), (world_x, world_y + 1, world_z + 1), chunk_voxels, world_voxels, chunk_positions)
+        g = is_void((x, y + 1, z), (world_x, world_y + 1, world_z), chunk_voxels, world_voxels, chunk_positions)
+        h = is_void((x, y + 1, z - 1), (world_x, world_y + 1, world_z - 1), chunk_voxels, world_voxels, chunk_positions)
 
     else:  # Z plane
-        a = is_void((x - 1, y, z), (wx - 1, wy, wz), chunk_voxels, world_voxels, chunk_positions)
-        b = is_void((x - 1, y - 1, z), (wx - 1, wy - 1, wz), chunk_voxels, world_voxels, chunk_positions)
-        c = is_void((x, y - 1, z), (wx, wy - 1, wz), chunk_voxels, world_voxels, chunk_positions)
-        d = is_void((x + 1, y - 1, z), (wx + 1, wy - 1, wz), chunk_voxels, world_voxels, chunk_positions)
-        e = is_void((x + 1, y, z), (wx + 1, wy, wz), chunk_voxels, world_voxels, chunk_positions)
-        f = is_void((x + 1, y + 1, z), (wx + 1, wy + 1, wz), chunk_voxels, world_voxels, chunk_positions)
-        g = is_void((x, y + 1, z), (wx, wy + 1, wz), chunk_voxels, world_voxels, chunk_positions)
-        h = is_void((x - 1, y + 1, z), (wx - 1, wy + 1, wz), chunk_voxels, world_voxels, chunk_positions)
+        a = is_void((x - 1, y, z), (world_x - 1, world_y, world_z), chunk_voxels, world_voxels, chunk_positions)
+        b = is_void((x - 1, y - 1, z), (world_x - 1, world_y - 1, world_z), chunk_voxels, world_voxels, chunk_positions)
+        c = is_void((x, y - 1, z), (world_x, world_y - 1, world_z), chunk_voxels, world_voxels, chunk_positions)
+        d = is_void((x + 1, y - 1, z), (world_x + 1, world_y - 1, world_z), chunk_voxels, world_voxels, chunk_positions)
+        e = is_void((x + 1, y, z), (world_x + 1, world_y, world_z), chunk_voxels, world_voxels, chunk_positions)
+        f = is_void((x + 1, y + 1, z), (world_x + 1, world_y + 1, world_z), chunk_voxels, world_voxels, chunk_positions)
+        g = is_void((x, y + 1, z), (world_x, world_y + 1, world_z), chunk_voxels, world_voxels, chunk_positions)
+        h = is_void((x - 1, y + 1, z), (world_x - 1, world_y + 1, world_z), chunk_voxels, world_voxels, chunk_positions)
 
     ao = (a + b + c), (g + h + a), (e + f + g), (c + d + e)
     return ao
@@ -117,120 +117,156 @@ def get_vertex_light(
     the sunlight and blocklight from the four surrounding blocks that share the vertex
     in the given plane.
     """
-    lx, ly, lz = local_vertex_pos
+    local_x, local_y, local_z = local_vertex_pos
     vx, vy, vz = world_vertex_pos
 
     if plane == 'Y':
         # Vertex is on an XZ plane, so we sample the 4 adjacent blocks in that plane.
-        b0 = get_neighbor_voxel_id((lx, ly, lz), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions)
-        b1 = get_neighbor_voxel_id((lx - 1, ly, lz), (vx - 1, vy, vz), chunk_voxels, world_voxels, chunk_positions)
-        b2 = get_neighbor_voxel_id((lx, ly, lz - 1), (vx, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions)
-        b3 = get_neighbor_voxel_id(
-            (lx - 1, ly, lz - 1), (vx - 1, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions
+        block_0 = get_neighbor_voxel_id(
+            (local_x, local_y, local_z), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_1 = get_neighbor_voxel_id(
+            (local_x - 1, local_y, local_z), (vx - 1, vy, vz), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_2 = get_neighbor_voxel_id(
+            (local_x, local_y, local_z - 1), (vx, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_3 = get_neighbor_voxel_id(
+            (local_x - 1, local_y, local_z - 1), (vx - 1, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions
         )
 
-        l0 = (
+        light_0 = (
             face_light
-            if not is_transparent(b0)
-            else get_neighbor_light((lx, ly, lz), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions)
-        )
-        l1 = (
-            face_light
-            if not is_transparent(b1)
+            if not is_transparent(block_0)
             else get_neighbor_light(
-                (lx - 1, ly, lz), (vx - 1, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
             )
         )
-        l2 = (
+        light_1 = (
             face_light
-            if not is_transparent(b2)
+            if not is_transparent(block_1)
             else get_neighbor_light(
-                (lx, ly, lz - 1), (vx, vy, vz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x - 1, local_y, local_z), (vx - 1, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
             )
         )
-        l3 = (
+        light_2 = (
             face_light
-            if not is_transparent(b3)
+            if not is_transparent(block_2)
             else get_neighbor_light(
-                (lx - 1, ly, lz - 1), (vx - 1, vy, vz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z - 1), (vx, vy, vz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+            )
+        )
+        light_3 = (
+            face_light
+            if not is_transparent(block_3)
+            else get_neighbor_light(
+                (local_x - 1, local_y, local_z - 1),
+                (vx - 1, vy, vz - 1),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
 
     elif plane == 'X':
         # Vertex is on a YZ plane
-        b0 = get_neighbor_voxel_id((lx, ly, lz), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions)
-        b1 = get_neighbor_voxel_id((lx, ly - 1, lz), (vx, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions)
-        b2 = get_neighbor_voxel_id((lx, ly, lz - 1), (vx, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions)
-        b3 = get_neighbor_voxel_id(
-            (lx, ly - 1, lz - 1), (vx, vy - 1, vz - 1), chunk_voxels, world_voxels, chunk_positions
+        block_0 = get_neighbor_voxel_id(
+            (local_x, local_y, local_z), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_1 = get_neighbor_voxel_id(
+            (local_x, local_y - 1, local_z), (vx, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_2 = get_neighbor_voxel_id(
+            (local_x, local_y, local_z - 1), (vx, vy, vz - 1), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_3 = get_neighbor_voxel_id(
+            (local_x, local_y - 1, local_z - 1), (vx, vy - 1, vz - 1), chunk_voxels, world_voxels, chunk_positions
         )
 
-        l0 = (
+        light_0 = (
             face_light
-            if not is_transparent(b0)
-            else get_neighbor_light((lx, ly, lz), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions)
-        )
-        l1 = (
-            face_light
-            if not is_transparent(b1)
+            if not is_transparent(block_0)
             else get_neighbor_light(
-                (lx, ly - 1, lz), (vx, vy - 1, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
             )
         )
-        l2 = (
+        light_1 = (
             face_light
-            if not is_transparent(b2)
+            if not is_transparent(block_1)
             else get_neighbor_light(
-                (lx, ly, lz - 1), (vx, vy, vz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y - 1, local_z), (vx, vy - 1, vz), chunk_lightmap, world_lightmaps, chunk_positions
             )
         )
-        l3 = (
+        light_2 = (
             face_light
-            if not is_transparent(b3)
+            if not is_transparent(block_2)
             else get_neighbor_light(
-                (lx, ly - 1, lz - 1), (vx, vy - 1, vz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z - 1), (vx, vy, vz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+            )
+        )
+        light_3 = (
+            face_light
+            if not is_transparent(block_3)
+            else get_neighbor_light(
+                (local_x, local_y - 1, local_z - 1),
+                (vx, vy - 1, vz - 1),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
 
     else:  # Z plane
         # Vertex is on an XY plane
-        b0 = get_neighbor_voxel_id((lx, ly, lz), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions)
-        b1 = get_neighbor_voxel_id((lx - 1, ly, lz), (vx - 1, vy, vz), chunk_voxels, world_voxels, chunk_positions)
-        b2 = get_neighbor_voxel_id((lx, ly - 1, lz), (vx, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions)
-        b3 = get_neighbor_voxel_id(
-            (lx - 1, ly - 1, lz), (vx - 1, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions
+        block_0 = get_neighbor_voxel_id(
+            (local_x, local_y, local_z), (vx, vy, vz), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_1 = get_neighbor_voxel_id(
+            (local_x - 1, local_y, local_z), (vx - 1, vy, vz), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_2 = get_neighbor_voxel_id(
+            (local_x, local_y - 1, local_z), (vx, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions
+        )
+        block_3 = get_neighbor_voxel_id(
+            (local_x - 1, local_y - 1, local_z), (vx - 1, vy - 1, vz), chunk_voxels, world_voxels, chunk_positions
         )
 
-        l0 = (
+        light_0 = (
             face_light
-            if not is_transparent(b0)
-            else get_neighbor_light((lx, ly, lz), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions)
-        )
-        l1 = (
-            face_light
-            if not is_transparent(b1)
+            if not is_transparent(block_0)
             else get_neighbor_light(
-                (lx - 1, ly, lz), (vx - 1, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y, local_z), (vx, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
             )
         )
-        l2 = (
+        light_1 = (
             face_light
-            if not is_transparent(b2)
+            if not is_transparent(block_1)
             else get_neighbor_light(
-                (lx, ly - 1, lz), (vx, vy - 1, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x - 1, local_y, local_z), (vx - 1, vy, vz), chunk_lightmap, world_lightmaps, chunk_positions
             )
         )
-        l3 = (
+        light_2 = (
             face_light
-            if not is_transparent(b3)
+            if not is_transparent(block_2)
             else get_neighbor_light(
-                (lx - 1, ly - 1, lz), (vx - 1, vy - 1, vz), chunk_lightmap, world_lightmaps, chunk_positions
+                (local_x, local_y - 1, local_z), (vx, vy - 1, vz), chunk_lightmap, world_lightmaps, chunk_positions
+            )
+        )
+        light_3 = (
+            face_light
+            if not is_transparent(block_3)
+            else get_neighbor_light(
+                (local_x - 1, local_y - 1, local_z),
+                (vx - 1, vy - 1, vz),
+                chunk_lightmap,
+                world_lightmaps,
+                chunk_positions,
             )
         )
 
     # Average the Sun and Block light separately to prevent overflow and incorrect mixing.
-    sun = ((l0 >> 4) + (l1 >> 4) + (l2 >> 4) + (l3 >> 4)) >> 2
-    block = ((l0 & 15) + (l1 & 15) + (l2 & 15) + (l3 & 15)) >> 2
+    sun = ((light_0 >> 4) + (light_1 >> 4) + (light_2 >> 4) + (light_3 >> 4)) >> 2
+    block = ((light_0 & 15) + (light_1 & 15) + (light_2 & 15) + (light_3 & 15)) >> 2
 
     return int((sun << 4) | block)
 
@@ -268,19 +304,23 @@ def get_chunk_index(world_voxel_pos: Tuple[int, int, int], chunk_positions: Any)
     world voxel coordinate. Returns -1 if the chunk is not currently loaded or out of bounds.
     """
     # Calculate chunk coordinates from global voxel position
-    wx, wy, wz = world_voxel_pos
-    cx = wx // CHUNK_SIZE
-    cy = wy // CHUNK_SIZE
-    cz = wz // CHUNK_SIZE
+    world_x, world_y, world_z = world_voxel_pos
+    chunk_x = world_x // CHUNK_SIZE
+    chunk_y = world_y // CHUNK_SIZE
+    chunk_z = world_z // CHUNK_SIZE
 
     # Validate Y axis bounds
-    if not (0 <= cy < WORLD_HEIGHT):
+    if not (0 <= chunk_y < WORLD_HEIGHT):
         return -1
 
     # Calculate 1D chunk index and verify chunk existence
-    index = (cx % WORLD_WIDTH) + WORLD_WIDTH * (cz % WORLD_DEPTH) + WORLD_AREA * (cy % WORLD_HEIGHT)
+    index = (chunk_x % WORLD_WIDTH) + WORLD_WIDTH * (chunk_z % WORLD_DEPTH) + WORLD_AREA * (chunk_y % WORLD_HEIGHT)
 
-    if chunk_positions[index][0] == cx and chunk_positions[index][1] == cy and chunk_positions[index][2] == cz:
+    if (
+        chunk_positions[index][0] == chunk_x
+        and chunk_positions[index][1] == chunk_y
+        and chunk_positions[index][2] == chunk_z
+    ):
         return index
 
     # Return -1 if chunk is out of bounds or unloaded
@@ -312,10 +352,10 @@ def get_neighbor_voxel_id(
 
     chunk_voxels_global = world_voxels[chunk_index]
 
-    lx = world_voxel_pos[0] % CHUNK_SIZE
-    ly = world_voxel_pos[1] % CHUNK_SIZE
-    lz = world_voxel_pos[2] % CHUNK_SIZE
-    voxel_index = lx + lz * CHUNK_SIZE + ly * CHUNK_AREA
+    local_x = world_voxel_pos[0] % CHUNK_SIZE
+    local_y = world_voxel_pos[1] % CHUNK_SIZE
+    local_z = world_voxel_pos[2] % CHUNK_SIZE
+    voxel_index = local_x + local_z * CHUNK_SIZE + local_y * CHUNK_AREA
 
     return int(chunk_voxels_global[voxel_index])
 
@@ -345,10 +385,10 @@ def get_neighbor_light(
 
     chunk_lights_global = world_lightmaps[chunk_index]
 
-    lx = world_voxel_pos[0] % CHUNK_SIZE
-    ly = world_voxel_pos[1] % CHUNK_SIZE
-    lz = world_voxel_pos[2] % CHUNK_SIZE
-    voxel_index = lx + lz * CHUNK_SIZE + ly * CHUNK_AREA
+    local_x = world_voxel_pos[0] % CHUNK_SIZE
+    local_y = world_voxel_pos[1] % CHUNK_SIZE
+    local_z = world_voxel_pos[2] % CHUNK_SIZE
+    voxel_index = local_x + local_z * CHUNK_SIZE + local_y * CHUNK_AREA
 
     return int(chunk_lights_global[voxel_index])
 
@@ -376,10 +416,10 @@ def is_void(
     specifically during the ambient occlusion calculation to see if a corner is occluded.
     """
     # Get neighbor voxel ID
-    val = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, chunk_voxels, world_voxels, chunk_positions)
+    value = get_neighbor_voxel_id(local_voxel_pos, world_voxel_pos, chunk_voxels, world_voxels, chunk_positions)
 
     # Transparent blocks do not cast AO shadows!
-    return bool(is_transparent(val))
+    return bool(is_transparent(value))
 
 
 @njit(cache=True, nogil=True)
@@ -420,19 +460,19 @@ def build_chunk_mesh(
     water_index = 0
 
     # Extract chunk coordinates and initialize face masks
-    cx, cy, cz = chunk_pos
+    chunk_x, chunk_y, chunk_z = chunk_pos
     mask0 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint64)
     mask1 = np.zeros((CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint64)
 
     # Y PLANES (Top/Bottom)
     for y in range(CHUNK_SIZE):
-        wy = y + cy * CHUNK_SIZE
+        world_y = y + chunk_y * CHUNK_SIZE
 
         for x in range(CHUNK_SIZE):
-            wx = x + cx * CHUNK_SIZE
+            world_x = x + chunk_x * CHUNK_SIZE
 
             for z in range(CHUNK_SIZE):
-                wz = z + cz * CHUNK_SIZE
+                world_z = z + chunk_z * CHUNK_SIZE
 
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
 
@@ -441,21 +481,28 @@ def build_chunk_mesh(
 
                 # top face
                 neighbor_id = get_neighbor_voxel_id(
-                    (x, y + 1, z), (wx, wy + 1, wz), chunk_voxels, world_voxels, chunk_positions
+                    (x, y + 1, z), (world_x, world_y + 1, world_z), chunk_voxels, world_voxels, chunk_positions
                 )
 
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
-                    ao = get_ao((x, y + 1, z), (wx, wy + 1, wz), chunk_voxels, world_voxels, chunk_positions, plane='Y')
+                    ao = get_ao(
+                        (x, y + 1, z),
+                        (world_x, world_y + 1, world_z),
+                        chunk_voxels,
+                        world_voxels,
+                        chunk_positions,
+                        plane='Y',
+                    )
 
                     # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    voxel_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
 
                     face_light = get_neighbor_light(
-                        (x, y + 1, z), (wx, wy + 1, wz), chunk_lightmap, world_lightmaps, chunk_positions
+                        (x, y + 1, z), (world_x, world_y + 1, world_z), chunk_lightmap, world_lightmaps, chunk_positions
                     )
-                    l0 = get_vertex_light(
+                    light_0 = get_vertex_light(
                         (x, y + 1, z),
-                        (wx, wy + 1, wz),
+                        (world_x, world_y + 1, world_z),
                         'Y',
                         face_light,
                         chunk_voxels,
@@ -464,9 +511,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l1 = get_vertex_light(
+                    light_1 = get_vertex_light(
                         (x + 1, y + 1, z),
-                        (wx + 1, wy + 1, wz),
+                        (world_x + 1, world_y + 1, world_z),
                         'Y',
                         face_light,
                         chunk_voxels,
@@ -475,9 +522,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l2 = get_vertex_light(
+                    light_2 = get_vertex_light(
                         (x + 1, y + 1, z + 1),
-                        (wx + 1, wy + 1, wz + 1),
+                        (world_x + 1, world_y + 1, world_z + 1),
                         'Y',
                         face_light,
                         chunk_voxels,
@@ -486,9 +533,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l3 = get_vertex_light(
+                    light_3 = get_vertex_light(
                         (x, y + 1, z + 1),
-                        (wx, wy + 1, wz + 1),
+                        (world_x, world_y + 1, world_z + 1),
                         'Y',
                         face_light,
                         chunk_voxels,
@@ -501,18 +548,18 @@ def build_chunk_mesh(
                     # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
                     # We compare the total lighting (sun + block + ao) of the two diagonals.
                     # The diagonal with the higher total light is split to create smoother gradients.
-                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
-                        (l0 >> 4) + (l0 & 15) + ao[0]
-                    ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    flip_id = ((light_1 >> 4) + (light_1 & 15) + ao[1]) + ((light_3 >> 4) + (light_3 & 15) + ao[3]) > (
+                        (light_0 >> 4) + (light_0 & 15) + ao[0]
+                    ) + ((light_2 >> 4) + (light_2 & 15) + ao[2])
                     # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
                     # into a single 64-bit integer mask for efficient greedy meshing later.
-                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
+                    # 41: voxel_id, 33: light_0, 25: light_1, 17: light_2, 9: light_3, 7: ambient_occlusion_0, 5: ambient_occlusion_1, 3: ambient_occlusion_2, 1: ambient_occlusion_3, 0: flip_id
                     mask0[x, z] = (
-                        (np.uint64(v_id) << 41)
-                        | (np.uint64(l0) << 33)
-                        | (np.uint64(l1) << 25)
-                        | (np.uint64(l2) << 17)
-                        | (np.uint64(l3) << 9)
+                        (np.uint64(voxel_id) << 41)
+                        | (np.uint64(light_0) << 33)
+                        | (np.uint64(light_1) << 25)
+                        | (np.uint64(light_2) << 17)
+                        | (np.uint64(light_3) << 9)
                         | (np.uint64(ao[0]) << 7)
                         | (np.uint64(ao[1]) << 5)
                         | (np.uint64(ao[2]) << 3)
@@ -522,21 +569,28 @@ def build_chunk_mesh(
 
                 # bottom face
                 neighbor_id = get_neighbor_voxel_id(
-                    (x, y - 1, z), (wx, wy - 1, wz), chunk_voxels, world_voxels, chunk_positions
+                    (x, y - 1, z), (world_x, world_y - 1, world_z), chunk_voxels, world_voxels, chunk_positions
                 )
 
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
-                    ao = get_ao((x, y - 1, z), (wx, wy - 1, wz), chunk_voxels, world_voxels, chunk_positions, plane='Y')
+                    ao = get_ao(
+                        (x, y - 1, z),
+                        (world_x, world_y - 1, world_z),
+                        chunk_voxels,
+                        world_voxels,
+                        chunk_positions,
+                        plane='Y',
+                    )
 
                     # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    voxel_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
 
                     face_light = get_neighbor_light(
-                        (x, y - 1, z), (wx, wy - 1, wz), chunk_lightmap, world_lightmaps, chunk_positions
+                        (x, y - 1, z), (world_x, world_y - 1, world_z), chunk_lightmap, world_lightmaps, chunk_positions
                     )
-                    l0 = get_vertex_light(
+                    light_0 = get_vertex_light(
                         (x, y, z),
-                        (wx, wy, wz),
+                        (world_x, world_y, world_z),
                         'Y',
                         face_light,
                         chunk_voxels,
@@ -545,9 +599,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l1 = get_vertex_light(
+                    light_1 = get_vertex_light(
                         (x + 1, y, z),
-                        (wx + 1, wy, wz),
+                        (world_x + 1, world_y, world_z),
                         'Y',
                         face_light,
                         chunk_voxels,
@@ -556,9 +610,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l2 = get_vertex_light(
+                    light_2 = get_vertex_light(
                         (x + 1, y, z + 1),
-                        (wx + 1, wy, wz + 1),
+                        (world_x + 1, world_y, world_z + 1),
                         'Y',
                         face_light,
                         chunk_voxels,
@@ -567,9 +621,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l3 = get_vertex_light(
+                    light_3 = get_vertex_light(
                         (x, y, z + 1),
-                        (wx, wy, wz + 1),
+                        (world_x, world_y, world_z + 1),
                         'Y',
                         face_light,
                         chunk_voxels,
@@ -582,18 +636,18 @@ def build_chunk_mesh(
                     # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
                     # We compare the total lighting (sun + block + ao) of the two diagonals.
                     # The diagonal with the higher total light is split to create smoother gradients.
-                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
-                        (l0 >> 4) + (l0 & 15) + ao[0]
-                    ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    flip_id = ((light_1 >> 4) + (light_1 & 15) + ao[1]) + ((light_3 >> 4) + (light_3 & 15) + ao[3]) > (
+                        (light_0 >> 4) + (light_0 & 15) + ao[0]
+                    ) + ((light_2 >> 4) + (light_2 & 15) + ao[2])
                     # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
                     # into a single 64-bit integer mask for efficient greedy meshing later.
-                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
+                    # 41: voxel_id, 33: light_0, 25: light_1, 17: light_2, 9: light_3, 7: ambient_occlusion_0, 5: ambient_occlusion_1, 3: ambient_occlusion_2, 1: ambient_occlusion_3, 0: flip_id
                     mask1[x, z] = (
-                        (np.uint64(v_id) << 41)
-                        | (np.uint64(l0) << 33)
-                        | (np.uint64(l1) << 25)
-                        | (np.uint64(l2) << 17)
-                        | (np.uint64(l3) << 9)
+                        (np.uint64(voxel_id) << 41)
+                        | (np.uint64(light_0) << 33)
+                        | (np.uint64(light_1) << 25)
+                        | (np.uint64(light_2) << 17)
+                        | (np.uint64(light_3) << 9)
                         | (np.uint64(ao[0]) << 7)
                         | (np.uint64(ao[1]) << 5)
                         | (np.uint64(ao[2]) << 3)
@@ -603,21 +657,21 @@ def build_chunk_mesh(
 
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
-                val = mask0[x, z]
+                value = mask0[x, z]
 
-                if val:
+                if value:
                     w, h = 1, 1
 
                     # Greedy meshing: Find the maximum width (w) this face can extend along the first axis
                     # where all faces share the exact same attributes (voxel ID, lighting, AO, etc).
-                    while x + w < CHUNK_SIZE and mask0[x + w, z] == val:
+                    while x + w < CHUNK_SIZE and mask0[x + w, z] == value:
                         w += 1
 
                     done = False
 
                     while z + h < CHUNK_SIZE:
-                        for ix in range(w):
-                            if mask0[x + ix, z + h] != val:
+                        for index_x in range(w):
+                            if mask0[x + index_x, z + h] != value:
                                 done = True
                                 break
 
@@ -626,25 +680,25 @@ def build_chunk_mesh(
                         h += 1
 
                     # Unpack the chunked face attributes from the 64-bit mask value
-                    v_id = int((val >> 41) & 0xFF)
-                    l0 = int((val >> 33) & 0xFF)
-                    l1 = int((val >> 25) & 0xFF)
-                    l2 = int((val >> 17) & 0xFF)
-                    l3 = int((val >> 9) & 0xFF)
+                    voxel_id = int((value >> 41) & 0xFF)
+                    light_0 = int((value >> 33) & 0xFF)
+                    light_1 = int((value >> 25) & 0xFF)
+                    light_2 = int((value >> 17) & 0xFF)
+                    light_3 = int((value >> 9) & 0xFF)
 
-                    ao0 = int((val >> 7) & 3)
-                    ao1 = int((val >> 5) & 3)
-                    ao2 = int((val >> 3) & 3)
-                    ao3 = int((val >> 1) & 3)
-                    flip_id = int(val & 1)
+                    ambient_occlusion_0 = int((value >> 7) & 3)
+                    ambient_occlusion_1 = int((value >> 5) & 3)
+                    ambient_occlusion_2 = int((value >> 3) & 3)
+                    ambient_occlusion_3 = int((value >> 1) & 3)
+                    flip_id = int(value & 1)
 
                     # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
-                    v0 = pack_data(x, y + 1, z, v_id, 0, ao0, flip_id, l0)
-                    v1 = pack_data(x + w, y + 1, z, v_id, 0, ao1, flip_id, l1)
-                    v2 = pack_data(x + w, y + 1, z + h, v_id, 0, ao2, flip_id, l2)
-                    v3 = pack_data(x, y + 1, z + h, v_id, 0, ao3, flip_id, l3)
+                    v0 = pack_data(x, y + 1, z, voxel_id, 0, ambient_occlusion_0, flip_id, light_0)
+                    v1 = pack_data(x + w, y + 1, z, voxel_id, 0, ambient_occlusion_1, flip_id, light_1)
+                    v2 = pack_data(x + w, y + 1, z + h, voxel_id, 0, ambient_occlusion_2, flip_id, light_2)
+                    v3 = pack_data(x, y + 1, z + h, voxel_id, 0, ambient_occlusion_3, flip_id, light_3)
 
-                    if v_id == WATER:
+                    if voxel_id == WATER:
                         if flip_id:
                             water_index = add_data(water_data, water_index, v1, v0, v3, v1, v3, v2)
                         else:
@@ -656,25 +710,25 @@ def build_chunk_mesh(
                         else:
                             index = add_data(vertex_data, index, v0, v3, v2, v0, v2, v1)
 
-                    for ix in range(w):
-                        for iz in range(h):
-                            mask0[x + ix, z + iz] = 0
+                    for index_x in range(w):
+                        for index_z in range(h):
+                            mask0[x + index_x, z + index_z] = 0
 
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
-                val = mask1[x, z]
+                value = mask1[x, z]
 
-                if val:
+                if value:
                     w, h = 1, 1
 
-                    while x + w < CHUNK_SIZE and mask1[x + w, z] == val:
+                    while x + w < CHUNK_SIZE and mask1[x + w, z] == value:
                         w += 1
 
                     done = False
 
                     while z + h < CHUNK_SIZE:
-                        for ix in range(w):
-                            if mask1[x + ix, z + h] != val:
+                        for index_x in range(w):
+                            if mask1[x + index_x, z + h] != value:
                                 done = True
                                 break
 
@@ -684,25 +738,25 @@ def build_chunk_mesh(
                         h += 1
 
                     # Unpack the chunked face attributes from the 64-bit mask value
-                    v_id = int((val >> 41) & 0xFF)
-                    l0 = int((val >> 33) & 0xFF)
-                    l1 = int((val >> 25) & 0xFF)
-                    l2 = int((val >> 17) & 0xFF)
-                    l3 = int((val >> 9) & 0xFF)
+                    voxel_id = int((value >> 41) & 0xFF)
+                    light_0 = int((value >> 33) & 0xFF)
+                    light_1 = int((value >> 25) & 0xFF)
+                    light_2 = int((value >> 17) & 0xFF)
+                    light_3 = int((value >> 9) & 0xFF)
 
-                    ao0 = int((val >> 7) & 3)
-                    ao1 = int((val >> 5) & 3)
-                    ao2 = int((val >> 3) & 3)
-                    ao3 = int((val >> 1) & 3)
-                    flip_id = int(val & 1)
+                    ambient_occlusion_0 = int((value >> 7) & 3)
+                    ambient_occlusion_1 = int((value >> 5) & 3)
+                    ambient_occlusion_2 = int((value >> 3) & 3)
+                    ambient_occlusion_3 = int((value >> 1) & 3)
+                    flip_id = int(value & 1)
 
                     # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
-                    v0 = pack_data(x, y, z, v_id, 1, ao0, flip_id, l0)
-                    v1 = pack_data(x + w, y, z, v_id, 1, ao1, flip_id, l1)
-                    v2 = pack_data(x + w, y, z + h, v_id, 1, ao2, flip_id, l2)
-                    v3 = pack_data(x, y, z + h, v_id, 1, ao3, flip_id, l3)
+                    v0 = pack_data(x, y, z, voxel_id, 1, ambient_occlusion_0, flip_id, light_0)
+                    v1 = pack_data(x + w, y, z, voxel_id, 1, ambient_occlusion_1, flip_id, light_1)
+                    v2 = pack_data(x + w, y, z + h, voxel_id, 1, ambient_occlusion_2, flip_id, light_2)
+                    v3 = pack_data(x, y, z + h, voxel_id, 1, ambient_occlusion_3, flip_id, light_3)
 
-                    if v_id == WATER:
+                    if voxel_id == WATER:
                         if flip_id:
                             water_index = add_data(water_data, water_index, v1, v3, v0, v1, v2, v3)
                         else:
@@ -714,19 +768,19 @@ def build_chunk_mesh(
                         else:
                             index = add_data(vertex_data, index, v0, v2, v3, v0, v1, v2)
 
-                    for ix in range(w):
-                        for iz in range(h):
-                            mask1[x + ix, z + iz] = 0
+                    for index_x in range(w):
+                        for index_z in range(h):
+                            mask1[x + index_x, z + index_z] = 0
 
     # X PLANES (Right/Left)
     for x in range(CHUNK_SIZE):
-        wx = x + cx * CHUNK_SIZE
+        world_x = x + chunk_x * CHUNK_SIZE
 
         for y in range(CHUNK_SIZE):
-            wy = y + cy * CHUNK_SIZE
+            world_y = y + chunk_y * CHUNK_SIZE
 
             for z in range(CHUNK_SIZE):
-                wz = z + cz * CHUNK_SIZE
+                world_z = z + chunk_z * CHUNK_SIZE
 
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
 
@@ -734,21 +788,28 @@ def build_chunk_mesh(
                     continue
 
                 neighbor_id = get_neighbor_voxel_id(
-                    (x + 1, y, z), (wx + 1, wy, wz), chunk_voxels, world_voxels, chunk_positions
+                    (x + 1, y, z), (world_x + 1, world_y, world_z), chunk_voxels, world_voxels, chunk_positions
                 )
 
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
-                    ao = get_ao((x + 1, y, z), (wx + 1, wy, wz), chunk_voxels, world_voxels, chunk_positions, plane='X')
+                    ao = get_ao(
+                        (x + 1, y, z),
+                        (world_x + 1, world_y, world_z),
+                        chunk_voxels,
+                        world_voxels,
+                        chunk_positions,
+                        plane='X',
+                    )
 
                     # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    voxel_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
 
                     face_light = get_neighbor_light(
-                        (x + 1, y, z), (wx + 1, wy, wz), chunk_lightmap, world_lightmaps, chunk_positions
+                        (x + 1, y, z), (world_x + 1, world_y, world_z), chunk_lightmap, world_lightmaps, chunk_positions
                     )
-                    l0 = get_vertex_light(
+                    light_0 = get_vertex_light(
                         (x + 1, y, z),
-                        (wx + 1, wy, wz),
+                        (world_x + 1, world_y, world_z),
                         'X',
                         face_light,
                         chunk_voxels,
@@ -757,9 +818,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l1 = get_vertex_light(
+                    light_1 = get_vertex_light(
                         (x + 1, y + 1, z),
-                        (wx + 1, wy + 1, wz),
+                        (world_x + 1, world_y + 1, world_z),
                         'X',
                         face_light,
                         chunk_voxels,
@@ -768,9 +829,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l2 = get_vertex_light(
+                    light_2 = get_vertex_light(
                         (x + 1, y + 1, z + 1),
-                        (wx + 1, wy + 1, wz + 1),
+                        (world_x + 1, world_y + 1, world_z + 1),
                         'X',
                         face_light,
                         chunk_voxels,
@@ -779,9 +840,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l3 = get_vertex_light(
+                    light_3 = get_vertex_light(
                         (x + 1, y, z + 1),
-                        (wx + 1, wy, wz + 1),
+                        (world_x + 1, world_y, world_z + 1),
                         'X',
                         face_light,
                         chunk_voxels,
@@ -794,18 +855,18 @@ def build_chunk_mesh(
                     # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
                     # We compare the total lighting (sun + block + ao) of the two diagonals.
                     # The diagonal with the higher total light is split to create smoother gradients.
-                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
-                        (l0 >> 4) + (l0 & 15) + ao[0]
-                    ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    flip_id = ((light_1 >> 4) + (light_1 & 15) + ao[1]) + ((light_3 >> 4) + (light_3 & 15) + ao[3]) > (
+                        (light_0 >> 4) + (light_0 & 15) + ao[0]
+                    ) + ((light_2 >> 4) + (light_2 & 15) + ao[2])
                     # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
                     # into a single 64-bit integer mask for efficient greedy meshing later.
-                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
+                    # 41: voxel_id, 33: light_0, 25: light_1, 17: light_2, 9: light_3, 7: ambient_occlusion_0, 5: ambient_occlusion_1, 3: ambient_occlusion_2, 1: ambient_occlusion_3, 0: flip_id
                     mask0[y, z] = (
-                        (np.uint64(v_id) << 41)
-                        | (np.uint64(l0) << 33)
-                        | (np.uint64(l1) << 25)
-                        | (np.uint64(l2) << 17)
-                        | (np.uint64(l3) << 9)
+                        (np.uint64(voxel_id) << 41)
+                        | (np.uint64(light_0) << 33)
+                        | (np.uint64(light_1) << 25)
+                        | (np.uint64(light_2) << 17)
+                        | (np.uint64(light_3) << 9)
                         | (np.uint64(ao[0]) << 7)
                         | (np.uint64(ao[1]) << 5)
                         | (np.uint64(ao[2]) << 3)
@@ -814,21 +875,28 @@ def build_chunk_mesh(
                     )
 
                 neighbor_id = get_neighbor_voxel_id(
-                    (x - 1, y, z), (wx - 1, wy, wz), chunk_voxels, world_voxels, chunk_positions
+                    (x - 1, y, z), (world_x - 1, world_y, world_z), chunk_voxels, world_voxels, chunk_positions
                 )
 
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
-                    ao = get_ao((x - 1, y, z), (wx - 1, wy, wz), chunk_voxels, world_voxels, chunk_positions, plane='X')
+                    ao = get_ao(
+                        (x - 1, y, z),
+                        (world_x - 1, world_y, world_z),
+                        chunk_voxels,
+                        world_voxels,
+                        chunk_positions,
+                        plane='X',
+                    )
 
                     # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    voxel_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
 
                     face_light = get_neighbor_light(
-                        (x - 1, y, z), (wx - 1, wy, wz), chunk_lightmap, world_lightmaps, chunk_positions
+                        (x - 1, y, z), (world_x - 1, world_y, world_z), chunk_lightmap, world_lightmaps, chunk_positions
                     )
-                    l0 = get_vertex_light(
+                    light_0 = get_vertex_light(
                         (x, y, z),
-                        (wx, wy, wz),
+                        (world_x, world_y, world_z),
                         'X',
                         face_light,
                         chunk_voxels,
@@ -837,9 +905,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l1 = get_vertex_light(
+                    light_1 = get_vertex_light(
                         (x, y + 1, z),
-                        (wx, wy + 1, wz),
+                        (world_x, world_y + 1, world_z),
                         'X',
                         face_light,
                         chunk_voxels,
@@ -848,9 +916,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l2 = get_vertex_light(
+                    light_2 = get_vertex_light(
                         (x, y + 1, z + 1),
-                        (wx, wy + 1, wz + 1),
+                        (world_x, world_y + 1, world_z + 1),
                         'X',
                         face_light,
                         chunk_voxels,
@@ -859,9 +927,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l3 = get_vertex_light(
+                    light_3 = get_vertex_light(
                         (x, y, z + 1),
-                        (wx, wy, wz + 1),
+                        (world_x, world_y, world_z + 1),
                         'X',
                         face_light,
                         chunk_voxels,
@@ -874,18 +942,18 @@ def build_chunk_mesh(
                     # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
                     # We compare the total lighting (sun + block + ao) of the two diagonals.
                     # The diagonal with the higher total light is split to create smoother gradients.
-                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
-                        (l0 >> 4) + (l0 & 15) + ao[0]
-                    ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    flip_id = ((light_1 >> 4) + (light_1 & 15) + ao[1]) + ((light_3 >> 4) + (light_3 & 15) + ao[3]) > (
+                        (light_0 >> 4) + (light_0 & 15) + ao[0]
+                    ) + ((light_2 >> 4) + (light_2 & 15) + ao[2])
                     # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
                     # into a single 64-bit integer mask for efficient greedy meshing later.
-                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
+                    # 41: voxel_id, 33: light_0, 25: light_1, 17: light_2, 9: light_3, 7: ambient_occlusion_0, 5: ambient_occlusion_1, 3: ambient_occlusion_2, 1: ambient_occlusion_3, 0: flip_id
                     mask1[y, z] = (
-                        (np.uint64(v_id) << 41)
-                        | (np.uint64(l0) << 33)
-                        | (np.uint64(l1) << 25)
-                        | (np.uint64(l2) << 17)
-                        | (np.uint64(l3) << 9)
+                        (np.uint64(voxel_id) << 41)
+                        | (np.uint64(light_0) << 33)
+                        | (np.uint64(light_1) << 25)
+                        | (np.uint64(light_2) << 17)
+                        | (np.uint64(light_3) << 9)
                         | (np.uint64(ao[0]) << 7)
                         | (np.uint64(ao[1]) << 5)
                         | (np.uint64(ao[2]) << 3)
@@ -895,19 +963,19 @@ def build_chunk_mesh(
 
         for y in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
-                val = mask0[y, z]
+                value = mask0[y, z]
 
-                if val:
+                if value:
                     w, h = 1, 1
 
-                    while y + w < CHUNK_SIZE and mask0[y + w, z] == val:
+                    while y + w < CHUNK_SIZE and mask0[y + w, z] == value:
                         w += 1
 
                     done = False
 
                     while z + h < CHUNK_SIZE:
-                        for iy in range(w):
-                            if mask0[y + iy, z + h] != val:
+                        for index_y in range(w):
+                            if mask0[y + index_y, z + h] != value:
                                 done = True
                                 break
 
@@ -917,25 +985,25 @@ def build_chunk_mesh(
                         h += 1
 
                     # Unpack the chunked face attributes from the 64-bit mask value
-                    v_id = int((val >> 41) & 0xFF)
-                    l0 = int((val >> 33) & 0xFF)
-                    l1 = int((val >> 25) & 0xFF)
-                    l2 = int((val >> 17) & 0xFF)
-                    l3 = int((val >> 9) & 0xFF)
+                    voxel_id = int((value >> 41) & 0xFF)
+                    light_0 = int((value >> 33) & 0xFF)
+                    light_1 = int((value >> 25) & 0xFF)
+                    light_2 = int((value >> 17) & 0xFF)
+                    light_3 = int((value >> 9) & 0xFF)
 
-                    ao0 = int((val >> 7) & 3)
-                    ao1 = int((val >> 5) & 3)
-                    ao2 = int((val >> 3) & 3)
-                    ao3 = int((val >> 1) & 3)
-                    flip_id = int(val & 1)
+                    ambient_occlusion_0 = int((value >> 7) & 3)
+                    ambient_occlusion_1 = int((value >> 5) & 3)
+                    ambient_occlusion_2 = int((value >> 3) & 3)
+                    ambient_occlusion_3 = int((value >> 1) & 3)
+                    flip_id = int(value & 1)
 
                     # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
-                    v0 = pack_data(x + 1, y, z, v_id, 2, ao0, flip_id, l0)
-                    v1 = pack_data(x + 1, y + w, z, v_id, 2, ao1, flip_id, l1)
-                    v2 = pack_data(x + 1, y + w, z + h, v_id, 2, ao2, flip_id, l2)
-                    v3 = pack_data(x + 1, y, z + h, v_id, 2, ao3, flip_id, l3)
+                    v0 = pack_data(x + 1, y, z, voxel_id, 2, ambient_occlusion_0, flip_id, light_0)
+                    v1 = pack_data(x + 1, y + w, z, voxel_id, 2, ambient_occlusion_1, flip_id, light_1)
+                    v2 = pack_data(x + 1, y + w, z + h, voxel_id, 2, ambient_occlusion_2, flip_id, light_2)
+                    v3 = pack_data(x + 1, y, z + h, voxel_id, 2, ambient_occlusion_3, flip_id, light_3)
 
-                    if v_id == WATER:
+                    if voxel_id == WATER:
                         if flip_id:
                             water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
                         else:
@@ -947,25 +1015,25 @@ def build_chunk_mesh(
                         else:
                             index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
 
-                    for iy in range(w):
-                        for iz in range(h):
-                            mask0[y + iy, z + iz] = 0
+                    for index_y in range(w):
+                        for index_z in range(h):
+                            mask0[y + index_y, z + index_z] = 0
 
         for y in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
-                val = mask1[y, z]
+                value = mask1[y, z]
 
-                if val:
+                if value:
                     w, h = 1, 1
 
-                    while y + w < CHUNK_SIZE and mask1[y + w, z] == val:
+                    while y + w < CHUNK_SIZE and mask1[y + w, z] == value:
                         w += 1
 
                     done = False
 
                     while z + h < CHUNK_SIZE:
-                        for iy in range(w):
-                            if mask1[y + iy, z + h] != val:
+                        for index_y in range(w):
+                            if mask1[y + index_y, z + h] != value:
                                 done = True
                                 break
 
@@ -975,25 +1043,25 @@ def build_chunk_mesh(
                         h += 1
 
                     # Unpack the chunked face attributes from the 64-bit mask value
-                    v_id = int((val >> 41) & 0xFF)
-                    l0 = int((val >> 33) & 0xFF)
-                    l1 = int((val >> 25) & 0xFF)
-                    l2 = int((val >> 17) & 0xFF)
-                    l3 = int((val >> 9) & 0xFF)
+                    voxel_id = int((value >> 41) & 0xFF)
+                    light_0 = int((value >> 33) & 0xFF)
+                    light_1 = int((value >> 25) & 0xFF)
+                    light_2 = int((value >> 17) & 0xFF)
+                    light_3 = int((value >> 9) & 0xFF)
 
-                    ao0 = int((val >> 7) & 3)
-                    ao1 = int((val >> 5) & 3)
-                    ao2 = int((val >> 3) & 3)
-                    ao3 = int((val >> 1) & 3)
-                    flip_id = int(val & 1)
+                    ambient_occlusion_0 = int((value >> 7) & 3)
+                    ambient_occlusion_1 = int((value >> 5) & 3)
+                    ambient_occlusion_2 = int((value >> 3) & 3)
+                    ambient_occlusion_3 = int((value >> 1) & 3)
+                    flip_id = int(value & 1)
 
                     # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
-                    v0 = pack_data(x, y, z, v_id, 3, ao0, flip_id, l0)
-                    v1 = pack_data(x, y + w, z, v_id, 3, ao1, flip_id, l1)
-                    v2 = pack_data(x, y + w, z + h, v_id, 3, ao2, flip_id, l2)
-                    v3 = pack_data(x, y, z + h, v_id, 3, ao3, flip_id, l3)
+                    v0 = pack_data(x, y, z, voxel_id, 3, ambient_occlusion_0, flip_id, light_0)
+                    v1 = pack_data(x, y + w, z, voxel_id, 3, ambient_occlusion_1, flip_id, light_1)
+                    v2 = pack_data(x, y + w, z + h, voxel_id, 3, ambient_occlusion_2, flip_id, light_2)
+                    v3 = pack_data(x, y, z + h, voxel_id, 3, ambient_occlusion_3, flip_id, light_3)
 
-                    if v_id == WATER:
+                    if voxel_id == WATER:
                         if flip_id:
                             water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
                         else:
@@ -1005,19 +1073,19 @@ def build_chunk_mesh(
                         else:
                             index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
 
-                    for iy in range(w):
-                        for iz in range(h):
-                            mask1[y + iy, z + iz] = 0
+                    for index_y in range(w):
+                        for index_z in range(h):
+                            mask1[y + index_y, z + index_z] = 0
 
     # Z PLANES (Back/Front)
     for z in range(CHUNK_SIZE):
-        wz = z + cz * CHUNK_SIZE
+        world_z = z + chunk_z * CHUNK_SIZE
 
         for x in range(CHUNK_SIZE):
-            wx = x + cx * CHUNK_SIZE
+            world_x = x + chunk_x * CHUNK_SIZE
 
             for y in range(CHUNK_SIZE):
-                wy = y + cy * CHUNK_SIZE
+                world_y = y + chunk_y * CHUNK_SIZE
 
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
 
@@ -1025,21 +1093,28 @@ def build_chunk_mesh(
                     continue
 
                 neighbor_id = get_neighbor_voxel_id(
-                    (x, y, z - 1), (wx, wy, wz - 1), chunk_voxels, world_voxels, chunk_positions
+                    (x, y, z - 1), (world_x, world_y, world_z - 1), chunk_voxels, world_voxels, chunk_positions
                 )
 
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
-                    ao = get_ao((x, y, z - 1), (wx, wy, wz - 1), chunk_voxels, world_voxels, chunk_positions, plane='Z')
+                    ao = get_ao(
+                        (x, y, z - 1),
+                        (world_x, world_y, world_z - 1),
+                        chunk_voxels,
+                        world_voxels,
+                        chunk_positions,
+                        plane='Z',
+                    )
 
                     # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    voxel_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
 
                     face_light = get_neighbor_light(
-                        (x, y, z - 1), (wx, wy, wz - 1), chunk_lightmap, world_lightmaps, chunk_positions
+                        (x, y, z - 1), (world_x, world_y, world_z - 1), chunk_lightmap, world_lightmaps, chunk_positions
                     )
-                    l0 = get_vertex_light(
+                    light_0 = get_vertex_light(
                         (x, y, z),
-                        (wx, wy, wz),
+                        (world_x, world_y, world_z),
                         'Z',
                         face_light,
                         chunk_voxels,
@@ -1048,9 +1123,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l1 = get_vertex_light(
+                    light_1 = get_vertex_light(
                         (x, y + 1, z),
-                        (wx, wy + 1, wz),
+                        (world_x, world_y + 1, world_z),
                         'Z',
                         face_light,
                         chunk_voxels,
@@ -1059,9 +1134,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l2 = get_vertex_light(
+                    light_2 = get_vertex_light(
                         (x + 1, y + 1, z),
-                        (wx + 1, wy + 1, wz),
+                        (world_x + 1, world_y + 1, world_z),
                         'Z',
                         face_light,
                         chunk_voxels,
@@ -1070,9 +1145,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l3 = get_vertex_light(
+                    light_3 = get_vertex_light(
                         (x + 1, y, z),
-                        (wx + 1, wy, wz),
+                        (world_x + 1, world_y, world_z),
                         'Z',
                         face_light,
                         chunk_voxels,
@@ -1085,18 +1160,18 @@ def build_chunk_mesh(
                     # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
                     # We compare the total lighting (sun + block + ao) of the two diagonals.
                     # The diagonal with the higher total light is split to create smoother gradients.
-                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
-                        (l0 >> 4) + (l0 & 15) + ao[0]
-                    ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    flip_id = ((light_1 >> 4) + (light_1 & 15) + ao[1]) + ((light_3 >> 4) + (light_3 & 15) + ao[3]) > (
+                        (light_0 >> 4) + (light_0 & 15) + ao[0]
+                    ) + ((light_2 >> 4) + (light_2 & 15) + ao[2])
                     # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
                     # into a single 64-bit integer mask for efficient greedy meshing later.
-                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
+                    # 41: voxel_id, 33: light_0, 25: light_1, 17: light_2, 9: light_3, 7: ambient_occlusion_0, 5: ambient_occlusion_1, 3: ambient_occlusion_2, 1: ambient_occlusion_3, 0: flip_id
                     mask0[x, y] = (
-                        (np.uint64(v_id) << 41)
-                        | (np.uint64(l0) << 33)
-                        | (np.uint64(l1) << 25)
-                        | (np.uint64(l2) << 17)
-                        | (np.uint64(l3) << 9)
+                        (np.uint64(voxel_id) << 41)
+                        | (np.uint64(light_0) << 33)
+                        | (np.uint64(light_1) << 25)
+                        | (np.uint64(light_2) << 17)
+                        | (np.uint64(light_3) << 9)
                         | (np.uint64(ao[0]) << 7)
                         | (np.uint64(ao[1]) << 5)
                         | (np.uint64(ao[2]) << 3)
@@ -1105,21 +1180,28 @@ def build_chunk_mesh(
                     )
 
                 neighbor_id = get_neighbor_voxel_id(
-                    (x, y, z + 1), (wx, wy, wz + 1), chunk_voxels, world_voxels, chunk_positions
+                    (x, y, z + 1), (world_x, world_y, world_z + 1), chunk_voxels, world_voxels, chunk_positions
                 )
 
                 if is_transparent(neighbor_id) and voxel_id != neighbor_id:
-                    ao = get_ao((x, y, z + 1), (wx, wy, wz + 1), chunk_voxels, world_voxels, chunk_positions, plane='Z')
+                    ao = get_ao(
+                        (x, y, z + 1),
+                        (world_x, world_y, world_z + 1),
+                        chunk_voxels,
+                        world_voxels,
+                        chunk_positions,
+                        plane='Z',
+                    )
 
                     # flip_id = ao[1] + ao[3] > ao[0] + ao[2]
-                    v_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
+                    voxel_id = (voxel_id | 128) if neighbor_id == WATER else voxel_id
 
                     face_light = get_neighbor_light(
-                        (x, y, z + 1), (wx, wy, wz + 1), chunk_lightmap, world_lightmaps, chunk_positions
+                        (x, y, z + 1), (world_x, world_y, world_z + 1), chunk_lightmap, world_lightmaps, chunk_positions
                     )
-                    l0 = get_vertex_light(
+                    light_0 = get_vertex_light(
                         (x, y, z + 1),
-                        (wx, wy, wz + 1),
+                        (world_x, world_y, world_z + 1),
                         'Z',
                         face_light,
                         chunk_voxels,
@@ -1128,9 +1210,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l1 = get_vertex_light(
+                    light_1 = get_vertex_light(
                         (x, y + 1, z + 1),
-                        (wx, wy + 1, wz + 1),
+                        (world_x, world_y + 1, world_z + 1),
                         'Z',
                         face_light,
                         chunk_voxels,
@@ -1139,9 +1221,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l2 = get_vertex_light(
+                    light_2 = get_vertex_light(
                         (x + 1, y + 1, z + 1),
-                        (wx + 1, wy + 1, wz + 1),
+                        (world_x + 1, world_y + 1, world_z + 1),
                         'Z',
                         face_light,
                         chunk_voxels,
@@ -1150,9 +1232,9 @@ def build_chunk_mesh(
                         world_lightmaps,
                         chunk_positions,
                     )
-                    l3 = get_vertex_light(
+                    light_3 = get_vertex_light(
                         (x + 1, y, z + 1),
-                        (wx + 1, wy, wz + 1),
+                        (world_x + 1, world_y, world_z + 1),
                         'Z',
                         face_light,
                         chunk_voxels,
@@ -1165,18 +1247,18 @@ def build_chunk_mesh(
                     # Determine if the quad should be flipped to prevent anisotropic lighting artifacts.
                     # We compare the total lighting (sun + block + ao) of the two diagonals.
                     # The diagonal with the higher total light is split to create smoother gradients.
-                    flip_id = ((l1 >> 4) + (l1 & 15) + ao[1]) + ((l3 >> 4) + (l3 & 15) + ao[3]) > (
-                        (l0 >> 4) + (l0 & 15) + ao[0]
-                    ) + ((l2 >> 4) + (l2 & 15) + ao[2])
+                    flip_id = ((light_1 >> 4) + (light_1 & 15) + ao[1]) + ((light_3 >> 4) + (light_3 & 15) + ao[3]) > (
+                        (light_0 >> 4) + (light_0 & 15) + ao[0]
+                    ) + ((light_2 >> 4) + (light_2 & 15) + ao[2])
                     # Pack all vertex attributes (voxel ID, 4 light values, 4 AO values, and flip ID)
                     # into a single 64-bit integer mask for efficient greedy meshing later.
-                    # 41: voxel_id, 33: l0, 25: l1, 17: l2, 9: l3, 7: ao0, 5: ao1, 3: ao2, 1: ao3, 0: flip_id
+                    # 41: voxel_id, 33: light_0, 25: light_1, 17: light_2, 9: light_3, 7: ambient_occlusion_0, 5: ambient_occlusion_1, 3: ambient_occlusion_2, 1: ambient_occlusion_3, 0: flip_id
                     mask1[x, y] = (
-                        (np.uint64(v_id) << 41)
-                        | (np.uint64(l0) << 33)
-                        | (np.uint64(l1) << 25)
-                        | (np.uint64(l2) << 17)
-                        | (np.uint64(l3) << 9)
+                        (np.uint64(voxel_id) << 41)
+                        | (np.uint64(light_0) << 33)
+                        | (np.uint64(light_1) << 25)
+                        | (np.uint64(light_2) << 17)
+                        | (np.uint64(light_3) << 9)
                         | (np.uint64(ao[0]) << 7)
                         | (np.uint64(ao[1]) << 5)
                         | (np.uint64(ao[2]) << 3)
@@ -1186,19 +1268,19 @@ def build_chunk_mesh(
 
         for x in range(CHUNK_SIZE):
             for y in range(CHUNK_SIZE):
-                val = mask0[x, y]
+                value = mask0[x, y]
 
-                if val:
+                if value:
                     w, h = 1, 1
 
-                    while x + w < CHUNK_SIZE and mask0[x + w, y] == val:
+                    while x + w < CHUNK_SIZE and mask0[x + w, y] == value:
                         w += 1
 
                     done = False
 
                     while y + h < CHUNK_SIZE:
-                        for ix in range(w):
-                            if mask0[x + ix, y + h] != val:
+                        for index_x in range(w):
+                            if mask0[x + index_x, y + h] != value:
                                 done = True
                                 break
 
@@ -1208,25 +1290,25 @@ def build_chunk_mesh(
                         h += 1
 
                     # Unpack the chunked face attributes from the 64-bit mask value
-                    v_id = int((val >> 41) & 0xFF)
-                    l0 = int((val >> 33) & 0xFF)
-                    l1 = int((val >> 25) & 0xFF)
-                    l2 = int((val >> 17) & 0xFF)
-                    l3 = int((val >> 9) & 0xFF)
+                    voxel_id = int((value >> 41) & 0xFF)
+                    light_0 = int((value >> 33) & 0xFF)
+                    light_1 = int((value >> 25) & 0xFF)
+                    light_2 = int((value >> 17) & 0xFF)
+                    light_3 = int((value >> 9) & 0xFF)
 
-                    ao0 = int((val >> 7) & 3)
-                    ao1 = int((val >> 5) & 3)
-                    ao2 = int((val >> 3) & 3)
-                    ao3 = int((val >> 1) & 3)
-                    flip_id = int(val & 1)
+                    ambient_occlusion_0 = int((value >> 7) & 3)
+                    ambient_occlusion_1 = int((value >> 5) & 3)
+                    ambient_occlusion_2 = int((value >> 3) & 3)
+                    ambient_occlusion_3 = int((value >> 1) & 3)
+                    flip_id = int(value & 1)
 
                     # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
-                    v0 = pack_data(x, y, z, v_id, 4, ao0, flip_id, l0)
-                    v1 = pack_data(x, y + h, z, v_id, 4, ao1, flip_id, l1)
-                    v2 = pack_data(x + w, y + h, z, v_id, 4, ao2, flip_id, l2)
-                    v3 = pack_data(x + w, y, z, v_id, 4, ao3, flip_id, l3)
+                    v0 = pack_data(x, y, z, voxel_id, 4, ambient_occlusion_0, flip_id, light_0)
+                    v1 = pack_data(x, y + h, z, voxel_id, 4, ambient_occlusion_1, flip_id, light_1)
+                    v2 = pack_data(x + w, y + h, z, voxel_id, 4, ambient_occlusion_2, flip_id, light_2)
+                    v3 = pack_data(x + w, y, z, voxel_id, 4, ambient_occlusion_3, flip_id, light_3)
 
-                    if v_id == WATER:
+                    if voxel_id == WATER:
                         if flip_id:
                             water_index = add_data(water_data, water_index, v3, v0, v1, v3, v1, v2)
                         else:
@@ -1238,25 +1320,25 @@ def build_chunk_mesh(
                         else:
                             index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
 
-                    for ix in range(w):
-                        for iy in range(h):
-                            mask0[x + ix, y + iy] = 0
+                    for index_x in range(w):
+                        for index_y in range(h):
+                            mask0[x + index_x, y + index_y] = 0
 
         for x in range(CHUNK_SIZE):
             for y in range(CHUNK_SIZE):
-                val = mask1[x, y]
+                value = mask1[x, y]
 
-                if val:
+                if value:
                     w, h = 1, 1
 
-                    while x + w < CHUNK_SIZE and mask1[x + w, y] == val:
+                    while x + w < CHUNK_SIZE and mask1[x + w, y] == value:
                         w += 1
 
                     done = False
 
                     while y + h < CHUNK_SIZE:
-                        for ix in range(w):
-                            if mask1[x + ix, y + h] != val:
+                        for index_x in range(w):
+                            if mask1[x + index_x, y + h] != value:
                                 done = True
                                 break
 
@@ -1266,25 +1348,25 @@ def build_chunk_mesh(
                         h += 1
 
                     # Unpack the chunked face attributes from the 64-bit mask value
-                    v_id = int((val >> 41) & 0xFF)
-                    l0 = int((val >> 33) & 0xFF)
-                    l1 = int((val >> 25) & 0xFF)
-                    l2 = int((val >> 17) & 0xFF)
-                    l3 = int((val >> 9) & 0xFF)
+                    voxel_id = int((value >> 41) & 0xFF)
+                    light_0 = int((value >> 33) & 0xFF)
+                    light_1 = int((value >> 25) & 0xFF)
+                    light_2 = int((value >> 17) & 0xFF)
+                    light_3 = int((value >> 9) & 0xFF)
 
-                    ao0 = int((val >> 7) & 3)
-                    ao1 = int((val >> 5) & 3)
-                    ao2 = int((val >> 3) & 3)
-                    ao3 = int((val >> 1) & 3)
-                    flip_id = int(val & 1)
+                    ambient_occlusion_0 = int((value >> 7) & 3)
+                    ambient_occlusion_1 = int((value >> 5) & 3)
+                    ambient_occlusion_2 = int((value >> 3) & 3)
+                    ambient_occlusion_3 = int((value >> 1) & 3)
+                    flip_id = int(value & 1)
 
                     # Pack the final geometric vertex data (position, voxel_id, face_id, etc) into a 32-bit int.
-                    v0 = pack_data(x, y, z + 1, v_id, 5, ao0, flip_id, l0)
-                    v1 = pack_data(x, y + h, z + 1, v_id, 5, ao1, flip_id, l1)
-                    v2 = pack_data(x + w, y + h, z + 1, v_id, 5, ao2, flip_id, l2)
-                    v3 = pack_data(x + w, y, z + 1, v_id, 5, ao3, flip_id, l3)
+                    v0 = pack_data(x, y, z + 1, voxel_id, 5, ambient_occlusion_0, flip_id, light_0)
+                    v1 = pack_data(x, y + h, z + 1, voxel_id, 5, ambient_occlusion_1, flip_id, light_1)
+                    v2 = pack_data(x + w, y + h, z + 1, voxel_id, 5, ambient_occlusion_2, flip_id, light_2)
+                    v3 = pack_data(x + w, y, z + 1, voxel_id, 5, ambient_occlusion_3, flip_id, light_3)
 
-                    if v_id == WATER:
+                    if voxel_id == WATER:
                         if flip_id:
                             water_index = add_data(water_data, water_index, v3, v1, v0, v3, v2, v1)
                         else:
@@ -1296,9 +1378,9 @@ def build_chunk_mesh(
                         else:
                             index = add_data(vertex_data, index, v0, v2, v1, v0, v3, v2)
 
-                    for ix in range(w):
-                        for iy in range(h):
-                            mask1[x + ix, y + iy] = 0
+                    for index_x in range(w):
+                        for index_y in range(h):
+                            mask1[x + index_x, y + index_y] = 0
 
     # Slice and combine opaque and transparent meshes
     opaque_mesh = vertex_data[:index]
