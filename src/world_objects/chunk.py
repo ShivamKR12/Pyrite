@@ -112,7 +112,7 @@ class Chunk:
         """
         # Allocate a continuous block of 1D memory representing the 3D volume.
         # Using uint8 minimizes memory overhead, as voxel IDs range from 0 to 255.
-        voxels: NDArray[np.uint8] = np.zeros(CHUNK_VOLUME, dtype='uint8')
+        voxels: NDArray[np.uint8] = np.zeros((CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint8)
 
         # Convert the chunk's grid position into absolute world block coordinates.
         # chunk_x, chunk_y, chunk_z represent the exact minimum bounds (bottom-left-back corner) of the chunk.

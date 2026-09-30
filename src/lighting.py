@@ -33,7 +33,7 @@ def get_voxel_fast(world_x: int, world_y: int, world_z: int, world_voxels: Any, 
 
     lx, ly, lz = world_x % CHUNK_SIZE, world_y % CHUNK_SIZE, world_z % CHUNK_SIZE
 
-    return int(world_voxels[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA])
+    return int(world_voxels[idx][lx, ly, lz])
 
 
 @njit(cache=True, nogil=True)
@@ -49,7 +49,7 @@ def get_light_fast(world_x: int, world_y: int, world_z: int, world_lightmaps: An
 
     lx, ly, lz = world_x % CHUNK_SIZE, world_y % CHUNK_SIZE, world_z % CHUNK_SIZE
 
-    return int(world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA])
+    return int(world_lightmaps[idx][lx, ly, lz])
 
 
 @njit(cache=True, nogil=True)
@@ -64,7 +64,7 @@ def set_light_fast(
 
     if idx != -1:
         lx, ly, lz = world_x % CHUNK_SIZE, world_y % CHUNK_SIZE, world_z % CHUNK_SIZE
-        world_lightmaps[idx][lx + lz * CHUNK_SIZE + ly * CHUNK_AREA] = val
+        world_lightmaps[idx][lx, ly, lz] = val
 
 
 # Voxel Flood-Fill Lighting (BFS)
@@ -178,10 +178,8 @@ def propagate_light_queue(
 
             if is_local:
                 lx, ly, lz = nx % CHUNK_SIZE, ny % CHUNK_SIZE, nz % CHUNK_SIZE
-                idx = lx + lz * CHUNK_SIZE + ly * CHUNK_AREA
-
-                voxel_id = local_voxels[idx]
-                n_val = local_lightmaps[idx]
+                voxel_id = local_voxels[lx, ly, lz]
+                n_val = local_lightmaps[lx, ly, lz]
 
             else:
                 voxel_id = get_voxel_fast(nx, ny, nz, world_voxels, chunk_positions)
@@ -211,7 +209,7 @@ def propagate_light_queue(
                     new_val = ((n_val >> 4) << 4) | new_L
 
                 if is_local:
-                    local_lightmaps[idx] = new_val
+                    local_lightmaps[lx, ly, lz] = new_val
                 else:
                     set_light_fast(nx, ny, nz, new_val, world_lightmaps, chunk_positions)
 
@@ -249,14 +247,13 @@ def _init_chunk_lighting(
             for z in range(CHUNK_SIZE):
                 for x in range(CHUNK_SIZE):
                     # Fetch block properties
-                    idx = x + z * CHUNK_SIZE + y * CHUNK_AREA
-                    val = local_lightmap[idx]
-                    voxel_id = local_voxels[idx]
+                    val = local_lightmap[x, y, z]
+                    voxel_id = local_voxels[x, y, z]
 
                     # Ignite glowstone
                     if voxel_id == GLOWSTONE:
                         val = (val & 240) | 14
-                        local_lightmap[idx] = val
+                        local_lightmap[x, y, z] = val
 
                     # Enqueue sunlight
                     sun = val >> 4
@@ -275,12 +272,12 @@ def _init_chunk_lighting(
                             tail_sun += 1
                         else:
                             if (
-                                (local_lightmap[(x - 1) + z * CHUNK_SIZE + y * CHUNK_AREA] >> 4) < sun
-                                or (local_lightmap[(x + 1) + z * CHUNK_SIZE + y * CHUNK_AREA] >> 4) < sun
-                                or (local_lightmap[x + (z - 1) * CHUNK_SIZE + y * CHUNK_AREA] >> 4) < sun
-                                or (local_lightmap[x + (z + 1) * CHUNK_SIZE + y * CHUNK_AREA] >> 4) < sun
-                                or (local_lightmap[x + z * CHUNK_SIZE + (y - 1) * CHUNK_AREA] >> 4) < sun
-                                or (local_lightmap[x + z * CHUNK_SIZE + (y + 1) * CHUNK_AREA] >> 4) < sun
+                                (local_lightmap[x - 1, y, z] >> 4) < sun
+                                or (local_lightmap[x + 1, y, z] >> 4) < sun
+                                or (local_lightmap[x, y, z - 1] >> 4) < sun
+                                or (local_lightmap[x, y, z + 1] >> 4) < sun
+                                or (local_lightmap[x, y - 1, z] >> 4) < sun
+                                or (local_lightmap[x, y + 1, z] >> 4) < sun
                             ):
                                 queue_sun[tail_sun] = (
                                     (np.uint64(x + chunk_x) << 32)
@@ -306,12 +303,12 @@ def _init_chunk_lighting(
                             tail_block += 1
                         else:
                             if (
-                                (local_lightmap[(x - 1) + z * CHUNK_SIZE + y * CHUNK_AREA] & 15) < block
-                                or (local_lightmap[(x + 1) + z * CHUNK_SIZE + y * CHUNK_AREA] & 15) < block
-                                or (local_lightmap[x + (z - 1) * CHUNK_SIZE + y * CHUNK_AREA] & 15) < block
-                                or (local_lightmap[x + (z + 1) * CHUNK_SIZE + y * CHUNK_AREA] & 15) < block
-                                or (local_lightmap[x + z * CHUNK_SIZE + (y - 1) * CHUNK_AREA] & 15) < block
-                                or (local_lightmap[x + z * CHUNK_SIZE + (y + 1) * CHUNK_AREA] & 15) < block
+                                (local_lightmap[x - 1, y, z] & 15) < block
+                                or (local_lightmap[x + 1, y, z] & 15) < block
+                                or (local_lightmap[x, y, z - 1] & 15) < block
+                                or (local_lightmap[x, y, z + 1] & 15) < block
+                                or (local_lightmap[x, y - 1, z] & 15) < block
+                                or (local_lightmap[x, y + 1, z] & 15) < block
                             ):
                                 queue_block[tail_block] = (
                                     (np.uint64(x + chunk_x) << 32)

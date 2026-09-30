@@ -426,7 +426,7 @@ def get_neighbor_voxel_id(
     # Check if voxel is within the current chunk boundaries
     x, y, z = local_voxel_pos
     if 0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE:
-        return int(chunk_voxels[x + z * CHUNK_SIZE + y * CHUNK_AREA])
+        return int(chunk_voxels[x, y, z])
 
     # Attempt to retrieve voxel from neighboring chunk
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
@@ -434,14 +434,10 @@ def get_neighbor_voxel_id(
     if chunk_index == -1:
         return 0
 
-    chunk_voxels_global = world_voxels[chunk_index]
-
     local_x = world_voxel_pos[0] % CHUNK_SIZE
     local_y = world_voxel_pos[1] % CHUNK_SIZE
     local_z = world_voxel_pos[2] % CHUNK_SIZE
-    voxel_index = local_x + local_z * CHUNK_SIZE + local_y * CHUNK_AREA
-
-    return int(chunk_voxels_global[voxel_index])
+    return int(world_voxels[chunk_index, local_x, local_y, local_z])
 
 
 @njit(cache=True, nogil=True)
@@ -459,7 +455,7 @@ def get_neighbor_light(
     # Check if voxel is within the current chunk boundaries
     x, y, z = local_voxel_pos
     if 0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE:
-        return int(chunk_lightmap[x + z * CHUNK_SIZE + y * CHUNK_AREA])
+        return int(chunk_lightmap[x, y, z])
 
     # Attempt to retrieve light value from neighboring chunk
     chunk_index = get_chunk_index(world_voxel_pos, chunk_positions)
@@ -467,14 +463,10 @@ def get_neighbor_light(
     if chunk_index == -1:
         return 255
 
-    chunk_lights_global = world_lightmaps[chunk_index]
-
     local_x = world_voxel_pos[0] % CHUNK_SIZE
     local_y = world_voxel_pos[1] % CHUNK_SIZE
     local_z = world_voxel_pos[2] % CHUNK_SIZE
-    voxel_index = local_x + local_z * CHUNK_SIZE + local_y * CHUNK_AREA
-
-    return int(chunk_lights_global[voxel_index])
+    return int(world_lightmaps[chunk_index, local_x, local_y, local_z])
 
 
 @njit(cache=True, nogil=True)
@@ -558,7 +550,7 @@ def build_chunk_mesh(
             for z in range(CHUNK_SIZE):
                 world_z = z + chunk_z * CHUNK_SIZE
 
-                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+                voxel_id = chunk_voxels[x, y, z]
 
                 if not voxel_id:
                     continue
@@ -866,7 +858,7 @@ def build_chunk_mesh(
             for z in range(CHUNK_SIZE):
                 world_z = z + chunk_z * CHUNK_SIZE
 
-                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+                voxel_id = chunk_voxels[x, y, z]
 
                 if not voxel_id:
                     continue
@@ -1171,7 +1163,7 @@ def build_chunk_mesh(
             for y in range(CHUNK_SIZE):
                 world_y = y + chunk_y * CHUNK_SIZE
 
-                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+                voxel_id = chunk_voxels[x, y, z]
 
                 if not voxel_id:
                     continue

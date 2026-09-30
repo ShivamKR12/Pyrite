@@ -121,15 +121,6 @@ def get_height(x: float, z: float, perm_array: Any) -> int:
 
 
 @njit(cache=True, fastmath=True, nogil=True)
-def get_index(x: int, y: int, z: int) -> int:
-    """
-    Translates a localized 3D chunk coordinate (x, y, z) into a flattened
-    1D array index for highly optimized, contiguous memory access.
-    """
-    return x + CHUNK_SIZE * z + CHUNK_AREA * y
-
-
-@njit(cache=True, fastmath=True, nogil=True)
 def set_voxel_column(
     voxels: Any, x: int, z: int, chunk_x: int, chunk_y: int, chunk_z: int, perm_array: Any, perm_grad_array: Any
 ) -> None:
@@ -208,7 +199,7 @@ def set_voxel_column(
 
         # Set block ID
         if voxel_id:
-            voxels[get_index(x, y, z)] = voxel_id
+            voxels[x, y, z] = voxel_id
 
         # Place vegetation
         if (
@@ -248,7 +239,7 @@ def place_tree(voxels: Any, x: int, y: int, z: int, voxel_id: int, tree_prob: fl
         return None
 
     # Place dirt foundation
-    voxels[get_index(x, y, z)] = DIRT
+    voxels[x, y, z] = DIRT
 
     # Generate leaf crown
     m = 0
@@ -258,15 +249,15 @@ def place_tree(voxels: Any, x: int, y: int, z: int, voxel_id: int, tree_prob: fl
         for ix in range(-TREE_H_WIDTH + m, TREE_H_WIDTH - m * rng):
             for iz in range(-TREE_H_WIDTH + m * rng, TREE_H_WIDTH - m):
                 if (ix + iz) % 4:
-                    voxels[get_index(x + ix + k, y + iy, z + iz + k)] = LEAVES
+                    voxels[x + ix + k, y + iy, z + iz + k] = LEAVES
         m += 1 if n > 0 else 3 if n > 1 else 0
 
     # Generate wood trunk
     for iy in range(1, TREE_HEIGHT - 2):
-        voxels[get_index(x, y + iy, z)] = WOOD
+        voxels[x, y + iy, z] = WOOD
 
     # Place top leaf
-    voxels[get_index(x, y + TREE_HEIGHT - 2, z)] = LEAVES
+    voxels[x, y + TREE_HEIGHT - 2, z] = LEAVES
 
 
 @njit(cache=True, fastmath=True, nogil=True)
@@ -287,7 +278,7 @@ def fill_initial_sunlight(
             # Assign sunlight based on block depth
             for y in range(CHUNK_SIZE):
                 world_y = y + chunk_y
-                index = get_index(x, y, z)
+                index = x, y, z
 
                 if world_y >= world_height:
                     voxel_id = voxels[index]

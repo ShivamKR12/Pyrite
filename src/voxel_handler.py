@@ -358,7 +358,7 @@ class VoxelHandler:
             lx, ly, lz = voxel_local_pos = (
                 glm.ivec3(voxel_world_pos) - glm.ivec3(chunk_x, chunk_y, chunk_z) * CHUNK_SIZE
             )
-            voxel_index: int = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
+            voxel_index: Any = (lx, ly, lz)
             voxel_id: int = chunk.voxels[voxel_index]
             return voxel_id, voxel_index, voxel_local_pos, chunk
 

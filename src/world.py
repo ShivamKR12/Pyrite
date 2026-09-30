@@ -91,7 +91,7 @@ class World:
         self.build_queue: List[Chunk] = []
         self.load_queue: List[Tuple[Optional[Chunk], concurrent.futures.Future[Any]]] = []
 
-        self.voxels: NDArray[np.uint8] = np.empty([WORLD_VOLUME, CHUNK_VOLUME], dtype='uint8')
+        self.voxels: NDArray[np.uint8] = np.empty([WORLD_VOLUME, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE], dtype='uint8')
         self.lightmaps: NDArray[np.uint8] = np.full([WORLD_VOLUME, CHUNK_VOLUME], 255, dtype='uint8')
         self.voxel_handler: Any = VoxelHandler(self)
         self.vbo_pool: deque[Tuple[Any, Any]] = deque()
