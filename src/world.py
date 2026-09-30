@@ -92,7 +92,9 @@ class World:
         self.load_queue: List[Tuple[Optional[Chunk], concurrent.futures.Future[Any]]] = []
 
         self.voxels: NDArray[np.uint8] = np.empty([WORLD_VOLUME, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE], dtype='uint8')
-        self.lightmaps: NDArray[np.uint8] = np.full([WORLD_VOLUME, CHUNK_VOLUME], 255, dtype='uint8')
+        self.lightmaps: NDArray[np.uint8] = np.full(
+            [WORLD_VOLUME, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE], 255, dtype='uint8'
+        )
         self.voxel_handler: Any = VoxelHandler(self)
         self.vbo_pool: deque[Tuple[Any, Any]] = deque()
         self.last_player_chunk_pos: Optional[Tuple[int, int]] = None
@@ -234,8 +236,8 @@ class World:
         t0 = time.perf_counter()
 
         def compile_numba() -> None:
-            dummy_voxels = np.zeros(CHUNK_VOLUME, dtype='uint8')
-            dummy_lights = np.full(CHUNK_VOLUME, 255, dtype='uint8')
+            dummy_voxels = np.zeros((CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint8)
+            dummy_lights = np.full((CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE), 255, dtype='uint8')
             Chunk.generate_terrain(
                 dummy_voxels, dummy_lights, 0, 0, 0, noise.perm, noise.perm_grad_index3, self.world_seed
             )
@@ -490,22 +492,30 @@ class World:
         row = self.thread_local.cursor.fetchone()
 
         if row:
-            voxel_data = np.frombuffer(zlib.decompress(row[0]), dtype='uint8').copy()
+            voxel_data = (
+                np.frombuffer(zlib.decompress(row[0]), dtype=np.uint8)
+                .reshape((CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE))
+                .copy()
+            )
             is_empty = not np.any(voxel_data)
 
             if len(row) > 1 and row[1] is not None:
                 # Lightmap exists in DB! Skip expensive Numba BFS calculations entirely!
-                lightmap_data = np.frombuffer(zlib.decompress(row[1]), dtype='uint8').copy()
+                lightmap_data = (
+                    np.frombuffer(zlib.decompress(row[1]), dtype=np.uint8)
+                    .reshape((CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE))
+                    .copy()
+                )
                 return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, False)
 
             # Old save file format, fallback to generating sunlight
-            lightmap_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
+            lightmap_data = np.zeros((CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint8)
             Chunk.fill_initial_sunlight_only(voxel_data, lightmap_data, chunk_x, chunk_y, chunk_z, noise.perm)
 
             return ('db', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
-        voxel_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
-        lightmap_data = np.zeros(CHUNK_VOLUME, dtype='uint8')
+        voxel_data = np.zeros((CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint8)
+        lightmap_data = np.zeros((CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE), dtype=np.uint8)
         Chunk.generate_terrain(
             voxel_data, lightmap_data, chunk_x, chunk_y, chunk_z, noise.perm, noise.perm_grad_index3, self.world_seed
         )
