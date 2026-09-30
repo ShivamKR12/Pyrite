@@ -99,11 +99,13 @@ def get_height(x: float, z: float, perm_array: Any) -> int:
     # Shape terrain by continentalness
     if cont < -0.2:
         w = min((-0.2 - cont) * 5.0, 1.0)
-        target_h = WATER_LINE - 2 + detail_2 * 0.3 + detail_3 * 0.3
+        # Deep oceans: Base floor drops by 30 blocks, with exaggerated noise for oceanic trenches
+        target_h = WATER_LINE - 30 + detail_1 * 1.5 + detail_2 * 0.5
         height = height * (1.0 - w) + target_h * w
     elif cont > 0.4:
         w = min((cont - 0.4) * 5.0, 1.0)
-        target_h = base_h * 1.5 + detail_1 * 2.0 + detail_2 + detail_3 + 30
+        # Jagged Mountains: Drastically increase the amplitude of high-frequency noise details
+        target_h = base_h * 1.8 + detail_1 * 4.0 + detail_2 * 3.0 + detail_3 * 2.0 + 40
         height = height * (1.0 - w) + target_h * w
     elif 0.1 < cont <= 0.3:
         w = min((cont - 0.1) * 10.0, 1.0) * min((0.3 - cont) * 10.0, 1.0)
@@ -150,7 +152,11 @@ def set_voxel_column(
 
     # Identify terrain features
     is_underwater = world_height <= WATER_LINE
-    is_beach = world_height <= WATER_LINE + 2 and not is_underwater
+
+    # Organic Beaches: Use a 2D noise mask to naturally blend the coastline inland
+    beach_noise = noise2(world_x * 0.05, world_z * 0.05, perm_array)
+    beach_limit = WATER_LINE + 2 + int(max(0.0, beach_noise) * 4.0)
+    is_beach = world_height <= beach_limit and not is_underwater
 
     # Assign surface blocks based on biome
     if is_underwater or is_beach or is_desert:
@@ -161,7 +167,12 @@ def set_voxel_column(
         subsurface_id = DIRT
     else:
         surface_id = GRASS
-        subsurface_id = DIRT
+        # If the grass block is near the coast (within a few blocks above the beach),
+        # replace the subsurface dirt with sand so players don't see ugly dirt lines under grass near the beach!
+        if world_height <= beach_limit + 4:
+            subsurface_id = SAND
+        else:
+            subsurface_id = DIRT
 
     # Evaluate depth and noise masks
     dirt_depth = int((noise2(world_x * 0.1, world_z * 0.1, perm_array) * 0.5 + 0.5) * 5) + 3
