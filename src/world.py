@@ -414,7 +414,11 @@ class World:
                 continue
 
             if future.done():
-                source, elapsed_time, voxel_data, lightmap_data, is_empty, needs_lighting = future.result()
+                all_results = future.result()
+                if chunk.position not in all_results:
+                    self.load_queue.remove(item)
+                    continue
+                source, elapsed_time, voxel_data, lightmap_data, is_empty, needs_lighting = all_results[chunk.position]
 
                 if source == 'db':
                     self.db_load_time += elapsed_time
@@ -523,6 +527,12 @@ class World:
 
         return ('gen', time.perf_counter() - t0, voxel_data, lightmap_data, is_empty, True)
 
+    def _fetch_or_generate_voxels_batch(self, batch):
+        results = {}
+        for x, y, z in batch:
+            results[(x, y, z)] = self._fetch_or_generate_voxels(x, y, z)
+        return results
+
     @global_profiler.profile_func('Stream_Chunks')
     def stream_chunks(self) -> None:
         """
@@ -564,29 +574,34 @@ class World:
         # Sort chunks by distance (closest first) so the ThreadPool executes them first
         chunks_to_load.sort(key=lambda position: (position[0] - player_cx) ** 2 + (position[2] - player_cz) ** 2)
 
-        for position in chunks_to_load:
-            self.load_chunk(*position)
+        batch_size = 8
+        batches = [chunks_to_load[i : i + batch_size] for i in range(0, len(chunks_to_load), batch_size)]
+
+        for batch in batches:
+            future = self.executor.submit(self._fetch_or_generate_voxels_batch, batch)
+            for position in batch:
+                self.load_chunk_sync(*position, future)
 
     @global_profiler.profile_func('Load_Chunk')
-    def load_chunk(self, x: int, y: int, z: int) -> None:
+    def load_chunk_sync(self, x: int, y: int, z: int, future: 'concurrent.futures.Future') -> None:
         """
-        Initializes a Chunk instance at the given coordinates and dispatches
-        an asynchronous task to fetch or generate its actual voxel data.
+        Initializes a Chunk instance and associates it with an existing batch future.
         """
-        # Register chunk
         chunk_index = (x % WORLD_WIDTH) + WORLD_WIDTH * (z % WORLD_DEPTH) + WORLD_AREA * (y % WORLD_HEIGHT)
         old_chunk = self.chunks[chunk_index]
         if old_chunk:
             self.unload_chunk(old_chunk.position)
 
-        # Create chunk
         chunk = Chunk(self, position=(x, y, z))
         self.chunks[chunk_index] = chunk
         self.active_chunks[(x, y, z)] = chunk
 
-        # Dispatch load task
-        future = self.executor.submit(self._fetch_or_generate_voxels, x, y, z)
         self.load_queue.append((chunk, future))
+
+    def load_chunk(self, x: int, y: int, z: int) -> None:
+        # Legacy fallback if used elsewhere
+        future = self.executor.submit(self._fetch_or_generate_voxels_batch, [(x, y, z)])
+        self.load_chunk_sync(x, y, z, future)
 
     @global_profiler.profile_func('Save_Chunk_To_DB')
     def save_chunk_to_db(

@@ -107,11 +107,11 @@ def propagate_light_queue(
     # LOOP UNTIL QUEUE IS EMPTY (head catches up to tail).
     # We also have a safety check `tail < LIGHTING_QUEUE_SIZE - 10` to prevent
     # a queue overflow crash if the light spreads too far (buffer overflow protection).
-    while head < tail and tail < LIGHTING_QUEUE_SIZE - 10:
+    while head != tail:
         # READ PACKED 64-BIT INTEGER FROM QUEUE
         # `packed` is a 64-bit unsigned integer containing the X, Y, and Z
         # coordinates squashed together to save memory and avoid Python object overhead.
-        packed = queue[head]
+        packed = queue[head & (LIGHTING_QUEUE_SIZE - 1)]
         head += 1
 
         # BITWISE UNPACKING (X Coordinate)
@@ -213,7 +213,7 @@ def propagate_light_queue(
                 else:
                     set_light_fast(nx, ny, nz, new_val, world_lightmaps, chunk_positions)
 
-                queue[tail] = (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
+                queue[tail & (LIGHTING_QUEUE_SIZE - 1)] = (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
                 tail += 1
 
 
@@ -266,7 +266,7 @@ def _init_chunk_lighting(
                             or z == 0
                             or z == CHUNK_SIZE - 1
                         ):
-                            queue_sun[tail_sun] = (
+                            queue_sun[tail_sun & (LIGHTING_QUEUE_SIZE - 1)] = (
                                 (np.uint64(x + chunk_x) << 32) | (np.uint64(y + chunk_y) << 16) | np.uint64(z + chunk_z)
                             )
                             tail_sun += 1
@@ -279,7 +279,7 @@ def _init_chunk_lighting(
                                 or (local_lightmap[x, y - 1, z] >> 4) < sun
                                 or (local_lightmap[x, y + 1, z] >> 4) < sun
                             ):
-                                queue_sun[tail_sun] = (
+                                queue_sun[tail_sun & (LIGHTING_QUEUE_SIZE - 1)] = (
                                     (np.uint64(x + chunk_x) << 32)
                                     | (np.uint64(y + chunk_y) << 16)
                                     | np.uint64(z + chunk_z)
@@ -297,7 +297,7 @@ def _init_chunk_lighting(
                             or z == 0
                             or z == CHUNK_SIZE - 1
                         ):
-                            queue_block[tail_block] = (
+                            queue_block[tail_block & (LIGHTING_QUEUE_SIZE - 1)] = (
                                 (np.uint64(x + chunk_x) << 32) | (np.uint64(y + chunk_y) << 16) | np.uint64(z + chunk_z)
                             )
                             tail_block += 1
@@ -310,7 +310,7 @@ def _init_chunk_lighting(
                                 or (local_lightmap[x, y - 1, z] & 15) < block
                                 or (local_lightmap[x, y + 1, z] & 15) < block
                             ):
-                                queue_block[tail_block] = (
+                                queue_block[tail_block & (LIGHTING_QUEUE_SIZE - 1)] = (
                                     (np.uint64(x + chunk_x) << 32)
                                     | (np.uint64(y + chunk_y) << 16)
                                     | np.uint64(z + chunk_z)
@@ -402,19 +402,27 @@ def _stitch_chunk_lighting(
                     # Enqueue neighbor border light
                     val_n = get_light_fast(wx_n, wy_n, wz_n, world_lightmaps, chunk_positions)
                     if (val_n >> 4) > 0:
-                        queue_sun[tail_sun] = (np.uint64(wx_n) << 32) | (np.uint64(wy_n) << 16) | np.uint64(wz_n)
+                        queue_sun[tail_sun & (LIGHTING_QUEUE_SIZE - 1)] = (
+                            (np.uint64(wx_n) << 32) | (np.uint64(wy_n) << 16) | np.uint64(wz_n)
+                        )
                         tail_sun += 1
                     if (val_n & 15) > 0:
-                        queue_block[tail_block] = (np.uint64(wx_n) << 32) | (np.uint64(wy_n) << 16) | np.uint64(wz_n)
+                        queue_block[tail_block & (LIGHTING_QUEUE_SIZE - 1)] = (
+                            (np.uint64(wx_n) << 32) | (np.uint64(wy_n) << 16) | np.uint64(wz_n)
+                        )
                         tail_block += 1
 
                     # Enqueue current chunk border light
                     val_c = get_light_fast(wx_c, wy_c, wz_c, world_lightmaps, chunk_positions)
                     if (val_c >> 4) > 0:
-                        queue_sun[tail_sun] = (np.uint64(wx_c) << 32) | (np.uint64(wy_c) << 16) | np.uint64(wz_c)
+                        queue_sun[tail_sun & (LIGHTING_QUEUE_SIZE - 1)] = (
+                            (np.uint64(wx_c) << 32) | (np.uint64(wy_c) << 16) | np.uint64(wz_c)
+                        )
                         tail_sun += 1
                     if (val_c & 15) > 0:
-                        queue_block[tail_block] = (np.uint64(wx_c) << 32) | (np.uint64(wy_c) << 16) | np.uint64(wz_c)
+                        queue_block[tail_block & (LIGHTING_QUEUE_SIZE - 1)] = (
+                            (np.uint64(wx_c) << 32) | (np.uint64(wy_c) << 16) | np.uint64(wz_c)
+                        )
                         tail_block += 1
 
     # Propagate stitched lighting
@@ -464,14 +472,14 @@ def remove_light_node(
     # Initialize queue with root node
     head = 0
     tail = 0
-    queue[tail] = (
+    queue[tail & (LIGHTING_QUEUE_SIZE - 1)] = (
         (np.uint64(world_x) << 40) | (np.uint64(world_y) << 24) | (np.uint64(world_z) << 8) | np.uint64(light_level)
     )
     tail += 1
 
     # Process removal queue
-    while head < tail and tail < LIGHTING_QUEUE_SIZE - 10:
-        packed = queue[head]
+    while head != tail:
+        packed = queue[head & (LIGHTING_QUEUE_SIZE - 1)]
         head += 1
         x = int((packed >> 40) & 0xFFFF)
         y = int((packed >> 24) & 0xFFFF)
@@ -493,7 +501,9 @@ def remove_light_node(
                     set_light_fast(nx, ny, nz, (0 << 4) | (n_val & 15), world_lightmaps, chunk_positions)
                 else:
                     set_light_fast(nx, ny, nz, ((n_val >> 4) << 4) | 0, world_lightmaps, chunk_positions)
-                queue[tail] = (np.uint64(nx) << 40) | (np.uint64(ny) << 24) | (np.uint64(nz) << 8) | np.uint64(n_L)
+                queue[tail & (LIGHTING_QUEUE_SIZE - 1)] = (
+                    (np.uint64(nx) << 40) | (np.uint64(ny) << 24) | (np.uint64(nz) << 8) | np.uint64(n_L)
+                )
                 tail += 1
             # Save brighter overlapping light for refill
             elif n_L >= L:
@@ -587,7 +597,9 @@ def _update_light_remove_block(
                 break
             curr_val = get_light_fast(world_x, curr_y, world_z, world_lightmaps, chunk_positions)
             set_light_fast(world_x, curr_y, world_z, (15 << 4) | (curr_val & 15), world_lightmaps, chunk_positions)
-            queue_sun[tail_sun] = (np.uint64(world_x) << 32) | (np.uint64(curr_y) << 16) | np.uint64(world_z)
+            queue_sun[tail_sun & (LIGHTING_QUEUE_SIZE - 1)] = (
+                (np.uint64(world_x) << 32) | (np.uint64(curr_y) << 16) | np.uint64(world_z)
+            )
             tail_sun += 1
             if voxel_id == WATER or voxel_id == LEAVES:
                 break
@@ -601,10 +613,14 @@ def _update_light_remove_block(
 
         n_val = get_light_fast(nx, ny, nz, world_lightmaps, chunk_positions)
         if (n_val >> 4) > 0:
-            queue_sun[tail_sun] = (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
+            queue_sun[tail_sun & (LIGHTING_QUEUE_SIZE - 1)] = (
+                (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
+            )
             tail_sun += 1
         if (n_val & 15) > 0:
-            queue_block[tail_block] = (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
+            queue_block[tail_block & (LIGHTING_QUEUE_SIZE - 1)] = (
+                (np.uint64(nx) << 32) | (np.uint64(ny) << 16) | np.uint64(nz)
+            )
             tail_block += 1
 
     # Propagate new lighting
